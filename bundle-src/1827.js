@@ -10,13 +10,18 @@ __d(
           [S, I] = (0, l.useState)(null),
           [N, K] = (0, l.useState)(null),
           [R, z] = (0, l.useState)(!0),
-          [F, L] = (0, l.useState)(!1),
+          [F, L] = (0, l.useState)(null),
+          [rsn, setRsn] = (0, l.useState)(""),
+          [busy, setBusy] = (0, l.useState)(!1),
+          gate = (0, G9.useRoleGate)(["admin"]),
           M = (0, l.useCallback)(async () => {
             if (t) {
+              L(null);
               try {
-                (I(await (0, k.fetchDemandWeights)(t.id)), K(await (0, k.fetchDemandModelStats)(t.id)));
-              } catch {
-                L(!0);
+                const [e, a] = await Promise.all([(0, k.fetchDemandWeights)(t.id), (0, k.fetchDemandModelStats)(t.id)]);
+                (I(e), K(a));
+              } catch (e) {
+                L(e);
               }
               z(!1);
             }
@@ -27,9 +32,19 @@ __d(
           }, [M]),
         );
         const H = async (l) => {
-          t && I(await (0, k.setDemandWeights)(t.id, l));
+          if (!t || busy) return;
+          if (rsn.trim().length < 3) return s9.default.alert(h("error"), h("changeReasonRequired"));
+          setBusy(!0);
+          try {
+            (I(await (0, k.setDemandWeights)(t.id, l, rsn.trim())), K(await (0, k.fetchDemandModelStats)(t.id).catch(() => N)));
+          } catch (e) {
+            s9.default.alert(h("error"), (0, G9.classifyError)(e).message || h("error"));
+          } finally {
+            setBusy(!1);
+          }
         };
-        if (R)
+        if (gate.ready && !gate.allowed) return (0, B.jsx)(G9.GateScreen, { kind: "denied", onBack: () => s.back() });
+        if (R || !gate.ready)
           return (0, B.jsx)(y.SafeAreaView, {
             style: [D.center, { backgroundColor: o.bg }],
             children: (0, B.jsx)(r.default, { color: o.accentText }),
@@ -58,6 +73,13 @@ __d(
             (0, B.jsxs)(n.default, {
               contentContainerStyle: { padding: w.spacing.lg, paddingBottom: w.spacing.xxxl },
               children: [
+                (0, B.jsx)(i9.Input, {
+                  label: h("changeReasonLabel"),
+                  placeholder: h("changeReasonPlaceholder"),
+                  value: rsn,
+                  onChangeText: setRsn,
+                  maxLength: 200,
+                }),
                 N &&
                   (0, B.jsxs)(f.Card, {
                     style: { marginBottom: w.spacing.lg },
@@ -128,6 +150,7 @@ __d(
                                 : (0, v.formatNumber)(Math.round(100 * S[l]) / 100)),
                             onDec: () => H({ [t.key]: Math.max(t.min, S[t.key] - t.step) }),
                             onInc: () => H({ [t.key]: Math.min(t.max, S[t.key] + t.step) }),
+                            disabled: busy || rsn.trim().length < 3,
                             colors: o,
                           }),
                         ],
@@ -161,7 +184,10 @@ __d(
       v = _r(d[17]),
       C = _r(d[18]),
       S = _r(d[19]),
-      B = _r(d[20]);
+      B = _r(d[20]),
+      G9 = _r(d[21]),
+      i9 = _r(d[22]),
+      s9 = _r(d[23]);
     const T = [
       { key: "cancelOrganizerHistory", labelKey: "wCancelOrganizer", step: 0.05, min: 0, max: 1 },
       { key: "cancelLowFill", labelKey: "wCancelLowFill", step: 0.05, min: 0, max: 1 },
@@ -172,13 +198,17 @@ __d(
       { key: "noShowLateSlot", labelKey: "wNoShowLate", step: 0.05, min: 0, max: 1 },
       { key: "timeToFillHours", labelKey: "wTimeToFill", step: 1, min: 1, max: 72 },
     ];
-    const A = ({ value: t, onDec: l, onInc: r, colors: n }) =>
+    const A = ({ value: t, onDec: l, onInc: r, colors: n, disabled: dz }) =>
         (0, B.jsxs)(u.default, {
           style: { flexDirection: "row", alignItems: "center", gap: w.spacing.sm },
           children: [
             (0, B.jsx)(o.default, {
               onPress: l,
-              style: [D.stepBtn, { borderColor: n.border }],
+              disabled: dz,
+              accessibilityRole: "button",
+              accessibilityLabel: "decrease",
+              accessibilityState: { disabled: !!dz },
+              style: [D.stepBtn, { borderColor: n.border, opacity: dz ? 0.4 : 1 }],
               children: (0, B.jsx)(h.Ionicons, { name: "remove", size: 18, color: n.text }),
             }),
             (0, B.jsx)(c.default, {
@@ -187,7 +217,11 @@ __d(
             }),
             (0, B.jsx)(o.default, {
               onPress: r,
-              style: [D.stepBtn, { borderColor: n.border }],
+              disabled: dz,
+              accessibilityRole: "button",
+              accessibilityLabel: "increase",
+              accessibilityState: { disabled: !!dz },
+              style: [D.stepBtn, { borderColor: n.border, opacity: dz ? 0.4 : 1 }],
               children: (0, B.jsx)(h.Ionicons, { name: "add", size: 18, color: n.text }),
             }),
           ],
@@ -261,5 +295,7 @@ __d(
       });
   },
   1827,
-  [33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 675, 1171, 13],
+  [
+    33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 675, 1171, 13, 9001, 625, 445,
+  ],
 );

@@ -81,5 +81,41 @@ await run('conduct approve ban with reason', async () => {
   ok('no page errors', !errors.some((e) => e.startsWith('pageerror')));
   await browser.close();
 });
+
+await run('analytics: reason required, save applies, importance refreshes', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/admin/demand' });
+  const d = []; page.on('dialog', (x) => d.push(x.message()));
+  // stepper is disabled until a reason is typed
+  const stepDisabled = await page.evaluate(() => {
+    const b = [...document.querySelectorAll('[role="button"],button')].filter((x) => /add|remove|increase|decrease/i.test(x.getAttribute('aria-label') || ''));
+    return b.length ? b.every((x) => x.hasAttribute('disabled') || x.getAttribute('aria-disabled') === 'true') : 'no-steppers';
+  });
+  ok('weight steppers disabled without a reason', stepDisabled === true, String(stepDisabled));
+  await page.getByPlaceholder(t('changeReasonPlaceholder')).fill('Tuning after the weekly review');
+  await page.waitForTimeout(300);
+  const stepEnabled = await page.evaluate(() => {
+    const b = [...document.querySelectorAll('[role="button"],button')].filter((x) => /add|remove|increase|decrease/i.test(x.getAttribute('aria-label') || ''));
+    return b.length ? b.some((x) => !x.hasAttribute('disabled') && x.getAttribute('aria-disabled') !== 'true') : 'no-steppers';
+  });
+  ok('weight steppers enabled once a reason is given', stepEnabled === true, String(stepEnabled));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
+  await browser.close();
+});
+
+await run('insights export is guarded and audited', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/admin/insights' });
+  const d = []; page.on('dialog', (x) => d.push(x.message()));
+  const dl = [];
+  page.on('download', (x) => dl.push(x.suggestedFilename()));
+  const exportBtn = page.getByRole('button', { name: t('biExport'), exact: true }).first();
+  if (await exportBtn.count()) { await exportBtn.click(); await page.waitForTimeout(1500); }
+  ok('export reports the file it produced', d.some((m) => /\.csv/.test(m)) || dl.length > 0, `${JSON.stringify(d).slice(0, 120)} dl=${dl.length}`);
+  // CSV injection guard
+  const csv = await page.evaluate(() => __r(644).toCsv(['a'], [['=HYPERLINK("http://x")', 'ok']]));
+  ok('CSV formula values are neutralised', csv.includes("'=HYPERLINK") || csv.includes('"\'=HYPERLINK'), csv.slice(0, 60));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

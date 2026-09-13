@@ -18828,7 +18828,106 @@ __d(
   643,
   [33, 618, 137],
 );
-__d(function(g,_r,_i,_a,_m,_e,_d){Object.defineProperty(_e,"__esModule",{value:!0}),_e.activeSince=function(e,t,n=Date.now()){const o=n-864e5*t,r=new Set;for(const t of e)new Date(t.at).getTime()>=o&&r.add(t.user);return r.size},_e.arpu=void 0,_e.bucketByDay=function(e,t,r){const a=new Map,s=n(new Date);for(let e=r-1;e>=0;e--){const t=new Date(s.getTime()-864e5*e);a.set(o(t),0)}for(const n of e){const e=o(new Date(t(n)));a.has(e)&&a.set(e,(a.get(e)??0)+1)}return[...a.entries()].map(([e,t])=>({key:e,value:t,label:e.slice(5)}))},_e.cac=void 0,_e.countSince=r,_e.growthRate=function(e,t,n,o=Date.now()){const a=r(e,t,n,o),s=o-864e5*n,c=e.filter(e=>{const o=new Date(t(e)).getTime();return o>=s-864e5*n&&o<s}).length;return c>0?(a-c)/c:a>0?1:0},_e.pct=_e.ltv=void 0,_e.peakDays=function(e){const t=new Array(7).fill(0);for(const n of e)t[new Date(n).getDay()]++;return t.map((e,t)=>({key:String(t),label:a[t],value:e}))},_e.peakHours=function(e){const t=new Array(24).fill(0);for(const n of e)t[new Date(n).getHours()]++;return t.map((e,t)=>({key:String(t),label:`${String(t).padStart(2,'0')}`,value:e}))},_e.round2=_e.rate=void 0,_e.segmentCounts=function(e,t){const n=new Map;for(const o of e){const e=t(o);e&&n.set(e,(n.get(e)??0)+1)}return[...n.entries()].map(([e,t])=>({key:e,value:t,label:e})).sort((e,t)=>t.value-e.value)},_e.sumByDay=function(e,r,a,s){const c=new Map,u=n(new Date);for(let e=s-1;e>=0;e--)c.set(o(new Date(u.getTime()-864e5*e)),0);for(const n of e){const e=o(new Date(r(n)));c.has(e)&&c.set(e,t((c.get(e)??0)+a(n)))}return[...c.entries()].map(([e,t])=>({key:e,value:t,label:e.slice(5)}))},_e.toCsv=function(e,t){const n=e=>{const t=String(e);return/[",\n]/.test(t)?`"${t.replace(/"/g,'""')}"`:t};return[e.map(n).join(','),...t.map(e=>e.map(n).join(','))].join('\n')},_e.topN=function(e,t){return[...e].sort((e,t)=>t.value-e.value).slice(0,t)};const e=(e,t)=>t>0?e/t:0;_e.rate=e;_e.pct=e=>Math.round(1e3*e)/10;const t=e=>Math.round(100*e)/100;_e.round2=t;const n=e=>{const t=new Date(e);return t.setHours(0,0,0,0),t},o=e=>n(e).toISOString().slice(0,10);function r(e,t,n,o=Date.now()){const r=o-864e5*n;return e.filter(e=>new Date(t(e)).getTime()>=r).length}const a=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];_e.arpu=(n,o)=>t(e(n,o));_e.ltv=(e,n)=>t(e*(n>0?1/n:12));_e.cac=(n,o)=>t(e(n,o))},644,[]);
+__d(
+  function (g, _r, _i, _a, _m, _e, _d) {
+    (Object.defineProperty(_e, "__esModule", { value: !0 }),
+      (_e.activeSince = function (e, t, n = Date.now()) {
+        const o = n - 864e5 * t,
+          r = new Set();
+        for (const t of e) new Date(t.at).getTime() >= o && r.add(t.user);
+        return r.size;
+      }),
+      (_e.arpu = void 0),
+      (_e.bucketByDay = function (e, t, r) {
+        const a = new Map(),
+          s = n(new Date());
+        for (let e = r - 1; e >= 0; e--) {
+          const t = new Date(s.getTime() - 864e5 * e);
+          a.set(o(t), 0);
+        }
+        for (const n of e) {
+          const e = o(new Date(t(n)));
+          a.has(e) && a.set(e, (a.get(e) ?? 0) + 1);
+        }
+        return [...a.entries()].map(([e, t]) => ({ key: e, value: t, label: e.slice(5) }));
+      }),
+      (_e.cac = void 0),
+      (_e.countSince = r),
+      (_e.growthRate = function (e, t, n, o = Date.now()) {
+        const a = r(e, t, n, o),
+          s = o - 864e5 * n,
+          c = e.filter((e) => {
+            const o = new Date(t(e)).getTime();
+            return o >= s - 864e5 * n && o < s;
+          }).length;
+        return c > 0 ? (a - c) / c : a > 0 ? 1 : 0;
+      }),
+      (_e.pct = _e.ltv = void 0),
+      (_e.peakDays = function (e) {
+        const t = new Array(7).fill(0);
+        for (const n of e) t[new Date(n).getDay()]++;
+        return t.map((e, t) => ({ key: String(t), label: a[t], value: e }));
+      }),
+      (_e.peakHours = function (e) {
+        const t = new Array(24).fill(0);
+        for (const n of e) t[new Date(n).getHours()]++;
+        return t.map((e, t) => ({ key: String(t), label: `${String(t).padStart(2, "0")}`, value: e }));
+      }),
+      (_e.round2 = _e.rate = void 0),
+      (_e.segmentCounts = function (e, t) {
+        const n = new Map();
+        for (const o of e) {
+          const e = t(o);
+          e && n.set(e, (n.get(e) ?? 0) + 1);
+        }
+        return [...n.entries()]
+          .map(([e, t]) => ({ key: e, value: t, label: e }))
+          .sort((e, t) => t.value - e.value);
+      }),
+      (_e.sumByDay = function (e, r, a, s) {
+        const c = new Map(),
+          u = n(new Date());
+        for (let e = s - 1; e >= 0; e--) c.set(o(new Date(u.getTime() - 864e5 * e)), 0);
+        for (const n of e) {
+          const e = o(new Date(r(n)));
+          c.has(e) && c.set(e, t((c.get(e) ?? 0) + a(n)));
+        }
+        return [...c.entries()].map(([e, t]) => ({ key: e, value: t, label: e.slice(5) }));
+      }),
+      (_e.toCsv = function (e, t) {
+        // ADM2 (F-ADM2-15): values that a spreadsheet would treat as a formula are neutralised.
+        const n = (e) => {
+          let t = String(e);
+          /^[=+\-@\t\r]/.test(t) && (t = `'${t}`);
+          return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+        };
+        return [e.map(n).join(","), ...t.map((e) => e.map(n).join(","))].join("\n");
+      }),
+      (_e.topN = function (e, t) {
+        return [...e].sort((e, t) => t.value - e.value).slice(0, t);
+      }));
+    const e = (e, t) => (t > 0 ? e / t : 0);
+    _e.rate = e;
+    _e.pct = (e) => Math.round(1e3 * e) / 10;
+    const t = (e) => Math.round(100 * e) / 100;
+    _e.round2 = t;
+    const n = (e) => {
+        const t = new Date(e);
+        return (t.setHours(0, 0, 0, 0), t);
+      },
+      o = (e) => n(e).toISOString().slice(0, 10);
+    function r(e, t, n, o = Date.now()) {
+      const r = o - 864e5 * n;
+      return e.filter((e) => new Date(t(e)).getTime() >= r).length;
+    }
+    const a = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    _e.arpu = (n, o) => t(e(n, o));
+    _e.ltv = (e, n) => t(e * (n > 0 ? 1 / n : 12));
+    _e.cac = (n, o) => t(e(n, o));
+  },
+  644,
+  [],
+);
 __d(function(g,r,_i,_a,m,e,_d){Object.defineProperty(e,"__esModule",{value:!0}),e.demoUserLocation=function(t){let n=0;for(let o=0;o<t.length;o++)n=31*n+t.charCodeAt(o)>>>0;return{lat:29.32+.22*(n%1e3/1e3-.5),lng:47.99+.22*((n>>10)%1e3/1e3-.5)}},e.distanceKm=function(t,n,o,a){const c=t=>t*Math.PI/180,h=c(o-t),i=c(a-n),s=Math.sin(h/2)**2+Math.cos(c(t))*Math.cos(c(o))*Math.sin(i/2)**2;return 12742*Math.asin(Math.sqrt(s))},e.formatKm=function(t){return Math.round(10*t)/10}},645,[]);
 __d(function(g,r,i,a,_m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.streaksReached=e.reputationClass=e.participationStatus=e.attendanceClass=e.STREAK_MILESTONES=e.MILESTONES=e.BADGES=e.ACHIEVEMENTS=void 0;e.ACHIEVEMENTS=[{id:'first_match',emoji:'\ud83c\udfc6',key:'achFirstMatch',test:t=>t.matchesPlayed>=1},{id:'played_10',emoji:'\ud83c\udfc6',key:'achPlayed10',test:t=>t.matchesPlayed>=10},{id:'played_50',emoji:'\ud83c\udfc6',key:'achPlayed50',test:t=>t.matchesPlayed>=50},{id:'played_100',emoji:'\ud83c\udfc6',key:'achPlayed100',test:t=>t.matchesPlayed>=100},{id:'first_hosted',emoji:'\ud83c\udfc6',key:'achFirstHosted',test:t=>t.matchesHosted>=1},{id:'community_organizer',emoji:'\ud83c\udfc6',key:'achCommunityOrganizer',test:t=>t.matchesHosted>=10},{id:'attendance_champion',emoji:'\ud83c\udfc6',key:'achAttendanceChampion',test:t=>t.attendedCount+t.noShowCount>=10&&t.attendanceRate>=.95},{id:'weekend_warrior',emoji:'\ud83c\udfc6',key:'achWeekendWarrior',test:t=>t.weekendMatches>=5},{id:'padel_enthusiast',emoji:'\ud83c\udfc6',key:'achPadelEnthusiast',test:t=>t.bySport.padel>=10},{id:'tennis_ace',emoji:'\ud83c\udfc6',key:'achTennisAce',test:t=>t.bySport.tennis>=10},{id:'football_veteran',emoji:'\ud83c\udfc6',key:'achFootballVeteran',test:t=>t.bySport.football>=25}],e.BADGES=[{id:'early_adopter',emoji:'\u2b50',key:'badgeEarlyAdopter',test:t=>s(t.memberSince)},{id:'verified_organizer',emoji:'\u2b50',key:'badgeVerifiedOrganizer',test:t=>t.isApprovedOrganizer},{id:'community_builder',emoji:'\u2b50',key:'badgeCommunityBuilder',test:t=>t.matchesHosted>=5},{id:'top_organizer',emoji:'\u2b50',key:'badgeTopOrganizer',test:t=>t.matchesHosted>=20&&t.trustScore>=80},{id:'consistent_participant',emoji:'\u2b50',key:'badgeConsistent',test:t=>t.longestStreak>=10},{id:'sports_ambassador',emoji:'\u2b50',key:'badgeAmbassador',test:t=>t.matchesPlayed>=50&&t.sportsPlayedCount>=3}];const t=new Date('2026-01-01').getTime(),s=s=>new Date(s).getTime()<=t+15552e6,o=e.STREAK_MILESTONES=[5,20,50];e.streaksReached=t=>o.filter(s=>t>=s);e.reputationClass=t=>t>=85?{key:'repHighlyTrusted',tone:'success',emoji:'\ud83d\udfe2'}:t>=65?{key:'repTrusted',tone:'success',emoji:'\ud83d\udfe2'}:t>=40?{key:'repBuilding',tone:'warning',emoji:'\ud83d\udfe1'}:{key:'repUnderReview',tone:'danger',emoji:'\ud83d\udd34'};e.attendanceClass=(t,s)=>0===s?{key:'attNewPlayer',tone:'neutral'}:t>=.95?{key:'attExcellent',tone:'success'}:t>=.8?{key:'attReliable',tone:'success'}:t>=.6?{key:'attOccasional',tone:'warning'}:{key:'attRisk',tone:'danger'};e.participationStatus=t=>t.isApprovedOrganizer&&t.matchesHostedCompleted>=20?{key:'statusCommunityLeader',tone:'accent'}:t.isApprovedOrganizer?{key:'statusVerifiedOrganizer',tone:'success'}:t.matchesHosted>0?{key:'statusActiveOrganizer',tone:'success'}:{key:'statusActivePlayer',tone:'neutral'};e.MILESTONES=[{id:'m_100_played',key:'mile100Played',reached:t=>t.matchesPlayed>=100},{id:'m_1_year',key:'mile1Year',reached:t=>t.memberDays>=365},{id:'m_50_hosted',key:'mile50Hosted',reached:t=>t.matchesHosted>=50},{id:'m_100_streak',key:'mile100Streak',reached:t=>t.longestStreak>=100}]},646,[]);
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.scoreFromFeatures=e.isRatingAnomalous=e.compatibilityClass=e.FEATURE_KEYS=e.COMPAT_WEIGHTS=void 0;const t=e.COMPAT_WEIGHTS={skill:.18,attendance:.14,reliability:.14,sportsmanship:.1,matchHistory:.08,sportPref:.1,timePref:.06,distance:.1,ageGroup:.02,positiveHistory:.08},o=e.FEATURE_KEYS=Object.keys(t);e.scoreFromFeatures=s=>{let n=0,c=0;for(const l of o){n+=Math.min(1,Math.max(0,s[l]))*t[l],c+=t[l]}return Math.round(100*n/c)};e.compatibilityClass=t=>t>=75?{key:'compatHigh',tone:'success',emoji:'\ud83d\udfe2'}:t>=50?{key:'compatMed',tone:'warning',emoji:'\ud83d\udfe1'}:{key:'compatLow',tone:'danger',emoji:'\ud83d\udd34'};e.isRatingAnomalous=(t,o)=>t>=4&&o<=1},647,[]);
@@ -20446,6 +20545,27 @@ __d(
         adminCannotRegisterVenueBody: "Venue registrations are reviewed by administrators, so an admin account cannot own one.",
         confirmDecision: "Confirm",
         // --- ADM2 keys (fix batch) ---
+        changeReasonLabel: "Reason for this change",
+        changeReasonPlaceholder: "Recorded with the change in the admin audit log",
+        changeReasonRequired: "Enter a reason before changing a platform setting.",
+        fraudReviewed: "Reviewed",
+        fraudReview: "Mark reviewed",
+        fraudReviewReason: "What did you find?",
+        fraudShowReviewed: "Show reviewed signals",
+        fraudHideReviewed: "Hide reviewed signals",
+        noFraudBody: "Nothing to review right now.",
+        feedWeightsFrozen: "Automatic tuning is frozen",
+        feedFreeze: "Freeze automatic tuning",
+        feedUnfreeze: "Resume automatic tuning",
+        feedReset: "Reset to defaults",
+        feedResetConfirm: "Reset the ranking weights to their defaults?",
+        exportNotAvailable: "This tab has no CSV export.",
+        exportStarted: "%{file} downloaded.",
+        simulatedBadge: "Simulated",
+        noDataDash: "\u2014",
+        evaluatedN: "%{n} evaluated",
+        refreshing: "Refreshing\u2026",
+        adminPlayersLink: "Player intelligence",
         // --- ORG1 keys (fix batch) ---
         seUploadYourIdentityDocument: "Please attach a photo of your identity document.",
         seInvalidMatchOption: "One of the match options is not valid.",
@@ -23864,6 +23984,27 @@ __d(
         adminCannotRegisterVenueBody: "يراجع المشرفون تسجيلات الملاعب، لذا لا يمكن لحساب مشرف أن يملك ملعبًا.",
         confirmDecision: "تأكيد",
         // --- ADM2 keys (fix batch) ---
+        changeReasonLabel: "\u0633\u0628\u0628 \u0627\u0644\u062a\u063a\u064a\u064a\u0631",
+        changeReasonPlaceholder: "\u064a\u064f\u0633\u062c\u0644 \u0645\u0639 \u0627\u0644\u062a\u063a\u064a\u064a\u0631 \u0641\u064a \u0633\u062c\u0644 \u0627\u0644\u062a\u062f\u0642\u064a\u0642",
+        changeReasonRequired: "\u0623\u062f\u062e\u0644 \u0633\u0628\u0628\u064b\u0627 \u0642\u0628\u0644 \u062a\u063a\u064a\u064a\u0631 \u0625\u0639\u062f\u0627\u062f \u0627\u0644\u0645\u0646\u0635\u0629.",
+        fraudReviewed: "\u062a\u0645\u062a \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629",
+        fraudReview: "\u062a\u0639\u0644\u064a\u0645 \u0643\u0645\u0631\u0627\u062c\u0639",
+        fraudReviewReason: "\u0645\u0627 \u0627\u0644\u0630\u064a \u0648\u062c\u062f\u062a\u0647\u061f",
+        fraudShowReviewed: "\u0625\u0638\u0647\u0627\u0631 \u0627\u0644\u0625\u0634\u0627\u0631\u0627\u062a \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629",
+        fraudHideReviewed: "\u0625\u062e\u0641\u0627\u0621 \u0627\u0644\u0625\u0634\u0627\u0631\u0627\u062a \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629",
+        noFraudBody: "\u0644\u0627 \u064a\u0648\u062c\u062f \u0645\u0627 \u064a\u0633\u062a\u062f\u0639\u064a \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0622\u0646.",
+        feedWeightsFrozen: "\u0627\u0644\u0636\u0628\u0637 \u0627\u0644\u062a\u0644\u0642\u0627\u0626\u064a \u0645\u062c\u0645\u0651\u062f",
+        feedFreeze: "\u062a\u062c\u0645\u064a\u062f \u0627\u0644\u0636\u0628\u0637 \u0627\u0644\u062a\u0644\u0642\u0627\u0626\u064a",
+        feedUnfreeze: "\u0627\u0633\u062a\u0626\u0646\u0627\u0641 \u0627\u0644\u0636\u0628\u0637 \u0627\u0644\u062a\u0644\u0642\u0627\u0626\u064a",
+        feedReset: "\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0636\u0628\u0637 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a",
+        feedResetConfirm: "\u0625\u0639\u0627\u062f\u0629 \u0636\u0628\u0637 \u0623\u0648\u0632\u0627\u0646 \u0627\u0644\u062a\u0631\u062a\u064a\u0628 \u0625\u0644\u0649 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a\u061f",
+        exportNotAvailable: "\u0644\u0627 \u064a\u062a\u0648\u0641\u0631 \u062a\u0635\u062f\u064a\u0631 CSV \u0644\u0647\u0630\u0627 \u0627\u0644\u0642\u0633\u0645.",
+        exportStarted: "\u062a\u0645 \u062a\u0646\u0632\u064a\u0644 %{file}.",
+        simulatedBadge: "\u0645\u062d\u0627\u0643\u0627\u0629",
+        noDataDash: "\u2014",
+        evaluatedN: "%{n} \u0645\u064f\u0642\u064a\u0651\u0645\u0629",
+        refreshing: "\u062c\u0627\u0631\u064d \u0627\u0644\u062a\u062d\u062f\u064a\u062b\u2026",
+        adminPlayersLink: "\u0630\u0643\u0627\u0621 \u0627\u0644\u0644\u0627\u0639\u0628\u064a\u0646",
         // --- ORG1 keys (fix batch) ---
         seUploadYourIdentityDocument: "\u064a\u0631\u062c\u0649 \u0625\u0631\u0641\u0627\u0642 \u0635\u0648\u0631\u0629 \u0645\u0646 \u0648\u062b\u064a\u0642\u0629 \u0627\u0644\u0647\u0648\u064a\u0629.",
         seInvalidMatchOption: "\u0623\u062d\u062f \u062e\u064a\u0627\u0631\u0627\u062a \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629 \u063a\u064a\u0631 \u0635\u0627\u0644\u062d.",
@@ -33602,11 +33743,20 @@ __d(
               (Je || "analyst" === M?.role) &&
                 (0, L.jsxs)(L.Fragment, {
                   children: [
-                    (0, L.jsx)(c.default, { style: [E.section, { color: q.textMuted }], children: "ADMIN" }),
+                    (0, L.jsx)(c.default, {
+                      style: [E.section, { color: q.textMuted }],
+                      children: X("adminPanel").toUpperCase(),
+                    }),
                     (0, L.jsx)(O, {
                       icon: "speedometer-outline",
                       title: X("biTitle"),
                       onPress: () => J.push("/admin/insights"),
+                      colors: q,
+                    }),
+                    (0, L.jsx)(O, {
+                      icon: "analytics",
+                      title: X("feedAnalyticsTitle"),
+                      onPress: () => J.push("/admin/feed"),
                       colors: q,
                     }),
                     Je &&
@@ -33643,9 +33793,9 @@ __d(
                             colors: q,
                           }),
                           (0, L.jsx)(O, {
-                            icon: "analytics",
-                            title: X("feedAnalyticsTitle"),
-                            onPress: () => J.push("/admin/feed"),
+                            icon: "people-outline",
+                            title: X("adminPlayersLink"),
+                            onPress: () => J.push("/admin/players"),
                             colors: q,
                           }),
                           (0, L.jsx)(O, {
@@ -34628,21 +34778,42 @@ __d(
           B = (0, f.useRouter)(),
           I = (0, S.useT)(),
           [L, A] = (0, n.useState)(null),
+          [er, setEr] = (0, n.useState)(null),
+          [showRev, setShowRev] = (0, n.useState)(!1),
+          [rev, setRev] = (0, n.useState)(null),
+          [rrs, setRrs] = (0, n.useState)(""),
+          [busy, setBusy] = (0, n.useState)(null),
+          gate = (0, G9.useRoleGate)(["admin"]),
           F = (0, n.useCallback)(async () => {
-            if (t)
+            if (t) {
+              setEr(null);
               try {
                 A(await (0, k.fetchAwardFraudSignals)(t.id));
-              } catch {
-                A([]);
+              } catch (e) {
+                (A([]), setEr(e));
               }
+            }
           }, [t]);
         return (
           (0, f.useFocusEffect)(
             (0, n.useCallback)(() => {
-              F();
-            }, [F]),
+              gate.ready && gate.allowed && F();
+            }, [F, gate.ready, gate.allowed]),
           ),
-          (0, C.jsxs)(u.SafeAreaView, {
+          gate.ready && !gate.allowed
+            ? (0, C.jsx)(G9.GateScreen, { kind: "denied", onBack: () => B.back() })
+            : er && (0, G9.classifyError)(er).isAuth
+              ? (0, C.jsx)(G9.GateScreen, { kind: "denied", onBack: () => B.back() })
+              : er
+                ? (0, C.jsx)(G9.GateScreen, {
+                    kind: "error",
+                    body: (0, G9.classifyError)(er).message,
+                    onRetry: () => {
+                      (A(null), F());
+                    },
+                    onBack: () => B.back(),
+                  })
+                : (0, C.jsxs)(u.SafeAreaView, {
             edges: ["top"],
             style: { flex: 1, backgroundColor: i.bg },
             children: [
@@ -34671,18 +34842,68 @@ __d(
                   }),
                 ],
               }),
+              (0, C.jsx)(r.default, {
+                onPress: () => setShowRev((e) => !e),
+                accessibilityRole: "button",
+                style: { paddingHorizontal: w.spacing.lg, paddingBottom: w.spacing.xs },
+                children: (0, C.jsx)(o.default, {
+                  style: [w.typography.smallStrong, { color: i.accentText }],
+                  children: I(showRev ? "fraudHideReviewed" : "fraudShowReviewed"),
+                }),
+              }),
+              rev &&
+                (0, C.jsxs)(c.default, {
+                  style: { paddingHorizontal: w.spacing.lg, paddingBottom: w.spacing.sm },
+                  children: [
+                    (0, C.jsx)(i9.Input, {
+                      label: I("fraudReviewReason"),
+                      value: rrs,
+                      onChangeText: setRrs,
+                      maxLength: 200,
+                    }),
+                    (0, C.jsxs)(c.default, {
+                      style: { flexDirection: "row", gap: w.spacing.sm, marginTop: w.spacing.xs },
+                      children: [
+                        (0, C.jsx)(b9.Button, {
+                          title: I("cancel"),
+                          size: "sm",
+                          variant: "ghost",
+                          style: { flex: 1 },
+                          onPress: () => (setRev(null), setRrs("")),
+                        }),
+                        (0, C.jsx)(b9.Button, {
+                          title: I("fraudReview"),
+                          size: "sm",
+                          style: { flex: 1 },
+                          loading: !!busy,
+                          disabled: rrs.trim().length < 3,
+                          onPress: async () => {
+                            setBusy(rev);
+                            try {
+                              (await (0, k.reviewFraudSignal)(t.id, rev, rrs.trim()), setRev(null), setRrs(""), await F());
+                            } catch (e) {
+                              a9.default.alert(I("error"), (0, G9.classifyError)(e).message || I("error"));
+                            } finally {
+                              setBusy(null);
+                            }
+                          },
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
               (0, C.jsx)(s.default, {
                 contentContainerStyle: { padding: w.spacing.lg, paddingBottom: w.spacing.xxxl },
                 children:
                   null === L
                     ? (0, C.jsx)(l.default, { color: i.accentText })
-                    : 0 === L.length
+                    : 0 === (showRev ? L : L.filter((e) => !e.review)).length
                       ? (0, C.jsx)(b.EmptyState, {
                           icon: "shield-checkmark-outline",
                           title: I("noFraud"),
-                          body: I("leaderboardSub"),
+                          body: I("noFraudBody"),
                         })
-                      : L.map((t, n) =>
+                      : (showRev ? L : L.filter((e) => !e.review)).map((t, n) =>
                           (0, C.jsx)(
                             x.Card,
                             {
@@ -34714,6 +34935,18 @@ __d(
                                   (0, C.jsx)(y.Badge, {
                                     label: I("votesLabel", { n: (0, v.formatNumber)(t.categories) }),
                                     tone: "warning",
+                                  }),
+                                  (0, C.jsx)(r.default, {
+                                    onPress: () => (setRev(t.id), setRrs("")),
+                                    accessibilityRole: "button",
+                                    accessibilityLabel: I("fraudReview"),
+                                    hitSlop: 8,
+                                    style: { marginStart: w.spacing.sm },
+                                    children: (0, C.jsx)(h.Ionicons, {
+                                      name: t.review ? "checkmark-done" : "checkmark-circle-outline",
+                                      size: 18,
+                                      color: t.review ? i.success : i.textMuted,
+                                    }),
                                   }),
                                   (0, C.jsx)(r.default, {
                                     onPress: () => B.push(`/awards/${t.match_id}`),
@@ -34758,7 +34991,11 @@ __d(
       v = _r(d[18]),
       S = _r(d[19]),
       _ = _r(d[20]),
-      C = _r(d[21]);
+      C = _r(d[21]),
+      G9 = _r(d[22]),
+      i9 = _r(d[23]),
+      b9 = _r(d[24]),
+      a9 = _r(d[25]);
     const z = i.default.create({
       header: {
         flexDirection: "row",
@@ -34778,8 +35015,7 @@ __d(
   },
   1824,
   [
-    33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 1627, 630, 615, 616, 671, 1311, 675,
-    1171, 13,
+    33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 1627, 630, 615, 616, 671, 1311, 675, 1171, 13, 9001, 625, 626, 445,
   ],
 );
 __d(
@@ -34794,13 +35030,18 @@ __d(
           [B, R] = (0, l.useState)(null),
           [W, N] = (0, l.useState)(null),
           [M, F] = (0, l.useState)(!0),
-          [H, V] = (0, l.useState)(!1),
+          [H, V] = (0, l.useState)(null),
+          [rsn, setRsn] = (0, l.useState)(""),
+          [busy, setBusy] = (0, l.useState)(!1),
+          gate = (0, G9.useRoleGate)(["admin"]),
           E = (0, l.useCallback)(async () => {
             if (t) {
+              V(null);
               try {
-                (R(await (0, I.fetchConciergeRules)(t.id)), N(await (0, I.fetchConciergeStats)(t.id)));
-              } catch {
-                V(!0);
+                const [e, a] = await Promise.all([(0, I.fetchConciergeRules)(t.id), (0, I.fetchConciergeStats)(t.id)]);
+                (R(e), N(a));
+              } catch (e) {
+                V(e);
               }
               F(!1);
             }
@@ -34810,37 +35051,52 @@ __d(
             E();
           }, [E]),
         );
+        // Saves are serialised, need a reason, and the next value is computed from the stored response.
         const L = async (l) => {
-          if (!t) return;
-          const n = await (0, I.setConciergeRules)(t.id, l);
-          R(n);
+          if (!t || busy) return;
+          if (rsn.trim().length < 3) return s9.default.alert(h("error"), h("changeReasonRequired"));
+          setBusy(!0);
+          try {
+            const e = await (0, I.setConciergeRules)(t.id, l, rsn.trim());
+            (R(e), N(await (0, I.fetchConciergeStats)(t.id).catch(() => W)));
+          } catch (e) {
+            s9.default.alert(h("error"), (0, G9.classifyError)(e).message || h("error"));
+          } finally {
+            setBusy(!1);
+          }
         };
-        if (M)
+        if (gate.ready && !gate.allowed) return (0, A.jsx)(G9.GateScreen, { kind: "denied", onBack: () => c.back() });
+        if (M || !gate.ready)
           return (0, A.jsx)(f.SafeAreaView, {
             style: [D.center, { backgroundColor: o.bg }],
             children: (0, A.jsx)(n.default, { color: o.accentText }),
           });
-        if (H || !B)
-          return (0, A.jsxs)(f.SafeAreaView, {
-            edges: ["top"],
-            style: { flex: 1, backgroundColor: o.bg },
-            children: [
-              (0, A.jsx)(K, { colors: o, title: h("adminConciergeTitle"), onBack: () => c.back() }),
-              (0, A.jsx)(x.default, {
-                style: { padding: v.spacing.lg },
-                children: (0, A.jsx)(j.EmptyState, {
-                  icon: "lock-closed-outline",
-                  title: h("organizerGateTitle"),
-                  body: h("adminPanel"),
-                }),
-              }),
-            ],
+        if (H || !B) {
+          const e = H ? (0, G9.classifyError)(H) : null;
+          return (0, A.jsx)(G9.GateScreen, {
+            kind: e?.isAuth ? "denied" : "error",
+            body: e && !e.isAuth ? e.message : void 0,
+            onRetry: () => {
+              (F(!0), E());
+            },
+            onBack: () => c.back(),
           });
+        }
         return (0, A.jsxs)(f.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: o.bg },
           children: [
             (0, A.jsx)(K, { colors: o, title: h("adminConciergeTitle"), onBack: () => c.back() }),
+            (0, A.jsx)(x.default, {
+              style: { paddingHorizontal: v.spacing.lg, paddingTop: v.spacing.sm },
+              children: (0, A.jsx)(i9.Input, {
+                label: h("changeReasonLabel"),
+                placeholder: h("changeReasonPlaceholder"),
+                value: rsn,
+                onChangeText: setRsn,
+                maxLength: 200,
+              }),
+            }),
             (0, A.jsxs)(s.default, {
               contentContainerStyle: { padding: v.spacing.lg, paddingBottom: v.spacing.xxxl },
               children: [
@@ -34896,6 +35152,7 @@ __d(
                       }),
                       (0, A.jsx)(u.default, {
                         value: B.autoInvite,
+                        disabled: busy || rsn.trim().length < 3,
                         onValueChange: (t) => L({ autoInvite: t }),
                       }),
                     ],
@@ -34917,6 +35174,7 @@ __d(
                             value: B[t.key],
                             onDec: () => L({ [t.key]: Math.max(t.min, B[t.key] - t.step) }),
                             onInc: () => L({ [t.key]: Math.min(t.max, B[t.key] + t.step) }),
+                            disabled: busy || rsn.trim().length < 3,
                             colors: o,
                           }),
                         ],
@@ -34950,7 +35208,10 @@ __d(
       w = r(d[18]),
       S = r(d[19]),
       B = r(d[20]),
-      A = r(d[21]);
+      A = r(d[21]),
+      G9 = r(d[22]),
+      i9 = r(d[23]),
+      s9 = r(d[24]);
     const T = [
       { key: "autoInviteCount", labelKey: "ruleAutoInviteCount", min: 0, max: 20, step: 1 },
       { key: "minFillToPublish", labelKey: "ruleMinFill", min: 0, max: 100, step: 5 },
@@ -34961,13 +35222,17 @@ __d(
       { key: "quietStart", labelKey: "ruleQuietStart", min: 0, max: 23, step: 1 },
       { key: "quietEnd", labelKey: "ruleQuietEnd", min: 0, max: 23, step: 1 },
     ];
-    const P = ({ value: t, onDec: l, onInc: n, colors: s }) =>
+    const P = ({ value: t, onDec: l, onInc: n, colors: s, disabled: dz }) =>
         (0, A.jsxs)(x.default, {
           style: { flexDirection: "row", alignItems: "center", gap: v.spacing.sm },
           children: [
             (0, A.jsx)(o.default, {
               onPress: l,
-              style: [D.stepBtn, { borderColor: s.border }],
+              disabled: dz,
+              accessibilityRole: "button",
+              accessibilityLabel: "decrease",
+              accessibilityState: { disabled: !!dz },
+              style: [D.stepBtn, { borderColor: s.border, opacity: dz ? 0.4 : 1 }],
               children: (0, A.jsx)(h.Ionicons, { name: "remove", size: 18, color: s.text }),
             }),
             (0, A.jsx)(y.default, {
@@ -34976,7 +35241,11 @@ __d(
             }),
             (0, A.jsx)(o.default, {
               onPress: n,
-              style: [D.stepBtn, { borderColor: s.border }],
+              disabled: dz,
+              accessibilityRole: "button",
+              accessibilityLabel: "increase",
+              accessibilityState: { disabled: !!dz },
+              style: [D.stepBtn, { borderColor: s.border, opacity: dz ? 0.4 : 1 }],
               children: (0, A.jsx)(h.Ionicons, { name: "add", size: 18, color: s.text }),
             }),
           ],
@@ -35051,8 +35320,7 @@ __d(
   },
   1825,
   [
-    33, 15, 461, 369, 281, 158, 477, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 675, 1171,
-    13,
+    33, 15, 461, 369, 281, 158, 477, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 675, 1171, 13, 9001, 625, 445,
   ],
 );
 __d(
@@ -35542,13 +35810,18 @@ __d(
           [S, I] = (0, l.useState)(null),
           [N, K] = (0, l.useState)(null),
           [R, z] = (0, l.useState)(!0),
-          [F, L] = (0, l.useState)(!1),
+          [F, L] = (0, l.useState)(null),
+          [rsn, setRsn] = (0, l.useState)(""),
+          [busy, setBusy] = (0, l.useState)(!1),
+          gate = (0, G9.useRoleGate)(["admin"]),
           M = (0, l.useCallback)(async () => {
             if (t) {
+              L(null);
               try {
-                (I(await (0, k.fetchDemandWeights)(t.id)), K(await (0, k.fetchDemandModelStats)(t.id)));
-              } catch {
-                L(!0);
+                const [e, a] = await Promise.all([(0, k.fetchDemandWeights)(t.id), (0, k.fetchDemandModelStats)(t.id)]);
+                (I(e), K(a));
+              } catch (e) {
+                L(e);
               }
               z(!1);
             }
@@ -35559,9 +35832,19 @@ __d(
           }, [M]),
         );
         const H = async (l) => {
-          t && I(await (0, k.setDemandWeights)(t.id, l));
+          if (!t || busy) return;
+          if (rsn.trim().length < 3) return s9.default.alert(h("error"), h("changeReasonRequired"));
+          setBusy(!0);
+          try {
+            (I(await (0, k.setDemandWeights)(t.id, l, rsn.trim())), K(await (0, k.fetchDemandModelStats)(t.id).catch(() => N)));
+          } catch (e) {
+            s9.default.alert(h("error"), (0, G9.classifyError)(e).message || h("error"));
+          } finally {
+            setBusy(!1);
+          }
         };
-        if (R)
+        if (gate.ready && !gate.allowed) return (0, B.jsx)(G9.GateScreen, { kind: "denied", onBack: () => s.back() });
+        if (R || !gate.ready)
           return (0, B.jsx)(y.SafeAreaView, {
             style: [D.center, { backgroundColor: o.bg }],
             children: (0, B.jsx)(r.default, { color: o.accentText }),
@@ -35590,6 +35873,13 @@ __d(
             (0, B.jsxs)(n.default, {
               contentContainerStyle: { padding: w.spacing.lg, paddingBottom: w.spacing.xxxl },
               children: [
+                (0, B.jsx)(i9.Input, {
+                  label: h("changeReasonLabel"),
+                  placeholder: h("changeReasonPlaceholder"),
+                  value: rsn,
+                  onChangeText: setRsn,
+                  maxLength: 200,
+                }),
                 N &&
                   (0, B.jsxs)(f.Card, {
                     style: { marginBottom: w.spacing.lg },
@@ -35660,6 +35950,7 @@ __d(
                                 : (0, v.formatNumber)(Math.round(100 * S[l]) / 100)),
                             onDec: () => H({ [t.key]: Math.max(t.min, S[t.key] - t.step) }),
                             onInc: () => H({ [t.key]: Math.min(t.max, S[t.key] + t.step) }),
+                            disabled: busy || rsn.trim().length < 3,
                             colors: o,
                           }),
                         ],
@@ -35693,7 +35984,10 @@ __d(
       v = _r(d[17]),
       C = _r(d[18]),
       S = _r(d[19]),
-      B = _r(d[20]);
+      B = _r(d[20]),
+      G9 = _r(d[21]),
+      i9 = _r(d[22]),
+      s9 = _r(d[23]);
     const T = [
       { key: "cancelOrganizerHistory", labelKey: "wCancelOrganizer", step: 0.05, min: 0, max: 1 },
       { key: "cancelLowFill", labelKey: "wCancelLowFill", step: 0.05, min: 0, max: 1 },
@@ -35704,13 +35998,17 @@ __d(
       { key: "noShowLateSlot", labelKey: "wNoShowLate", step: 0.05, min: 0, max: 1 },
       { key: "timeToFillHours", labelKey: "wTimeToFill", step: 1, min: 1, max: 72 },
     ];
-    const A = ({ value: t, onDec: l, onInc: r, colors: n }) =>
+    const A = ({ value: t, onDec: l, onInc: r, colors: n, disabled: dz }) =>
         (0, B.jsxs)(u.default, {
           style: { flexDirection: "row", alignItems: "center", gap: w.spacing.sm },
           children: [
             (0, B.jsx)(o.default, {
               onPress: l,
-              style: [D.stepBtn, { borderColor: n.border }],
+              disabled: dz,
+              accessibilityRole: "button",
+              accessibilityLabel: "decrease",
+              accessibilityState: { disabled: !!dz },
+              style: [D.stepBtn, { borderColor: n.border, opacity: dz ? 0.4 : 1 }],
               children: (0, B.jsx)(h.Ionicons, { name: "remove", size: 18, color: n.text }),
             }),
             (0, B.jsx)(c.default, {
@@ -35719,7 +36017,11 @@ __d(
             }),
             (0, B.jsx)(o.default, {
               onPress: r,
-              style: [D.stepBtn, { borderColor: n.border }],
+              disabled: dz,
+              accessibilityRole: "button",
+              accessibilityLabel: "increase",
+              accessibilityState: { disabled: !!dz },
+              style: [D.stepBtn, { borderColor: n.border, opacity: dz ? 0.4 : 1 }],
               children: (0, B.jsx)(h.Ionicons, { name: "add", size: 18, color: n.text }),
             }),
           ],
@@ -35793,7 +36095,9 @@ __d(
       });
   },
   1827,
-  [33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 675, 1171, 13],
+  [
+    33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 675, 1171, 13, 9001, 625, 445,
+  ],
 );
 __d(
   function (g, r, _i, _a, m, e, d) {
@@ -35805,22 +36109,52 @@ __d(
           W = (0, b.useRouter)(),
           M = (0, k.useT)(),
           [$, _] = (0, a.useState)(null),
-          [B, S] = (0, a.useState)(!1),
+          [B, S] = (0, a.useState)(null),
+          [rsn, setRsn] = (0, a.useState)(""),
+          [busy, setBusy] = (0, a.useState)(!1),
+          gate = (0, G9.useRoleGate)(["admin", "analyst"]),
           D = (0, a.useCallback)(async () => {
-            if (t)
+            if (t) {
+              S(null);
               try {
                 _(await (0, w.fetchFeedAnalytics)(t.id));
-              } catch {
-                S(!0);
+              } catch (e) {
+                S(e);
               }
-          }, [t]);
+            }
+          }, [t]),
+          // Administrators can freeze the self-tuning weights or reset them to the defaults.
+          act = async (e) => {
+            if (!t || busy) return;
+            if (rsn.trim().length < 3) return a9.default.alert(M("error"), M("changeReasonRequired"));
+            setBusy(!0);
+            try {
+              (await e(), await D());
+            } catch (e) {
+              a9.default.alert(M("error"), (0, G9.classifyError)(e).message || M("error"));
+            } finally {
+              setBusy(!1);
+            }
+          };
         return (
           (0, b.useFocusEffect)(
             (0, a.useCallback)(() => {
               D();
             }, [D]),
           ),
-          (0, R.jsxs)(u.SafeAreaView, {
+          gate.ready && !gate.allowed
+            ? (0, R.jsx)(G9.GateScreen, { kind: "denied", roles: ["admin", "analyst"], onBack: () => W.back() })
+            : B
+              ? (0, R.jsx)(G9.GateScreen, {
+                  kind: (0, G9.classifyError)(B).isAuth ? "denied" : "error",
+                  roles: ["admin", "analyst"],
+                  body: (0, G9.classifyError)(B).isAuth ? void 0 : (0, G9.classifyError)(B).message,
+                  onRetry: () => {
+                    (S(null), D());
+                  },
+                  onBack: () => W.back(),
+                })
+              : (0, R.jsxs)(u.SafeAreaView, {
             edges: ["top"],
             style: { flex: 1, backgroundColor: N.bg },
             children: [
@@ -35840,6 +36174,51 @@ __d(
                   }),
                 ],
               }),
+              "admin" === gate.role &&
+                (0, R.jsxs)(n.default, {
+                  style: { paddingHorizontal: j.spacing.lg, paddingBottom: j.spacing.sm },
+                  children: [
+                    $?.frozen &&
+                      (0, R.jsx)(c.default, {
+                        style: [j.typography.smallStrong, { color: N.warning, marginBottom: 4 }],
+                        children: M("feedWeightsFrozen"),
+                      }),
+                    (0, R.jsx)(i9.Input, {
+                      label: M("changeReasonLabel"),
+                      placeholder: M("changeReasonPlaceholder"),
+                      value: rsn,
+                      onChangeText: setRsn,
+                      maxLength: 200,
+                    }),
+                    (0, R.jsxs)(n.default, {
+                      style: { flexDirection: "row", gap: j.spacing.sm, marginTop: j.spacing.xs },
+                      children: [
+                        (0, R.jsx)(b9.Button, {
+                          title: M($?.frozen ? "feedUnfreeze" : "feedFreeze"),
+                          size: "sm",
+                          variant: "secondary",
+                          style: { flex: 1 },
+                          loading: busy,
+                          disabled: rsn.trim().length < 3,
+                          onPress: () => act(() => (0, w.setFeedFrozen)(t.id, !$?.frozen, rsn.trim())),
+                        }),
+                        (0, R.jsx)(b9.Button, {
+                          title: M("feedReset"),
+                          size: "sm",
+                          variant: "danger",
+                          style: { flex: 1 },
+                          loading: busy,
+                          disabled: rsn.trim().length < 3,
+                          onPress: () =>
+                            a9.default.alert(M("feedResetConfirm"), "", [
+                              { text: M("cancel"), style: "cancel" },
+                              { text: M("feedReset"), onPress: () => act(() => (0, w.resetFeedWeights)(t.id, rsn.trim())) },
+                            ]),
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
               (0, R.jsx)(i.default, {
                 contentContainerStyle: { padding: j.spacing.lg, paddingBottom: j.spacing.xxxl },
                 children: B
@@ -35967,7 +36346,11 @@ __d(
       C = r(d[18]),
       k = r(d[19]),
       L = r(d[20]),
-      R = r(d[21]);
+      R = r(d[21]),
+      G9 = r(d[22]),
+      i9 = r(d[23]),
+      b9 = r(d[24]),
+      a9 = r(d[25]);
     const T = ({ label: t, value: a, colors: l }) =>
         (0, R.jsxs)(n.default, {
           style: [A.metric, { backgroundColor: l.surface, borderColor: l.border }],
@@ -36013,8 +36396,7 @@ __d(
   },
   1828,
   [
-    33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 652, 675, 1171,
-    13,
+    33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 652, 675, 1171, 13, 9001, 625, 626, 445,
   ],
 );
 __d(
@@ -36026,17 +36408,36 @@ __d(
           { colors: s } = (0, b.useTheme)(),
           k = (0, f.useRouter)(),
           A = (0, B.useT)(),
-          [E, z] = (0, l.useState)(null);
+          [E, z] = (0, l.useState)(null),
+          [er, setEr] = (0, l.useState)(null),
+          gate = (0, G9.useRoleGate)(["admin"]),
+          load = (0, l.useCallback)(() => {
+            t &&
+              (setEr(null),
+              (0, S.fetchFunnelStats)(t.id)
+                .then(z)
+                .catch((e) => {
+                  (z([]), setEr(e));
+                }));
+          }, [t]);
         return (
           (0, f.useFocusEffect)(
             (0, l.useCallback)(() => {
-              t &&
-                (0, S.fetchFunnelStats)(t.id)
-                  .then(z)
-                  .catch(() => z([]));
-            }, [t]),
+              gate.ready && gate.allowed && load();
+            }, [load, gate.ready, gate.allowed]),
           ),
-          (0, M.jsxs)(h.SafeAreaView, {
+          gate.ready && !gate.allowed
+            ? (0, M.jsx)(G9.GateScreen, { kind: "denied", onBack: () => k.back() })
+            : er
+              ? (0, M.jsx)(G9.GateScreen, {
+                  kind: (0, G9.classifyError)(er).isAuth ? "denied" : "error",
+                  body: (0, G9.classifyError)(er).isAuth ? void 0 : (0, G9.classifyError)(er).message,
+                  onRetry: () => {
+                    (z(null), load());
+                  },
+                  onBack: () => k.back(),
+                })
+              : (0, M.jsxs)(h.SafeAreaView, {
             edges: ["top"],
             style: { flex: 1, backgroundColor: s.bg },
             children: [
@@ -36169,7 +36570,8 @@ __d(
       v = _r(d[17]),
       B = _r(d[18]),
       C = _r(d[19]),
-      M = _r(d[20]);
+      M = _r(d[20]),
+      G9 = _r(d[21]);
     const T = s.default.create({
       header: {
         flexDirection: "row",
@@ -36188,7 +36590,9 @@ __d(
     });
   },
   1829,
-  [33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 675, 1171, 13],
+  [
+    33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 675, 1171, 13, 9001,
+  ],
 );
 __d(
   function (g, _r, _i, _a, _m, _e, _d) {
@@ -36204,18 +36608,21 @@ __d(
           [L, U] = (0, t.useState)(90),
           [_, Y] = (0, t.useState)(null),
           [q, J] = (0, t.useState)(!0),
-          [Q, X] = (0, t.useState)(!1),
+          [Q, X] = (0, t.useState)(null),
+          gate = (0, G9.useRoleGate)(["admin", "analyst"]),
           Z = () => ({
             from: L ? new Date(Date.now() - 864e5 * L).toISOString() : void 0,
             sport: _ ?? void 0,
           }),
           ee = (0, t.useCallback)(async () => {
             if (e) {
-              J(!0);
+              // ADM2 (F-ADM2-17): the error flag is cleared on every attempt so a transient failure
+              // does not lock the screen until it is unmounted.
+              (J(!0), X(null));
               try {
                 A(await (0, h.fetchBIDashboard)(e.id, Z()));
-              } catch {
-                X(!0);
+              } catch (e) {
+                X(e);
               }
               J(!1);
             }
@@ -36230,22 +36637,20 @@ __d(
             style: [F.center, { backgroundColor: m.bg }],
             children: (0, N.jsx)(l.default, { color: m.accentText }),
           });
-        if (Q || !V)
-          return (0, N.jsxs)(c.SafeAreaView, {
-            edges: ["top"],
-            style: { flex: 1, backgroundColor: m.bg },
-            children: [
-              (0, N.jsx)(I, { colors: m, t: w, onBack: () => j.back(), onExport: () => {}, hideExport: !0 }),
-              (0, N.jsx)(n.default, {
-                style: { padding: y.spacing.lg },
-                children: (0, N.jsx)(b.EmptyState, {
-                  icon: "lock-closed-outline",
-                  title: w("organizerGateTitle"),
-                  body: w("biTitle"),
-                }),
-              }),
-            ],
+        if (gate.ready && !gate.allowed)
+          return (0, N.jsx)(G9.GateScreen, { kind: "denied", roles: ["admin", "analyst"], onBack: () => j.back() });
+        if (Q || !V) {
+          const e = Q ? (0, G9.classifyError)(Q) : null;
+          return (0, N.jsx)(G9.GateScreen, {
+            kind: e?.isAuth ? "denied" : "error",
+            roles: ["admin", "analyst"],
+            body: e && !e.isAuth ? e.message : void 0,
+            onRetry: () => {
+              (X(null), ee());
+            },
+            onBack: () => j.back(),
           });
+        }
         const te = "analyst" === s?.role;
         return (0, N.jsxs)(c.SafeAreaView, {
           edges: ["top"],
@@ -36255,30 +36660,30 @@ __d(
               colors: m,
               t: w,
               onBack: () => j.back(),
+              // ADM2 (F-ADM2-14/16): only tabs with a real report can be exported, the anchor is attached
+              // before clicking, the object URL is revoked afterwards, and success is only claimed when a
+              // download actually started.
+              hideExport: !EXPORTABLE.includes(E),
               onExport: async () => {
                 if (!e) return;
-                const t = [
-                  "executive",
-                  "financial",
-                  "users",
-                  "matches",
-                  "venues",
-                  "organizers",
-                  "geographic",
-                ].includes(E)
-                  ? E
-                  : "executive";
+                if (!EXPORTABLE.includes(E)) return r.default.alert(w("biExport"), w("exportNotAvailable"));
                 try {
-                  const { filename: l, csv: o } = await (0, h.exportBIReport)(e.id, t, Z());
-                  if ("undefined" != typeof document) {
-                    const e = new Blob([o], { type: "text/csv" }),
-                      t = URL.createObjectURL(e),
-                      r = document.createElement("a");
-                    ((r.href = t), (r.download = l), r.click(), URL.revokeObjectURL(t));
-                  }
-                  r.default.alert(w("biExport"), `${l}`);
+                  const { filename: t, csv: l } = await (0, h.exportBIReport)(e.id, E, Z());
+                  if ("undefined" == typeof document) return void r.default.alert(w("error"), w("exportNotAvailable"));
+                  const o = new Blob([l], { type: "text/csv" }),
+                    n = URL.createObjectURL(o),
+                    s = document.createElement("a");
+                  ((s.href = n),
+                    (s.download = t),
+                    (s.style.display = "none"),
+                    document.body.appendChild(s),
+                    s.click(),
+                    setTimeout(() => {
+                      (document.body.removeChild(s), URL.revokeObjectURL(n));
+                    }, 1e3),
+                    r.default.alert(w("biExport"), w("exportStarted", { file: t })));
                 } catch (e) {
-                  r.default.alert(w("error"), (0, P.storeErrorText)(e?.message ?? "") || w("error"));
+                  r.default.alert(w("error"), (0, G9.classifyError)(e).message || w("error"));
                 }
               },
             }),
@@ -36402,7 +36807,9 @@ __d(
       k = _r(_d[22]),
       w = _r(_d[23]),
       P = _r(_d[24]),
-      N = _r(_d[25]);
+      N = _r(_d[25]),
+      G9 = _r(_d[26]);
+    const EXPORTABLE = ["executive", "financial", "users", "matches", "venues", "organizers", "geographic"];
     const C = [
         { key: "executive", labelKey: "secExecutive", icon: "speedometer-outline" },
         { key: "financial", labelKey: "secFinancial", icon: "cash-outline" },
@@ -37127,8 +37534,7 @@ __d(
   },
   1830,
   [
-    33, 15, 461, 445, 137, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 1627, 630, 615, 616, 671, 1311,
-    1626, 675, 1171, 674, 13,
+    33, 15, 461, 445, 137, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 1627, 630, 615, 616, 671, 1311, 1626, 675, 1171, 674, 13, 9001,
   ],
 );
 __d(
@@ -37143,9 +37549,13 @@ __d(
           [v, W] = (0, l.useState)(null),
           [F, K] = (0, l.useState)(null),
           [M, P] = (0, l.useState)(!0),
-          [R, A] = (0, l.useState)(!1),
+          [R, A] = (0, l.useState)(null),
+          [rsn, setRsn] = (0, l.useState)(""),
+          [busy, setBusy] = (0, l.useState)(!1),
+          gate = (0, G9.useRoleGate)(["admin"]),
           D = (0, l.useCallback)(async () => {
             if (t) {
+              A(null);
               try {
                 (W(await (0, k.fetchOptimizerDashboard)(t.id)), K(await (0, k.fetchOptimizerWeights)(t.id)));
               } catch {
@@ -37160,9 +37570,20 @@ __d(
           }, [D]),
         );
         const L = async (l) => {
-          t && K(await (0, k.setOptimizerWeights)(t.id, l));
+          if (!t || busy) return;
+          if (rsn.trim().length < 3) return s9.default.alert(h("error"), h("changeReasonRequired"));
+          setBusy(!0);
+          try {
+            // Re-fetch the dashboard so feature importance matches the saved weights.
+            (K(await (0, k.setOptimizerWeights)(t.id, l, rsn.trim())), await D());
+          } catch (e) {
+            s9.default.alert(h("error"), (0, G9.classifyError)(e).message || h("error"));
+          } finally {
+            setBusy(!1);
+          }
         };
-        if (M)
+        if (gate.ready && !gate.allowed) return (0, B.jsx)(G9.GateScreen, { kind: "denied", onBack: () => s.back() });
+        if (M || !gate.ready)
           return (0, B.jsx)(u.SafeAreaView, {
             style: [N.center, { backgroundColor: i.bg }],
             children: (0, B.jsx)(r.default, { color: i.accentText }),
@@ -37191,6 +37612,13 @@ __d(
             (0, B.jsxs)(o.default, {
               contentContainerStyle: { padding: j.spacing.lg, paddingBottom: j.spacing.xxxl },
               children: [
+                (0, B.jsx)(i9.Input, {
+                  label: y("changeReasonLabel"),
+                  placeholder: y("changeReasonPlaceholder"),
+                  value: rsn,
+                  onChangeText: setRsn,
+                  maxLength: 200,
+                }),
                 (0, B.jsxs)(h.Card, {
                   style: { marginBottom: j.spacing.lg },
                   children: [
@@ -37334,6 +37762,7 @@ __d(
                             value: (0, w.formatNumber)(Math.round(100 * F[t.key]) / 100),
                             onDec: () => L({ [t.key]: Math.max(0, F[t.key] - 0.05) }),
                             onInc: () => L({ [t.key]: Math.min(1, F[t.key] + 0.05) }),
+                            disabled: busy || rsn.trim().length < 3,
                             colors: i,
                           }),
                         ],
@@ -37366,7 +37795,10 @@ __d(
       w = _r(d[17]),
       C = _r(d[18]),
       v = _r(d[19]),
-      B = _r(d[20]);
+      B = _r(d[20]),
+      G9 = _r(d[21]),
+      i9 = _r(d[22]),
+      s9 = _r(d[23]);
     const S = [
       { key: "successFill", labelKey: "fiFill" },
       { key: "successLowCancel", labelKey: "fiLowCancel" },
@@ -37413,13 +37845,17 @@ __d(
           ),
         });
       },
-      _ = ({ value: t, onDec: l, onInc: r, colors: o }) =>
+      _ = ({ value: t, onDec: l, onInc: r, colors: o, disabled: dz }) =>
         (0, B.jsxs)(n.default, {
           style: { flexDirection: "row", alignItems: "center", gap: j.spacing.sm },
           children: [
             (0, B.jsx)(i.default, {
               onPress: l,
-              style: [N.stepBtn, { borderColor: o.border }],
+              disabled: dz,
+              accessibilityRole: "button",
+              accessibilityLabel: "decrease",
+              accessibilityState: { disabled: !!dz },
+              style: [N.stepBtn, { borderColor: o.border, opacity: dz ? 0.4 : 1 }],
               children: (0, B.jsx)(y.Ionicons, { name: "remove", size: 18, color: o.text }),
             }),
             (0, B.jsx)(c.default, {
@@ -37428,7 +37864,11 @@ __d(
             }),
             (0, B.jsx)(i.default, {
               onPress: r,
-              style: [N.stepBtn, { borderColor: o.border }],
+              disabled: dz,
+              accessibilityRole: "button",
+              accessibilityLabel: "increase",
+              accessibilityState: { disabled: !!dz },
+              style: [N.stepBtn, { borderColor: o.border, opacity: dz ? 0.4 : 1 }],
               children: (0, B.jsx)(y.Ionicons, { name: "add", size: 18, color: o.text }),
             }),
           ],
@@ -37504,7 +37944,9 @@ __d(
       });
   },
   1831,
-  [33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 675, 1171, 13],
+  [
+    33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 675, 1171, 13, 9001, 625, 445,
+  ],
 );
 __d(
   function (g, r, i, _a, m, e, d) {

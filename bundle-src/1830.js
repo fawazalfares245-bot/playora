@@ -12,18 +12,21 @@ __d(
           [L, U] = (0, t.useState)(90),
           [_, Y] = (0, t.useState)(null),
           [q, J] = (0, t.useState)(!0),
-          [Q, X] = (0, t.useState)(!1),
+          [Q, X] = (0, t.useState)(null),
+          gate = (0, G9.useRoleGate)(["admin", "analyst"]),
           Z = () => ({
             from: L ? new Date(Date.now() - 864e5 * L).toISOString() : void 0,
             sport: _ ?? void 0,
           }),
           ee = (0, t.useCallback)(async () => {
             if (e) {
-              J(!0);
+              // ADM2 (F-ADM2-17): the error flag is cleared on every attempt so a transient failure
+              // does not lock the screen until it is unmounted.
+              (J(!0), X(null));
               try {
                 A(await (0, h.fetchBIDashboard)(e.id, Z()));
-              } catch {
-                X(!0);
+              } catch (e) {
+                X(e);
               }
               J(!1);
             }
@@ -38,22 +41,20 @@ __d(
             style: [F.center, { backgroundColor: m.bg }],
             children: (0, N.jsx)(l.default, { color: m.accentText }),
           });
-        if (Q || !V)
-          return (0, N.jsxs)(c.SafeAreaView, {
-            edges: ["top"],
-            style: { flex: 1, backgroundColor: m.bg },
-            children: [
-              (0, N.jsx)(I, { colors: m, t: w, onBack: () => j.back(), onExport: () => {}, hideExport: !0 }),
-              (0, N.jsx)(n.default, {
-                style: { padding: y.spacing.lg },
-                children: (0, N.jsx)(b.EmptyState, {
-                  icon: "lock-closed-outline",
-                  title: w("organizerGateTitle"),
-                  body: w("biTitle"),
-                }),
-              }),
-            ],
+        if (gate.ready && !gate.allowed)
+          return (0, N.jsx)(G9.GateScreen, { kind: "denied", roles: ["admin", "analyst"], onBack: () => j.back() });
+        if (Q || !V) {
+          const e = Q ? (0, G9.classifyError)(Q) : null;
+          return (0, N.jsx)(G9.GateScreen, {
+            kind: e?.isAuth ? "denied" : "error",
+            roles: ["admin", "analyst"],
+            body: e && !e.isAuth ? e.message : void 0,
+            onRetry: () => {
+              (X(null), ee());
+            },
+            onBack: () => j.back(),
           });
+        }
         const te = "analyst" === s?.role;
         return (0, N.jsxs)(c.SafeAreaView, {
           edges: ["top"],
@@ -63,30 +64,30 @@ __d(
               colors: m,
               t: w,
               onBack: () => j.back(),
+              // ADM2 (F-ADM2-14/16): only tabs with a real report can be exported, the anchor is attached
+              // before clicking, the object URL is revoked afterwards, and success is only claimed when a
+              // download actually started.
+              hideExport: !EXPORTABLE.includes(E),
               onExport: async () => {
                 if (!e) return;
-                const t = [
-                  "executive",
-                  "financial",
-                  "users",
-                  "matches",
-                  "venues",
-                  "organizers",
-                  "geographic",
-                ].includes(E)
-                  ? E
-                  : "executive";
+                if (!EXPORTABLE.includes(E)) return r.default.alert(w("biExport"), w("exportNotAvailable"));
                 try {
-                  const { filename: l, csv: o } = await (0, h.exportBIReport)(e.id, t, Z());
-                  if ("undefined" != typeof document) {
-                    const e = new Blob([o], { type: "text/csv" }),
-                      t = URL.createObjectURL(e),
-                      r = document.createElement("a");
-                    ((r.href = t), (r.download = l), r.click(), URL.revokeObjectURL(t));
-                  }
-                  r.default.alert(w("biExport"), `${l}`);
+                  const { filename: t, csv: l } = await (0, h.exportBIReport)(e.id, E, Z());
+                  if ("undefined" == typeof document) return void r.default.alert(w("error"), w("exportNotAvailable"));
+                  const o = new Blob([l], { type: "text/csv" }),
+                    n = URL.createObjectURL(o),
+                    s = document.createElement("a");
+                  ((s.href = n),
+                    (s.download = t),
+                    (s.style.display = "none"),
+                    document.body.appendChild(s),
+                    s.click(),
+                    setTimeout(() => {
+                      (document.body.removeChild(s), URL.revokeObjectURL(n));
+                    }, 1e3),
+                    r.default.alert(w("biExport"), w("exportStarted", { file: t })));
                 } catch (e) {
-                  r.default.alert(w("error"), (0, P.storeErrorText)(e?.message ?? "") || w("error"));
+                  r.default.alert(w("error"), (0, G9.classifyError)(e).message || w("error"));
                 }
               },
             }),
@@ -210,7 +211,9 @@ __d(
       k = _r(_d[22]),
       w = _r(_d[23]),
       P = _r(_d[24]),
-      N = _r(_d[25]);
+      N = _r(_d[25]),
+      G9 = _r(_d[26]);
+    const EXPORTABLE = ["executive", "financial", "users", "matches", "venues", "organizers", "geographic"];
     const C = [
         { key: "executive", labelKey: "secExecutive", icon: "speedometer-outline" },
         { key: "financial", labelKey: "secFinancial", icon: "cash-outline" },
@@ -935,7 +938,6 @@ __d(
   },
   1830,
   [
-    33, 15, 461, 445, 137, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 1627, 630, 615, 616, 671, 1311,
-    1626, 675, 1171, 674, 13,
+    33, 15, 461, 445, 137, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 1627, 630, 615, 616, 671, 1311, 1626, 675, 1171, 674, 13, 9001,
   ],
 );

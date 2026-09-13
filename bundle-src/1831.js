@@ -10,9 +10,13 @@ __d(
           [v, W] = (0, l.useState)(null),
           [F, K] = (0, l.useState)(null),
           [M, P] = (0, l.useState)(!0),
-          [R, A] = (0, l.useState)(!1),
+          [R, A] = (0, l.useState)(null),
+          [rsn, setRsn] = (0, l.useState)(""),
+          [busy, setBusy] = (0, l.useState)(!1),
+          gate = (0, G9.useRoleGate)(["admin"]),
           D = (0, l.useCallback)(async () => {
             if (t) {
+              A(null);
               try {
                 (W(await (0, k.fetchOptimizerDashboard)(t.id)), K(await (0, k.fetchOptimizerWeights)(t.id)));
               } catch {
@@ -27,9 +31,20 @@ __d(
           }, [D]),
         );
         const L = async (l) => {
-          t && K(await (0, k.setOptimizerWeights)(t.id, l));
+          if (!t || busy) return;
+          if (rsn.trim().length < 3) return s9.default.alert(h("error"), h("changeReasonRequired"));
+          setBusy(!0);
+          try {
+            // Re-fetch the dashboard so feature importance matches the saved weights.
+            (K(await (0, k.setOptimizerWeights)(t.id, l, rsn.trim())), await D());
+          } catch (e) {
+            s9.default.alert(h("error"), (0, G9.classifyError)(e).message || h("error"));
+          } finally {
+            setBusy(!1);
+          }
         };
-        if (M)
+        if (gate.ready && !gate.allowed) return (0, B.jsx)(G9.GateScreen, { kind: "denied", onBack: () => s.back() });
+        if (M || !gate.ready)
           return (0, B.jsx)(u.SafeAreaView, {
             style: [N.center, { backgroundColor: i.bg }],
             children: (0, B.jsx)(r.default, { color: i.accentText }),
@@ -58,6 +73,13 @@ __d(
             (0, B.jsxs)(o.default, {
               contentContainerStyle: { padding: j.spacing.lg, paddingBottom: j.spacing.xxxl },
               children: [
+                (0, B.jsx)(i9.Input, {
+                  label: y("changeReasonLabel"),
+                  placeholder: y("changeReasonPlaceholder"),
+                  value: rsn,
+                  onChangeText: setRsn,
+                  maxLength: 200,
+                }),
                 (0, B.jsxs)(h.Card, {
                   style: { marginBottom: j.spacing.lg },
                   children: [
@@ -201,6 +223,7 @@ __d(
                             value: (0, w.formatNumber)(Math.round(100 * F[t.key]) / 100),
                             onDec: () => L({ [t.key]: Math.max(0, F[t.key] - 0.05) }),
                             onInc: () => L({ [t.key]: Math.min(1, F[t.key] + 0.05) }),
+                            disabled: busy || rsn.trim().length < 3,
                             colors: i,
                           }),
                         ],
@@ -233,7 +256,10 @@ __d(
       w = _r(d[17]),
       C = _r(d[18]),
       v = _r(d[19]),
-      B = _r(d[20]);
+      B = _r(d[20]),
+      G9 = _r(d[21]),
+      i9 = _r(d[22]),
+      s9 = _r(d[23]);
     const S = [
       { key: "successFill", labelKey: "fiFill" },
       { key: "successLowCancel", labelKey: "fiLowCancel" },
@@ -280,13 +306,17 @@ __d(
           ),
         });
       },
-      _ = ({ value: t, onDec: l, onInc: r, colors: o }) =>
+      _ = ({ value: t, onDec: l, onInc: r, colors: o, disabled: dz }) =>
         (0, B.jsxs)(n.default, {
           style: { flexDirection: "row", alignItems: "center", gap: j.spacing.sm },
           children: [
             (0, B.jsx)(i.default, {
               onPress: l,
-              style: [N.stepBtn, { borderColor: o.border }],
+              disabled: dz,
+              accessibilityRole: "button",
+              accessibilityLabel: "decrease",
+              accessibilityState: { disabled: !!dz },
+              style: [N.stepBtn, { borderColor: o.border, opacity: dz ? 0.4 : 1 }],
               children: (0, B.jsx)(y.Ionicons, { name: "remove", size: 18, color: o.text }),
             }),
             (0, B.jsx)(c.default, {
@@ -295,7 +325,11 @@ __d(
             }),
             (0, B.jsx)(i.default, {
               onPress: r,
-              style: [N.stepBtn, { borderColor: o.border }],
+              disabled: dz,
+              accessibilityRole: "button",
+              accessibilityLabel: "increase",
+              accessibilityState: { disabled: !!dz },
+              style: [N.stepBtn, { borderColor: o.border, opacity: dz ? 0.4 : 1 }],
               children: (0, B.jsx)(y.Ionicons, { name: "add", size: 18, color: o.text }),
             }),
           ],
@@ -371,5 +405,7 @@ __d(
       });
   },
   1831,
-  [33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 675, 1171, 13],
+  [
+    33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 675, 1171, 13, 9001, 625, 445,
+  ],
 );

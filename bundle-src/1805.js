@@ -752,11 +752,20 @@ __d(
               (Je || "analyst" === M?.role) &&
                 (0, L.jsxs)(L.Fragment, {
                   children: [
-                    (0, L.jsx)(c.default, { style: [E.section, { color: q.textMuted }], children: "ADMIN" }),
+                    (0, L.jsx)(c.default, {
+                      style: [E.section, { color: q.textMuted }],
+                      children: X("adminPanel").toUpperCase(),
+                    }),
                     (0, L.jsx)(O, {
                       icon: "speedometer-outline",
                       title: X("biTitle"),
                       onPress: () => J.push("/admin/insights"),
+                      colors: q,
+                    }),
+                    (0, L.jsx)(O, {
+                      icon: "analytics",
+                      title: X("feedAnalyticsTitle"),
+                      onPress: () => J.push("/admin/feed"),
                       colors: q,
                     }),
                     Je &&
@@ -793,9 +802,9 @@ __d(
                             colors: q,
                           }),
                           (0, L.jsx)(O, {
-                            icon: "analytics",
-                            title: X("feedAnalyticsTitle"),
-                            onPress: () => J.push("/admin/feed"),
+                            icon: "people-outline",
+                            title: X("adminPlayersLink"),
+                            onPress: () => J.push("/admin/players"),
                             colors: q,
                           }),
                           (0, L.jsx)(O, {

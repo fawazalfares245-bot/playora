@@ -8,22 +8,52 @@ __d(
           W = (0, b.useRouter)(),
           M = (0, k.useT)(),
           [$, _] = (0, a.useState)(null),
-          [B, S] = (0, a.useState)(!1),
+          [B, S] = (0, a.useState)(null),
+          [rsn, setRsn] = (0, a.useState)(""),
+          [busy, setBusy] = (0, a.useState)(!1),
+          gate = (0, G9.useRoleGate)(["admin", "analyst"]),
           D = (0, a.useCallback)(async () => {
-            if (t)
+            if (t) {
+              S(null);
               try {
                 _(await (0, w.fetchFeedAnalytics)(t.id));
-              } catch {
-                S(!0);
+              } catch (e) {
+                S(e);
               }
-          }, [t]);
+            }
+          }, [t]),
+          // Administrators can freeze the self-tuning weights or reset them to the defaults.
+          act = async (e) => {
+            if (!t || busy) return;
+            if (rsn.trim().length < 3) return a9.default.alert(M("error"), M("changeReasonRequired"));
+            setBusy(!0);
+            try {
+              (await e(), await D());
+            } catch (e) {
+              a9.default.alert(M("error"), (0, G9.classifyError)(e).message || M("error"));
+            } finally {
+              setBusy(!1);
+            }
+          };
         return (
           (0, b.useFocusEffect)(
             (0, a.useCallback)(() => {
               D();
             }, [D]),
           ),
-          (0, R.jsxs)(u.SafeAreaView, {
+          gate.ready && !gate.allowed
+            ? (0, R.jsx)(G9.GateScreen, { kind: "denied", roles: ["admin", "analyst"], onBack: () => W.back() })
+            : B
+              ? (0, R.jsx)(G9.GateScreen, {
+                  kind: (0, G9.classifyError)(B).isAuth ? "denied" : "error",
+                  roles: ["admin", "analyst"],
+                  body: (0, G9.classifyError)(B).isAuth ? void 0 : (0, G9.classifyError)(B).message,
+                  onRetry: () => {
+                    (S(null), D());
+                  },
+                  onBack: () => W.back(),
+                })
+              : (0, R.jsxs)(u.SafeAreaView, {
             edges: ["top"],
             style: { flex: 1, backgroundColor: N.bg },
             children: [
@@ -43,6 +73,51 @@ __d(
                   }),
                 ],
               }),
+              "admin" === gate.role &&
+                (0, R.jsxs)(n.default, {
+                  style: { paddingHorizontal: j.spacing.lg, paddingBottom: j.spacing.sm },
+                  children: [
+                    $?.frozen &&
+                      (0, R.jsx)(c.default, {
+                        style: [j.typography.smallStrong, { color: N.warning, marginBottom: 4 }],
+                        children: M("feedWeightsFrozen"),
+                      }),
+                    (0, R.jsx)(i9.Input, {
+                      label: M("changeReasonLabel"),
+                      placeholder: M("changeReasonPlaceholder"),
+                      value: rsn,
+                      onChangeText: setRsn,
+                      maxLength: 200,
+                    }),
+                    (0, R.jsxs)(n.default, {
+                      style: { flexDirection: "row", gap: j.spacing.sm, marginTop: j.spacing.xs },
+                      children: [
+                        (0, R.jsx)(b9.Button, {
+                          title: M($?.frozen ? "feedUnfreeze" : "feedFreeze"),
+                          size: "sm",
+                          variant: "secondary",
+                          style: { flex: 1 },
+                          loading: busy,
+                          disabled: rsn.trim().length < 3,
+                          onPress: () => act(() => (0, w.setFeedFrozen)(t.id, !$?.frozen, rsn.trim())),
+                        }),
+                        (0, R.jsx)(b9.Button, {
+                          title: M("feedReset"),
+                          size: "sm",
+                          variant: "danger",
+                          style: { flex: 1 },
+                          loading: busy,
+                          disabled: rsn.trim().length < 3,
+                          onPress: () =>
+                            a9.default.alert(M("feedResetConfirm"), "", [
+                              { text: M("cancel"), style: "cancel" },
+                              { text: M("feedReset"), onPress: () => act(() => (0, w.resetFeedWeights)(t.id, rsn.trim())) },
+                            ]),
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
               (0, R.jsx)(i.default, {
                 contentContainerStyle: { padding: j.spacing.lg, paddingBottom: j.spacing.xxxl },
                 children: B
@@ -170,7 +245,11 @@ __d(
       C = r(d[18]),
       k = r(d[19]),
       L = r(d[20]),
-      R = r(d[21]);
+      R = r(d[21]),
+      G9 = r(d[22]),
+      i9 = r(d[23]),
+      b9 = r(d[24]),
+      a9 = r(d[25]);
     const T = ({ label: t, value: a, colors: l }) =>
         (0, R.jsxs)(n.default, {
           style: [A.metric, { backgroundColor: l.surface, borderColor: l.border }],
@@ -216,7 +295,6 @@ __d(
   },
   1828,
   [
-    33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 652, 675, 1171,
-    13,
+    33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 652, 675, 1171, 13, 9001, 625, 626, 445,
   ],
 );

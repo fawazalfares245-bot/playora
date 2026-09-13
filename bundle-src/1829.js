@@ -7,17 +7,36 @@ __d(
           { colors: s } = (0, b.useTheme)(),
           k = (0, f.useRouter)(),
           A = (0, B.useT)(),
-          [E, z] = (0, l.useState)(null);
+          [E, z] = (0, l.useState)(null),
+          [er, setEr] = (0, l.useState)(null),
+          gate = (0, G9.useRoleGate)(["admin"]),
+          load = (0, l.useCallback)(() => {
+            t &&
+              (setEr(null),
+              (0, S.fetchFunnelStats)(t.id)
+                .then(z)
+                .catch((e) => {
+                  (z([]), setEr(e));
+                }));
+          }, [t]);
         return (
           (0, f.useFocusEffect)(
             (0, l.useCallback)(() => {
-              t &&
-                (0, S.fetchFunnelStats)(t.id)
-                  .then(z)
-                  .catch(() => z([]));
-            }, [t]),
+              gate.ready && gate.allowed && load();
+            }, [load, gate.ready, gate.allowed]),
           ),
-          (0, M.jsxs)(h.SafeAreaView, {
+          gate.ready && !gate.allowed
+            ? (0, M.jsx)(G9.GateScreen, { kind: "denied", onBack: () => k.back() })
+            : er
+              ? (0, M.jsx)(G9.GateScreen, {
+                  kind: (0, G9.classifyError)(er).isAuth ? "denied" : "error",
+                  body: (0, G9.classifyError)(er).isAuth ? void 0 : (0, G9.classifyError)(er).message,
+                  onRetry: () => {
+                    (z(null), load());
+                  },
+                  onBack: () => k.back(),
+                })
+              : (0, M.jsxs)(h.SafeAreaView, {
             edges: ["top"],
             style: { flex: 1, backgroundColor: s.bg },
             children: [
@@ -150,7 +169,8 @@ __d(
       v = _r(d[17]),
       B = _r(d[18]),
       C = _r(d[19]),
-      M = _r(d[20]);
+      M = _r(d[20]),
+      G9 = _r(d[21]);
     const T = s.default.create({
       header: {
         flexDirection: "row",
@@ -169,5 +189,7 @@ __d(
     });
   },
   1829,
-  [33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 675, 1171, 13],
+  [
+    33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 1311, 675, 1171, 13, 9001,
+  ],
 );
