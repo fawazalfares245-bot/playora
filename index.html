@@ -5763,7 +5763,15 @@ __d(
           viewer_world: i,
         });
       },
-      un = (e) => aa(e);
+      un = (e) => aa(e),
+      // ADM1 (F-ADM1-9/10): same partition rule as `cn` but without the audit side effect, for stats and
+      // "hidden in the other world" counters shown next to partitioned lists.
+      adm1Visible = (e, t, a) => {
+        if (ln(e)) return t;
+        const i = aa(e);
+        return t.filter((e) => ia(a(e), i));
+      },
+      adm1Hidden = (e, t, a) => t.length - adm1Visible(e, t, a).length;
     r.mockGrantCrossPartition = async (e, t, a) => {
       if ((await ei(), await sn(e), e === t)) throw new Error("E_YOU_CANNOT_GRANT_THIS_TO_YOURSELF");
       const i = (0, v.sanitizeText)(a ?? "").slice(0, 200);
@@ -5806,9 +5814,22 @@ __d(
         .sort((e, t) => new Date(t.created_at).getTime() - new Date(e.created_at).getTime())
     );
     r.mockGetMyPartitionStance = async (e) => {
-      (await ei(), await sn(e));
-      const t = ln(e);
-      return { world: aa(e), crossing: !!t, expires_at: t?.expires_at ?? null, reason: t?.reason ?? null };
+      (await ei(), await sn(e), await hn());
+      const t = ln(e),
+        a = (e) => un(e.user_id);
+      return {
+        world: aa(e),
+        crossing: !!t,
+        expires_at: t?.expires_at ?? null,
+        reason: t?.reason ?? null,
+        // ADM1 (F-ADM1-9): how many records each admin list is withholding because they belong to the
+        // other world (0 while a cross-partition grant is active).
+        hidden: {
+          applications: adm1Hidden(e, Qt.applications, a),
+          players: adm1Hidden(e, Qt.skillProfiles, a),
+          sanctions: adm1Hidden(e, Qt.sanctions, a),
+        },
+      };
     };
     r.mockAdminFindPlayers = async (e, t) => {
       (await ei(), await sn(e));
@@ -5841,23 +5862,31 @@ __d(
       if (r < 0) throw new Error("E_NO_SUCH_PLAYER");
       const o = Qt.profiles[r].audience;
       if (o === a) throw new Error("E_THAT_PLAYER_IS_ALREADY_IN_THIS");
-      (await _n(e, o ?? "male", "admin.correct_audience"),
-        (Qt.profiles[r] = Object.assign({}, Qt.profiles[r], { audience: a })),
-        await Za(Y, Qt.profiles),
-        (Qt.follows = Qt.follows.filter((e) => e.follower_id !== t && e.followee_id !== t)),
-        await Za(Ne, Qt.follows),
-        await (0, w.logAudit)("admin.audience_corrected", (0, w.actorRef)(e), {
-          target: t,
-          from: o ?? "unset",
-          to: a,
-          reason: n,
-        }));
+      await _n(e, o ?? "male", "admin.correct_audience");
+      ((Qt.profiles[r] = Object.assign({}, Qt.profiles[r], { audience: a })), await Za(Y, Qt.profiles));
+      // ADM1 (F-ADM1-16): moving worlds severs follow links across the partition; record how many.
+      const s = Qt.follows.length;
+      ((Qt.follows = Qt.follows.filter((e) => e.follower_id !== t && e.followee_id !== t)),
+        await Za(Ne, Qt.follows));
+      const d = s - Qt.follows.length;
+      // ADM1 (F-ADM1-17): privileged change -> admin audit store with before/after values.
+      await (0, w.logAdminAudit)("admin.audience_corrected", e, t, {
+        from: o ?? "unset",
+        to: a,
+        reason: n,
+        follows_removed: d,
+      });
+      return { from: o ?? null, to: a, follows_removed: d };
     };
-    const mn = async (e, t) => {
-        const a = Qt.profiles.findIndex((t) => t.id === e);
-        a >= 0 &&
-          "admin" !== Qt.profiles[a].role &&
-          ((Qt.profiles[a] = Object.assign({}, Qt.profiles[a], { role: t })), await Za(Y, Qt.profiles));
+    const mn = async (e, t, a) => {
+        // ADM1 (F-ADM1-7): organizer decisions never overwrite a privileged role (admin / analyst), and
+        // every role transition is recorded with before/after values and the acting admin.
+        const i = Qt.profiles.findIndex((t) => t.id === e);
+        if (i < 0) return;
+        const n = Qt.profiles[i].role ?? "user";
+        if (n === t || "admin" === n || "analyst" === n) return;
+        ((Qt.profiles[i] = Object.assign({}, Qt.profiles[i], { role: t })), await Za(Y, Qt.profiles));
+        await (0, w.logAdminAudit)("profile.role_changed", a ?? null, e, { from: n, to: t });
       },
       wn = async (e, t, a, i) => {
         await bi({
@@ -5976,65 +6005,135 @@ __d(
         account_age_days: t ? Math.floor((Date.now() - new Date(t.created_at).getTime()) / 864e5) : 0,
       });
     };
+    // ADM1 (F-ADM1-31): the queue only renders names, sports, flags and dates -> slim list DTO; the
+    // detail DTO drops hashed identity references (phone / document / registration / licence hashes).
+    const adm1AppListDto = (e) => ({
+        id: e.id,
+        user_id: e.user_id,
+        status: e.status,
+        display_name: e.display_name,
+        full_legal_name: e.full_legal_name,
+        sports: e.sports,
+        organizer_type: e.organizer_type,
+        risk_flags: e.risk_flags ?? [],
+        submitted_at: e.submitted_at,
+        reviewed_at: e.reviewed_at,
+        info_requested_at: e.info_requested_at ?? null,
+      }),
+      adm1AppDetailDto = (e) => {
+        const t = pn(e);
+        (delete t.phone_hash, delete t.id_doc_ref);
+        t.business &&
+          ((t.business = Object.assign({}, t.business)),
+          delete t.business.registration_number_ref,
+          delete t.business.license_ref);
+        return t;
+      };
     r.mockGetOrganizerApplications = async (e, t) => {
       (await ei(), await hn(), await sn(e));
       return (await cn(e, Qt.applications, (e) => un(e.user_id), "admin.applications"))
         .filter((e) => !t?.status || e.status === t.status)
         .sort((e, t) => new Date(t.submitted_at).getTime() - new Date(e.submitted_at).getTime())
-        .map(pn);
+        .map(adm1AppListDto);
     };
     r.mockGetApplicationDetail = async (e, t) => {
       (await ei(), await hn(), await sn(e));
       const a = Qt.applications.find((e) => e.id === t);
-      return a ? (await _n(e, un(a.user_id), "admin.application_detail"), pn(a)) : null;
+      return a ? (await _n(e, un(a.user_id), "admin.application_detail"), adm1AppDetailDto(a)) : null;
     };
+    // ADM1 (F-ADM1-8): server-side transition table; mirrors the actions the detail screen offers.
+    const adm1AppTransitions = { approved: ["suspend"], suspended: ["approve"], rejected: ["approve"] },
+      adm1AppAllowed = (e) => adm1AppTransitions[e] ?? ["approve", "request_info", "reject"];
     r.mockReviewApplication = async (e, t, a, i) => {
       (await ei(), await sn(e));
       const n = Qt.applications.find((e) => e.id === t);
       if (!n) throw new Error("E_APPLICATION_NOT_FOUND");
+      // ADM1 (F-ADM1-1): the reviewer must not be the applicant; the attempt is audited.
+      if (n.user_id === e)
+        throw (
+          await (0, w.logAdminAudit)("organizer.self_review_blocked", e, n.user_id, {
+            application: t.slice(-6),
+            action: String(a),
+          }),
+          new Error("E_YOU_CANNOT_REVIEW_YOUR_OWN")
+        );
+      if (!["approve", "reject", "request_info", "suspend"].includes(a) || !adm1AppAllowed(n.status).includes(a))
+        throw new Error("E_INVALID_TRANSITION");
       await _n(e, un(n.user_id), "admin.review_application");
+      // ADM1 (F-ADM1-5): `reason` is the message delivered to the applicant, `notes` the internal note.
       const r = new Date().toISOString(),
-        o = i?.notes ? (0, v.sanitizeText)(i.notes, 500) : n.admin_notes;
+        o = (0, v.sanitizeText)(i?.reason ?? "", 200),
+        s = (0, v.sanitizeText)(i?.notes ?? "", 500),
+        d = n.status,
+        l = t.slice(-6);
+      // ADM1 (F-ADM1-2): adverse decisions and info requests require an explicit message; nothing is
+      // back-filled with boilerplate any more.
+      if ("approve" !== a && !o) throw new Error("E_A_REASON_IS_REQUIRED");
       if ("approve" === a)
         ((n.status = "approved"),
           (n.reviewed_by = e),
           (n.reviewed_at = r),
-          (n.admin_notes = o),
+          (n.admin_notes = s || n.admin_notes),
           (n.rejection_reason = null),
           (n.reapply_after = null),
-          await mn(n.user_id, "organizer"),
-          await (0, w.logAdminAudit)("organizer.application_approved", e, n.user_id),
-          await wn(n.user_id, n.id, "approved", ""));
-      else if ("reject" === a) {
-        const t = (0, v.sanitizeText)(i?.reason ?? "", 200) || "Did not meet verification requirements.";
+          (n.info_requested_at = null),
+          await mn(n.user_id, "organizer", e),
+          await (0, w.logAdminAudit)("organizer.application_approved", e, n.user_id, {
+            application: l,
+            from: d,
+            to: "approved",
+            message: o || null,
+            note: s || null,
+          }),
+          await wn(n.user_id, n.id, "approved", o));
+      else if ("reject" === a)
         ((n.status = "rejected"),
           (n.reviewed_by = e),
           (n.reviewed_at = r),
-          (n.rejection_reason = t),
-          (n.admin_notes = o),
+          (n.rejection_reason = o),
+          (n.admin_notes = s || n.admin_notes),
           (n.reapply_after = new Date(Date.now() + 2592e6).toISOString()),
-          await mn(n.user_id, "user"),
-          await (0, w.logAdminAudit)("organizer.application_rejected", e, n.user_id, { reason: t }),
-          await wn(n.user_id, n.id, "rejected", t));
-      } else if ("request_info" === a) {
-        const t = (0, v.sanitizeText)(i?.notes ?? "", 500) || "Please provide additional information.";
-        ((n.status = "under_review"),
-          (n.admin_notes = t),
+          (n.info_requested_at = null),
+          await mn(n.user_id, "user", e),
+          await (0, w.logAdminAudit)("organizer.application_rejected", e, n.user_id, {
+            application: l,
+            from: d,
+            to: "rejected",
+            reason: o,
+            note: s || null,
+          }),
+          await wn(n.user_id, n.id, "rejected", o));
+      else if ("request_info" === a)
+        // ADM1 (F-ADM1-4): explicit `info_requested` status so the queue shows it and the applicant can
+        // resubmit (the applicant side reads the request from `admin_notes`).
+        ((n.status = "info_requested"),
+          (n.admin_notes = o),
+          (n.info_requested_at = r),
           (n.reviewed_by = e),
           (n.reviewed_at = r),
-          await (0, w.logAdminAudit)("organizer.application_info_requested", e, n.user_id),
-          await wn(n.user_id, n.id, "info_requested", t));
-      } else {
-        const t = (0, v.sanitizeText)(i?.reason ?? "", 200) || "Policy violation.";
+          await (0, w.logAdminAudit)("organizer.application_info_requested", e, n.user_id, {
+            application: l,
+            from: d,
+            to: "info_requested",
+            message: o,
+            note: s || null,
+          }),
+          await wn(n.user_id, n.id, "info_requested", o));
+      else
         ((n.status = "suspended"),
           (n.reviewed_by = e),
           (n.reviewed_at = r),
-          (n.rejection_reason = t),
-          (n.admin_notes = o),
-          await mn(n.user_id, "user"),
-          await (0, w.logAdminAudit)("organizer.application_suspended", e, n.user_id, { reason: t }),
-          await wn(n.user_id, n.id, "suspended", t));
-      }
+          (n.rejection_reason = o),
+          (n.admin_notes = s || n.admin_notes),
+          await mn(n.user_id, "user", e),
+          await (0, w.logAdminAudit)("organizer.application_suspended", e, n.user_id, {
+            application: l,
+            from: d,
+            to: "suspended",
+            reason: o,
+            note: s || null,
+          }),
+          await wn(n.user_id, n.id, "suspended", o));
       return (await Za(ne, Qt.applications), n);
     };
     r.mockGetOrganizerTrustScore = async (e) => {
@@ -6819,7 +6918,7 @@ __d(
         );
       };
     r.mockGetJoinRequestIntel = Pn;
-    r.mockAdminGetPlayerIntel = async (e) => {
+    r.mockAdminGetPlayerIntel = async (e, adm1Opts) => {
       await ei();
       try {
         await sn(e);
@@ -6848,24 +6947,32 @@ __d(
           audience: Qt.profiles.find((t) => t.id === e.user_id)?.audience ?? null,
         });
       }
+      // ADM1 (F-ADM1-14): the screen asks for an access record once per mount; plain refreshes after an
+      // adjustment do not flood the audit store.
       return (
-        await (0, w.logAdminAudit)("intel.accessed", e, null, { scope: "full", rows: t.length }),
+        adm1Opts?.logAccess &&
+          (await (0, w.logAdminAudit)("intel.accessed", e, null, { scope: "full", rows: t.length })),
         t.sort((e, t) => e.display_name.localeCompare(t.display_name))
       );
     };
     r.mockAdminAdjustRating = async (e, t, a, i, n) => {
       (await ei(), await sn(e));
-      const r = await Dn(t, a),
-        o = r.rating;
-      ((r.rating = (0, y.clampRating)(a, i)),
-        On(r),
+      // ADM1 (F-ADM1-12): a real reason is mandatory and stored with before/after values.
+      const r = (0, v.sanitizeText)(n ?? "", 200);
+      if (!r) throw new Error("E_A_REASON_IS_REQUIRED");
+      // ADM1 (F-ADM1-13): the player must exist, be in the admin's world (or a grant must be active),
+      // and already have a skill profile for that sport (no side-effect creation on the admin path).
+      if (!Qt.profiles.some((e) => e.id === t)) throw new Error("E_NO_SUCH_PLAYER");
+      await _n(e, un(t), "admin.adjust_rating");
+      const o = Qt.skillProfiles.find((e) => e.user_id === t && e.sport === a);
+      if (!o) throw new Error("E_NO_SKILL_PROFILE");
+      if ("number" != typeof i || !Number.isFinite(i)) throw new Error("E_INVALID_VALUE");
+      const s = o.rating;
+      ((o.rating = (0, y.clampRating)(a, i)),
+        On(o),
         await Za(jt, Qt.skillProfiles),
-        await (0, w.logAdminAudit)("skill.admin_adjusted", e, t, {
-          sport: a,
-          from: o,
-          to: r.rating,
-          note: (0, v.sanitizeText)(n ?? "", 120) || "manual adjustment",
-        }));
+        await (0, w.logAdminAudit)("skill.admin_adjusted", e, t, { sport: a, from: s, to: o.rating, reason: r }));
+      return { from: s, to: o.rating };
     };
     const Ln = (e) => {
         const t = new Date(e);
@@ -7996,6 +8103,8 @@ __d(
     };
     r.mockApplyVenue = async (e, t) => {
       (await ei(), await Dr());
+      // ADM1 (F-ADM1-19): administrators review venues, so they cannot also own one.
+      if (ro(e)) throw new Error("E_ADMINS_CANNOT_REGISTER_VENUES");
       let a = t.venue_id;
       if (a) {
         if (hr(a)) throw new Error("E_THIS_VENUE_IS_ALREADY_REGISTERED");
@@ -8111,6 +8220,8 @@ __d(
       const i = hr(t);
       return ((i.staff = i.staff.filter((e) => e.user_id !== a)), await Za(ce, Qt.venueProfiles), i);
     };
+    // ADM1 (F-ADM1-22/31): returns every venue registration (the screen labels it that way) as a slim
+    // DTO — no staff list, IBAN digits or policy text for a list view.
     r.mockGetPendingVenues = async (e) => (
       await ei(),
       await sn(e),
@@ -8119,16 +8230,49 @@ __d(
         .map((e) => ({ venue: fi().find((t) => t.id === e.venue_id), profile: e }))
         .filter((e) => !!e.venue)
         .sort((e, t) => ("pending" === e.profile.status ? -1 : 1) - ("pending" === t.profile.status ? -1 : 1))
+        .map(({ venue: e, profile: t }) => ({
+          venue: { id: e.id, name: e.name, area: e.area, sports: e.sports },
+          profile: {
+            venue_id: t.venue_id,
+            owner_id: t.owner_id,
+            status: t.status,
+            commission_type: t.commission_type,
+            commission_value: t.commission_value,
+            created_at: t.created_at,
+            reviewed_at: t.reviewed_at,
+            review_note: t.review_note,
+          },
+        }))
     );
+    // ADM1 (F-ADM1-22): allow-listed actions and a transition table for venue registrations.
+    const adm1VenueTransitions = {
+        pending: ["approve", "reject"],
+        approved: ["suspend"],
+        rejected: ["approve"],
+        suspended: ["approve"],
+      },
+      adm1MaxFixedCommissionKwd = 100;
     r.mockAdminReviewVenue = async (e, t, a, i) => {
       (await ei(), await sn(e));
       const n = hr(t);
       if (!n) throw new Error("E_VENUE_NOT_FOUND");
+      // ADM1 (F-ADM1-19): the reviewer must not be the venue owner.
+      if (n.owner_id === e)
+        throw (
+          await (0, w.logAdminAudit)("venue.self_review_blocked", e, t, { action: String(a) }),
+          new Error("E_YOU_CANNOT_REVIEW_YOUR_OWN")
+        );
+      if (!(adm1VenueTransitions[n.status] ?? []).includes(a)) throw new Error("E_INVALID_TRANSITION");
+      // ADM1 (F-ADM1-20): reject / suspend / re-activation need a reason that reaches the owner.
+      const r = (0, v.sanitizeText)(i ?? "", 300);
+      if (("approve" !== a || "pending" !== n.status) && !r) throw new Error("E_A_REASON_IS_REQUIRED");
+      const o = n.status,
+        s = "approve" === a ? "approved" : "reject" === a ? "rejected" : "suspended";
       return (
-        (n.status = "approve" === a ? "approved" : "reject" === a ? "rejected" : "suspended"),
+        (n.status = s),
         (n.reviewed_at = new Date().toISOString()),
         (n.reviewed_by = e),
-        (n.review_note = i ? (0, v.sanitizeText)(i, 300) : null),
+        (n.review_note = r || null),
         await Za(ce, Qt.venueProfiles),
         await bi({
           id: ea(),
@@ -8137,6 +8281,8 @@ __d(
           venue_id: t,
           venue_name: Ai(t),
           approved: "approve" === a,
+          decision: s,
+          note: r || null,
           read: !1,
           created_at: new Date().toISOString(),
         }),
@@ -8148,24 +8294,46 @@ __d(
               : "venue.application_suspended",
           e,
           n.owner_id,
-          { venue: t.slice(-6) },
+          { venue: t.slice(-6), from: o, to: s, reason: r || null },
         ),
         n
       );
     };
-    r.mockAdminSetCommission = async (e, t, a, i) => {
+    r.mockAdminSetCommission = async (e, t, a, i, n) => {
       (await ei(), await sn(e));
-      const n = hr(t);
-      if (!n) throw new Error("E_VENUE_NOT_FOUND");
+      const r = hr(t);
+      if (!r) throw new Error("E_VENUE_NOT_FOUND");
+      // ADM1 (F-ADM1-19): an admin cannot set the commission on a venue they own.
+      if (r.owner_id === e)
+        throw (
+          await (0, w.logAdminAudit)("venue.self_review_blocked", e, t, { action: "commission" }),
+          new Error("E_YOU_CANNOT_REVIEW_YOUR_OWN")
+        );
+      // ADM1 (F-ADM1-21): strict numeric validation, bounded values, mandatory reason, before/after audit.
+      if ("percentage" !== a && "fixed" !== a) throw new Error("E_INVALID_VALUE");
+      const o = "number" == typeof i ? i : Number(String(i ?? "").trim());
+      if (
+        !Number.isFinite(o) ||
+        o < 0 ||
+        ("percentage" === a && o > 100) ||
+        ("fixed" === a && o > adm1MaxFixedCommissionKwd)
+      )
+        throw new Error("E_INVALID_VALUE");
+      const s = (0, v.sanitizeText)(n ?? "", 200);
+      if (!s) throw new Error("E_A_REASON_IS_REQUIRED");
+      const d = `${r.commission_type}:${r.commission_value}`,
+        l = Math.round(100 * o) / 100;
       return (
-        (n.commission_type = a),
-        (n.commission_value = "percentage" === a ? Math.max(0, Math.min(100, i)) : Math.max(0, i)),
+        (r.commission_type = a),
+        (r.commission_value = l),
         await Za(ce, Qt.venueProfiles),
-        await (0, w.logAdminAudit)("venue.updated", e, n.owner_id, {
+        await (0, w.logAdminAudit)("venue.commission_changed", e, r.owner_id, {
           venue: t.slice(-6),
-          commission: `${a}:${n.commission_value}`,
+          from: d,
+          to: `${a}:${l}`,
+          reason: s,
         }),
-        n
+        r
       );
     };
     r.mockGetCourts = async (e, t) => {
@@ -9368,18 +9536,28 @@ __d(
     };
     r.mockGetAdminFinancials = async (e) => {
       (await ei(), await sn(e), await Dr(), await Cr());
+      // ADM1 (F-ADM1-23): pending and settled settlements are reported separately and gross is also
+      // given net of refunds; the legacy totals are kept for compatibility.
       const t = Qt.settlements,
-        a = Qt.payments;
+        a = Qt.payments,
+        i = t.filter((e) => "settled" === e.status),
+        n = t.filter((e) => "pending" === e.status),
+        r = (e, t) => (0, z.roundKwd)(e.reduce((e, a) => e + (a[t] ?? 0), 0)),
+        o = r(t, "gross_kwd"),
+        s = (0, z.roundKwd)(a.filter((e) => "refunded" === e.status).reduce((e, t) => e + t.amount_kwd, 0));
       return {
         venues: Qt.venueProfiles.filter((e) => "approved" === e.status).length,
         pendingVenues: Qt.venueProfiles.filter((e) => "pending" === e.status).length,
         bookings: Qt.courtBookings.filter((e) => "confirmed" === e.status || "released" === e.status).length,
-        grossKwd: (0, z.roundKwd)(t.reduce((e, t) => e + t.gross_kwd, 0)),
-        commissionKwd: (0, z.roundKwd)(t.reduce((e, t) => e + t.commission_kwd, 0)),
-        payoutsKwd: (0, z.roundKwd)(t.reduce((e, t) => e + t.net_to_venue_kwd, 0)),
-        refundsKwd: (0, z.roundKwd)(
-          a.filter((e) => "refunded" === e.status).reduce((e, t) => e + t.amount_kwd, 0),
-        ),
+        grossKwd: o,
+        netGrossKwd: (0, z.roundKwd)(o - s),
+        commissionKwd: r(t, "commission_kwd"),
+        commissionSettledKwd: r(i, "commission_kwd"),
+        commissionPendingKwd: r(n, "commission_kwd"),
+        payoutsKwd: r(t, "net_to_venue_kwd"),
+        payoutsSettledKwd: r(i, "net_to_venue_kwd"),
+        payoutsPendingKwd: r(n, "net_to_venue_kwd"),
+        refundsKwd: s,
         paidPlayers: a.filter((e) => "paid" === e.status).length,
       };
     };
@@ -13581,17 +13759,34 @@ __d(
         o
       );
     };
+    // ADM1 (F-ADM1-25): allow-listed actions and transition table for sanctions.
+    const adm1SanctionTransitions = { pending_approval: ["approve", "reject"], active: ["overturn"] };
     r.mockReviewSanction = async (e, t, a, i) => {
       (await ei(), await sn(e));
       const n = Qt.sanctions.find((e) => e.id === t);
-      if ((n && (await _n(e, un(n.user_id), "admin.review_sanction")), !n))
-        throw new Error("E_SANCTION_NOT_FOUND");
+      if (!n) throw new Error("E_SANCTION_NOT_FOUND");
+      await _n(e, un(n.user_id), "admin.review_sanction");
+      // ADM1 (F-ADM1-29): the issuer cannot approve, reject or overturn their own sanction.
+      if (n.issued_by === e)
+        throw (
+          await (0, w.logAdminAudit)("conduct.self_review_blocked", e, n.user_id, {
+            sanction: t.slice(-6),
+            action: String(a),
+          }),
+          new Error("E_YOU_CANNOT_REVIEW_YOUR_OWN")
+        );
+      if (!(adm1SanctionTransitions[n.status] ?? []).includes(a)) throw new Error("E_INVALID_TRANSITION");
+      // ADM1 (F-ADM1-24): every decision carries a note that is stored, audited and sent to the player.
+      const r = (0, v.sanitizeText)(i ?? "", 300);
+      if (!r) throw new Error("E_A_REASON_IS_REQUIRED");
+      const o = n.status,
+        s = "approve" === a ? "active" : "reject" === a ? "rejected" : "overturned";
       ((n.reviewed_by = e),
         (n.reviewed_at = new Date().toISOString()),
-        (n.review_note = i ? (0, v.sanitizeText)(i, 300) : null),
-        (n.status = "approve" === a ? "active" : "reject" === a ? "rejected" : "overturned"),
+        (n.review_note = r),
+        (n.status = s),
         await Za(gt, Qt.sanctions));
-      const r = "approve" === a;
+      const d = "approve" === a;
       return (
         await bi({
           id: ea(),
@@ -13599,27 +13794,42 @@ __d(
           type: "sanction_reviewed",
           sanction_id: n.id,
           sanction_type: n.type,
-          upheld: r,
+          upheld: d,
+          decision: s,
+          note: r,
           read: !1,
           created_at: new Date().toISOString(),
         }),
-        await (0, w.logAdminAudit)("conduct.sanction_reviewed", e, n.user_id, { decision: a, type: n.type }),
+        await (0, w.logAdminAudit)("conduct.sanction_reviewed", e, n.user_id, {
+          sanction: t.slice(-6),
+          decision: a,
+          type: n.type,
+          from: o,
+          to: s,
+          reason: r,
+        }),
         n
       );
     };
-    r.mockRestoreUser = async (e, t) => {
+    r.mockRestoreUser = async (e, t, a) => {
       (await ei(), await sn(e));
-      let a = 0;
-      for (const i of Qt.sanctions)
-        i.user_id !== t ||
-          "active" !== i.status ||
-          ("ban" !== i.type && "suspension" !== i.type) ||
-          ((i.status = "overturned"),
-          (i.reviewed_by = e),
-          (i.reviewed_at = new Date().toISOString()),
-          (a += 1));
+      // ADM1 (F-ADM1-26): same partition rule as every other conduct action, and a reason on record.
+      if (!Qt.profiles.some((e) => e.id === t)) throw new Error("E_NO_SUCH_PLAYER");
+      await _n(e, un(t), "admin.restore_user");
+      const i = (0, v.sanitizeText)(a ?? "", 300);
+      if (!i) throw new Error("E_A_REASON_IS_REQUIRED");
+      const n = [];
+      for (const a of Qt.sanctions)
+        a.user_id !== t ||
+          "active" !== a.status ||
+          ("ban" !== a.type && "suspension" !== a.type) ||
+          ((a.status = "overturned"),
+          (a.reviewed_by = e),
+          (a.reviewed_at = new Date().toISOString()),
+          (a.review_note = i),
+          n.push(a.id.slice(-6)));
       return (
-        a &&
+        n.length &&
           (await Za(gt, Qt.sanctions),
           await bi({
             id: ea(),
@@ -13628,11 +13838,19 @@ __d(
             sanction_id: "restore",
             sanction_type: "ban",
             upheld: !1,
+            decision: "overturned",
+            note: i,
             read: !1,
             created_at: new Date().toISOString(),
           }),
-          await (0, w.logAdminAudit)("conduct.user_restored", e, t, { lifted: a })),
-        a
+          await (0, w.logAdminAudit)("conduct.user_restored", e, t, {
+            lifted: n.length,
+            sanctions: n,
+            from: "active",
+            to: "overturned",
+            reason: i,
+          })),
+        n.length
       );
     };
     const pd = (e) =>
@@ -13661,7 +13879,8 @@ __d(
     };
     r.mockGetConductAdminStats = async (e) => {
       (await ei(), await sn(e));
-      const t = Qt.sanctions,
+      // ADM1 (F-ADM1-10): tiles are computed over the same partitioned set as the incident queue.
+      const t = adm1Visible(e, Qt.sanctions, (e) => un(e.user_id)),
         a = (e) => t.filter((t) => t.type === e && "active" === t.status).length,
         i = Qt.profiles.filter((e) => "admin" !== e.role && "analyst" !== e.role),
         n = new Set(
@@ -18232,7 +18451,8 @@ __d(
             ? "yellow_card"
             : "warning";
     };
-    e.needsAdminApproval = (n, o) => "organizer" === o && ("ban" === n || "suspension" === n);
+    // ADM1 (F-ADM1-29): bans and suspensions always need a second administrator, whoever issues them.
+    e.needsAdminApproval = (n, o) => "ban" === n || "suspension" === n;
   },
   656,
   [],
@@ -18251,7 +18471,771 @@ __d(function(g,r,i,_a,_m,_e,d){Object.defineProperty(_e,"__esModule",{value:!0})
 __d(function(_g,r,i,_a,_m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.splitAmounts=e.settlement=e.roundKwd=e.isOnlineMethod=e.hoursBetween=e.courtPrice=e.PAYMENT_METHODS=void 0;const t=t=>Math.round(1e3*t)/1e3;e.roundKwd=t;const o=(t,o)=>Math.max(0,(new Date(o).getTime()-new Date(t).getTime())/36e5);e.hoursBetween=o;e.courtPrice=(n,a,l)=>t(Math.max(0,n)*o(a,l));e.splitAmounts=o=>{const{mode:n,total:a,payerIds:l,organizerId:m,custom:s}=o,h=t(Math.max(0,a)),c={};if(0===l.length)return c;if('organizer_pays'===n){for(const t of l)c[t]=0;return c[m]=h,c}if('custom'===n){let o=0;for(const n of l){const a=t(Math.max(0,s?.[n]??0));c[n]=a,o+=a}return c[m]=t(Math.max(0,(c[m]??0)+(h-o))),c}const y=Math.floor(h/l.length*1e3)/1e3;let M=0;for(const t of l)c[t]=y,M+=y;const p=t(h-M);return c[m]=t((c[m]??0)+p),c};e.settlement=(o,n,a)=>{const l=t(Math.max(0,o)),m='percentage'===n?l*(Math.max(0,Math.min(100,a))/100):Math.max(0,a),s=t(Math.min(l,m));return{gross:l,commission:s,net:t(l-s)}};const n=e.PAYMENT_METHODS=[{method:'knet',labelKey:'payKnet',emoji:'\ud83d\udcb3',online:!0},{method:'apple_pay',labelKey:'payApplePay',emoji:'',online:!0},{method:'google_pay',labelKey:'payGooglePay',emoji:'G',online:!0},{method:'visa',labelKey:'payVisa',emoji:'\ud83d\udcb3',online:!0},{method:'mastercard',labelKey:'payMastercard',emoji:'\ud83d\udcb3',online:!0},{method:'wallet',labelKey:'payWallet',emoji:'\ud83d\udc5b',online:!0},{method:'cash',labelKey:'payCash',emoji:'\ud83d\udcb5',online:!1}];e.isOnlineMethod=t=>n.find(o=>o.method===t)?.online??!1},668,[]);
 __d(function(g,r,i,_a,_m,_e,_d){Object.defineProperty(_e,"__esModule",{value:!0}),_e.withinOperatingHours=_e.windowsOverlap=_e.minutesOfDay=_e.generateSlots=_e.freeCancellationAllowed=_e.fmtHHMM=void 0;const t=t=>new Date(t).getTime(),e=(e,n)=>t(e.starts_at)<t(n.ends_at)&&t(n.starts_at)<t(e.ends_at);_e.windowsOverlap=e;const n=t=>{const e=new Date(t);return 60*e.getHours()+e.getMinutes()};_e.minutesOfDay=n;_e.withinOperatingHours=(t,e,a,o)=>{const s=n(t),l=new Date(e),u=60*l.getHours()+l.getMinutes(),w=0===u?1440:u;return new Date(t).toDateString()===new Date(e).toDateString()&&s>=a&&w<=o&&s<w};_e.generateSlots=(t,n,a,o,s,l)=>{const u=[],w=Date.now();for(let c=n;c+o<=a;c+=s){const n=new Date(t);n.setHours(0,c,0,0);const a=new Date(n.getTime()+6e4*o);if(n.getTime()<w)continue;const s={starts_at:n.toISOString(),ends_at:a.toISOString()},d=!l.some(t=>e(s,t));u.push(Object.assign({},s,{available:d}))}return u};_e.freeCancellationAllowed=(e,n,a=Date.now())=>t(e)-a>=36e5*n;_e.fmtHHMM=t=>{const e=Math.floor(t/60),n=t%60;return`${String(e).padStart(2,'0')}:${String(n).padStart(2,'0')}`}},669,[]);
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.refundDeadlineMs=e.refundDeadlineIso=e.msUntilRefundDeadline=e.isRefundEligible=e.SEAT_REFUND_CUTOFF_MS=e.SEAT_REFUND_CUTOFF_HOURS=void 0;const n=e.SEAT_REFUND_CUTOFF_HOURS=2,_=e.SEAT_REFUND_CUTOFF_MS=36e5*n,l=n=>new Date(n).getTime()-_;e.refundDeadlineMs=l;e.refundDeadlineIso=n=>new Date(l(n)).toISOString();e.isRefundEligible=(n,_)=>_<=l(n);e.msUntilRefundDeadline=(n,_)=>l(n)-_},670,[]);
-__d(function(_g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.fetchCrossPartitionGrants=e.fetchCourts=e.fetchCourtAvailability=e.fetchConversations=e.fetchConductAdminStats=e.fetchConciergeStats=e.fetchConciergeRules=e.fetchConciergeReplacements=e.fetchConciergePlan=e.fetchConciergeNotificationPlan=e.fetchCompatAdminStats=e.fetchComments=e.fetchCoCStatus=e.fetchClubDashboard=e.fetchClipSignedUrl=e.fetchClanBattles=e.fetchClanBattle=e.fetchChatMessages=e.fetchBookingPayments=e.fetchBookingCheckins=e.fetchBooking=e.fetchBlockedList=e.fetchBattleResult=e.fetchBIDashboard=e.fetchAwardSeasons=e.fetchAwardLeaderboard=e.fetchAwardFraudSignals=e.fetchAwardBallot=e.fetchAuthorStories=e.fetchApplicationDetail=e.fetchAllTeamsAdmin=e.fetchAllRewardsAdmin=e.fetchAdminPlayerIntel=e.fetchAdminFinancials=e.fetchAdminCompatibility=e.exportUserData=e.exportBIReport=e.ensureChatSeed=e.endSeries=e.editFutureOccurrences=e.discardMatchDraft=e.deleteTeamChat=e.deleteSavedGroup=e.deleteDirectMessage=e.deleteAccount=e.declineReplacement=e.declineMessageRequest=e.decideJoinRequest=e.deactivateNeedPlayer=e.createWalletRequest=e.createTeam=e.createStory=e.createSeries=e.createPost=e.createPaymentPlan=e.createMatch=e.createGroupBooking=e.createCustomAward=e.createClub=e.createBooking=e.counterBattleResult=e.confirmSquadSpot=e.confirmLeagueSquad=e.conciergeAutoInvite=e.cocVersion=e.closeSquadWindowEarly=e.closeRegistration=e.claimVenuePayout=e.claimLineupSlot=e.checkoutJoin=e.checkUsername=e.changeMemberRole=e.castMvpVote=e.castAwardVote=e.cancelSeries=e.cancelMatch=e.cancelGroupMember=e.cancelCourtBooking=e.cancelBooking=e.blockUser=e.blockCourtTime=e.autoBalanceLineup=e.auditSeatConsistency=e.auditReplacementLeak=e.assignLineupSlot=e.approveParticipant=e.applyVenue=e.adminSuspendTeam=e.adminRemoveAchievement=e.adminGrantCredit=e.adminFindPlayers=e.adminCorrectAudience=e.adminAdjustRating=e.addVenueStaff=e.addComment=e.activateNeedPlayer=e.acceptReplacement=e.acceptMessageRequest=e.acceptCoC=e.acceptClubInvitation=void 0,e.fetchTeam=e.fetchSuggestedFollows=e.fetchStoryTray=e.fetchSquadState=e.fetchSmartSchedule=e.fetchSmartDefaults=e.fetchSkillFit=e.fetchSkillEvalTargets=e.fetchSkillAdminStats=e.fetchSeriesAnalytics=e.fetchSeries=e.fetchSeatRefundQuote=e.fetchRewards=e.fetchReviews=e.fetchReplacementState=e.fetchReplacementOffer=e.fetchReplacementMetrics=e.fetchReplacementAdminStats=e.fetchRecommendedGames=e.fetchRecentBattleResults=e.fetchProfile=e.fetchPrivacySettings=e.fetchPrivacy=e.fetchPlayerProfile=e.fetchPlayerAwards=e.fetchPendingVenues=e.fetchPendingCeremony=e.fetchPayment=e.fetchPassportPrivacy=e.fetchPassport=e.fetchOrganizerTrustScore=e.fetchOrganizerStats=e.fetchOrganizerSeries=e.fetchOrganizerReputation=e.fetchOrganizerReferralStats=e.fetchOrganizerRatings=e.fetchOrganizerMatches=e.fetchOrganizerMatchScreen=e.fetchOrganizerBookings=e.fetchOrganizerApplications=e.fetchOptimizerWeights=e.fetchOptimizerDashboard=e.fetchNpnCandidates=e.fetchNpnAdminStats=e.fetchNotifications=e.fetchNeedPlayerFeed=e.fetchMyVenues=e.fetchMyTeams=e.fetchMySkillSummary=e.fetchMySeatPayment=e.fetchMyReplacementOffers=e.fetchMyRedemptions=e.fetchMyPosition=e.fetchMyPaymentRequests=e.fetchMyPartitionStance=e.fetchMyOrganizerApplication=e.fetchMyCourtBookings=e.fetchMyCancellations=e.fetchMyBookings=e.fetchMvpPanel=e.fetchMediaUpload=e.fetchMediaLibrary=e.fetchMediaDashboard=e.fetchMatchParticipants=e.fetchMatchOptimization=e.fetchMatchInvite=e.fetchMatchFeed=e.fetchMatchDraft=e.fetchMatchAwards=e.fetchMatchActivity=e.fetchLoyaltyRules=e.fetchLoyaltyLedger=e.fetchLoyaltyEarnBreakdown=e.fetchLoyaltyAdminStats=e.fetchLoyaltyAccount=e.fetchLineup=e.fetchLeague=e.fetchJoinSuggestions=e.fetchJoinRequestIntel=e.fetchIncidentQueue=e.fetchHighlightCollections=e.fetchH2HMap=e.fetchGrowthAdminStats=e.fetchGroupConfig=e.fetchGroupBooking=e.fetchGroupAnalytics=e.fetchGameScreen=e.fetchGamePlayers=e.fetchGameGroups=e.fetchGame=e.fetchFunnelStats=e.fetchFollowRequests=e.fetchFollowList=e.fetchFeedAnalytics=e.fetchFeed=e.fetchDiscover=e.fetchDisciplinaryStanding=e.fetchDemandWeights=e.fetchDemandPrediction=e.fetchDemandModelStats=void 0,e.inviteClubMember=e.grantLineupEdit=e.grantCrossPartition=e.followPlayer=e.fetchWallet=e.fetchVenues=e.fetchVenueRevenue=e.fetchVenueBookings=e.fetchVenueBookingDetail=e.fetchVenue=e.fetchUserSanctions=e.fetchUserPosts=e.fetchUpcomingGames=e.fetchUnreadDMCount=e.fetchUnreadCount=e.fetchThread=e.fetchTeams=e.fetchTeamStats=e.fetchTeamRankings=e.fetchTeamMembers=e.fetchTeamInvite=e.fetchTeamEvents=e.fetchTeamChat=e.fetchTeamCalendar=e.fetchTeamBattles=e.fetchTeamAdminStats=e.fetchTeamAchievements=void 0,Object.defineProperty(e,"isAudienceError",{enumerable:!0,get:function(){return o.isAudienceError}}),e.saveLineupTemplate=e.saveFriendGroup=e.rewardCategories=e.revokeCrossPartition=e.revokeAward=e.reviewVenue=e.reviewSanction=e.reviewClubVerification=e.reviewApplication=e.resumeSeries=e.restoreUser=e.respondWalletRequest=e.respondFriendRequest=e.respondFollowRequest=e.respondClanChallenge=e.resolveInviteCode=e.reserveCourt=e.reportPost=e.reportClipCopyright=e.reopenRegistration=e.removeVenueStaff=e.removeTeamMember=e.remediateReplacementLeak=e.rejectParticipant=e.refundPayment=e.redeemReward=e.recordTeamResult=e.recordOptimizerDecision=e.recordLineupSubstitution=e.recordDemandOutcome=e.recordClipView=e.reconcileSeatPayments=e.rateOrganizer=e.randomizeLineup=e.quickCreateMatch=e.publishAwards=e.postTeamChat=e.pinTeamChat=e.paymentMethods=e.payRequest=e.payGroup=e.pauseSeries=e.optOutSquad=e.openSquadWindow=e.openAwardVoting=e.oneTapJoin=e.muteUser=e.markNotificationRead=e.markCeremonySeen=e.markAllNotificationsRead=e.manualReplace=e.loyaltyTiers=e.loyaltyActions=e.logTeamInviteShare=e.logShare=e.logFunnel=e.logFeedSignal=e.listSavedGroups=e.listMyGroups=e.listMyClubs=e.listLineupTemplates=e.listFriends=e.leaveTeam=e.leaveMatch=e.kickPlayer=e.joinTeamByCode=e.joinTeam=e.joinSeries=e.joinMatch=e.joinByCode=e.joinAtPosition=e.issueSanction=void 0,e.walletWithdraw=e.walletTransfer=e.walletAddFunds=e.venueDecideBooking=e.upsertSelfPlayer=e.upsertReward=e.upsertReview=e.upsertCourt=e.uploadMatchVideo=e.updateVenueProfile=e.updateTeam=e.updateProfile=e.updatePrivacy=e.updatePassportPrivacy=e.updateNeedPlayer=e.updateMatch=e.updateConsent=e.unmuteUser=e.unfollowPlayer=e.unblockUser=e.unblockCourtTime=e.touchPresence=e.toggleSavePost=e.toggleLineupLock=e.toggleLike=e.toggleCommentLike=e.syncLoyalty=e.swapLineupSlots=e.submitWalletKyc=e.submitSkillEvaluation=e.submitOrganizerApplication=e.submitMatchScore=e.submitContact=e.submitClubVerification=e.submitBattleResult=e.startConversation=e.startClubSubscription=e.sharePost=e.shareLineupToChat=e.shareClip=e.setVenueCommission=e.setTeamBadge=e.setSelfCategory=e.setSavedPayment=e.setRewardActive=e.setReplacementRadius=e.setReplacementMode=e.setPrivacySettings=e.setPlayerTeam=e.setOptimizerWeights=e.setLineupJersey=e.setLineupFormation=e.setLineupCaptain=e.setEarnRule=e.setDemandWeights=e.setCourtActive=e.setConciergeRules=e.setAttendance=e.sendPaymentReminders=e.sendFriendRequest=e.sendDirectMessage=e.sendClanChallenge=e.sendChatMessage=e.searchUsers=e.searchPlayers=e.searchBookableVenues=e.scheduleTeamEvent=e.scanCheckin=e.saveMatchDraft=void 0;var t=r(d[0]),o=r(d[1]);e.fetchUpcomingGames=o=>t.store.mockGetUpcomingGames(o).then(t=>o?.search?t.filter(t=>`${t.venue.name} ${t.venue.area} ${t.sport}`.toLowerCase().includes(o.search.toLowerCase())):t);e.fetchGame=(o,c)=>t.store.mockGetGame(o,c);e.fetchVenues=()=>t.store.mockGetVenues();e.fetchVenue=o=>t.store.mockGetVenue(o);e.fetchReviews=o=>t.store.mockGetReviews(o);e.upsertReview=o=>t.store.mockUpsertReview(o);e.fetchMyBookings=o=>t.store.mockGetMyBookings(o);e.createBooking=(o,c)=>t.store.mockCreateBooking(o,c);e.cancelBooking=(o,c)=>t.store.mockCancelBooking(o,c);e.fetchProfile=o=>t.store.mockGetProfile(o);e.updateProfile=(o,c)=>t.store.mockUpdateProfile(o,c);e.fetchNotifications=o=>t.store.mockGetNotifications(o);e.fetchUnreadCount=o=>t.store.mockGetUnreadCount(o);e.markNotificationRead=(o,c)=>t.store.mockMarkNotificationRead(o,c);e.markAllNotificationsRead=o=>t.store.mockMarkAllNotificationsRead(o);e.fetchGamePlayers=(o,c)=>t.store.mockGetGamePlayers(o,c);e.setPlayerTeam=(o,c,s)=>t.store.mockSetPlayerTeam(o,c,s);e.upsertSelfPlayer=o=>t.store.mockUpsertSelfPlayer(o);e.ensureChatSeed=o=>t.store.mockEnsureChatSeed(o);e.fetchChatMessages=(o,c,s)=>t.store.mockGetChatMessages(o,c,s);e.sendChatMessage=o=>t.store.mockSendChatMessage(o);e.submitContact=o=>t.store.mockSubmitContact(o);e.updateConsent=(o,c)=>t.store.mockUpdateConsent(o,c);e.exportUserData=o=>t.store.mockExportUserData(o);e.deleteAccount=o=>t.store.mockDeleteAccount(o);e.joinMatch=(o,c)=>t.store.mockJoinMatch(o,c);e.checkoutJoin=(o,c,s)=>t.store.mockCheckoutJoin(o,c,s);e.fetchMySeatPayment=(o,c)=>t.store.mockGetMySeatPayment(o,c);e.leaveMatch=(o,c)=>t.store.mockLeaveMatch(o,c);e.createMatch=(o,c)=>t.store.mockCreateMatch(o,c);e.updateMatch=(o,c,s)=>t.store.mockUpdateMatch(o,c,s);e.cancelMatch=(o,c,s)=>t.store.mockCancelMatch(o,c,s);e.approveParticipant=(o,c,s)=>t.store.mockApproveParticipant(o,c,s);e.rejectParticipant=(o,c,s)=>t.store.mockRejectParticipant(o,c,s);e.setAttendance=(o,c,s,n)=>t.store.mockSetAttendance(o,c,s,n);e.fetchSmartDefaults=(o,c,s)=>t.store.mockGetSmartDefaults(o,c,s);e.quickCreateMatch=(o,c)=>t.store.mockQuickCreateMatch(o,c);e.kickPlayer=(o,c,s,n)=>t.store.mockKickPlayer(o,c,s,n);e.closeRegistration=(o,c)=>t.store.mockCloseRegistration(o,c);e.reopenRegistration=(o,c)=>t.store.mockReopenRegistration(o,c);e.submitMatchScore=(o,c,s,n)=>t.store.mockSubmitMatchScore(o,c,s,n);e.fetchMatchActivity=(o,c)=>t.store.mockGetMatchActivity(o,c);e.fetchSeatRefundQuote=(o,c)=>t.store.mockGetSeatRefundQuote(o,c);e.fetchMyCancellations=o=>t.store.mockGetMyCancellations(o);e.openSquadWindow=(o,c,s)=>t.store.mockOpenSquadWindow(o,c,s);e.closeSquadWindowEarly=(o,c)=>t.store.mockCloseSquadWindowEarly(o,c);e.confirmSquadSpot=(o,c)=>t.store.mockConfirmSquadSpot(o,c);e.optOutSquad=(o,c)=>t.store.mockOptOutSquad(o,c);e.fetchSquadState=(o,c)=>t.store.mockGetSquadState(o,c);e.fetchOrganizerMatches=o=>t.store.mockGetOrganizerMatches(o);e.reconcileSeatPayments=()=>t.store.mockReconcileSeatPayments();e.auditSeatConsistency=()=>t.store.mockAuditSeatConsistency();e.fetchMatchParticipants=o=>t.store.mockGetMatchParticipants(o);e.fetchOrganizerStats=o=>t.store.mockGetOrganizerStats(o);e.fetchOrganizerReputation=o=>t.store.mockGetOrganizerReputation(o);e.fetchOrganizerRatings=o=>t.store.mockGetOrganizerRatings(o);e.rateOrganizer=o=>t.store.mockRateOrganizer(o);e.fetchMyOrganizerApplication=o=>t.store.mockGetMyOrganizerApplication(o);e.submitOrganizerApplication=(o,c)=>t.store.mockSubmitOrganizerApplication(o,c);e.fetchOrganizerTrustScore=o=>t.store.mockGetOrganizerTrustScore(o);e.fetchOrganizerApplications=(o,c)=>t.store.mockGetOrganizerApplications(o,c);e.fetchApplicationDetail=(o,c)=>t.store.mockGetApplicationDetail(o,c);e.reviewApplication=(o,c,s,n)=>t.store.mockReviewApplication(o,c,s,n);e.fetchMySkillSummary=o=>t.store.mockGetMySkillSummary(o);e.setSelfCategory=(o,c,s)=>t.store.mockSetSelfCategory(o,c,s);e.fetchJoinRequestIntel=(o,c)=>t.store.mockGetJoinRequestIntel(o,c);e.fetchAdminPlayerIntel=o=>t.store.mockAdminGetPlayerIntel(o);e.adminAdjustRating=(o,c,s,n,l)=>t.store.mockAdminAdjustRating(o,c,s,n,l);e.adminFindPlayers=(o,c)=>t.store.mockAdminFindPlayers(o,c);e.adminCorrectAudience=(o,c,s,n)=>t.store.mockAdminCorrectAudience(o,c,s,n);e.fetchMyCourtBookings=o=>t.store.mockGetMyCourtBookings(o);e.saveMatchDraft=(o,c)=>t.store.mockSaveMatchDraft(o,c);e.fetchMatchDraft=o=>t.store.mockGetMatchDraft(o);e.discardMatchDraft=o=>t.store.mockDiscardMatchDraft(o);e.fetchMvpPanel=(o,c)=>t.store.mockGetMvpPanel(o,c);e.castMvpVote=(o,c,s)=>t.store.mockCastAwardVote(o,c,'mvp',s);e.submitSkillEvaluation=(o,c)=>t.store.mockSubmitSkillEvaluation(o,c);e.fetchSkillEvalTargets=(o,c)=>t.store.mockGetSkillEvalTargets(o,c);e.fetchSkillFit=(o,c)=>t.store.mockGetSkillFit(o,c);e.fetchRecommendedGames=o=>t.store.mockGetRecommendedGames(o);e.fetchSkillAdminStats=o=>t.store.mockGetSkillAdminStats(o);e.createSeries=(o,c)=>t.store.mockCreateSeries(o,c);e.editFutureOccurrences=(o,c,s)=>t.store.mockEditFutureOccurrences(o,c,s);e.pauseSeries=(o,c)=>t.store.mockPauseSeries(o,c);e.resumeSeries=(o,c,s)=>t.store.mockResumeSeries(o,c,s);e.endSeries=(o,c)=>t.store.mockEndSeries(o,c);e.cancelSeries=(o,c,s)=>t.store.mockCancelSeries(o,c,s);e.joinSeries=(o,c)=>t.store.mockJoinSeries(o,c);e.fetchOrganizerSeries=o=>t.store.mockGetOrganizerSeries(o);e.fetchSeries=(o,c)=>t.store.mockGetSeries(o,c);e.fetchSeriesAnalytics=o=>t.store.mockGetSeriesAnalytics(o);e.activateNeedPlayer=(o,c,s)=>t.store.mockActivateNeedPlayer(o,c,s);e.updateNeedPlayer=(o,c,s)=>t.store.mockUpdateNeedPlayer(o,c,s);e.deactivateNeedPlayer=(o,c)=>t.store.mockDeactivateNeedPlayer(o,c);e.fetchNeedPlayerFeed=o=>t.store.mockGetNeedPlayerFeed(o);e.fetchNpnCandidates=(o,c,s)=>t.store.mockGetNpnCandidates(o,c,s);e.fetchNpnAdminStats=o=>t.store.mockGetNpnAdminStats(o);e.fetchCompatAdminStats=o=>t.store.mockGetCompatAdminStats(o);e.grantCrossPartition=(o,c,s)=>t.store.mockGrantCrossPartition(o,c,s);e.revokeCrossPartition=(o,c)=>t.store.mockRevokeCrossPartition(o,c);e.fetchCrossPartitionGrants=o=>t.store.mockGetCrossPartitionGrants(o);e.fetchMyPartitionStance=o=>t.store.mockGetMyPartitionStance(o);e.auditReplacementLeak=o=>t.store.mockAuditReplacementLeak(o);e.remediateReplacementLeak=(o,c,s)=>t.store.mockRemediateReplacementLeak(o,c,s);e.fetchAdminCompatibility=(o,c,s)=>t.store.mockAdminGetCompatibility(o,c,s);e.fetchPassport=(o,c)=>t.store.mockGetPassport(o,c);e.fetchPassportPrivacy=o=>t.store.mockGetPassportPrivacy(o);e.updatePassportPrivacy=(o,c)=>t.store.mockUpdatePassportPrivacy(o,c);e.adminRemoveAchievement=(o,c,s)=>t.store.mockAdminRemoveAchievement(o,c,s);e.fetchMatchInvite=o=>t.store.mockGetMatchInvite(o);e.resolveInviteCode=(o,c)=>t.store.mockResolveInviteCode(o,c);e.logShare=(o,c,s)=>t.store.mockLogShare(o,c,s);e.joinByCode=(o,c)=>t.store.mockJoinByCode(o,c);e.fetchOrganizerReferralStats=o=>t.store.mockGetOrganizerReferralStats(o);e.fetchGrowthAdminStats=o=>t.store.mockGetGrowthAdminStats(o);e.searchBookableVenues=o=>t.store.mockSearchBookableVenues(o);e.fetchVenueBookingDetail=o=>t.store.mockGetVenueBookingDetail(o);e.applyVenue=(o,c)=>t.store.mockApplyVenue(o,c);e.fetchMyVenues=o=>t.store.mockGetMyVenues(o);e.updateVenueProfile=(o,c,s)=>t.store.mockUpdateVenueProfile(o,c,s);e.addVenueStaff=(o,c,s,n)=>t.store.mockAddVenueStaff(o,c,s,n);e.removeVenueStaff=(o,c,s)=>t.store.mockRemoveVenueStaff(o,c,s);e.fetchPendingVenues=o=>t.store.mockGetPendingVenues(o);e.reviewVenue=(o,c,s,n)=>t.store.mockAdminReviewVenue(o,c,s,n);e.setVenueCommission=(o,c,s,n)=>t.store.mockAdminSetCommission(o,c,s,n);e.fetchAdminFinancials=o=>t.store.mockGetAdminFinancials(o);e.fetchCourts=(o,c)=>t.store.mockGetCourts(o,c);e.upsertCourt=(o,c,s)=>t.store.mockUpsertCourt(o,c,s);e.setCourtActive=(o,c,s)=>t.store.mockSetCourtActive(o,c,s);e.blockCourtTime=(o,c,s,n,l)=>t.store.mockBlockCourtTime(o,c,s,n,l);e.unblockCourtTime=(o,c)=>t.store.mockUnblockCourtTime(o,c);e.fetchCourtAvailability=(o,c,s)=>t.store.mockGetCourtAvailability(o,c,s);e.reserveCourt=(o,c,s,n,l)=>t.store.mockReserveCourt(o,c,s,n,l);e.venueDecideBooking=(o,c,s)=>t.store.mockVenueDecideBooking(o,c,s);e.cancelCourtBooking=(o,c,s)=>t.store.mockCancelCourtBooking(o,c,s);e.fetchOrganizerBookings=o=>t.store.mockGetOrganizerBookings(o);e.fetchVenueBookings=(o,c)=>t.store.mockGetVenueBookings(o,c);e.fetchBooking=(o,c)=>t.store.mockGetBooking(o,c);e.createPaymentPlan=(o,c,s,n)=>t.store.mockCreatePaymentPlan(o,c,s,n);e.fetchBookingPayments=(o,c)=>t.store.mockGetBookingPayments(o,c);e.fetchMyPaymentRequests=o=>t.store.mockGetMyPaymentRequests(o);e.fetchPayment=(o,c)=>t.store.mockGetPayment(o,c);e.payRequest=(o,c,s)=>t.store.mockPayRequest(o,c,s);e.refundPayment=(o,c)=>t.store.mockRefundPayment(o,c);e.sendPaymentReminders=(o,c)=>t.store.mockSendPaymentReminders(o,c);e.paymentMethods=()=>t.store.mockGetPaymentMethods();e.fetchBookingCheckins=(o,c)=>t.store.mockGetBookingCheckins(o,c);e.scanCheckin=(o,c,s,n)=>t.store.mockScanCheckin(o,c,s,n);e.fetchVenueRevenue=(o,c)=>t.store.mockGetVenueRevenue(o,c);e.createTeam=(o,c)=>t.store.mockCreateTeam(o,c);e.fetchTeams=(o,c)=>t.store.mockGetTeams(o,c);e.fetchMyTeams=o=>t.store.mockGetMyTeams(o);e.fetchTeam=(o,c)=>t.store.mockGetTeam(o,c);e.updateTeam=(o,c,s)=>t.store.mockUpdateTeam(o,c,s);e.fetchTeamMembers=(o,c)=>t.store.mockGetTeamMembers(o,c);e.joinTeam=(o,c)=>t.store.mockJoinTeam(o,c);e.joinTeamByCode=(o,c)=>t.store.mockJoinTeamByCode(o,c);e.setTeamBadge=(o,c,s)=>t.store.mockSetTeamBadge(o,c,s);e.fetchBattleResult=(o,c)=>t.store.mockGetBattleResult(o,c);e.submitBattleResult=(o,c,s,n)=>t.store.mockSubmitBattleResult(o,c,s,n);e.counterBattleResult=(o,c,s,n)=>t.store.mockCounterBattleResult(o,c,s,n);e.fetchPendingCeremony=o=>t.store.mockGetPendingCeremony(o);e.markCeremonySeen=(o,c)=>t.store.mockMarkCeremonySeen(o,c);e.fetchH2HMap=(o,c)=>t.store.mockGetH2HMap(o,c);e.decideJoinRequest=(o,c,s,n)=>t.store.mockDecideJoinRequest(o,c,s,n);e.leaveTeam=(o,c)=>t.store.mockLeaveTeam(o,c);e.removeTeamMember=(o,c,s)=>t.store.mockRemoveMember(o,c,s);e.changeMemberRole=(o,c,s,n)=>t.store.mockChangeMemberRole(o,c,s,n);e.fetchTeamStats=o=>t.store.mockGetTeamStats(o);e.fetchTeamAchievements=(o,c)=>t.store.mockGetTeamAchievements(o,c);e.scheduleTeamEvent=(o,c,s)=>t.store.mockScheduleTeamEvent(o,c,s);e.recordTeamResult=(o,c,s,n,l,h,k)=>t.store.mockRecordTeamResult(o,c,s,n,l,h,k);e.fetchTeamEvents=(o,c)=>t.store.mockGetTeamEvents(o,c);e.fetchTeamCalendar=(o,c)=>t.store.mockGetTeamCalendar(o,c);e.fetchTeamChat=(o,c)=>t.store.mockGetTeamChat(o,c);e.postTeamChat=(o,c,s,n,l)=>t.store.mockPostTeamChat(o,c,s,n,l);e.pinTeamChat=(o,c,s,n)=>t.store.mockPinTeamChat(o,c,s,n);e.deleteTeamChat=(o,c,s)=>t.store.mockDeleteTeamChat(o,c,s);e.fetchTeamRankings=(o,c)=>t.store.mockGetTeamRankings(o??{},c);e.fetchPrivacy=o=>t.store.mockGetPrivacy(o);e.updatePrivacy=(o,c)=>t.store.mockUpdatePrivacy(o,c);e.fetchClanBattles=o=>t.store.mockGetClanBattles(o);e.fetchClanBattle=(o,c)=>t.store.mockGetClanBattle(o,c);e.fetchTeamBattles=(o,c,s)=>t.store.mockGetTeamBattles(o,c,s);e.fetchRecentBattleResults=(o,c)=>t.store.mockGetRecentBattleResults(o,c);e.sendClanChallenge=(o,c,s,n,l)=>t.store.mockSendClanChallenge(o,c,s,n,l);e.respondClanChallenge=(o,c,s)=>t.store.mockRespondClanChallenge(o,c,s);e.fetchLeague=o=>t.store.mockGetLeague(o);e.confirmLeagueSquad=(o,c)=>t.store.mockConfirmLeagueSquad(o,c);e.fetchTeamInvite=o=>t.store.mockGetTeamInvite(o);e.logTeamInviteShare=(o,c,s)=>t.store.mockLogTeamInviteShare(o,c,s);e.adminSuspendTeam=(o,c,s,n)=>t.store.mockAdminSuspendTeam(o,c,s,n);e.fetchTeamAdminStats=o=>t.store.mockGetTeamAdminStats(o);e.fetchAllTeamsAdmin=o=>t.store.mockGetAllTeamsAdmin(o);e.fetchBIDashboard=(o,c)=>t.store.mockGetBIDashboard(o,c);e.exportBIReport=(o,c,s)=>t.store.mockExportBIReport(o,c,s);e.syncLoyalty=o=>t.store.mockSyncLoyalty(o);e.fetchLoyaltyAccount=o=>t.store.mockGetLoyaltyAccount(o);e.fetchLoyaltyLedger=o=>t.store.mockGetLoyaltyLedger(o);e.fetchLoyaltyEarnBreakdown=o=>t.store.mockGetLoyaltyEarnBreakdown(o);e.fetchRewards=o=>t.store.mockGetRewards(o);e.redeemReward=(o,c)=>t.store.mockRedeemReward(o,c);e.fetchMyRedemptions=o=>t.store.mockGetMyRedemptions(o);e.loyaltyTiers=()=>t.store.mockGetLoyaltyTiers();e.loyaltyActions=()=>t.store.mockGetLoyaltyActions();e.rewardCategories=()=>t.store.mockGetRewardCategories();e.fetchLoyaltyRules=o=>t.store.mockGetLoyaltyRules(o);e.setEarnRule=(o,c,s)=>t.store.mockSetEarnRule(o,c,s);e.upsertReward=(o,c)=>t.store.mockUpsertReward(o,c);e.setRewardActive=(o,c,s)=>t.store.mockSetRewardActive(o,c,s);e.fetchAllRewardsAdmin=o=>t.store.mockGetAllRewardsAdmin(o);e.fetchLoyaltyAdminStats=o=>t.store.mockGetLoyaltyAdminStats(o);e.fetchSmartSchedule=(o,c)=>t.store.mockGetSmartSchedule(o,c);e.fetchDemandPrediction=(o,c)=>t.store.mockGetDemandPrediction(o,c);e.recordDemandOutcome=(o,c,s,n)=>t.store.mockRecordDemandOutcome(o,c,s,n);e.fetchDemandWeights=o=>t.store.mockGetDemandWeights(o);e.setDemandWeights=(o,c)=>t.store.mockSetDemandWeights(o,c);e.fetchDemandModelStats=o=>t.store.mockGetDemandModelStats(o);e.fetchMatchOptimization=(o,c)=>t.store.mockGetMatchOptimization(o,c);e.recordOptimizerDecision=(o,c,s,n,l)=>t.store.mockRecordOptimizerDecision(o,c,s,n,l);e.fetchOptimizerWeights=o=>t.store.mockGetOptimizerWeights(o);e.setOptimizerWeights=(o,c)=>t.store.mockSetOptimizerWeights(o,c);e.fetchOptimizerDashboard=o=>t.store.mockGetOptimizerDashboard(o);e.createClub=(o,c)=>t.store.mockCreateClub(o,c);e.listMyClubs=o=>t.store.mockListMyClubs(o);e.fetchClubDashboard=(o,c)=>t.store.mockGetClubDashboard(o,c);e.submitClubVerification=(o,c)=>t.store.mockSubmitClubVerification(o,c);e.reviewClubVerification=(o,c,s)=>t.store.mockReviewClubVerification(o,c,s);e.inviteClubMember=(o,c,s)=>t.store.mockInviteClubMember(o,c,s);e.acceptClubInvitation=(o,c)=>t.store.mockAcceptClubInvitation(o,c);e.startClubSubscription=(o,c,s,n)=>t.store.mockStartClubSubscription(o,c,s,n);e.uploadMatchVideo=(o,c)=>t.store.mockUploadMatchVideo(o,c);e.fetchMediaLibrary=o=>t.store.mockGetMediaLibrary(o);e.fetchMediaUpload=(o,c)=>t.store.mockGetMediaUpload(o,c);e.recordClipView=o=>t.store.mockRecordClipView(o);e.shareClip=(o,c,s)=>t.store.mockShareClip(o,c,s);e.fetchClipSignedUrl=(o,c)=>t.store.mockGetClipSignedUrl(o,c);e.reportClipCopyright=(o,c,s)=>t.store.mockReportClipCopyright(o,c,s);e.fetchMediaDashboard=o=>t.store.mockGetMediaDashboard(o);e.searchUsers=(o,c)=>t.store.mockSearchUsers(o,c);e.sendFriendRequest=(o,c)=>t.store.mockSendFriendRequest(o,c);e.respondFriendRequest=(o,c,s)=>t.store.mockRespondFriendRequest(o,c,s);e.listFriends=o=>t.store.mockListFriends(o);e.fetchGroupConfig=(o,c)=>t.store.mockGetGroupConfig(o,c);e.createGroupBooking=(o,c,s)=>t.store.mockCreateGroupBooking(o,c,s);e.fetchGroupBooking=(o,c)=>t.store.mockGetGroupBooking(o,c);e.listMyGroups=o=>t.store.mockListMyGroups(o);e.payGroup=(o,c,s="wallet")=>t.store.mockPayGroup(o,c,s);e.cancelGroupMember=(o,c,s)=>t.store.mockCancelGroupMember(o,c,s);e.fetchGroupAnalytics=o=>t.store.mockGetGroupAnalytics(o);e.fetchGameGroups=(o,c)=>t.store.mockGetGameGroups(o,c);e.saveFriendGroup=(o,c,s)=>t.store.mockSaveFriendGroup(o,c,s);e.listSavedGroups=o=>t.store.mockListSavedGroups(o);e.deleteSavedGroup=(o,c)=>t.store.mockDeleteSavedGroup(o,c);e.setSavedPayment=(o,c)=>t.store.mockSetSavedPayment(o,c);e.fetchJoinSuggestions=(o,c)=>t.store.mockGetJoinSuggestions(o,c);e.oneTapJoin=(o,c)=>t.store.mockOneTapJoin(o,c);e.followPlayer=(o,c)=>t.store.mockFollow(o,c);e.unfollowPlayer=(o,c)=>t.store.mockUnfollow(o,c);e.checkUsername=(o,c)=>t.store.mockCheckUsername(o,c);e.respondFollowRequest=(o,c,s)=>t.store.mockRespondFollowRequest(o,c,s);e.fetchFollowRequests=o=>t.store.mockGetFollowRequests(o);e.fetchFollowList=(o,c,s)=>t.store.mockGetFollowList(o,c,s);e.fetchSuggestedFollows=o=>t.store.mockGetSuggestedFollows(o);e.fetchPlayerProfile=(o,c)=>t.store.mockGetPlayerProfile(o,c);e.createPost=(o,c)=>t.store.mockCreatePost(o,c);e.fetchFeed=o=>t.store.mockGetFeed(o);e.fetchUserPosts=(o,c)=>t.store.mockGetUserPosts(o,c);e.toggleLike=(o,c)=>t.store.mockToggleLike(o,c);e.toggleSavePost=(o,c)=>t.store.mockToggleSave(o,c);e.sharePost=(o,c)=>t.store.mockSharePost(o,c);e.addComment=(o,c,s)=>t.store.mockAddComment(o,c,s);e.fetchComments=(o,c)=>t.store.mockGetComments(o,c);e.toggleCommentLike=(o,c)=>t.store.mockToggleCommentLike(o,c);e.reportPost=(o,c,s)=>t.store.mockReportPost(o,c,s);e.fetchHighlightCollections=o=>t.store.mockGetHighlightCollections(o);e.startConversation=(o,c)=>t.store.mockStartConversation(o,c);e.fetchConversations=o=>t.store.mockGetConversations(o);e.fetchUnreadDMCount=o=>t.store.mockGetUnreadDMCount(o);e.fetchThread=(o,c)=>t.store.mockGetThread(o,c);e.sendDirectMessage=(o,c,s)=>t.store.mockSendDirectMessage(o,c,s);e.acceptMessageRequest=(o,c)=>t.store.mockAcceptMessageRequest(o,c);e.declineMessageRequest=(o,c)=>t.store.mockDeclineMessageRequest(o,c);e.deleteDirectMessage=(o,c)=>t.store.mockDeleteDirectMessage(o,c);e.searchPlayers=(o,c)=>t.store.mockSearchPlayers(o,c);e.blockUser=(o,c)=>t.store.mockBlockUser(o,c);e.unblockUser=(o,c)=>t.store.mockUnblockUser(o,c);e.muteUser=(o,c)=>t.store.mockMuteUser(o,c);e.unmuteUser=(o,c)=>t.store.mockUnmuteUser(o,c);e.fetchBlockedList=o=>t.store.mockGetBlockedList(o);e.fetchPrivacySettings=o=>t.store.mockGetPrivacySettings(o);e.setPrivacySettings=(o,c)=>t.store.mockSetPrivacySettings(o,c);e.touchPresence=o=>t.store.mockTouchPresence(o);e.createStory=(o,c)=>t.store.mockCreateStory(o,c);e.fetchStoryTray=o=>t.store.mockGetStoryTray(o);e.fetchAuthorStories=(o,c)=>t.store.mockGetAuthorStories(o,c);e.fetchAwardBallot=(o,c)=>t.store.mockGetAwardBallot(o,c);e.castAwardVote=(o,c,s,n)=>t.store.mockCastAwardVote(o,c,s,n);e.openAwardVoting=(o,c)=>t.store.mockOpenAwardVoting(o,c);e.publishAwards=(o,c)=>t.store.mockPublishAwards(o,c);e.createCustomAward=(o,c)=>t.store.mockCreateCustomAward(o,c);e.fetchMatchAwards=o=>t.store.mockGetMatchAwards(o);e.fetchPlayerAwards=o=>t.store.mockGetPlayerAwards(o);e.fetchAwardLeaderboard=o=>t.store.mockGetAwardLeaderboard(o);e.fetchAwardSeasons=()=>t.store.mockGetAwardSeasons();e.revokeAward=(o,c)=>t.store.mockRevokeAward(o,c);e.fetchAwardFraudSignals=o=>t.store.mockGetAwardFraudSignals(o);e.fetchMatchFeed=o=>t.store.mockGetMatchFeed(o);e.fetchDiscover=o=>t.store.mockGetDiscover(o);e.logFeedSignal=(o,c,s)=>t.store.mockLogFeedSignal(o,c,s);e.logFunnel=(o,c)=>t.store.mockLogFunnel(o,c).catch(()=>{});e.fetchFunnelStats=o=>t.store.mockGetFunnelStats(o);e.fetchFeedAnalytics=o=>t.store.mockGetFeedAnalytics(o);e.fetchWallet=(o,c)=>t.store.mockGetWallet(o,c);e.walletAddFunds=(o,c,s)=>t.store.mockWalletAddFunds(o,c,s);e.walletWithdraw=(o,c)=>t.store.mockWalletWithdraw(o,c);e.submitWalletKyc=(o,c,s)=>t.store.mockSubmitWalletKyc(o,c,s);e.walletTransfer=(o,c,s,n)=>t.store.mockWalletTransfer(o,c,s,n);e.createWalletRequest=(o,c,s,n)=>t.store.mockCreateWalletRequest(o,c,s,n);e.respondWalletRequest=(o,c,s)=>t.store.mockRespondWalletRequest(o,c,s);e.adminGrantCredit=(o,c,s,n,l)=>t.store.mockAdminGrantCredit(o,c,s,n,l);e.claimVenuePayout=o=>t.store.mockClaimVenuePayout(o);e.fetchLineup=(o,c)=>t.store.mockGetLineup(o,c);e.fetchMyPosition=o=>t.store.mockGetMyPosition(o);e.setLineupFormation=(o,c,s,n)=>t.store.mockSetLineupFormation(o,c,s,n);e.assignLineupSlot=(o,c,s,n,l)=>t.store.mockAssignLineupSlot(o,c,s,n,l);e.claimLineupSlot=(o,c,s,n)=>t.store.mockClaimLineupSlot(o,c,s,n);e.joinAtPosition=(o,c,s,n)=>t.store.mockJoinAtPosition(o,c,s,n);e.swapLineupSlots=(o,c,s,n,l)=>t.store.mockSwapLineupSlots(o,c,s,n,l);e.setLineupCaptain=(o,c,s,n)=>t.store.mockSetLineupCaptain(o,c,s,n);e.setLineupJersey=(o,c,s,n,l)=>t.store.mockSetLineupJersey(o,c,s,n,l);e.toggleLineupLock=(o,c)=>t.store.mockToggleLineupLock(o,c);e.grantLineupEdit=(o,c,s,n)=>t.store.mockGrantLineupEdit(o,c,s,n);e.randomizeLineup=(o,c)=>t.store.mockRandomizeLineup(o,c);e.autoBalanceLineup=(o,c)=>t.store.mockAutoBalanceLineup(o,c);e.recordLineupSubstitution=(o,c,s,n,l)=>t.store.mockRecordLineupSubstitution(o,c,s,n,l);e.shareLineupToChat=(o,c,s)=>t.store.mockShareLineupToChat(o,c,s);e.saveLineupTemplate=(o,c,s)=>t.store.mockSaveLineupTemplate(o,c,s);e.listLineupTemplates=o=>t.store.mockListLineupTemplates(o);e.fetchConciergePlan=(o,c)=>t.store.mockGetConciergePlan(o,c);e.conciergeAutoInvite=(o,c,s)=>t.store.mockConciergeAutoInvite(o,c,s);e.fetchConciergeReplacements=(o,c,s)=>t.store.mockGetConciergeReplacements(o,c,s);e.fetchConciergeNotificationPlan=(o,c)=>t.store.mockGetConciergeNotificationPlan(o,c);e.fetchConciergeRules=o=>t.store.mockGetConciergeRules(o);e.setConciergeRules=(o,c)=>t.store.mockSetConciergeRules(o,c);e.fetchConciergeStats=o=>t.store.mockGetConciergeStats(o);e.acceptReplacement=(o,c)=>t.store.mockAcceptReplacement(o,c);e.declineReplacement=(o,c)=>t.store.mockDeclineReplacement(o,c);e.fetchMyReplacementOffers=o=>t.store.mockGetMyReplacementOffers(o);e.fetchReplacementOffer=(o,c)=>t.store.mockGetReplacementOffer(o,c);e.setReplacementMode=(o,c,s)=>t.store.mockSetReplacementMode(o,c,s);e.setReplacementRadius=(o,c,s)=>t.store.mockSetReplacementRadius(o,c,s);e.manualReplace=(o,c,s)=>t.store.mockManualReplace(o,c,s);e.fetchReplacementState=(o,c)=>t.store.mockGetReplacementState(o,c);e.fetchReplacementMetrics=(o,c)=>t.store.mockGetReplacementMetrics(o,c);e.fetchReplacementAdminStats=o=>t.store.mockGetReplacementAdminStats(o);e.fetchCoCStatus=o=>t.store.mockGetCoCStatus(o);e.acceptCoC=o=>t.store.mockAcceptCoC(o);e.cocVersion=()=>t.store.mockGetCoCVersion();e.issueSanction=(o,c,s)=>t.store.mockIssueSanction(o,c,s);e.reviewSanction=(o,c,s,n)=>t.store.mockReviewSanction(o,c,s,n);e.restoreUser=(o,c)=>t.store.mockRestoreUser(o,c);e.fetchUserSanctions=(o,c)=>t.store.mockGetUserSanctions(o,c);e.fetchDisciplinaryStanding=o=>t.store.mockGetDisciplinaryStanding(o);e.fetchIncidentQueue=o=>t.store.mockGetIncidentQueue(o);e.fetchConductAdminStats=o=>t.store.mockGetConductAdminStats(o);e.fetchGameScreen=(o,c)=>t.store.mockGetGameScreen(o,c);e.fetchOrganizerMatchScreen=(o,c)=>t.store.mockGetOrganizerMatchScreen(o,c)},671,[672,631]);
+__d(
+  function (_g, r, i, a, m, e, d) {
+    (Object.defineProperty(e, "__esModule", { value: !0 }),
+      (e.fetchCrossPartitionGrants =
+        e.fetchCourts =
+        e.fetchCourtAvailability =
+        e.fetchConversations =
+        e.fetchConductAdminStats =
+        e.fetchConciergeStats =
+        e.fetchConciergeRules =
+        e.fetchConciergeReplacements =
+        e.fetchConciergePlan =
+        e.fetchConciergeNotificationPlan =
+        e.fetchCompatAdminStats =
+        e.fetchComments =
+        e.fetchCoCStatus =
+        e.fetchClubDashboard =
+        e.fetchClipSignedUrl =
+        e.fetchClanBattles =
+        e.fetchClanBattle =
+        e.fetchChatMessages =
+        e.fetchBookingPayments =
+        e.fetchBookingCheckins =
+        e.fetchBooking =
+        e.fetchBlockedList =
+        e.fetchBattleResult =
+        e.fetchBIDashboard =
+        e.fetchAwardSeasons =
+        e.fetchAwardLeaderboard =
+        e.fetchAwardFraudSignals =
+        e.fetchAwardBallot =
+        e.fetchAuthorStories =
+        e.fetchApplicationDetail =
+        e.fetchAllTeamsAdmin =
+        e.fetchAllRewardsAdmin =
+        e.fetchAdminPlayerIntel =
+        e.fetchAdminFinancials =
+        e.fetchAdminCompatibility =
+        e.exportUserData =
+        e.exportBIReport =
+        e.ensureChatSeed =
+        e.endSeries =
+        e.editFutureOccurrences =
+        e.discardMatchDraft =
+        e.deleteTeamChat =
+        e.deleteSavedGroup =
+        e.deleteDirectMessage =
+        e.deleteAccount =
+        e.declineReplacement =
+        e.declineMessageRequest =
+        e.decideJoinRequest =
+        e.deactivateNeedPlayer =
+        e.createWalletRequest =
+        e.createTeam =
+        e.createStory =
+        e.createSeries =
+        e.createPost =
+        e.createPaymentPlan =
+        e.createMatch =
+        e.createGroupBooking =
+        e.createCustomAward =
+        e.createClub =
+        e.createBooking =
+        e.counterBattleResult =
+        e.confirmSquadSpot =
+        e.confirmLeagueSquad =
+        e.conciergeAutoInvite =
+        e.cocVersion =
+        e.closeSquadWindowEarly =
+        e.closeRegistration =
+        e.claimVenuePayout =
+        e.claimLineupSlot =
+        e.checkoutJoin =
+        e.checkUsername =
+        e.changeMemberRole =
+        e.castMvpVote =
+        e.castAwardVote =
+        e.cancelSeries =
+        e.cancelMatch =
+        e.cancelGroupMember =
+        e.cancelCourtBooking =
+        e.cancelBooking =
+        e.blockUser =
+        e.blockCourtTime =
+        e.autoBalanceLineup =
+        e.auditSeatConsistency =
+        e.auditReplacementLeak =
+        e.assignLineupSlot =
+        e.approveParticipant =
+        e.applyVenue =
+        e.adminSuspendTeam =
+        e.adminRemoveAchievement =
+        e.adminGrantCredit =
+        e.adminFindPlayers =
+        e.adminCorrectAudience =
+        e.adminAdjustRating =
+        e.addVenueStaff =
+        e.addComment =
+        e.activateNeedPlayer =
+        e.acceptReplacement =
+        e.acceptMessageRequest =
+        e.acceptCoC =
+        e.acceptClubInvitation =
+          void 0),
+      (e.fetchTeam =
+        e.fetchSuggestedFollows =
+        e.fetchStoryTray =
+        e.fetchSquadState =
+        e.fetchSmartSchedule =
+        e.fetchSmartDefaults =
+        e.fetchSkillFit =
+        e.fetchSkillEvalTargets =
+        e.fetchSkillAdminStats =
+        e.fetchSeriesAnalytics =
+        e.fetchSeries =
+        e.fetchSeatRefundQuote =
+        e.fetchRewards =
+        e.fetchReviews =
+        e.fetchReplacementState =
+        e.fetchReplacementOffer =
+        e.fetchReplacementMetrics =
+        e.fetchReplacementAdminStats =
+        e.fetchRecommendedGames =
+        e.fetchRecentBattleResults =
+        e.fetchProfile =
+        e.fetchPrivacySettings =
+        e.fetchPrivacy =
+        e.fetchPlayerProfile =
+        e.fetchPlayerAwards =
+        e.fetchPendingVenues =
+        e.fetchPendingCeremony =
+        e.fetchPayment =
+        e.fetchPassportPrivacy =
+        e.fetchPassport =
+        e.fetchOrganizerTrustScore =
+        e.fetchOrganizerStats =
+        e.fetchOrganizerSeries =
+        e.fetchOrganizerReputation =
+        e.fetchOrganizerReferralStats =
+        e.fetchOrganizerRatings =
+        e.fetchOrganizerMatches =
+        e.fetchOrganizerMatchScreen =
+        e.fetchOrganizerBookings =
+        e.fetchOrganizerApplications =
+        e.fetchOptimizerWeights =
+        e.fetchOptimizerDashboard =
+        e.fetchNpnCandidates =
+        e.fetchNpnAdminStats =
+        e.fetchNotifications =
+        e.fetchNeedPlayerFeed =
+        e.fetchMyVenues =
+        e.fetchMyTeams =
+        e.fetchMySkillSummary =
+        e.fetchMySeatPayment =
+        e.fetchMyReplacementOffers =
+        e.fetchMyRedemptions =
+        e.fetchMyPosition =
+        e.fetchMyPaymentRequests =
+        e.fetchMyPartitionStance =
+        e.fetchMyOrganizerApplication =
+        e.fetchMyCourtBookings =
+        e.fetchMyCancellations =
+        e.fetchMyBookings =
+        e.fetchMvpPanel =
+        e.fetchMediaUpload =
+        e.fetchMediaLibrary =
+        e.fetchMediaDashboard =
+        e.fetchMatchParticipants =
+        e.fetchMatchOptimization =
+        e.fetchMatchInvite =
+        e.fetchMatchFeed =
+        e.fetchMatchDraft =
+        e.fetchMatchAwards =
+        e.fetchMatchActivity =
+        e.fetchLoyaltyRules =
+        e.fetchLoyaltyLedger =
+        e.fetchLoyaltyEarnBreakdown =
+        e.fetchLoyaltyAdminStats =
+        e.fetchLoyaltyAccount =
+        e.fetchLineup =
+        e.fetchLeague =
+        e.fetchJoinSuggestions =
+        e.fetchJoinRequestIntel =
+        e.fetchIncidentQueue =
+        e.fetchHighlightCollections =
+        e.fetchH2HMap =
+        e.fetchGrowthAdminStats =
+        e.fetchGroupConfig =
+        e.fetchGroupBooking =
+        e.fetchGroupAnalytics =
+        e.fetchGameScreen =
+        e.fetchGamePlayers =
+        e.fetchGameGroups =
+        e.fetchGame =
+        e.fetchFunnelStats =
+        e.fetchFollowRequests =
+        e.fetchFollowList =
+        e.fetchFeedAnalytics =
+        e.fetchFeed =
+        e.fetchDiscover =
+        e.fetchDisciplinaryStanding =
+        e.fetchDemandWeights =
+        e.fetchDemandPrediction =
+        e.fetchDemandModelStats =
+          void 0),
+      (e.inviteClubMember =
+        e.grantLineupEdit =
+        e.grantCrossPartition =
+        e.followPlayer =
+        e.fetchWallet =
+        e.fetchVenues =
+        e.fetchVenueRevenue =
+        e.fetchVenueBookings =
+        e.fetchVenueBookingDetail =
+        e.fetchVenue =
+        e.fetchUserSanctions =
+        e.fetchUserPosts =
+        e.fetchUpcomingGames =
+        e.fetchUnreadDMCount =
+        e.fetchUnreadCount =
+        e.fetchThread =
+        e.fetchTeams =
+        e.fetchTeamStats =
+        e.fetchTeamRankings =
+        e.fetchTeamMembers =
+        e.fetchTeamInvite =
+        e.fetchTeamEvents =
+        e.fetchTeamChat =
+        e.fetchTeamCalendar =
+        e.fetchTeamBattles =
+        e.fetchTeamAdminStats =
+        e.fetchTeamAchievements =
+          void 0),
+      Object.defineProperty(e, "isAudienceError", {
+        enumerable: !0,
+        get: function () {
+          return o.isAudienceError;
+        },
+      }),
+      (e.saveLineupTemplate =
+        e.saveFriendGroup =
+        e.rewardCategories =
+        e.revokeCrossPartition =
+        e.revokeAward =
+        e.reviewVenue =
+        e.reviewSanction =
+        e.reviewClubVerification =
+        e.reviewApplication =
+        e.resumeSeries =
+        e.restoreUser =
+        e.respondWalletRequest =
+        e.respondFriendRequest =
+        e.respondFollowRequest =
+        e.respondClanChallenge =
+        e.resolveInviteCode =
+        e.reserveCourt =
+        e.reportPost =
+        e.reportClipCopyright =
+        e.reopenRegistration =
+        e.removeVenueStaff =
+        e.removeTeamMember =
+        e.remediateReplacementLeak =
+        e.rejectParticipant =
+        e.refundPayment =
+        e.redeemReward =
+        e.recordTeamResult =
+        e.recordOptimizerDecision =
+        e.recordLineupSubstitution =
+        e.recordDemandOutcome =
+        e.recordClipView =
+        e.reconcileSeatPayments =
+        e.rateOrganizer =
+        e.randomizeLineup =
+        e.quickCreateMatch =
+        e.publishAwards =
+        e.postTeamChat =
+        e.pinTeamChat =
+        e.paymentMethods =
+        e.payRequest =
+        e.payGroup =
+        e.pauseSeries =
+        e.optOutSquad =
+        e.openSquadWindow =
+        e.openAwardVoting =
+        e.oneTapJoin =
+        e.muteUser =
+        e.markNotificationRead =
+        e.markCeremonySeen =
+        e.markAllNotificationsRead =
+        e.manualReplace =
+        e.loyaltyTiers =
+        e.loyaltyActions =
+        e.logTeamInviteShare =
+        e.logShare =
+        e.logFunnel =
+        e.logFeedSignal =
+        e.listSavedGroups =
+        e.listMyGroups =
+        e.listMyClubs =
+        e.listLineupTemplates =
+        e.listFriends =
+        e.leaveTeam =
+        e.leaveMatch =
+        e.kickPlayer =
+        e.joinTeamByCode =
+        e.joinTeam =
+        e.joinSeries =
+        e.joinMatch =
+        e.joinByCode =
+        e.joinAtPosition =
+        e.issueSanction =
+          void 0),
+      (e.walletWithdraw =
+        e.walletTransfer =
+        e.walletAddFunds =
+        e.venueDecideBooking =
+        e.upsertSelfPlayer =
+        e.upsertReward =
+        e.upsertReview =
+        e.upsertCourt =
+        e.uploadMatchVideo =
+        e.updateVenueProfile =
+        e.updateTeam =
+        e.updateProfile =
+        e.updatePrivacy =
+        e.updatePassportPrivacy =
+        e.updateNeedPlayer =
+        e.updateMatch =
+        e.updateConsent =
+        e.unmuteUser =
+        e.unfollowPlayer =
+        e.unblockUser =
+        e.unblockCourtTime =
+        e.touchPresence =
+        e.toggleSavePost =
+        e.toggleLineupLock =
+        e.toggleLike =
+        e.toggleCommentLike =
+        e.syncLoyalty =
+        e.swapLineupSlots =
+        e.submitWalletKyc =
+        e.submitSkillEvaluation =
+        e.submitOrganizerApplication =
+        e.submitMatchScore =
+        e.submitContact =
+        e.submitClubVerification =
+        e.submitBattleResult =
+        e.startConversation =
+        e.startClubSubscription =
+        e.sharePost =
+        e.shareLineupToChat =
+        e.shareClip =
+        e.setVenueCommission =
+        e.setTeamBadge =
+        e.setSelfCategory =
+        e.setSavedPayment =
+        e.setRewardActive =
+        e.setReplacementRadius =
+        e.setReplacementMode =
+        e.setPrivacySettings =
+        e.setPlayerTeam =
+        e.setOptimizerWeights =
+        e.setLineupJersey =
+        e.setLineupFormation =
+        e.setLineupCaptain =
+        e.setEarnRule =
+        e.setDemandWeights =
+        e.setCourtActive =
+        e.setConciergeRules =
+        e.setAttendance =
+        e.sendPaymentReminders =
+        e.sendFriendRequest =
+        e.sendDirectMessage =
+        e.sendClanChallenge =
+        e.sendChatMessage =
+        e.searchUsers =
+        e.searchPlayers =
+        e.searchBookableVenues =
+        e.scheduleTeamEvent =
+        e.scanCheckin =
+        e.saveMatchDraft =
+          void 0));
+    var t = r(d[0]),
+      o = r(d[1]);
+    e.fetchUpcomingGames = (o) =>
+      t.store
+        .mockGetUpcomingGames(o)
+        .then((t) =>
+          o?.search
+            ? t.filter((t) =>
+                `${t.venue.name} ${t.venue.area} ${t.sport}`.toLowerCase().includes(o.search.toLowerCase()),
+              )
+            : t,
+        );
+    e.fetchGame = (o, c) => t.store.mockGetGame(o, c);
+    e.fetchVenues = () => t.store.mockGetVenues();
+    e.fetchVenue = (o) => t.store.mockGetVenue(o);
+    e.fetchReviews = (o) => t.store.mockGetReviews(o);
+    e.upsertReview = (o) => t.store.mockUpsertReview(o);
+    e.fetchMyBookings = (o) => t.store.mockGetMyBookings(o);
+    e.createBooking = (o, c) => t.store.mockCreateBooking(o, c);
+    e.cancelBooking = (o, c) => t.store.mockCancelBooking(o, c);
+    e.fetchProfile = (o) => t.store.mockGetProfile(o);
+    e.updateProfile = (o, c) => t.store.mockUpdateProfile(o, c);
+    e.fetchNotifications = (o) => t.store.mockGetNotifications(o);
+    e.fetchUnreadCount = (o) => t.store.mockGetUnreadCount(o);
+    e.markNotificationRead = (o, c) => t.store.mockMarkNotificationRead(o, c);
+    e.markAllNotificationsRead = (o) => t.store.mockMarkAllNotificationsRead(o);
+    e.fetchGamePlayers = (o, c) => t.store.mockGetGamePlayers(o, c);
+    e.setPlayerTeam = (o, c, s) => t.store.mockSetPlayerTeam(o, c, s);
+    e.upsertSelfPlayer = (o) => t.store.mockUpsertSelfPlayer(o);
+    e.ensureChatSeed = (o) => t.store.mockEnsureChatSeed(o);
+    e.fetchChatMessages = (o, c, s) => t.store.mockGetChatMessages(o, c, s);
+    e.sendChatMessage = (o) => t.store.mockSendChatMessage(o);
+    e.submitContact = (o) => t.store.mockSubmitContact(o);
+    e.updateConsent = (o, c) => t.store.mockUpdateConsent(o, c);
+    e.exportUserData = (o) => t.store.mockExportUserData(o);
+    e.deleteAccount = (o) => t.store.mockDeleteAccount(o);
+    e.joinMatch = (o, c) => t.store.mockJoinMatch(o, c);
+    e.checkoutJoin = (o, c, s) => t.store.mockCheckoutJoin(o, c, s);
+    e.fetchMySeatPayment = (o, c) => t.store.mockGetMySeatPayment(o, c);
+    e.leaveMatch = (o, c) => t.store.mockLeaveMatch(o, c);
+    e.createMatch = (o, c) => t.store.mockCreateMatch(o, c);
+    e.updateMatch = (o, c, s) => t.store.mockUpdateMatch(o, c, s);
+    e.cancelMatch = (o, c, s) => t.store.mockCancelMatch(o, c, s);
+    e.approveParticipant = (o, c, s) => t.store.mockApproveParticipant(o, c, s);
+    e.rejectParticipant = (o, c, s) => t.store.mockRejectParticipant(o, c, s);
+    e.setAttendance = (o, c, s, n) => t.store.mockSetAttendance(o, c, s, n);
+    e.fetchSmartDefaults = (o, c, s) => t.store.mockGetSmartDefaults(o, c, s);
+    e.quickCreateMatch = (o, c) => t.store.mockQuickCreateMatch(o, c);
+    e.kickPlayer = (o, c, s, n) => t.store.mockKickPlayer(o, c, s, n);
+    e.closeRegistration = (o, c) => t.store.mockCloseRegistration(o, c);
+    e.reopenRegistration = (o, c) => t.store.mockReopenRegistration(o, c);
+    e.submitMatchScore = (o, c, s, n) => t.store.mockSubmitMatchScore(o, c, s, n);
+    e.fetchMatchActivity = (o, c) => t.store.mockGetMatchActivity(o, c);
+    e.fetchSeatRefundQuote = (o, c) => t.store.mockGetSeatRefundQuote(o, c);
+    e.fetchMyCancellations = (o) => t.store.mockGetMyCancellations(o);
+    e.openSquadWindow = (o, c, s) => t.store.mockOpenSquadWindow(o, c, s);
+    e.closeSquadWindowEarly = (o, c) => t.store.mockCloseSquadWindowEarly(o, c);
+    e.confirmSquadSpot = (o, c) => t.store.mockConfirmSquadSpot(o, c);
+    e.optOutSquad = (o, c) => t.store.mockOptOutSquad(o, c);
+    e.fetchSquadState = (o, c) => t.store.mockGetSquadState(o, c);
+    e.fetchOrganizerMatches = (o) => t.store.mockGetOrganizerMatches(o);
+    e.reconcileSeatPayments = () => t.store.mockReconcileSeatPayments();
+    e.auditSeatConsistency = () => t.store.mockAuditSeatConsistency();
+    e.fetchMatchParticipants = (o) => t.store.mockGetMatchParticipants(o);
+    e.fetchOrganizerStats = (o) => t.store.mockGetOrganizerStats(o);
+    e.fetchOrganizerReputation = (o) => t.store.mockGetOrganizerReputation(o);
+    e.fetchOrganizerRatings = (o) => t.store.mockGetOrganizerRatings(o);
+    e.rateOrganizer = (o) => t.store.mockRateOrganizer(o);
+    e.fetchMyOrganizerApplication = (o) => t.store.mockGetMyOrganizerApplication(o);
+    e.submitOrganizerApplication = (o, c) => t.store.mockSubmitOrganizerApplication(o, c);
+    e.fetchOrganizerTrustScore = (o) => t.store.mockGetOrganizerTrustScore(o);
+    e.fetchOrganizerApplications = (o, c) => t.store.mockGetOrganizerApplications(o, c);
+    e.fetchApplicationDetail = (o, c) => t.store.mockGetApplicationDetail(o, c);
+    e.reviewApplication = (o, c, s, n) => t.store.mockReviewApplication(o, c, s, n);
+    e.fetchMySkillSummary = (o) => t.store.mockGetMySkillSummary(o);
+    e.setSelfCategory = (o, c, s) => t.store.mockSetSelfCategory(o, c, s);
+    e.fetchJoinRequestIntel = (o, c) => t.store.mockGetJoinRequestIntel(o, c);
+    e.fetchAdminPlayerIntel = (o, c) => t.store.mockAdminGetPlayerIntel(o, c);
+    e.adminAdjustRating = (o, c, s, n, l) => t.store.mockAdminAdjustRating(o, c, s, n, l);
+    e.adminFindPlayers = (o, c) => t.store.mockAdminFindPlayers(o, c);
+    e.adminCorrectAudience = (o, c, s, n) => t.store.mockAdminCorrectAudience(o, c, s, n);
+    e.fetchMyCourtBookings = (o) => t.store.mockGetMyCourtBookings(o);
+    e.saveMatchDraft = (o, c) => t.store.mockSaveMatchDraft(o, c);
+    e.fetchMatchDraft = (o) => t.store.mockGetMatchDraft(o);
+    e.discardMatchDraft = (o) => t.store.mockDiscardMatchDraft(o);
+    e.fetchMvpPanel = (o, c) => t.store.mockGetMvpPanel(o, c);
+    e.castMvpVote = (o, c, s) => t.store.mockCastAwardVote(o, c, "mvp", s);
+    e.submitSkillEvaluation = (o, c) => t.store.mockSubmitSkillEvaluation(o, c);
+    e.fetchSkillEvalTargets = (o, c) => t.store.mockGetSkillEvalTargets(o, c);
+    e.fetchSkillFit = (o, c) => t.store.mockGetSkillFit(o, c);
+    e.fetchRecommendedGames = (o) => t.store.mockGetRecommendedGames(o);
+    e.fetchSkillAdminStats = (o) => t.store.mockGetSkillAdminStats(o);
+    e.createSeries = (o, c) => t.store.mockCreateSeries(o, c);
+    e.editFutureOccurrences = (o, c, s) => t.store.mockEditFutureOccurrences(o, c, s);
+    e.pauseSeries = (o, c) => t.store.mockPauseSeries(o, c);
+    e.resumeSeries = (o, c, s) => t.store.mockResumeSeries(o, c, s);
+    e.endSeries = (o, c) => t.store.mockEndSeries(o, c);
+    e.cancelSeries = (o, c, s) => t.store.mockCancelSeries(o, c, s);
+    e.joinSeries = (o, c) => t.store.mockJoinSeries(o, c);
+    e.fetchOrganizerSeries = (o) => t.store.mockGetOrganizerSeries(o);
+    e.fetchSeries = (o, c) => t.store.mockGetSeries(o, c);
+    e.fetchSeriesAnalytics = (o) => t.store.mockGetSeriesAnalytics(o);
+    e.activateNeedPlayer = (o, c, s) => t.store.mockActivateNeedPlayer(o, c, s);
+    e.updateNeedPlayer = (o, c, s) => t.store.mockUpdateNeedPlayer(o, c, s);
+    e.deactivateNeedPlayer = (o, c) => t.store.mockDeactivateNeedPlayer(o, c);
+    e.fetchNeedPlayerFeed = (o) => t.store.mockGetNeedPlayerFeed(o);
+    e.fetchNpnCandidates = (o, c, s) => t.store.mockGetNpnCandidates(o, c, s);
+    e.fetchNpnAdminStats = (o) => t.store.mockGetNpnAdminStats(o);
+    e.fetchCompatAdminStats = (o) => t.store.mockGetCompatAdminStats(o);
+    e.grantCrossPartition = (o, c, s) => t.store.mockGrantCrossPartition(o, c, s);
+    e.revokeCrossPartition = (o, c) => t.store.mockRevokeCrossPartition(o, c);
+    e.fetchCrossPartitionGrants = (o) => t.store.mockGetCrossPartitionGrants(o);
+    e.fetchMyPartitionStance = (o) => t.store.mockGetMyPartitionStance(o);
+    e.auditReplacementLeak = (o) => t.store.mockAuditReplacementLeak(o);
+    e.remediateReplacementLeak = (o, c, s) => t.store.mockRemediateReplacementLeak(o, c, s);
+    e.fetchAdminCompatibility = (o, c, s) => t.store.mockAdminGetCompatibility(o, c, s);
+    e.fetchPassport = (o, c) => t.store.mockGetPassport(o, c);
+    e.fetchPassportPrivacy = (o) => t.store.mockGetPassportPrivacy(o);
+    e.updatePassportPrivacy = (o, c) => t.store.mockUpdatePassportPrivacy(o, c);
+    e.adminRemoveAchievement = (o, c, s) => t.store.mockAdminRemoveAchievement(o, c, s);
+    e.fetchMatchInvite = (o) => t.store.mockGetMatchInvite(o);
+    e.resolveInviteCode = (o, c) => t.store.mockResolveInviteCode(o, c);
+    e.logShare = (o, c, s) => t.store.mockLogShare(o, c, s);
+    e.joinByCode = (o, c) => t.store.mockJoinByCode(o, c);
+    e.fetchOrganizerReferralStats = (o) => t.store.mockGetOrganizerReferralStats(o);
+    e.fetchGrowthAdminStats = (o) => t.store.mockGetGrowthAdminStats(o);
+    e.searchBookableVenues = (o) => t.store.mockSearchBookableVenues(o);
+    e.fetchVenueBookingDetail = (o) => t.store.mockGetVenueBookingDetail(o);
+    e.applyVenue = (o, c) => t.store.mockApplyVenue(o, c);
+    e.fetchMyVenues = (o) => t.store.mockGetMyVenues(o);
+    e.updateVenueProfile = (o, c, s) => t.store.mockUpdateVenueProfile(o, c, s);
+    e.addVenueStaff = (o, c, s, n) => t.store.mockAddVenueStaff(o, c, s, n);
+    e.removeVenueStaff = (o, c, s) => t.store.mockRemoveVenueStaff(o, c, s);
+    e.fetchPendingVenues = (o) => t.store.mockGetPendingVenues(o);
+    e.reviewVenue = (o, c, s, n) => t.store.mockAdminReviewVenue(o, c, s, n);
+    e.setVenueCommission = (o, c, s, n, l) => t.store.mockAdminSetCommission(o, c, s, n, l);
+    e.fetchAdminFinancials = (o) => t.store.mockGetAdminFinancials(o);
+    e.fetchCourts = (o, c) => t.store.mockGetCourts(o, c);
+    e.upsertCourt = (o, c, s) => t.store.mockUpsertCourt(o, c, s);
+    e.setCourtActive = (o, c, s) => t.store.mockSetCourtActive(o, c, s);
+    e.blockCourtTime = (o, c, s, n, l) => t.store.mockBlockCourtTime(o, c, s, n, l);
+    e.unblockCourtTime = (o, c) => t.store.mockUnblockCourtTime(o, c);
+    e.fetchCourtAvailability = (o, c, s) => t.store.mockGetCourtAvailability(o, c, s);
+    e.reserveCourt = (o, c, s, n, l) => t.store.mockReserveCourt(o, c, s, n, l);
+    e.venueDecideBooking = (o, c, s) => t.store.mockVenueDecideBooking(o, c, s);
+    e.cancelCourtBooking = (o, c, s) => t.store.mockCancelCourtBooking(o, c, s);
+    e.fetchOrganizerBookings = (o) => t.store.mockGetOrganizerBookings(o);
+    e.fetchVenueBookings = (o, c) => t.store.mockGetVenueBookings(o, c);
+    e.fetchBooking = (o, c) => t.store.mockGetBooking(o, c);
+    e.createPaymentPlan = (o, c, s, n) => t.store.mockCreatePaymentPlan(o, c, s, n);
+    e.fetchBookingPayments = (o, c) => t.store.mockGetBookingPayments(o, c);
+    e.fetchMyPaymentRequests = (o) => t.store.mockGetMyPaymentRequests(o);
+    e.fetchPayment = (o, c) => t.store.mockGetPayment(o, c);
+    e.payRequest = (o, c, s) => t.store.mockPayRequest(o, c, s);
+    e.refundPayment = (o, c) => t.store.mockRefundPayment(o, c);
+    e.sendPaymentReminders = (o, c) => t.store.mockSendPaymentReminders(o, c);
+    e.paymentMethods = () => t.store.mockGetPaymentMethods();
+    e.fetchBookingCheckins = (o, c) => t.store.mockGetBookingCheckins(o, c);
+    e.scanCheckin = (o, c, s, n) => t.store.mockScanCheckin(o, c, s, n);
+    e.fetchVenueRevenue = (o, c) => t.store.mockGetVenueRevenue(o, c);
+    e.createTeam = (o, c) => t.store.mockCreateTeam(o, c);
+    e.fetchTeams = (o, c) => t.store.mockGetTeams(o, c);
+    e.fetchMyTeams = (o) => t.store.mockGetMyTeams(o);
+    e.fetchTeam = (o, c) => t.store.mockGetTeam(o, c);
+    e.updateTeam = (o, c, s) => t.store.mockUpdateTeam(o, c, s);
+    e.fetchTeamMembers = (o, c) => t.store.mockGetTeamMembers(o, c);
+    e.joinTeam = (o, c) => t.store.mockJoinTeam(o, c);
+    e.joinTeamByCode = (o, c) => t.store.mockJoinTeamByCode(o, c);
+    e.setTeamBadge = (o, c, s) => t.store.mockSetTeamBadge(o, c, s);
+    e.fetchBattleResult = (o, c) => t.store.mockGetBattleResult(o, c);
+    e.submitBattleResult = (o, c, s, n) => t.store.mockSubmitBattleResult(o, c, s, n);
+    e.counterBattleResult = (o, c, s, n) => t.store.mockCounterBattleResult(o, c, s, n);
+    e.fetchPendingCeremony = (o) => t.store.mockGetPendingCeremony(o);
+    e.markCeremonySeen = (o, c) => t.store.mockMarkCeremonySeen(o, c);
+    e.fetchH2HMap = (o, c) => t.store.mockGetH2HMap(o, c);
+    e.decideJoinRequest = (o, c, s, n) => t.store.mockDecideJoinRequest(o, c, s, n);
+    e.leaveTeam = (o, c) => t.store.mockLeaveTeam(o, c);
+    e.removeTeamMember = (o, c, s) => t.store.mockRemoveMember(o, c, s);
+    e.changeMemberRole = (o, c, s, n) => t.store.mockChangeMemberRole(o, c, s, n);
+    e.fetchTeamStats = (o) => t.store.mockGetTeamStats(o);
+    e.fetchTeamAchievements = (o, c) => t.store.mockGetTeamAchievements(o, c);
+    e.scheduleTeamEvent = (o, c, s) => t.store.mockScheduleTeamEvent(o, c, s);
+    e.recordTeamResult = (o, c, s, n, l, h, k) => t.store.mockRecordTeamResult(o, c, s, n, l, h, k);
+    e.fetchTeamEvents = (o, c) => t.store.mockGetTeamEvents(o, c);
+    e.fetchTeamCalendar = (o, c) => t.store.mockGetTeamCalendar(o, c);
+    e.fetchTeamChat = (o, c) => t.store.mockGetTeamChat(o, c);
+    e.postTeamChat = (o, c, s, n, l) => t.store.mockPostTeamChat(o, c, s, n, l);
+    e.pinTeamChat = (o, c, s, n) => t.store.mockPinTeamChat(o, c, s, n);
+    e.deleteTeamChat = (o, c, s) => t.store.mockDeleteTeamChat(o, c, s);
+    e.fetchTeamRankings = (o, c) => t.store.mockGetTeamRankings(o ?? {}, c);
+    e.fetchPrivacy = (o) => t.store.mockGetPrivacy(o);
+    e.updatePrivacy = (o, c) => t.store.mockUpdatePrivacy(o, c);
+    e.fetchClanBattles = (o) => t.store.mockGetClanBattles(o);
+    e.fetchClanBattle = (o, c) => t.store.mockGetClanBattle(o, c);
+    e.fetchTeamBattles = (o, c, s) => t.store.mockGetTeamBattles(o, c, s);
+    e.fetchRecentBattleResults = (o, c) => t.store.mockGetRecentBattleResults(o, c);
+    e.sendClanChallenge = (o, c, s, n, l) => t.store.mockSendClanChallenge(o, c, s, n, l);
+    e.respondClanChallenge = (o, c, s) => t.store.mockRespondClanChallenge(o, c, s);
+    e.fetchLeague = (o) => t.store.mockGetLeague(o);
+    e.confirmLeagueSquad = (o, c) => t.store.mockConfirmLeagueSquad(o, c);
+    e.fetchTeamInvite = (o) => t.store.mockGetTeamInvite(o);
+    e.logTeamInviteShare = (o, c, s) => t.store.mockLogTeamInviteShare(o, c, s);
+    e.adminSuspendTeam = (o, c, s, n) => t.store.mockAdminSuspendTeam(o, c, s, n);
+    e.fetchTeamAdminStats = (o) => t.store.mockGetTeamAdminStats(o);
+    e.fetchAllTeamsAdmin = (o) => t.store.mockGetAllTeamsAdmin(o);
+    e.fetchBIDashboard = (o, c) => t.store.mockGetBIDashboard(o, c);
+    e.exportBIReport = (o, c, s) => t.store.mockExportBIReport(o, c, s);
+    e.syncLoyalty = (o) => t.store.mockSyncLoyalty(o);
+    e.fetchLoyaltyAccount = (o) => t.store.mockGetLoyaltyAccount(o);
+    e.fetchLoyaltyLedger = (o) => t.store.mockGetLoyaltyLedger(o);
+    e.fetchLoyaltyEarnBreakdown = (o) => t.store.mockGetLoyaltyEarnBreakdown(o);
+    e.fetchRewards = (o) => t.store.mockGetRewards(o);
+    e.redeemReward = (o, c) => t.store.mockRedeemReward(o, c);
+    e.fetchMyRedemptions = (o) => t.store.mockGetMyRedemptions(o);
+    e.loyaltyTiers = () => t.store.mockGetLoyaltyTiers();
+    e.loyaltyActions = () => t.store.mockGetLoyaltyActions();
+    e.rewardCategories = () => t.store.mockGetRewardCategories();
+    e.fetchLoyaltyRules = (o) => t.store.mockGetLoyaltyRules(o);
+    e.setEarnRule = (o, c, s) => t.store.mockSetEarnRule(o, c, s);
+    e.upsertReward = (o, c) => t.store.mockUpsertReward(o, c);
+    e.setRewardActive = (o, c, s) => t.store.mockSetRewardActive(o, c, s);
+    e.fetchAllRewardsAdmin = (o) => t.store.mockGetAllRewardsAdmin(o);
+    e.fetchLoyaltyAdminStats = (o) => t.store.mockGetLoyaltyAdminStats(o);
+    e.fetchSmartSchedule = (o, c) => t.store.mockGetSmartSchedule(o, c);
+    e.fetchDemandPrediction = (o, c) => t.store.mockGetDemandPrediction(o, c);
+    e.recordDemandOutcome = (o, c, s, n) => t.store.mockRecordDemandOutcome(o, c, s, n);
+    e.fetchDemandWeights = (o) => t.store.mockGetDemandWeights(o);
+    e.setDemandWeights = (o, c) => t.store.mockSetDemandWeights(o, c);
+    e.fetchDemandModelStats = (o) => t.store.mockGetDemandModelStats(o);
+    e.fetchMatchOptimization = (o, c) => t.store.mockGetMatchOptimization(o, c);
+    e.recordOptimizerDecision = (o, c, s, n, l) => t.store.mockRecordOptimizerDecision(o, c, s, n, l);
+    e.fetchOptimizerWeights = (o) => t.store.mockGetOptimizerWeights(o);
+    e.setOptimizerWeights = (o, c) => t.store.mockSetOptimizerWeights(o, c);
+    e.fetchOptimizerDashboard = (o) => t.store.mockGetOptimizerDashboard(o);
+    e.createClub = (o, c) => t.store.mockCreateClub(o, c);
+    e.listMyClubs = (o) => t.store.mockListMyClubs(o);
+    e.fetchClubDashboard = (o, c) => t.store.mockGetClubDashboard(o, c);
+    e.submitClubVerification = (o, c) => t.store.mockSubmitClubVerification(o, c);
+    e.reviewClubVerification = (o, c, s) => t.store.mockReviewClubVerification(o, c, s);
+    e.inviteClubMember = (o, c, s) => t.store.mockInviteClubMember(o, c, s);
+    e.acceptClubInvitation = (o, c) => t.store.mockAcceptClubInvitation(o, c);
+    e.startClubSubscription = (o, c, s, n) => t.store.mockStartClubSubscription(o, c, s, n);
+    e.uploadMatchVideo = (o, c) => t.store.mockUploadMatchVideo(o, c);
+    e.fetchMediaLibrary = (o) => t.store.mockGetMediaLibrary(o);
+    e.fetchMediaUpload = (o, c) => t.store.mockGetMediaUpload(o, c);
+    e.recordClipView = (o) => t.store.mockRecordClipView(o);
+    e.shareClip = (o, c, s) => t.store.mockShareClip(o, c, s);
+    e.fetchClipSignedUrl = (o, c) => t.store.mockGetClipSignedUrl(o, c);
+    e.reportClipCopyright = (o, c, s) => t.store.mockReportClipCopyright(o, c, s);
+    e.fetchMediaDashboard = (o) => t.store.mockGetMediaDashboard(o);
+    e.searchUsers = (o, c) => t.store.mockSearchUsers(o, c);
+    e.sendFriendRequest = (o, c) => t.store.mockSendFriendRequest(o, c);
+    e.respondFriendRequest = (o, c, s) => t.store.mockRespondFriendRequest(o, c, s);
+    e.listFriends = (o) => t.store.mockListFriends(o);
+    e.fetchGroupConfig = (o, c) => t.store.mockGetGroupConfig(o, c);
+    e.createGroupBooking = (o, c, s) => t.store.mockCreateGroupBooking(o, c, s);
+    e.fetchGroupBooking = (o, c) => t.store.mockGetGroupBooking(o, c);
+    e.listMyGroups = (o) => t.store.mockListMyGroups(o);
+    e.payGroup = (o, c, s = "wallet") => t.store.mockPayGroup(o, c, s);
+    e.cancelGroupMember = (o, c, s) => t.store.mockCancelGroupMember(o, c, s);
+    e.fetchGroupAnalytics = (o) => t.store.mockGetGroupAnalytics(o);
+    e.fetchGameGroups = (o, c) => t.store.mockGetGameGroups(o, c);
+    e.saveFriendGroup = (o, c, s) => t.store.mockSaveFriendGroup(o, c, s);
+    e.listSavedGroups = (o) => t.store.mockListSavedGroups(o);
+    e.deleteSavedGroup = (o, c) => t.store.mockDeleteSavedGroup(o, c);
+    e.setSavedPayment = (o, c) => t.store.mockSetSavedPayment(o, c);
+    e.fetchJoinSuggestions = (o, c) => t.store.mockGetJoinSuggestions(o, c);
+    e.oneTapJoin = (o, c) => t.store.mockOneTapJoin(o, c);
+    e.followPlayer = (o, c) => t.store.mockFollow(o, c);
+    e.unfollowPlayer = (o, c) => t.store.mockUnfollow(o, c);
+    e.checkUsername = (o, c) => t.store.mockCheckUsername(o, c);
+    e.respondFollowRequest = (o, c, s) => t.store.mockRespondFollowRequest(o, c, s);
+    e.fetchFollowRequests = (o) => t.store.mockGetFollowRequests(o);
+    e.fetchFollowList = (o, c, s) => t.store.mockGetFollowList(o, c, s);
+    e.fetchSuggestedFollows = (o) => t.store.mockGetSuggestedFollows(o);
+    e.fetchPlayerProfile = (o, c) => t.store.mockGetPlayerProfile(o, c);
+    e.createPost = (o, c) => t.store.mockCreatePost(o, c);
+    e.fetchFeed = (o) => t.store.mockGetFeed(o);
+    e.fetchUserPosts = (o, c) => t.store.mockGetUserPosts(o, c);
+    e.toggleLike = (o, c) => t.store.mockToggleLike(o, c);
+    e.toggleSavePost = (o, c) => t.store.mockToggleSave(o, c);
+    e.sharePost = (o, c) => t.store.mockSharePost(o, c);
+    e.addComment = (o, c, s) => t.store.mockAddComment(o, c, s);
+    e.fetchComments = (o, c) => t.store.mockGetComments(o, c);
+    e.toggleCommentLike = (o, c) => t.store.mockToggleCommentLike(o, c);
+    e.reportPost = (o, c, s) => t.store.mockReportPost(o, c, s);
+    e.fetchHighlightCollections = (o) => t.store.mockGetHighlightCollections(o);
+    e.startConversation = (o, c) => t.store.mockStartConversation(o, c);
+    e.fetchConversations = (o) => t.store.mockGetConversations(o);
+    e.fetchUnreadDMCount = (o) => t.store.mockGetUnreadDMCount(o);
+    e.fetchThread = (o, c) => t.store.mockGetThread(o, c);
+    e.sendDirectMessage = (o, c, s) => t.store.mockSendDirectMessage(o, c, s);
+    e.acceptMessageRequest = (o, c) => t.store.mockAcceptMessageRequest(o, c);
+    e.declineMessageRequest = (o, c) => t.store.mockDeclineMessageRequest(o, c);
+    e.deleteDirectMessage = (o, c) => t.store.mockDeleteDirectMessage(o, c);
+    e.searchPlayers = (o, c) => t.store.mockSearchPlayers(o, c);
+    e.blockUser = (o, c) => t.store.mockBlockUser(o, c);
+    e.unblockUser = (o, c) => t.store.mockUnblockUser(o, c);
+    e.muteUser = (o, c) => t.store.mockMuteUser(o, c);
+    e.unmuteUser = (o, c) => t.store.mockUnmuteUser(o, c);
+    e.fetchBlockedList = (o) => t.store.mockGetBlockedList(o);
+    e.fetchPrivacySettings = (o) => t.store.mockGetPrivacySettings(o);
+    e.setPrivacySettings = (o, c) => t.store.mockSetPrivacySettings(o, c);
+    e.touchPresence = (o) => t.store.mockTouchPresence(o);
+    e.createStory = (o, c) => t.store.mockCreateStory(o, c);
+    e.fetchStoryTray = (o) => t.store.mockGetStoryTray(o);
+    e.fetchAuthorStories = (o, c) => t.store.mockGetAuthorStories(o, c);
+    e.fetchAwardBallot = (o, c) => t.store.mockGetAwardBallot(o, c);
+    e.castAwardVote = (o, c, s, n) => t.store.mockCastAwardVote(o, c, s, n);
+    e.openAwardVoting = (o, c) => t.store.mockOpenAwardVoting(o, c);
+    e.publishAwards = (o, c) => t.store.mockPublishAwards(o, c);
+    e.createCustomAward = (o, c) => t.store.mockCreateCustomAward(o, c);
+    e.fetchMatchAwards = (o) => t.store.mockGetMatchAwards(o);
+    e.fetchPlayerAwards = (o) => t.store.mockGetPlayerAwards(o);
+    e.fetchAwardLeaderboard = (o) => t.store.mockGetAwardLeaderboard(o);
+    e.fetchAwardSeasons = () => t.store.mockGetAwardSeasons();
+    e.revokeAward = (o, c) => t.store.mockRevokeAward(o, c);
+    e.fetchAwardFraudSignals = (o) => t.store.mockGetAwardFraudSignals(o);
+    e.fetchMatchFeed = (o) => t.store.mockGetMatchFeed(o);
+    e.fetchDiscover = (o) => t.store.mockGetDiscover(o);
+    e.logFeedSignal = (o, c, s) => t.store.mockLogFeedSignal(o, c, s);
+    e.logFunnel = (o, c) => t.store.mockLogFunnel(o, c).catch(() => {});
+    e.fetchFunnelStats = (o) => t.store.mockGetFunnelStats(o);
+    e.fetchFeedAnalytics = (o) => t.store.mockGetFeedAnalytics(o);
+    e.fetchWallet = (o, c) => t.store.mockGetWallet(o, c);
+    e.walletAddFunds = (o, c, s) => t.store.mockWalletAddFunds(o, c, s);
+    e.walletWithdraw = (o, c) => t.store.mockWalletWithdraw(o, c);
+    e.submitWalletKyc = (o, c, s) => t.store.mockSubmitWalletKyc(o, c, s);
+    e.walletTransfer = (o, c, s, n) => t.store.mockWalletTransfer(o, c, s, n);
+    e.createWalletRequest = (o, c, s, n) => t.store.mockCreateWalletRequest(o, c, s, n);
+    e.respondWalletRequest = (o, c, s) => t.store.mockRespondWalletRequest(o, c, s);
+    e.adminGrantCredit = (o, c, s, n, l) => t.store.mockAdminGrantCredit(o, c, s, n, l);
+    e.claimVenuePayout = (o) => t.store.mockClaimVenuePayout(o);
+    e.fetchLineup = (o, c) => t.store.mockGetLineup(o, c);
+    e.fetchMyPosition = (o) => t.store.mockGetMyPosition(o);
+    e.setLineupFormation = (o, c, s, n) => t.store.mockSetLineupFormation(o, c, s, n);
+    e.assignLineupSlot = (o, c, s, n, l) => t.store.mockAssignLineupSlot(o, c, s, n, l);
+    e.claimLineupSlot = (o, c, s, n) => t.store.mockClaimLineupSlot(o, c, s, n);
+    e.joinAtPosition = (o, c, s, n) => t.store.mockJoinAtPosition(o, c, s, n);
+    e.swapLineupSlots = (o, c, s, n, l) => t.store.mockSwapLineupSlots(o, c, s, n, l);
+    e.setLineupCaptain = (o, c, s, n) => t.store.mockSetLineupCaptain(o, c, s, n);
+    e.setLineupJersey = (o, c, s, n, l) => t.store.mockSetLineupJersey(o, c, s, n, l);
+    e.toggleLineupLock = (o, c) => t.store.mockToggleLineupLock(o, c);
+    e.grantLineupEdit = (o, c, s, n) => t.store.mockGrantLineupEdit(o, c, s, n);
+    e.randomizeLineup = (o, c) => t.store.mockRandomizeLineup(o, c);
+    e.autoBalanceLineup = (o, c) => t.store.mockAutoBalanceLineup(o, c);
+    e.recordLineupSubstitution = (o, c, s, n, l) => t.store.mockRecordLineupSubstitution(o, c, s, n, l);
+    e.shareLineupToChat = (o, c, s) => t.store.mockShareLineupToChat(o, c, s);
+    e.saveLineupTemplate = (o, c, s) => t.store.mockSaveLineupTemplate(o, c, s);
+    e.listLineupTemplates = (o) => t.store.mockListLineupTemplates(o);
+    e.fetchConciergePlan = (o, c) => t.store.mockGetConciergePlan(o, c);
+    e.conciergeAutoInvite = (o, c, s) => t.store.mockConciergeAutoInvite(o, c, s);
+    e.fetchConciergeReplacements = (o, c, s) => t.store.mockGetConciergeReplacements(o, c, s);
+    e.fetchConciergeNotificationPlan = (o, c) => t.store.mockGetConciergeNotificationPlan(o, c);
+    e.fetchConciergeRules = (o) => t.store.mockGetConciergeRules(o);
+    e.setConciergeRules = (o, c) => t.store.mockSetConciergeRules(o, c);
+    e.fetchConciergeStats = (o) => t.store.mockGetConciergeStats(o);
+    e.acceptReplacement = (o, c) => t.store.mockAcceptReplacement(o, c);
+    e.declineReplacement = (o, c) => t.store.mockDeclineReplacement(o, c);
+    e.fetchMyReplacementOffers = (o) => t.store.mockGetMyReplacementOffers(o);
+    e.fetchReplacementOffer = (o, c) => t.store.mockGetReplacementOffer(o, c);
+    e.setReplacementMode = (o, c, s) => t.store.mockSetReplacementMode(o, c, s);
+    e.setReplacementRadius = (o, c, s) => t.store.mockSetReplacementRadius(o, c, s);
+    e.manualReplace = (o, c, s) => t.store.mockManualReplace(o, c, s);
+    e.fetchReplacementState = (o, c) => t.store.mockGetReplacementState(o, c);
+    e.fetchReplacementMetrics = (o, c) => t.store.mockGetReplacementMetrics(o, c);
+    e.fetchReplacementAdminStats = (o) => t.store.mockGetReplacementAdminStats(o);
+    e.fetchCoCStatus = (o) => t.store.mockGetCoCStatus(o);
+    e.acceptCoC = (o) => t.store.mockAcceptCoC(o);
+    e.cocVersion = () => t.store.mockGetCoCVersion();
+    e.issueSanction = (o, c, s) => t.store.mockIssueSanction(o, c, s);
+    e.reviewSanction = (o, c, s, n) => t.store.mockReviewSanction(o, c, s, n);
+    e.restoreUser = (o, c, s) => t.store.mockRestoreUser(o, c, s);
+    e.fetchUserSanctions = (o, c) => t.store.mockGetUserSanctions(o, c);
+    e.fetchDisciplinaryStanding = (o) => t.store.mockGetDisciplinaryStanding(o);
+    e.fetchIncidentQueue = (o) => t.store.mockGetIncidentQueue(o);
+    e.fetchConductAdminStats = (o) => t.store.mockGetConductAdminStats(o);
+    e.fetchGameScreen = (o, c) => t.store.mockGetGameScreen(o, c);
+    e.fetchOrganizerMatchScreen = (o, c) => t.store.mockGetOrganizerMatchScreen(o, c);
+  },
+  671,
+  [672, 631],
+);
 __d(function(g,_r,_i,a,m,_e,d){Object.defineProperty(_e,"__esModule",{value:!0}),Object.defineProperty(_e,"remoteEnabled",{enumerable:!0,get:function(){return t.remoteEnabled}}),_e.store=void 0;var e=(function(e,t){if("function"==typeof WeakMap)var r=new WeakMap,n=new WeakMap;return(function(e,t){if(!t&&e&&e.__esModule)return e;var o,c,f={__proto__:null,default:e};if(null===e||"object"!=typeof e&&"function"!=typeof e)return f;if(o=t?n:r){if(o.has(e))return o.get(e);o.set(e,f)}for(const t in e)"default"!==t&&{}.hasOwnProperty.call(e,t)&&((c=(o=Object.defineProperty)&&Object.getOwnPropertyDescriptor(e,t))&&(c.get||c.set)?o(f,t,c):f[t]=e[t]);return f})(e,t)})(_r(d[0])),t=_r(d[1]),r=_r(d[2]);_e.store=new Proxy(e,{get(e,n,o){const c=Reflect.get(e,n,o);return'function'==typeof c&&/^mock[A-Z]/.test(String(n))?async(...e)=>{try{return await(0,t.rpc)(String(n),e,()=>c(...e))}catch(e){throw(0,r.localizeStoreError)(e)}}:c}})},672,[631,673,674]);
 __d(
   function (g, r, i, a, m, e, d) {
@@ -18616,6 +19600,9 @@ __d(
         E_A_REASON_IS_REQUIRED: "seAReasonIsRequired",
         E_INVALID_TRANSITION: "seInvalidTransition",
         E_INVALID_VALUE: "seInvalidValue",
+        // ADM1
+        E_ADMINS_CANNOT_REGISTER_VENUES: "seAdminsCannotRegisterVenues",
+        E_NO_SKILL_PROFILE: "seNoSkillProfile",
       },
       E = {
         E_TOO_MANY_ATTEMPTS_MINUTES: "seTooManyAttemptsMinutes",
@@ -18898,6 +19885,56 @@ __d(
         demoModeBanner: "Demo mode \u2014 data is stored on this device only",
         sessionExpired: "Your session has expired. Please sign in again.",
         // --- ADM1 keys (fix batch) ---
+        seAdminsCannotRegisterVenues: "Administrators review venues and cannot register one.",
+        seNoSkillProfile: "This player has no skill profile for that sport yet.",
+        appStatus_info_requested: "Info requested",
+        filterInfoRequested: "Info requested",
+        hiddenOtherWorld: "%{n} records hidden in the other world",
+        hiddenOtherWorldBody: "They belong to the other audience world. A cross-partition grant is needed to review them.",
+        platformWideStatsNote: "Platform-wide statistics. The queue below shows your world only.",
+        decisionMessageLabel: "Message to applicant",
+        decisionMessagePlaceholder: "Sent to the applicant with the decision \u2014 required to reject, suspend or request info",
+        decisionInternalNoteLabel: "Internal note",
+        decisionInternalNotePlaceholder: "Visible to administrators only",
+        confirmRejectTitle: "Reject this application?",
+        confirmRejectBody: "The applicant cannot reapply for 30 days. Your message: %{reason}",
+        confirmSuspendTitle: "Suspend this organizer?",
+        confirmSuspendBody: "Organizer access is revoked immediately. Your message: %{reason}",
+        ownRecordNotice: "This is your own record. Another administrator has to review it.",
+        adjustRatingTitle: "Adjust rating",
+        adjustRatingReason: "Reason for the adjustment",
+        adjustRatingConfirm: "Apply change",
+        ratingAdjusted: "Rating updated: %{from} \u2192 %{to}",
+        noPlayerProfilesTitle: "No player profiles in your world yet",
+        noPlayerProfilesBody: "Profiles appear once players rate themselves or play a match.",
+        adminCorrectWorldFollowsNote: "All of this player\u2019s follow links are removed when they change world.",
+        playerMovedToOtherWorld: "%{name} is now in the other world and is no longer listed here.",
+        venueRegistrationsAll: "All venue registrations",
+        venueDecisionReason: "Reason (sent to the venue owner)",
+        confirmVenueApproveTitle: "Approve this venue?",
+        confirmVenueApproveBody: "%{name} will start accepting bookings immediately.",
+        ownVenueNotice: "You own this venue. Another administrator has to review it.",
+        commissionReasonLabel: "Reason for the change",
+        confirmCommissionTitle: "Update commission?",
+        confirmCommissionBody: "%{name}: %{from} \u2192 %{to}",
+        commissionInvalid: "Enter a number from 0 to 100 (percent) or up to 100 KWD (fixed).",
+        grossNetOfRefunds: "Gross net of refunds",
+        commissionSettled: "Commission (settled)",
+        commissionPending: "Commission (pending)",
+        payoutsSettled: "Paid to venues",
+        payoutsPending: "Owed to venues",
+        sanctionDecisionReason: "Reason (sent to the player)",
+        confirmRestoreTitle: "Restore this account?",
+        confirmRestoreBody: "All active bans and suspensions for %{name} will be lifted.",
+        restoreReason: "Reason for restoring",
+        restoredCount: "%{n} sanction(s) lifted.",
+        nothingToRestore: "Nothing to restore \u2014 no active ban or suspension.",
+        ownSanctionNotice: "You issued this sanction. Another administrator has to review it.",
+        openEvidence: "Open evidence",
+        evidenceLinkInvalid: "The evidence link is not a web address.",
+        adminCannotRegisterVenueTitle: "Administrators cannot register venues",
+        adminCannotRegisterVenueBody: "Venue registrations are reviewed by administrators, so an admin account cannot own one.",
+        confirmDecision: "Confirm",
         // --- ADM2 keys (fix batch) ---
         // --- ORG1 keys (fix batch) ---
         // --- ORG2 keys (fix batch) ---
@@ -22208,6 +23245,56 @@ __d(
         demoModeBanner: "\u0648\u0636\u0639 \u0627\u0644\u0639\u0631\u0636 \u2014 \u062a\u064f\u062d\u0641\u0638 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632 \u0641\u0642\u0637",
         sessionExpired: "\u0627\u0646\u062a\u0647\u062a \u062c\u0644\u0633\u062a\u0643. \u064a\u0631\u062c\u0649 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0645\u062c\u062f\u062f\u064b\u0627.",
         // --- ADM1 keys (fix batch) ---
+        seAdminsCannotRegisterVenues: "المشرفون يراجعون الملاعب ولا يمكنهم تسجيل ملعب.",
+        seNoSkillProfile: "لا يملك هذا اللاعب ملف مهارة لهذه الرياضة بعد.",
+        appStatus_info_requested: "مطلوب معلومات",
+        filterInfoRequested: "مطلوب معلومات",
+        hiddenOtherWorld: "%{n} سجلات مخفية في العالم الآخر",
+        hiddenOtherWorldBody: "تنتمي هذه السجلات إلى عالم الجمهور الآخر. تحتاج إلى تصريح عبور بين العوالم لمراجعتها.",
+        platformWideStatsNote: "إحصاءات على مستوى المنصة. القائمة أدناه تعرض عالمك فقط.",
+        decisionMessageLabel: "رسالة إلى مقدم الطلب",
+        decisionMessagePlaceholder: "تُرسل إلى مقدم الطلب مع القرار — مطلوبة للرفض أو التعليق أو طلب المعلومات",
+        decisionInternalNoteLabel: "ملاحظة داخلية",
+        decisionInternalNotePlaceholder: "تظهر للمشرفين فقط",
+        confirmRejectTitle: "رفض هذا الطلب؟",
+        confirmRejectBody: "لن يتمكن مقدم الطلب من إعادة التقديم لمدة 30 يومًا. رسالتك: %{reason}",
+        confirmSuspendTitle: "تعليق هذا المنظم؟",
+        confirmSuspendBody: "سيتم إلغاء صلاحيات المنظم فورًا. رسالتك: %{reason}",
+        ownRecordNotice: "هذا سجلك الخاص. يجب أن يراجعه مشرف آخر.",
+        adjustRatingTitle: "تعديل التقييم",
+        adjustRatingReason: "سبب التعديل",
+        adjustRatingConfirm: "تطبيق التغيير",
+        ratingAdjusted: "تم تحديث التقييم: %{from} ← %{to}",
+        noPlayerProfilesTitle: "لا توجد ملفات لاعبين في عالمك بعد",
+        noPlayerProfilesBody: "تظهر الملفات عندما يقيّم اللاعبون أنفسهم أو يلعبون مباراة.",
+        adminCorrectWorldFollowsNote: "تُحذف جميع روابط المتابعة لهذا اللاعب عند تغيير العالم.",
+        playerMovedToOtherWorld: "%{name} أصبح الآن في العالم الآخر ولم يعد مدرجًا هنا.",
+        venueRegistrationsAll: "جميع تسجيلات الملاعب",
+        venueDecisionReason: "السبب (يُرسل إلى مالك الملعب)",
+        confirmVenueApproveTitle: "اعتماد هذا الملعب؟",
+        confirmVenueApproveBody: "سيبدأ %{name} في قبول الحجوزات فورًا.",
+        ownVenueNotice: "أنت مالك هذا الملعب. يجب أن يراجعه مشرف آخر.",
+        commissionReasonLabel: "سبب التغيير",
+        confirmCommissionTitle: "تحديث العمولة؟",
+        confirmCommissionBody: "%{name}: %{from} ← %{to}",
+        commissionInvalid: "أدخل رقمًا من 0 إلى 100 (نسبة مئوية) أو حتى 100 د.ك (مبلغ ثابت).",
+        grossNetOfRefunds: "الإجمالي بعد المبالغ المستردة",
+        commissionSettled: "العمولة (المسوّاة)",
+        commissionPending: "العمولة (قيد التسوية)",
+        payoutsSettled: "المدفوع للملاعب",
+        payoutsPending: "المستحق للملاعب",
+        sanctionDecisionReason: "السبب (يُرسل إلى اللاعب)",
+        confirmRestoreTitle: "استعادة هذا الحساب؟",
+        confirmRestoreBody: "سيتم رفع جميع عمليات الحظر والتعليق النشطة عن %{name}.",
+        restoreReason: "سبب الاستعادة",
+        restoredCount: "تم رفع %{n} من العقوبات.",
+        nothingToRestore: "لا شيء لاستعادته — لا يوجد حظر أو تعليق نشط.",
+        ownSanctionNotice: "أنت من أصدر هذه العقوبة. يجب أن يراجعها مشرف آخر.",
+        openEvidence: "فتح الدليل",
+        evidenceLinkInvalid: "رابط الدليل ليس عنوان ويب.",
+        adminCannotRegisterVenueTitle: "لا يمكن للمشرفين تسجيل الملاعب",
+        adminCannotRegisterVenueBody: "يراجع المشرفون تسجيلات الملاعب، لذا لا يمكن لحساب مشرف أن يملك ملعبًا.",
+        confirmDecision: "تأكيد",
         // --- ADM2 keys (fix batch) ---
         // --- ORG1 keys (fix batch) ---
         // --- ORG2 keys (fix batch) ---
