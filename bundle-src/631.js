@@ -4164,8 +4164,15 @@ __d(
           : new Date(e.ends_at).getTime() < Date.now()
             ? "completed"
             : "upcoming";
-    r.mockGetOrganizerMatches = async (e) => {
+    // ORG1 (F-ORG1-16): every organizer read takes the caller and only the organizer (or an admin)
+    // may read it. Private invite codes are never returned to anyone else.
+    const orgSelf = (e, t) => {
+      if (t && t !== e && !ro(t)) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return !t || t === e;
+    };
+    r.mockGetOrganizerMatches = async (e, t9) => {
       (await ei(), await tn(), await Yn());
+      const own9 = orgSelf(e, t9);
       const t = new Map((await pi()).map((e) => [e.id, e])),
         a = gi().filter((t) => t.organizer_id === e);
       await Promise.all(a.map((e) => Oi(e.id)));
@@ -4186,8 +4193,8 @@ __d(
       };
     };
     r.mockGetMatchParticipants = Qi;
-    r.mockGetOrganizerStats = async (e) => {
-      (await ei(), await tn());
+    r.mockGetOrganizerStats = async (e, t9) => {
+      (await ei(), await tn(), orgSelf(e, t9));
       const t = gi().filter((t) => t.organizer_id === e),
         a = t.length,
         i = t.filter((e) => "completed" === Ji(e)).length,
@@ -4254,9 +4261,10 @@ __d(
       };
     };
     r.mockGetOrganizerReputation = Zi;
-    r.mockGetOrganizerRatings = async (e) => (
+    r.mockGetOrganizerRatings = async (e, t9) => (
       await ei(),
       await tn(),
+      orgSelf(e, t9),
       Qt.orgRatings
         .filter((t) => t.organizer_id === e)
         .sort((e, t) => new Date(t.created_at).getTime() - new Date(e.created_at).getTime())
@@ -6185,9 +6193,10 @@ __d(
           : void 0,
       });
     };
-    r.mockGetOrganizerSeries = async (e) => (
+    r.mockGetOrganizerSeries = async (e, t9) => (
       await ei(),
       await Yn(),
+      orgSelf(e, t9),
       Qt.templates
         .filter((t) => t.organizer_id === e)
         .sort((e, t) => new Date(t.created_at).getTime() - new Date(e.created_at).getTime())
@@ -6352,8 +6361,8 @@ __d(
       const o = await Ni(i.id, t);
       return { status: n.status, game: o };
     };
-    r.mockGetOrganizerReferralStats = async (e) => {
-      await ei();
+    r.mockGetOrganizerReferralStats = async (e, t9) => {
+      (await ei(), orgSelf(e, t9));
       const t = new Set(
           gi()
             .filter((t) => t.organizer_id === e)
@@ -12172,7 +12181,7 @@ __d(
         const t = hi(e.game_id);
         if (t && ((n += e.predicted_fill), "completed" === Ji(t))) {
           const a = Qt.bookings.filter(
-              (e) => e.game_id === t.id && ("confirmed" === e.status || "attended" === e.attendance),
+              (e) => e.game_id === t.id && ("confirmed" === e.status || ("cancelled" !== e.status && "rejected" !== e.status && "attended" === e.attendance)),
             ).length,
             n = Math.round((a / Math.max(1, t.max_players)) * 100);
           ((r += n), (i += Math.abs(e.predicted_fill - n)), (o += 1));
@@ -12183,7 +12192,7 @@ __d(
         autoInvites: t.filter((e) => "concierge.auto_invited" === e.type).length,
         predictions: a.length,
         evaluated: o,
-        accuracyPct: o ? Math.round(100 - i / o) : 0,
+        accuracyPct: o ? Math.round(100 - i / o) : null,
         avgPredictedFill: a.length ? Math.round(n / a.length) : 0,
         avgActualFill: o ? Math.round(r / o) : 0,
       };
@@ -12897,19 +12906,50 @@ __d(
       for (const e of t) {
         const t = td(e),
           o = Qt.bookings.filter(
-            (t) => t.game_id === e.id && ("confirmed" === t.status || "attended" === t.attendance),
+            (t) => t.game_id === e.id && ("confirmed" === t.status || ("cancelled" !== t.status && "rejected" !== t.status && "attended" === t.attendance)),
           ).length,
           s = Math.round((o / Math.max(1, e.max_players)) * 100);
         ((a += Math.abs(t - s)), (i += t), (n += s), (r += 1));
       }
-      const o = Qt.demandLog.filter((e) => e.accepted).length;
+      const o = Qt.demandLog.filter((e) => e.accepted).length,
+        // ADM2 (F-ADM2-12): the tuned weights are measured on their own model. Every past match is
+        // scored with the current cancellation weights; a useful model scores matches that were
+        // actually cancelled higher than the ones that went ahead. The gap moves when the weights move.
+        s9 = fd(),
+        d9 = gi().filter((e) => "cancelled" === e.status || "completed" === Ji(e)),
+        l9 = [],
+        c9 = [];
+      for (const e of d9) {
+        const t = Qt.bookings.filter((t) => t.game_id === e.id && "confirmed" === t.status).length,
+          a = (new Date(e.starts_at).getTime() - new Date(e.created_at).getTime()) / 36e5,
+          i = Zi ? 0 : 0,
+          n = (0, O.cancellationRisk)(
+            {
+              organizerCancelRate: 0,
+              predictedFill: Math.min(1, t / Math.max(1, e.max_players)),
+              leadHours: Number.isFinite(a) ? a : 48,
+              priceVsDemand: Math.min(1, (e.price_kwd ?? 0) / 10),
+            },
+            s9,
+          );
+        ("cancelled" === e.status ? l9 : c9).push(n);
+      }
+      const _9 = (e) => (e.length ? e.reduce((e, t) => e + t, 0) / e.length : null),
+        u9 = _9(l9),
+        m9 = _9(c9);
       return {
         evaluated: r,
-        fillAccuracyPct: r ? Math.round(100 - a / r) : 0,
-        avgPredictedFill: r ? Math.round(i / r) : 0,
-        avgActualFill: r ? Math.round(n / r) : 0,
+        fillModel: "baseline",
+        fillAccuracyPct: r ? Math.round(100 - a / r) : null,
+        avgPredictedFill: r ? Math.round(i / r) : null,
+        avgActualFill: r ? Math.round(n / r) : null,
         predictions: Qt.demandLog.length,
-        acceptRatePct: Qt.demandLog.length ? Math.round((o / Qt.demandLog.length) * 100) : 0,
+        acceptRatePct: Qt.demandLog.length ? Math.round((o / Qt.demandLog.length) * 100) : null,
+        // Weighted-model evaluation (moves with the weights on this screen).
+        riskEvaluated: d9.length,
+        riskCancelledAvgPct: null === u9 ? null : Math.round(100 * u9),
+        riskCompletedAvgPct: null === m9 ? null : Math.round(100 * m9),
+        riskSeparationPct: null === u9 || null === m9 ? null : Math.round(100 * (u9 - m9)),
       };
     };
     const yd = () => Qt.optimizerWeights ?? R.DEFAULT_OPTIMIZER_WEIGHTS,
@@ -13109,7 +13149,7 @@ __d(
       for (const e of t) {
         const t = td(e),
           o = Qt.bookings.filter(
-            (t) => t.game_id === e.id && ("confirmed" === t.status || "attended" === t.attendance),
+            (t) => t.game_id === e.id && ("confirmed" === t.status || ("cancelled" !== t.status && "rejected" !== t.status && "attended" === t.attendance)),
           ).length,
           s = Math.round((o / Math.max(1, e.max_players)) * 100);
         ((a += Math.abs(t - s)), (i += t), (n += s), (r += 1));
