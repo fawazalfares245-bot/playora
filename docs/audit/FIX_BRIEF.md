@@ -62,3 +62,9 @@ Not fixed = explain why (architectural, needs product decision, or out of reach 
 Write `docs/audit/fixes/<group>.md` with one line per finding ID in your scope:
 `- F-XXX-n: Fixed | Partially fixed | Not fixed — <what changed, files touched, how verified>`
 Also list any NEW issues you found while fixing (with evidence) so they can be added to the register.
+
+## Interruption safety (added)
+Commit to your branch after every 2-3 fixes (`git add bundle-src docs/audit/fixes && git commit -m "..."`) and
+keep `docs/audit/fixes/<group>.md` updated as you go, so that work survives an interruption. If your worktree
+already contains commits or edits from a previous attempt, read them first (`git log`, `git diff`) and continue
+from there instead of starting over.
