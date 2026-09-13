@@ -4180,7 +4180,11 @@ __d(
         "cancelled" !== e.status && new Date(e.ends_at).getTime() < Date.now() && (await ur(e));
       return a
         .sort((e, t) => new Date(t.starts_at).getTime() - new Date(e.starts_at).getTime())
-        .map((a) => Object.assign({}, Ii(a, t, e), { effective_status: Ji(a) }));
+        .map((a) => {
+          const row9 = Object.assign({}, Ii(a, t, e), { effective_status: Ji(a) });
+          // The private invite code belongs to the organizer; an admin reading the list never sees it.
+          return own9 ? row9 : Object.assign(row9, { invite_code: null });
+        });
     };
     const Qi = async (e) => {
       (await ei(), await Oi(e));

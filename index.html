@@ -5661,7 +5661,11 @@ __d(
         "cancelled" !== e.status && new Date(e.ends_at).getTime() < Date.now() && (await ur(e));
       return a
         .sort((e, t) => new Date(t.starts_at).getTime() - new Date(e.starts_at).getTime())
-        .map((a) => Object.assign({}, Ii(a, t, e), { effective_status: Ji(a) }));
+        .map((a) => {
+          const row9 = Object.assign({}, Ii(a, t, e), { effective_status: Ji(a) });
+          // The private invite code belongs to the organizer; an admin reading the list never sees it.
+          return own9 ? row9 : Object.assign(row9, { invite_code: null });
+        });
     };
     const Qi = async (e) => {
       (await ei(), await Oi(e));
@@ -19540,13 +19544,13 @@ __d(
     e.confirmSquadSpot = (o, c) => t.store.mockConfirmSquadSpot(o, c);
     e.optOutSquad = (o, c) => t.store.mockOptOutSquad(o, c);
     e.fetchSquadState = (o, c) => t.store.mockGetSquadState(o, c);
-    e.fetchOrganizerMatches = (o) => t.store.mockGetOrganizerMatches(o);
+    e.fetchOrganizerMatches = (o, c) => t.store.mockGetOrganizerMatches(o, c);
     e.reconcileSeatPayments = () => t.store.mockReconcileSeatPayments();
     e.auditSeatConsistency = () => t.store.mockAuditSeatConsistency();
     e.fetchMatchParticipants = (o) => t.store.mockGetMatchParticipants(o);
-    e.fetchOrganizerStats = (o) => t.store.mockGetOrganizerStats(o);
+    e.fetchOrganizerStats = (o, c) => t.store.mockGetOrganizerStats(o, c);
     e.fetchOrganizerReputation = (o) => t.store.mockGetOrganizerReputation(o);
-    e.fetchOrganizerRatings = (o) => t.store.mockGetOrganizerRatings(o);
+    e.fetchOrganizerRatings = (o, c) => t.store.mockGetOrganizerRatings(o, c);
     e.rateOrganizer = (o) => t.store.mockRateOrganizer(o);
     e.fetchMyOrganizerApplication = (o) => t.store.mockGetMyOrganizerApplication(o);
     e.submitOrganizerApplication = (o, c) => t.store.mockSubmitOrganizerApplication(o, c);
@@ -19579,7 +19583,7 @@ __d(
     e.endSeries = (o, c) => t.store.mockEndSeries(o, c);
     e.cancelSeries = (o, c, s) => t.store.mockCancelSeries(o, c, s);
     e.joinSeries = (o, c) => t.store.mockJoinSeries(o, c);
-    e.fetchOrganizerSeries = (o) => t.store.mockGetOrganizerSeries(o);
+    e.fetchOrganizerSeries = (o, c) => t.store.mockGetOrganizerSeries(o, c);
     e.fetchSeries = (o, c) => t.store.mockGetSeries(o, c);
     e.fetchSeriesAnalytics = (o, c) => t.store.mockGetSeriesAnalytics(o, c);
     e.activateNeedPlayer = (o, c, s) => t.store.mockActivateNeedPlayer(o, c, s);
@@ -19604,7 +19608,7 @@ __d(
     e.resolveInviteCode = (o, c) => t.store.mockResolveInviteCode(o, c);
     e.logShare = (o, c, s) => t.store.mockLogShare(o, c, s);
     e.joinByCode = (o, c) => t.store.mockJoinByCode(o, c);
-    e.fetchOrganizerReferralStats = (o) => t.store.mockGetOrganizerReferralStats(o);
+    e.fetchOrganizerReferralStats = (o, c) => t.store.mockGetOrganizerReferralStats(o, c);
     e.fetchGrowthAdminStats = (o) => t.store.mockGetGrowthAdminStats(o);
     e.searchBookableVenues = (o) => t.store.mockSearchBookableVenues(o);
     e.fetchVenueBookingDetail = (o) => t.store.mockGetVenueBookingDetail(o);
@@ -43348,12 +43352,12 @@ __d(
           setEr(null);
           try {
             const [r, a, s, l, o, n] = await Promise.all([
-              (0, C.fetchOrganizerMatches)(t.id),
-              (0, C.fetchOrganizerStats)(t.id),
+              (0, C.fetchOrganizerMatches)(t.id, t.id),
+              (0, C.fetchOrganizerStats)(t.id, t.id),
               (0, C.fetchOrganizerReputation)(t.id),
-              (0, C.fetchOrganizerRatings)(t.id),
-              (0, C.fetchOrganizerReferralStats)(t.id),
-              (0, C.fetchOrganizerSeries)(t.id),
+              (0, C.fetchOrganizerRatings)(t.id, t.id),
+              (0, C.fetchOrganizerReferralStats)(t.id, t.id),
+              (0, C.fetchOrganizerSeries)(t.id, t.id),
             ]);
             (P(r), F(a), H(s), A(l), J(o), U(n));
           } catch (e) {
@@ -47932,7 +47936,7 @@ __d(
               const [t, s, a] = await Promise.all([
                 (0, b.fetchSeries)(e, z.id),
                 (0, b.fetchSeriesAnalytics)(e, z.id).catch(() => null),
-                (0, b.fetchOrganizerMatches)(z.id),
+                (0, b.fetchOrganizerMatches)(z.id, z.id),
               ]);
               ($(t), N(s), A(a.filter((t) => t.series_id === e)));
             } catch (e) {

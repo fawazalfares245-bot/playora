@@ -30,12 +30,12 @@ __d(
           setEr(null);
           try {
             const [r, a, s, l, o, n] = await Promise.all([
-              (0, C.fetchOrganizerMatches)(t.id),
-              (0, C.fetchOrganizerStats)(t.id),
+              (0, C.fetchOrganizerMatches)(t.id, t.id),
+              (0, C.fetchOrganizerStats)(t.id, t.id),
               (0, C.fetchOrganizerReputation)(t.id),
-              (0, C.fetchOrganizerRatings)(t.id),
-              (0, C.fetchOrganizerReferralStats)(t.id),
-              (0, C.fetchOrganizerSeries)(t.id),
+              (0, C.fetchOrganizerRatings)(t.id, t.id),
+              (0, C.fetchOrganizerReferralStats)(t.id, t.id),
+              (0, C.fetchOrganizerSeries)(t.id, t.id),
             ]);
             (P(r), F(a), H(s), A(l), J(o), U(n));
           } catch (e) {

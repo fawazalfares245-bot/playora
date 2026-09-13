@@ -28,7 +28,7 @@ __d(
               const [t, s, a] = await Promise.all([
                 (0, b.fetchSeries)(e, z.id),
                 (0, b.fetchSeriesAnalytics)(e, z.id).catch(() => null),
-                (0, b.fetchOrganizerMatches)(z.id),
+                (0, b.fetchOrganizerMatches)(z.id, z.id),
               ]);
               ($(t), N(s), A(a.filter((t) => t.series_id === e)));
             } catch (e) {

@@ -36,6 +36,36 @@ const out = await page.evaluate(async (ids) => {
   res.venueRejectNoReason = await code(() => api.reviewVenue(ids.admin, 'venue-x', 'reject', ''));
   res.restoreNoReason = await code(() => api.restoreUser(ids.admin, ids.user, ''));
 
+  // --- organizer reads are scoped to the organizer (F-ORG1-16) ---
+  // Seed a private match so the invite-code assertions below are not vacuous.
+  res.privateCreated = await code(() =>
+    api.createMatch(ids.organizer, {
+      sport: 'football',
+      title: 'Private rules probe',
+      format: 'football_5v5',
+      skill_level: 'all',
+      starts_at: new Date(Date.now() + 1728e5).toISOString(),
+      ends_at: new Date(Date.now() + 1728e5 + 54e5).toISOString(),
+      max_players: 10,
+      price_kwd: 2,
+      venue_id: anyGame?.venue_id,
+      visibility: 'private',
+      approval_mode: 'auto',
+    }),
+  );
+  res.orgMatchesOther = await code(() => api.fetchOrganizerMatches(ids.organizer, ids.user));
+  res.orgStatsOther = await code(() => api.fetchOrganizerStats(ids.organizer, ids.user));
+  res.orgRatingsOther = await code(() => api.fetchOrganizerRatings(ids.organizer, ids.user));
+  res.orgSeriesOther = await code(() => api.fetchOrganizerSeries(ids.organizer, ids.user));
+  res.orgReferralsOther = await code(() => api.fetchOrganizerReferralStats(ids.organizer, ids.user));
+  res.orgMatchesSelf = await code(() => api.fetchOrganizerMatches(ids.organizer, ids.organizer));
+  res.orgMatchesAdmin = await code(() => api.fetchOrganizerMatches(ids.organizer, ids.admin));
+  const selfRows = await api.fetchOrganizerMatches(ids.organizer, ids.organizer).catch(() => []);
+  const adminRows = await api.fetchOrganizerMatches(ids.organizer, ids.admin).catch(() => []);
+  res.selfHasPrivate = selfRows.some((r) => r.visibility === 'private');
+  res.selfKeepsCode = selfRows.some((r) => r.visibility === 'private' && !!r.invite_code);
+  res.adminSeesCode = adminRows.some((r) => !!r.invite_code);
+
   // --- self review ---
   const apps = JSON.parse(localStorage.getItem('playora.mock.applications.v1') || '[]');
   res.appsSeen = apps.length;
@@ -58,6 +88,16 @@ ok('NaN weight rejected', out.weightsNaN === 'E_INVALID_VALUE', out.weightsNaN);
 ok('unknown weight key rejected', out.weightsUnknownKey === 'E_INVALID_VALUE', out.weightsUnknownKey);
 ok('venue rejection needs a reason', /E_A_REASON_IS_REQUIRED|E_VENUE_NOT_FOUND/.test(out.venueRejectNoReason), out.venueRejectNoReason);
 ok('restore needs a reason', /E_A_REASON_IS_REQUIRED|E_NO_SUCH_PLAYER/.test(out.restoreNoReason), out.restoreNoReason);
+ok('a private probe match was created', out.privateCreated === 'accepted', out.privateCreated);
+ok('another player cannot read an organizer\u2019s matches', out.orgMatchesOther === 'E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW', out.orgMatchesOther);
+ok('another player cannot read an organizer\u2019s stats', out.orgStatsOther === 'E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW', out.orgStatsOther);
+ok('another player cannot read an organizer\u2019s ratings', out.orgRatingsOther === 'E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW', out.orgRatingsOther);
+ok('another player cannot read an organizer\u2019s series', out.orgSeriesOther === 'E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW', out.orgSeriesOther);
+ok('another player cannot read an organizer\u2019s referrals', out.orgReferralsOther === 'E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW', out.orgReferralsOther);
+ok('an organizer can read their own matches', out.orgMatchesSelf === 'accepted', out.orgMatchesSelf);
+ok('an admin can read an organizer\u2019s matches', out.orgMatchesAdmin === 'accepted', out.orgMatchesAdmin);
+ok('the organizer keeps their own invite codes', out.selfHasPrivate && out.selfKeepsCode, `private=${out.selfHasPrivate} code=${out.selfKeepsCode}`);
+ok('an admin never sees an invite code', out.adminSeesCode === false, String(out.adminSeesCode));
 ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
 await browser.close();
 console.log(results.join('\n'));
