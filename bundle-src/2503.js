@@ -3,7 +3,7 @@ __d(
     var e = r(d[0]);
     (Object.defineProperty(_e, "__esModule", { value: !0 }),
       (_e.default = function () {
-        const { user: e } = (0, v.useAuth)(),
+        const { user: e, profile: pr } = (0, v.useAuth)(),
           { colors: s } = (0, C.useTheme)(),
           I = (0, y.useRouter)(),
           R = (0, k.useT)(),
@@ -12,6 +12,14 @@ __d(
           [_, D] = (0, t.useState)(["padel"]),
           [M, N] = (0, t.useState)(!1),
           E = (e) => D((t) => (t.includes(e) ? t.filter((t) => t !== e) : [...t, e]));
+        // Administrators review venue registrations, so they cannot submit one themselves (F-ADM1-19).
+        if ("admin" === pr?.role)
+          return (0, H.jsx)(G9.GateScreen, {
+            kind: "denied",
+            title: R("adminCannotRegisterVenueTitle"),
+            body: R("adminCannotRegisterVenueBody"),
+            onBack: () => I.back(),
+          });
         return (0, H.jsxs)(p.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: s.bg },
@@ -136,7 +144,8 @@ __d(
       k = r(d[19]),
       P = r(d[20]),
       T = r(d[21]),
-      H = r(d[22]);
+      H = r(d[22]),
+      G9 = r(d[23]);
     const w = ["padel", "tennis", "football"];
     const A = s.default.create({
       header: {
@@ -166,6 +175,6 @@ __d(
   2503,
   [
     33, 15, 445, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 626, 625, 1841, 630, 615, 616, 671, 675, 1171,
-    674, 13,
+    674, 13, 9001,
   ],
 );

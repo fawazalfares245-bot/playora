@@ -10,54 +10,64 @@ __d(
           [z, N] = (0, t.useState)([]),
           [D, V] = (0, t.useState)(null),
           [H, $] = (0, t.useState)(!0),
-          [F, L] = (0, t.useState)(!1),
-          [O, Q] = (0, t.useState)(!1),
+          [F, L] = (0, t.useState)(null),
+          [O, Q] = (0, t.useState)(null),
+          [hid, setHid] = (0, t.useState)(0),
+          [pa, setPa] = (0, t.useState)(null),
+          [rs, setRs] = (0, t.useState)(""),
+          gate = (0, G9.useRoleGate)(["admin"]),
           U = (0, t.useCallback)(async () => {
             if (e) {
+              L(null);
               try {
-                (N(await (0, B.fetchIncidentQueue)(e.id)), V(await (0, B.fetchConductAdminStats)(e.id)));
-              } catch {
-                L(!0);
+                const [t, a, i] = await Promise.all([
+                  (0, B.fetchIncidentQueue)(e.id),
+                  (0, B.fetchConductAdminStats)(e.id),
+                  (0, B.fetchMyPartitionStance)(e.id).catch(() => null),
+                ]);
+                (N(t), V(a), setHid(i?.hidden?.sanctions ?? 0));
+              } catch (e) {
+                L(e);
               }
               $(!1);
             }
           }, [e]);
         (0, f.useFocusEffect)(
           (0, t.useCallback)(() => {
-            U();
-          }, [U]),
+            gate.ready && gate.allowed && U();
+          }, [U, gate.ready, gate.allowed]),
         );
-        const G = async (e) => {
-          Q(!0);
+        // Runs one decision for one record: busy state is per record, the reason is required, and the
+        // outcome is reported back to the admin.
+        const G = async (t, a, i) => {
+          Q(t);
           try {
-            (await e(), await U());
+            const e = await a();
+            (setPa(null), setRs(""), await U(), s.default.alert(i ? i(e) : y("actionDone"), ""));
           } catch (e) {
-            s.default.alert(y("error"), (0, P.storeErrorText)(e?.message ?? "") || y("error"));
+            s.default.alert(y("error"), (0, G9.classifyError)(e).message || y("error"));
           } finally {
-            Q(!1);
+            Q(null);
           }
         };
-        if (H)
+        if (gate.ready && !gate.allowed)
+          return (0, R.jsx)(G9.GateScreen, { kind: "denied", onBack: () => c.back() });
+        if (H || !gate.ready)
           return (0, R.jsx)(x.SafeAreaView, {
             style: [E.center, { backgroundColor: o.bg }],
             children: (0, R.jsx)(n.default, { color: o.accentText }),
           });
-        if (F)
-          return (0, R.jsxs)(x.SafeAreaView, {
-            edges: ["top"],
-            style: { flex: 1, backgroundColor: o.bg },
-            children: [
-              (0, R.jsx)(M, { colors: o, title: y("adminConductTitle"), onBack: () => c.back() }),
-              (0, R.jsx)(p.default, {
-                style: { padding: w.spacing.lg },
-                children: (0, R.jsx)(v.EmptyState, {
-                  icon: "lock-closed-outline",
-                  title: y("organizerGateTitle"),
-                  body: y("adminPanel"),
-                }),
-              }),
-            ],
+        if (F) {
+          const t = (0, G9.classifyError)(F);
+          return (0, R.jsx)(G9.GateScreen, {
+            kind: t.isAuth ? "denied" : "error",
+            body: t.isAuth ? void 0 : t.message,
+            onRetry: () => {
+              ($(!0), U());
+            },
+            onBack: () => c.back(),
           });
+        }
         return (0, R.jsxs)(x.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: o.bg },
@@ -111,6 +121,26 @@ __d(
                   style: [w.typography.h3, { color: o.text, marginBottom: w.spacing.sm }],
                   children: y("incidentQueue"),
                 }),
+                hid > 0 &&
+                  (0, R.jsxs)(p.default, {
+                    style: [E.hiddenNote, { backgroundColor: o.surfaceAlt, borderColor: o.border }],
+                    children: [
+                      (0, R.jsx)(y9.Ionicons, { name: "eye-off-outline", size: 16, color: o.textMuted }),
+                      (0, R.jsxs)(p.default, {
+                        style: { flex: 1 },
+                        children: [
+                          (0, R.jsx)(u.default, {
+                            style: [w.typography.smallStrong, { color: o.text }],
+                            children: y("hiddenOtherWorld", { n: String(hid) }),
+                          }),
+                          (0, R.jsx)(u.default, {
+                            style: [w.typography.caption, { color: o.textMuted }],
+                            children: y("hiddenOtherWorldBody"),
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
                 0 === z.length
                   ? (0, R.jsx)(v.EmptyState, { icon: "shield-checkmark-outline", title: y("noSanctions") })
                   : z.map((t) => {
@@ -144,7 +174,10 @@ __d(
                                     (0, R.jsxs)(u.default, {
                                       style: [w.typography.caption, { color: o.textMuted }],
                                       children: [
-                                        y(`vio${I(t.category)}`),
+                                        y(
+                                          (k.VIOLATION_CATEGORIES ?? []).find((e) => e.category === t.category)
+                                            ?.labelKey ?? `vio${I(t.category)}`,
+                                        ),
                                         " \xb7 ",
                                         y("issuedBy", { name: t.issuer_name }),
                                         " \xb7 ",
@@ -161,9 +194,29 @@ __d(
                               children: t.reason,
                             }),
                             !!t.evidence_url &&
+                              (0, R.jsxs)(o9.default, {
+                                onPress: () => {
+                                  const e = String(t.evidence_url);
+                                  /^https?:\/\/\S+$/i.test(e) && "undefined" != typeof window
+                                    ? window.open(e, "_blank", "noopener,noreferrer")
+                                    : s.default.alert(y("error"), y("evidenceLinkInvalid"));
+                                },
+                                accessibilityRole: "link",
+                                accessibilityLabel: y("openEvidence"),
+                                style: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
+                                children: [
+                                  (0, R.jsx)(y9.Ionicons, { name: "open-outline", size: 14, color: o.accentText }),
+                                  (0, R.jsx)(u.default, {
+                                    style: [w.typography.caption, { color: o.accentText }],
+                                    numberOfLines: 1,
+                                    children: `${y("openEvidence")} \u00b7 ${t.evidence_url}`,
+                                  }),
+                                ],
+                              }),
+                            t.issued_by === e?.id &&
                               (0, R.jsx)(u.default, {
-                                style: [w.typography.caption, { color: o.accentText, marginTop: 2 }],
-                                children: t.evidence_url,
+                                style: [w.typography.caption, { color: o.warning, marginTop: 4 }],
+                                children: y("ownSanctionNotice"),
                               }),
                             (0, R.jsxs)(p.default, {
                               style: {
@@ -172,44 +225,133 @@ __d(
                                 marginTop: w.spacing.sm,
                                 flexWrap: "wrap",
                               },
-                              children: [
-                                "pending_approval" === t.status &&
-                                  (0, R.jsxs)(R.Fragment, {
+                              children:
+                                t.issued_by === e?.id
+                                  ? null
+                                  : [
+                                      "pending_approval" === t.status &&
+                                        (0, R.jsxs)(
+                                          R.Fragment,
+                                          {
+                                            children: [
+                                              (0, R.jsx)(b.Button, {
+                                                title: y("approveBan"),
+                                                size: "sm",
+                                                loading: O === t.id,
+                                                disabled: !!O && O !== t.id,
+                                                onPress: () => (setPa({ id: t.id, action: "approve" }), setRs("")),
+                                              }),
+                                              (0, R.jsx)(b.Button, {
+                                                title: y("rejectBan"),
+                                                size: "sm",
+                                                variant: "secondary",
+                                                loading: O === t.id,
+                                                disabled: !!O && O !== t.id,
+                                                onPress: () => (setPa({ id: t.id, action: "reject" }), setRs("")),
+                                              }),
+                                            ],
+                                          },
+                                          "pending",
+                                        ),
+                                      "active" === t.status &&
+                                        (0, R.jsx)(
+                                          b.Button,
+                                          {
+                                            title: y("overturnSanction"),
+                                            size: "sm",
+                                            variant: "secondary",
+                                            loading: O === t.id,
+                                            disabled: !!O && O !== t.id,
+                                            onPress: () => (setPa({ id: t.id, action: "overturn" }), setRs("")),
+                                          },
+                                          "overturn",
+                                        ),
+                                      "active" === t.status &&
+                                        ("ban" === t.type || "suspension" === t.type) &&
+                                        (0, R.jsx)(
+                                          b.Button,
+                                          {
+                                            title: y("restoreAccount"),
+                                            size: "sm",
+                                            variant: "secondary",
+                                            loading: O === t.id,
+                                            disabled: !!O && O !== t.id,
+                                            onPress: () => (setPa({ id: t.id, action: "restore" }), setRs("")),
+                                          },
+                                          "restore",
+                                        ),
+                                    ],
+                            }),
+                            pa?.id === t.id &&
+                              (0, R.jsxs)(p.default, {
+                                style: {
+                                  marginTop: w.spacing.sm,
+                                  borderTopWidth: c9.default.hairlineWidth,
+                                  borderTopColor: o.border,
+                                  paddingTop: w.spacing.sm,
+                                },
+                                children: [
+                                  (0, R.jsx)(u.default, {
+                                    style: [w.typography.smallStrong, { color: o.text, marginBottom: 4 }],
+                                    children:
+                                      "restore" === pa.action
+                                        ? y("confirmRestoreTitle")
+                                        : "approve" === pa.action
+                                          ? y("approveBan")
+                                          : "reject" === pa.action
+                                            ? y("rejectBan")
+                                            : y("overturnSanction"),
+                                  }),
+                                  "restore" === pa.action &&
+                                    (0, R.jsx)(u.default, {
+                                      style: [w.typography.caption, { color: o.textMuted, marginBottom: 6 }],
+                                      children: y("confirmRestoreBody", { name: t.target_name }),
+                                    }),
+                                  (0, R.jsx)(i9.Input, {
+                                    label: "restore" === pa.action ? y("restoreReason") : y("sanctionDecisionReason"),
+                                    value: rs,
+                                    onChangeText: setRs,
+                                    multiline: !0,
+                                    numberOfLines: 2,
+                                    maxLength: 300,
+                                    style: { minHeight: 48, textAlignVertical: "top" },
+                                  }),
+                                  (0, R.jsxs)(p.default, {
+                                    style: { flexDirection: "row", gap: w.spacing.sm, marginTop: w.spacing.sm },
                                     children: [
                                       (0, R.jsx)(b.Button, {
-                                        title: y("approveBan"),
+                                        title: y("cancel"),
                                         size: "sm",
-                                        loading: O,
-                                        onPress: () => G(() => (0, B.reviewSanction)(e.id, t.id, "approve")),
+                                        variant: "ghost",
+                                        style: { flex: 1 },
+                                        onPress: () => (setPa(null), setRs("")),
                                       }),
                                       (0, R.jsx)(b.Button, {
-                                        title: y("rejectBan"),
+                                        title: y("confirmDecision"),
                                         size: "sm",
-                                        variant: "secondary",
-                                        loading: O,
-                                        onPress: () => G(() => (0, B.reviewSanction)(e.id, t.id, "reject")),
+                                        variant:
+                                          "overturn" === pa.action || "restore" === pa.action ? "danger" : "primary",
+                                        style: { flex: 1 },
+                                        loading: O === t.id,
+                                        disabled: rs.trim().length < 3,
+                                        onPress: () =>
+                                          "restore" === pa.action
+                                            ? G(
+                                                t.id,
+                                                () => (0, B.restoreUser)(e.id, t.user_id, rs.trim()),
+                                                (e) =>
+                                                  Number(e) > 0
+                                                    ? y("restoredCount", { n: String(Number(e)) })
+                                                    : y("nothingToRestore"),
+                                              )
+                                            : G(t.id, () =>
+                                                (0, B.reviewSanction)(e.id, t.id, pa.action, rs.trim()),
+                                              ),
                                       }),
                                     ],
                                   }),
-                                "active" === t.status &&
-                                  (0, R.jsx)(b.Button, {
-                                    title: y("overturnSanction"),
-                                    size: "sm",
-                                    variant: "secondary",
-                                    loading: O,
-                                    onPress: () => G(() => (0, B.reviewSanction)(e.id, t.id, "overturn")),
-                                  }),
-                                "active" === t.status &&
-                                  ("ban" === t.type || "suspension" === t.type) &&
-                                  (0, R.jsx)(b.Button, {
-                                    title: y("restoreAccount"),
-                                    size: "sm",
-                                    variant: "secondary",
-                                    loading: O,
-                                    onPress: () => G(() => (0, B.restoreUser)(e.id, t.user_id)),
-                                  }),
-                              ],
-                            }),
+                                ],
+                              }),
                           ],
                         },
                         t.id,
@@ -245,7 +387,12 @@ __d(
       A = r(d[23]),
       z = r(d[24]),
       P = r(d[25]),
-      R = r(d[26]);
+      R = r(d[26]),
+      G9 = r(d[27]),
+      i9 = r(d[28]),
+      y9 = y,
+      o9 = o,
+      c9 = c;
     const I = (e) =>
         e
           .split("_")
@@ -285,6 +432,15 @@ __d(
           ],
         }),
       E = c.default.create({
+        hiddenNote: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+          borderWidth: 1,
+          borderRadius: 12,
+          padding: 10,
+          marginBottom: 12,
+        },
         center: { flex: 1, alignItems: "center", justifyContent: "center" },
         header: {
           flexDirection: "row",
@@ -314,6 +470,6 @@ __d(
   1826,
   [
     33, 15, 461, 445, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 626, 1627, 630, 615, 616, 671, 656,
-    1311, 1626, 675, 1171, 674, 13,
+    1311, 1626, 675, 1171, 674, 13, 9001, 625,
   ],
 );

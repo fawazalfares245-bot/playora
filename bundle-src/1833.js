@@ -9,31 +9,69 @@ __d(
           L = (0, I.useT)(),
           [B, D] = (0, t.useState)([]),
           [E, H] = (0, t.useState)(!0),
-          [O, F] = (0, t.useState)(!1),
+          [O, F] = (0, t.useState)(null),
           [N, V] = (0, t.useState)(null),
           [$, q] = (0, t.useState)(""),
           [G, U] = (0, t.useState)([]),
           [J, K] = (0, t.useState)(""),
           [Q, X] = (0, t.useState)(!1),
+          [ra, setRa] = (0, t.useState)(null),
+          [rr, setRr] = (0, t.useState)(""),
+          [busy, setBusy] = (0, t.useState)(null),
+          [hid, setHid] = (0, t.useState)(0),
+          logged = (0, t.useRef)(!1),
+          reqId = (0, t.useRef)(0),
+          gate = (0, G9.useRoleGate)(["admin"]),
           Y = (0, t.useCallback)(async () => {
-            if (e)
+            if (e) {
+              F(null);
               try {
-                (D(await (0, w.fetchAdminPlayerIntel)(e.id)), F(!1));
-              } catch {
-                F(!0);
+                // Access to the full intel roster is logged once per screen mount, not on every refresh.
+                const [t, a] = await Promise.all([
+                  (0, w.fetchAdminPlayerIntel)(e.id, { logAccess: !logged.current }),
+                  (0, w.fetchMyPartitionStance)(e.id).catch(() => null),
+                ]);
+                ((logged.current = !0), D(t), setHid(a?.hidden?.players ?? 0));
+              } catch (e) {
+                F(e);
               } finally {
                 H(!1);
               }
+            }
           }, [e]);
         (0, t.useEffect)(() => {
-          Y();
-        }, [Y]);
-        const Z = async (t, r) => {
+          gate.ready && gate.allowed && Y();
+        }, [Y, gate.ready, gate.allowed]);
+        // Rating adjustments need a reason and confirm the before/after values.
+        const Z = async (t, r, a) => {
           if (!e) return;
-          const o = v.SPORT_SCALES[t.sport].step;
-          (await (0, w.adminAdjustRating)(e.id, t.user_id, t.sport, t.rating + r * o, "admin panel"),
-            await Y());
+          const stp = v.SPORT_SCALES[t.sport].step,
+            i = Math.round(100 * (t.rating + r * stp)) / 100;
+          setBusy(`${t.user_id}:${t.sport}`);
+          try {
+            (await (0, w.adminAdjustRating)(e.id, t.user_id, t.sport, i, a),
+              setRa(null),
+              setRr(""),
+              await Y(),
+              o.default.alert(L("ratingAdjusted", { from: t.rating.toFixed(1), to: i.toFixed(1) }), ""));
+          } catch (e) {
+            o.default.alert(L("error"), (0, G9.classifyError)(e).message || L("error"));
+          } finally {
+            setBusy(null);
+          }
         };
+        if (gate.ready && !gate.allowed) return (0, P.jsx)(G9.GateScreen, { kind: "denied", onBack: () => _.back() });
+        if (O) {
+          const e = (0, G9.classifyError)(O);
+          return (0, P.jsx)(G9.GateScreen, {
+            kind: e.isAuth ? "denied" : "error",
+            body: e.isAuth ? void 0 : e.message,
+            onRetry: () => {
+              (H(!0), Y());
+            },
+            onBack: () => _.back(),
+          });
+        }
         return (0, P.jsxs)(h.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: c.bg },
@@ -63,30 +101,31 @@ __d(
                 }),
               ],
             }),
-            E
+            E || !gate.ready
               ? (0, P.jsx)(y.default, {
                   style: { flex: 1, alignItems: "center", justifyContent: "center" },
                   children: (0, P.jsx)(r.default, { color: c.accentText }),
                 })
-              : O
-                ? (0, P.jsx)(j.EmptyState, {
-                    icon: "lock-closed-outline",
-                    title: L("organizerGateTitle"),
-                    body: L("adminPanel"),
-                  })
+              : !1
+                ? null
                 : (0, P.jsxs)(n.default, {
                     contentContainerStyle: { padding: k.spacing.lg, paddingBottom: k.spacing.xxxl },
                     children: [
                       (0, P.jsx)(p.default, {
                         value: $,
-                        onChangeText: async (t) => {
-                          if ((q(t), !e || t.trim().length < 2)) U([]);
-                          else
+                        onChangeText: (t) => {
+                          q(t);
+                          const a = ++reqId.current;
+                          if (!e || t.trim().length < 2) return void U([]);
+                          setTimeout(async () => {
+                            if (a !== reqId.current) return;
                             try {
-                              U(await (0, w.adminFindPlayers)(e.id, t));
-                            } catch {
-                              U([]);
+                              const r = await (0, w.adminFindPlayers)(e.id, t);
+                              a === reqId.current && U(r);
+                            } catch (e) {
+                              a === reqId.current && (U([]), o.default.alert(L("error"), (0, G9.classifyError)(e).message));
                             }
+                          }, 300);
                         },
                         placeholder: L("adminFindPlayer"),
                         placeholderTextColor: c.textMuted,
@@ -157,11 +196,41 @@ __d(
                         ],
                         children: L("adminPlayersHint"),
                       }),
+                      hid > 0 &&
+                        (0, P.jsxs)(y.default, {
+                          style: {
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 10,
+                            borderWidth: 1,
+                            borderRadius: 12,
+                            padding: 10,
+                            marginBottom: k.spacing.md,
+                            backgroundColor: c.surfaceAlt,
+                            borderColor: c.border,
+                          },
+                          children: [
+                            (0, P.jsx)(f.Ionicons, { name: "eye-off-outline", size: 16, color: c.textMuted }),
+                            (0, P.jsxs)(y.default, {
+                              style: { flex: 1 },
+                              children: [
+                                (0, P.jsx)(u.default, {
+                                  style: [k.typography.smallStrong, { color: c.text }],
+                                  children: L("hiddenOtherWorld", { n: String(hid) }),
+                                }),
+                                (0, P.jsx)(u.default, {
+                                  style: [k.typography.caption, { color: c.textMuted }],
+                                  children: L("hiddenOtherWorldBody"),
+                                }),
+                              ],
+                            }),
+                          ],
+                        }),
                       0 === B.length
                         ? (0, P.jsx)(j.EmptyState, {
                             icon: "people-outline",
-                            title: L("noOrganizerMatches"),
-                            body: "",
+                            title: L("noPlayerProfilesTitle"),
+                            body: L("noPlayerProfilesBody"),
                           })
                         : B.map((e) =>
                             (0, P.jsxs)(
@@ -230,7 +299,8 @@ __d(
                                         ],
                                       }),
                                       (0, P.jsx)(s.default, {
-                                        onPress: () => Z(e, -1),
+                                        onPress: () => (setRa({ key: `${e.user_id}:${e.sport}`, dir: -1 }), setRr("")),
+                                        disabled: !!busy,
                                         accessibilityRole: "button",
                                         accessibilityLabel: L("decreaseRating"),
                                         style: [
@@ -251,7 +321,8 @@ __d(
                                         children: e.rating.toFixed(1),
                                       }),
                                       (0, P.jsx)(s.default, {
-                                        onPress: () => Z(e, 1),
+                                        onPress: () => (setRa({ key: `${e.user_id}:${e.sport}`, dir: 1 }), setRr("")),
+                                        disabled: !!busy,
                                         accessibilityRole: "button",
                                         accessibilityLabel: L("increaseRating"),
                                         style: [
@@ -266,6 +337,48 @@ __d(
                                       }),
                                     ],
                                   }),
+                                  ra?.key === `${e.user_id}:${e.sport}` &&
+                                    (0, P.jsxs)(y.default, {
+                                      style: { marginTop: k.spacing.sm },
+                                      children: [
+                                        (0, P.jsx)(u.default, {
+                                          style: [k.typography.smallStrong, { color: c.text, marginBottom: 4 }],
+                                          children: `${L("adjustRatingTitle")}: ${e.rating.toFixed(1)} \u2192 ${(Math.round(100 * (e.rating + ra.dir * v.SPORT_SCALES[e.sport].step)) / 100).toFixed(1)}`,
+                                        }),
+                                        (0, P.jsx)(p.default, {
+                                          value: rr,
+                                          onChangeText: setRr,
+                                          placeholder: L("adjustRatingReason"),
+                                          placeholderTextColor: c.textMuted,
+                                          accessibilityLabel: L("adjustRatingReason"),
+                                          maxLength: 200,
+                                          style: [
+                                            A.reason,
+                                            { marginTop: 0, color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border },
+                                          ],
+                                        }),
+                                        (0, P.jsxs)(y.default, {
+                                          style: { flexDirection: "row", gap: k.spacing.sm, marginTop: k.spacing.sm },
+                                          children: [
+                                            (0, P.jsx)(W.Button, {
+                                              title: L("cancel"),
+                                              size: "sm",
+                                              variant: "ghost",
+                                              style: { flex: 1 },
+                                              onPress: () => (setRa(null), setRr("")),
+                                            }),
+                                            (0, P.jsx)(W.Button, {
+                                              title: L("adjustRatingConfirm"),
+                                              size: "sm",
+                                              style: { flex: 1 },
+                                              loading: busy === `${e.user_id}:${e.sport}`,
+                                              disabled: rr.trim().length < 3,
+                                              onPress: () => Z(e, ra.dir, rr.trim()),
+                                            }),
+                                          ],
+                                        }),
+                                      ],
+                                    }),
                                   (0, P.jsxs)(y.default, {
                                     style: [A.scores, { borderTopColor: c.border }],
                                     children: [
@@ -337,7 +450,7 @@ __d(
                       }),
                     (0, P.jsx)(u.default, {
                       style: [k.typography.small, { color: c.textMuted, marginTop: k.spacing.sm }],
-                      children: L("adminCorrectWorldBody"),
+                      children: `${L("adminCorrectWorldBody")} ${L("adminCorrectWorldFollowsNote")}`,
                     }),
                     (0, P.jsx)(p.default, {
                       value: J,
@@ -376,10 +489,14 @@ __d(
                               const t = "female" === N.audience ? "male" : "female";
                               X(!0);
                               try {
+                                const a = N.display_name ?? N.full_name ?? "";
                                 (await (0, w.adminCorrectAudience)(e.id, N.user_id, t, J.trim()),
                                   V(null),
                                   K(""),
-                                  Y());
+                                  U([]),
+                                  q(""),
+                                  Y(),
+                                  o.default.alert(L("playerMovedToOtherWorld", { name: a }), ""));
                               } catch (e) {
                                 o.default.alert(
                                   L("error"),
@@ -423,6 +540,7 @@ __d(
       v = _r(d[21]),
       S = _r(d[22]),
       I = _r(d[23]),
+      G9 = _r(d[27]),
       R = _r(d[24]),
       M = _r(d[25]),
       P = _r(d[26]);
@@ -494,6 +612,6 @@ __d(
   1833,
   [
     33, 15, 461, 445, 467, 369, 281, 158, 146, 394, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 626,
-    648, 1311, 675, 1171, 674, 13,
+    648, 1311, 675, 1171, 674, 13, 9001,
   ],
 );

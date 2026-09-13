@@ -33559,48 +33559,74 @@ __d(
           [q, H] = (0, s.useState)(!0),
           [$, E] = (0, s.useState)(!1),
           [G, F] = (0, s.useState)(""),
+          [Nn, setNn] = (0, s.useState)(""),
+          [Er, setEr] = (0, s.useState)(null),
+          gate = (0, G9.useRoleGate)(["admin"]),
           J = (0, s.useCallback)(async () => {
-            if (c && e)
+            if (c && e) {
+              setEr(null);
               try {
                 W(await (0, I.fetchApplicationDetail)(c.id, e));
-              } catch {
-                W(null);
+              } catch (e) {
+                (setEr(e), W(null));
               } finally {
                 H(!1);
               }
+            }
           }, [c, e]);
         (0, s.useEffect)(() => {
-          J();
-        }, [J]);
-        const K = async (s) => {
-          if (c && e) {
-            E(!0);
-            try {
-              (await (0, I.reviewApplication)(c.id, e, s, { reason: G, notes: G }),
-                F(""),
-                await J(),
-                t.default.alert(V("actionDone"), ""));
-            } catch (e) {
-              t.default.alert(V("error"), (0, S.storeErrorText)(e?.message ?? "") || V("error"));
-            } finally {
-              E(!1);
+          gate.ready && gate.allowed && J();
+        }, [J, gate.ready, gate.allowed]);
+        const K0 = async (s) => {
+            if (c && e) {
+              E(!0);
+              try {
+                (await (0, I.reviewApplication)(c.id, e, s, { reason: G.trim(), notes: Nn.trim() }),
+                  F(""),
+                  setNn(""),
+                  await J(),
+                  t.default.alert(V("actionDone"), ""));
+              } catch (e) {
+                t.default.alert(V("error"), (0, G9.classifyError)(e).message || V("error"));
+              } finally {
+                E(!1);
+              }
             }
-          }
-        };
-        if (q)
+          },
+          // Adverse decisions are confirmed with the exact message that will reach the applicant.
+          K = (s) => {
+            if ("reject" === s || "suspend" === s) {
+              const e = G.trim();
+              if (!e) return void t.default.alert(V("error"), V("seAReasonIsRequired"));
+              t.default.alert(
+                V("reject" === s ? "confirmRejectTitle" : "confirmSuspendTitle"),
+                V("reject" === s ? "confirmRejectBody" : "confirmSuspendBody", { reason: e }),
+                [
+                  { text: V("cancel"), style: "cancel" },
+                  { text: V("confirmDecision"), onPress: () => K0(s) },
+                ],
+              );
+            } else if ("request_info" === s && !G.trim()) t.default.alert(V("error"), V("seAReasonIsRequired"));
+            else K0(s);
+          };
+        if (gate.ready && !gate.allowed) return (0, T.jsx)(G9.GateScreen, { kind: "denied", onBack: () => O.back() });
+        if (q || !gate.ready)
           return (0, T.jsx)(p.SafeAreaView, {
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: N.bg },
             children: (0, T.jsx)(l.default, { color: N.accentText }),
           });
-        if (!R)
-          return (0, T.jsx)(p.SafeAreaView, {
-            style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: N.bg },
-            children: (0, T.jsx)(d.default, {
-              style: [w.typography.body, { color: N.text }],
-              children: V("error"),
-            }),
+        if (!R) {
+          const e = Er ? (0, G9.classifyError)(Er) : null;
+          return (0, T.jsx)(G9.GateScreen, {
+            kind: e?.isAuth ? "denied" : "error",
+            title: e ? void 0 : V("seApplicationNotFound"),
+            body: e && !e.isAuth ? e.message : void 0,
+            onRetry: e && !e.isAuth ? () => (H(!0), J()) : void 0,
+            onBack: () => O.back(),
           });
-        const Q = D(R.status);
+        }
+        const Q = R.user_id && R.user_id === c?.id ? [] : D(R.status),
+          own = !!R.user_id && R.user_id === c?.id;
         return (0, T.jsxs)(p.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: N.bg },
@@ -33801,16 +33827,33 @@ __d(
                   ],
                   children: V("reviewDecision"),
                 }),
-                (0, T.jsx)(b.Input, {
-                  label: V("decisionReason"),
-                  value: G,
-                  onChangeText: F,
-                  placeholder: V("decisionReasonPlaceholder"),
-                  multiline: !0,
-                  numberOfLines: 2,
-                  maxLength: 500,
-                  style: { minHeight: 56, textAlignVertical: "top" },
-                }),
+                own &&
+                  (0, T.jsx)(d.default, {
+                    style: [w.typography.body, { color: N.warning }],
+                    children: V("ownRecordNotice"),
+                  }),
+                !own &&
+                  (0, T.jsx)(b.Input, {
+                    label: V("decisionMessageLabel"),
+                    value: G,
+                    onChangeText: (e) => F(e.slice(0, 200)),
+                    placeholder: V("decisionMessagePlaceholder"),
+                    multiline: !0,
+                    numberOfLines: 2,
+                    maxLength: 200,
+                    style: { minHeight: 56, textAlignVertical: "top" },
+                  }),
+                !own &&
+                  (0, T.jsx)(b.Input, {
+                    label: V("decisionInternalNoteLabel"),
+                    value: Nn,
+                    onChangeText: setNn,
+                    placeholder: V("decisionInternalNotePlaceholder"),
+                    multiline: !0,
+                    numberOfLines: 2,
+                    maxLength: 500,
+                    style: { minHeight: 48, textAlignVertical: "top", marginTop: w.spacing.sm },
+                  }),
                 (0, T.jsxs)(u.default, {
                   style: { gap: w.spacing.sm, marginTop: w.spacing.sm },
                   children: [
@@ -33834,6 +33877,7 @@ __d(
                             title: V("requestInfo"),
                             variant: "secondary",
                             loading: $,
+                            disabled: !G.trim(),
                             onPress: () => K("request_info"),
                             style: { flex: 1 },
                           }),
@@ -33842,6 +33886,7 @@ __d(
                             title: V("rejectApplication"),
                             variant: "secondary",
                             loading: $,
+                            disabled: !G.trim(),
                             onPress: () => K("reject"),
                             style: { flex: 1 },
                           }),
@@ -33853,6 +33898,7 @@ __d(
                         variant: "danger",
                         loading: $,
                         fullWidth: !0,
+                        disabled: !G.trim(),
                         onPress: () => K("suspend"),
                         leftIcon: (0, T.jsx)(x.Ionicons, { name: "pause-circle", size: 18, color: "#fff" }),
                       }),
@@ -33886,11 +33932,13 @@ __d(
       k = r(_d[21]),
       B = r(_d[22]),
       S = r(_d[23]),
-      T = r(_d[24]);
+      T = r(_d[24]),
+      G9 = r(_d[25]);
     const z = {
         draft: "neutral",
         submitted: "warning",
         under_review: "warning",
+        info_requested: "warning",
         approved: "success",
         rejected: "danger",
         suspended: "danger",
@@ -33959,7 +34007,7 @@ __d(
   1823,
   [
     33, 15, 461, 445, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 626, 625, 630, 615, 616, 671, 1311,
-    675, 1171, 674, 13,
+    675, 1171, 674, 13, 9001,
   ],
 );
 __d(
@@ -34411,54 +34459,64 @@ __d(
           [z, N] = (0, t.useState)([]),
           [D, V] = (0, t.useState)(null),
           [H, $] = (0, t.useState)(!0),
-          [F, L] = (0, t.useState)(!1),
-          [O, Q] = (0, t.useState)(!1),
+          [F, L] = (0, t.useState)(null),
+          [O, Q] = (0, t.useState)(null),
+          [hid, setHid] = (0, t.useState)(0),
+          [pa, setPa] = (0, t.useState)(null),
+          [rs, setRs] = (0, t.useState)(""),
+          gate = (0, G9.useRoleGate)(["admin"]),
           U = (0, t.useCallback)(async () => {
             if (e) {
+              L(null);
               try {
-                (N(await (0, B.fetchIncidentQueue)(e.id)), V(await (0, B.fetchConductAdminStats)(e.id)));
-              } catch {
-                L(!0);
+                const [t, a, i] = await Promise.all([
+                  (0, B.fetchIncidentQueue)(e.id),
+                  (0, B.fetchConductAdminStats)(e.id),
+                  (0, B.fetchMyPartitionStance)(e.id).catch(() => null),
+                ]);
+                (N(t), V(a), setHid(i?.hidden?.sanctions ?? 0));
+              } catch (e) {
+                L(e);
               }
               $(!1);
             }
           }, [e]);
         (0, f.useFocusEffect)(
           (0, t.useCallback)(() => {
-            U();
-          }, [U]),
+            gate.ready && gate.allowed && U();
+          }, [U, gate.ready, gate.allowed]),
         );
-        const G = async (e) => {
-          Q(!0);
+        // Runs one decision for one record: busy state is per record, the reason is required, and the
+        // outcome is reported back to the admin.
+        const G = async (t, a, i) => {
+          Q(t);
           try {
-            (await e(), await U());
+            const e = await a();
+            (setPa(null), setRs(""), await U(), s.default.alert(i ? i(e) : y("actionDone"), ""));
           } catch (e) {
-            s.default.alert(y("error"), (0, P.storeErrorText)(e?.message ?? "") || y("error"));
+            s.default.alert(y("error"), (0, G9.classifyError)(e).message || y("error"));
           } finally {
-            Q(!1);
+            Q(null);
           }
         };
-        if (H)
+        if (gate.ready && !gate.allowed)
+          return (0, R.jsx)(G9.GateScreen, { kind: "denied", onBack: () => c.back() });
+        if (H || !gate.ready)
           return (0, R.jsx)(x.SafeAreaView, {
             style: [E.center, { backgroundColor: o.bg }],
             children: (0, R.jsx)(n.default, { color: o.accentText }),
           });
-        if (F)
-          return (0, R.jsxs)(x.SafeAreaView, {
-            edges: ["top"],
-            style: { flex: 1, backgroundColor: o.bg },
-            children: [
-              (0, R.jsx)(M, { colors: o, title: y("adminConductTitle"), onBack: () => c.back() }),
-              (0, R.jsx)(p.default, {
-                style: { padding: w.spacing.lg },
-                children: (0, R.jsx)(v.EmptyState, {
-                  icon: "lock-closed-outline",
-                  title: y("organizerGateTitle"),
-                  body: y("adminPanel"),
-                }),
-              }),
-            ],
+        if (F) {
+          const t = (0, G9.classifyError)(F);
+          return (0, R.jsx)(G9.GateScreen, {
+            kind: t.isAuth ? "denied" : "error",
+            body: t.isAuth ? void 0 : t.message,
+            onRetry: () => {
+              ($(!0), U());
+            },
+            onBack: () => c.back(),
           });
+        }
         return (0, R.jsxs)(x.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: o.bg },
@@ -34512,6 +34570,26 @@ __d(
                   style: [w.typography.h3, { color: o.text, marginBottom: w.spacing.sm }],
                   children: y("incidentQueue"),
                 }),
+                hid > 0 &&
+                  (0, R.jsxs)(p.default, {
+                    style: [E.hiddenNote, { backgroundColor: o.surfaceAlt, borderColor: o.border }],
+                    children: [
+                      (0, R.jsx)(y9.Ionicons, { name: "eye-off-outline", size: 16, color: o.textMuted }),
+                      (0, R.jsxs)(p.default, {
+                        style: { flex: 1 },
+                        children: [
+                          (0, R.jsx)(u.default, {
+                            style: [w.typography.smallStrong, { color: o.text }],
+                            children: y("hiddenOtherWorld", { n: String(hid) }),
+                          }),
+                          (0, R.jsx)(u.default, {
+                            style: [w.typography.caption, { color: o.textMuted }],
+                            children: y("hiddenOtherWorldBody"),
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
                 0 === z.length
                   ? (0, R.jsx)(v.EmptyState, { icon: "shield-checkmark-outline", title: y("noSanctions") })
                   : z.map((t) => {
@@ -34545,7 +34623,10 @@ __d(
                                     (0, R.jsxs)(u.default, {
                                       style: [w.typography.caption, { color: o.textMuted }],
                                       children: [
-                                        y(`vio${I(t.category)}`),
+                                        y(
+                                          (k.VIOLATION_CATEGORIES ?? []).find((e) => e.category === t.category)
+                                            ?.labelKey ?? `vio${I(t.category)}`,
+                                        ),
                                         " \xb7 ",
                                         y("issuedBy", { name: t.issuer_name }),
                                         " \xb7 ",
@@ -34562,9 +34643,29 @@ __d(
                               children: t.reason,
                             }),
                             !!t.evidence_url &&
+                              (0, R.jsxs)(o9.default, {
+                                onPress: () => {
+                                  const e = String(t.evidence_url);
+                                  /^https?:\/\/\S+$/i.test(e) && "undefined" != typeof window
+                                    ? window.open(e, "_blank", "noopener,noreferrer")
+                                    : s.default.alert(y("error"), y("evidenceLinkInvalid"));
+                                },
+                                accessibilityRole: "link",
+                                accessibilityLabel: y("openEvidence"),
+                                style: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
+                                children: [
+                                  (0, R.jsx)(y9.Ionicons, { name: "open-outline", size: 14, color: o.accentText }),
+                                  (0, R.jsx)(u.default, {
+                                    style: [w.typography.caption, { color: o.accentText }],
+                                    numberOfLines: 1,
+                                    children: `${y("openEvidence")} \u00b7 ${t.evidence_url}`,
+                                  }),
+                                ],
+                              }),
+                            t.issued_by === e?.id &&
                               (0, R.jsx)(u.default, {
-                                style: [w.typography.caption, { color: o.accentText, marginTop: 2 }],
-                                children: t.evidence_url,
+                                style: [w.typography.caption, { color: o.warning, marginTop: 4 }],
+                                children: y("ownSanctionNotice"),
                               }),
                             (0, R.jsxs)(p.default, {
                               style: {
@@ -34573,44 +34674,133 @@ __d(
                                 marginTop: w.spacing.sm,
                                 flexWrap: "wrap",
                               },
-                              children: [
-                                "pending_approval" === t.status &&
-                                  (0, R.jsxs)(R.Fragment, {
+                              children:
+                                t.issued_by === e?.id
+                                  ? null
+                                  : [
+                                      "pending_approval" === t.status &&
+                                        (0, R.jsxs)(
+                                          R.Fragment,
+                                          {
+                                            children: [
+                                              (0, R.jsx)(b.Button, {
+                                                title: y("approveBan"),
+                                                size: "sm",
+                                                loading: O === t.id,
+                                                disabled: !!O && O !== t.id,
+                                                onPress: () => (setPa({ id: t.id, action: "approve" }), setRs("")),
+                                              }),
+                                              (0, R.jsx)(b.Button, {
+                                                title: y("rejectBan"),
+                                                size: "sm",
+                                                variant: "secondary",
+                                                loading: O === t.id,
+                                                disabled: !!O && O !== t.id,
+                                                onPress: () => (setPa({ id: t.id, action: "reject" }), setRs("")),
+                                              }),
+                                            ],
+                                          },
+                                          "pending",
+                                        ),
+                                      "active" === t.status &&
+                                        (0, R.jsx)(
+                                          b.Button,
+                                          {
+                                            title: y("overturnSanction"),
+                                            size: "sm",
+                                            variant: "secondary",
+                                            loading: O === t.id,
+                                            disabled: !!O && O !== t.id,
+                                            onPress: () => (setPa({ id: t.id, action: "overturn" }), setRs("")),
+                                          },
+                                          "overturn",
+                                        ),
+                                      "active" === t.status &&
+                                        ("ban" === t.type || "suspension" === t.type) &&
+                                        (0, R.jsx)(
+                                          b.Button,
+                                          {
+                                            title: y("restoreAccount"),
+                                            size: "sm",
+                                            variant: "secondary",
+                                            loading: O === t.id,
+                                            disabled: !!O && O !== t.id,
+                                            onPress: () => (setPa({ id: t.id, action: "restore" }), setRs("")),
+                                          },
+                                          "restore",
+                                        ),
+                                    ],
+                            }),
+                            pa?.id === t.id &&
+                              (0, R.jsxs)(p.default, {
+                                style: {
+                                  marginTop: w.spacing.sm,
+                                  borderTopWidth: c9.default.hairlineWidth,
+                                  borderTopColor: o.border,
+                                  paddingTop: w.spacing.sm,
+                                },
+                                children: [
+                                  (0, R.jsx)(u.default, {
+                                    style: [w.typography.smallStrong, { color: o.text, marginBottom: 4 }],
+                                    children:
+                                      "restore" === pa.action
+                                        ? y("confirmRestoreTitle")
+                                        : "approve" === pa.action
+                                          ? y("approveBan")
+                                          : "reject" === pa.action
+                                            ? y("rejectBan")
+                                            : y("overturnSanction"),
+                                  }),
+                                  "restore" === pa.action &&
+                                    (0, R.jsx)(u.default, {
+                                      style: [w.typography.caption, { color: o.textMuted, marginBottom: 6 }],
+                                      children: y("confirmRestoreBody", { name: t.target_name }),
+                                    }),
+                                  (0, R.jsx)(i9.Input, {
+                                    label: "restore" === pa.action ? y("restoreReason") : y("sanctionDecisionReason"),
+                                    value: rs,
+                                    onChangeText: setRs,
+                                    multiline: !0,
+                                    numberOfLines: 2,
+                                    maxLength: 300,
+                                    style: { minHeight: 48, textAlignVertical: "top" },
+                                  }),
+                                  (0, R.jsxs)(p.default, {
+                                    style: { flexDirection: "row", gap: w.spacing.sm, marginTop: w.spacing.sm },
                                     children: [
                                       (0, R.jsx)(b.Button, {
-                                        title: y("approveBan"),
+                                        title: y("cancel"),
                                         size: "sm",
-                                        loading: O,
-                                        onPress: () => G(() => (0, B.reviewSanction)(e.id, t.id, "approve")),
+                                        variant: "ghost",
+                                        style: { flex: 1 },
+                                        onPress: () => (setPa(null), setRs("")),
                                       }),
                                       (0, R.jsx)(b.Button, {
-                                        title: y("rejectBan"),
+                                        title: y("confirmDecision"),
                                         size: "sm",
-                                        variant: "secondary",
-                                        loading: O,
-                                        onPress: () => G(() => (0, B.reviewSanction)(e.id, t.id, "reject")),
+                                        variant:
+                                          "overturn" === pa.action || "restore" === pa.action ? "danger" : "primary",
+                                        style: { flex: 1 },
+                                        loading: O === t.id,
+                                        disabled: rs.trim().length < 3,
+                                        onPress: () =>
+                                          "restore" === pa.action
+                                            ? G(
+                                                t.id,
+                                                () => (0, B.restoreUser)(e.id, t.user_id, rs.trim()),
+                                                (e) =>
+                                                  Number(e) > 0
+                                                    ? y("restoredCount", { n: String(Number(e)) })
+                                                    : y("nothingToRestore"),
+                                              )
+                                            : G(t.id, () =>
+                                                (0, B.reviewSanction)(e.id, t.id, pa.action, rs.trim()),
+                                              ),
                                       }),
                                     ],
                                   }),
-                                "active" === t.status &&
-                                  (0, R.jsx)(b.Button, {
-                                    title: y("overturnSanction"),
-                                    size: "sm",
-                                    variant: "secondary",
-                                    loading: O,
-                                    onPress: () => G(() => (0, B.reviewSanction)(e.id, t.id, "overturn")),
-                                  }),
-                                "active" === t.status &&
-                                  ("ban" === t.type || "suspension" === t.type) &&
-                                  (0, R.jsx)(b.Button, {
-                                    title: y("restoreAccount"),
-                                    size: "sm",
-                                    variant: "secondary",
-                                    loading: O,
-                                    onPress: () => G(() => (0, B.restoreUser)(e.id, t.user_id)),
-                                  }),
-                              ],
-                            }),
+                                ],
+                              }),
                           ],
                         },
                         t.id,
@@ -34646,7 +34836,12 @@ __d(
       A = r(d[23]),
       z = r(d[24]),
       P = r(d[25]),
-      R = r(d[26]);
+      R = r(d[26]),
+      G9 = r(d[27]),
+      i9 = r(d[28]),
+      y9 = y,
+      o9 = o,
+      c9 = c;
     const I = (e) =>
         e
           .split("_")
@@ -34686,6 +34881,15 @@ __d(
           ],
         }),
       E = c.default.create({
+        hiddenNote: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+          borderWidth: 1,
+          borderRadius: 12,
+          padding: 10,
+          marginBottom: 12,
+        },
         center: { flex: 1, alignItems: "center", justifyContent: "center" },
         header: {
           flexDirection: "row",
@@ -34715,7 +34919,7 @@ __d(
   1826,
   [
     33, 15, 461, 445, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 626, 1627, 630, 615, 616, 671, 656,
-    1311, 1626, 675, 1171, 674, 13,
+    1311, 1626, 675, 1171, 674, 13, 9001, 625,
   ],
 );
 __d(
@@ -36704,7 +36908,9 @@ __d(
           D = (0, x.useRouter)(),
           W = (0, N.useT)(),
           [M, P] = (0, l.useState)(!0),
-          [$, F] = (0, l.useState)(!1),
+          [$, F] = (0, l.useState)(null),
+          [hid, setHid] = (0, l.useState)(0),
+          gate = (0, G9.useRoleGate)(["admin"]),
           [O, E] = (0, l.useState)([]),
           [H, L] = (0, l.useState)("under_review"),
           [U, V] = (0, l.useState)(null),
@@ -36712,40 +36918,44 @@ __d(
           [G, Q] = (0, l.useState)(null),
           [K, X] = (0, l.useState)(null),
           Y = (0, l.useCallback)(async () => {
-            if (t)
+            if (t) {
+              F(null);
               try {
-                (E(await (0, S.fetchOrganizerApplications)(t.id)),
-                  V(await (0, S.fetchNpnAdminStats)(t.id).catch(() => null)),
-                  J(await (0, S.fetchSkillAdminStats)(t.id).catch(() => null)),
-                  Q(await (0, S.fetchGrowthAdminStats)(t.id).catch(() => null)),
-                  X(await (0, S.fetchCompatAdminStats)(t.id).catch(() => null)),
-                  F(!1));
-              } catch (err) {
-                (console.error("[admin/organizers] load failed:", err?.code ?? err?.message), F(!0));
+                const [e, a, i, n, r, o] = await Promise.all([
+                  (0, S.fetchOrganizerApplications)(t.id),
+                  (0, S.fetchNpnAdminStats)(t.id).catch(() => null),
+                  (0, S.fetchSkillAdminStats)(t.id).catch(() => null),
+                  (0, S.fetchGrowthAdminStats)(t.id).catch(() => null),
+                  (0, S.fetchCompatAdminStats)(t.id).catch(() => null),
+                  (0, S.fetchMyPartitionStance)(t.id).catch(() => null),
+                ]);
+                (E(e), V(a), J(i), Q(n), X(r), setHid(o?.hidden?.applications ?? 0));
+              } catch (e) {
+                F(e);
               } finally {
                 P(!1);
               }
+            }
           }, [t]);
         (0, x.useFocusEffect)(
           (0, l.useCallback)(() => {
-            Y();
-          }, [Y]),
+            gate.ready && gate.allowed && Y();
+          }, [Y, gate.ready, gate.allowed]),
         );
         const Z = O.filter((t) => "all" === H || t.status === H),
           ee = O.filter((t) => "under_review" === t.status).length;
-        if (!M && ($ || "admin" !== n?.role))
-          return (0, B.jsxs)(p.SafeAreaView, {
-            edges: ["top"],
-            style: { flex: 1, backgroundColor: I.bg },
-            children: [
-              (0, B.jsx)(R, { colors: I, t: W, onBack: () => D.back(), count: 0 }),
-              (0, B.jsx)(b.EmptyState, {
-                icon: "lock-closed-outline",
-                title: W("organizerGateTitle"),
-                body: W("adminPanel"),
-              }),
-            ],
+        if (gate.ready && !gate.allowed) return (0, B.jsx)(G9.GateScreen, { kind: "denied", onBack: () => D.back() });
+        if ($) {
+          const e = (0, G9.classifyError)($);
+          return (0, B.jsx)(G9.GateScreen, {
+            kind: e.isAuth ? "denied" : "error",
+            body: e.isAuth ? void 0 : e.message,
+            onRetry: () => {
+              (P(!0), Y());
+            },
+            onBack: () => D.back(),
           });
+        }
         return (0, B.jsxs)(p.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: I.bg },
@@ -37030,6 +37240,36 @@ __d(
                           }),
                         ],
                       }),
+                    hid > 0 &&
+                      (0, B.jsxs)(u.default, {
+                        style: {
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 10,
+                          borderWidth: 1,
+                          borderRadius: 12,
+                          padding: 10,
+                          marginBottom: w.spacing.md,
+                          backgroundColor: I.surfaceAlt,
+                          borderColor: I.border,
+                        },
+                        children: [
+                          (0, B.jsx)(f.Ionicons, { name: "eye-off-outline", size: 16, color: I.textMuted }),
+                          (0, B.jsxs)(u.default, {
+                            style: { flex: 1 },
+                            children: [
+                              (0, B.jsx)(c.default, {
+                                style: [w.typography.smallStrong, { color: I.text }],
+                                children: W("hiddenOtherWorld", { n: String(hid) }),
+                              }),
+                              (0, B.jsx)(c.default, {
+                                style: [w.typography.caption, { color: I.textMuted }],
+                                children: W("hiddenOtherWorldBody"),
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
                     0 === Z.length
                       ? (0, B.jsx)(b.EmptyState, {
                           icon: "checkmark-done-outline",
@@ -37170,9 +37410,11 @@ __d(
       C = r(d[19]),
       N = r(d[20]),
       I = r(d[21]),
-      B = r(d[22]);
+      B = r(d[22]),
+      G9 = r(d[23]);
     const A = [
         { value: "under_review", key: "filterUnderReview" },
+        { value: "info_requested", key: "filterInfoRequested" },
         { value: "approved", key: "filterApproved" },
         { value: "rejected", key: "filterRejected" },
         { value: "suspended", key: "filterSuspended" },
@@ -37182,6 +37424,7 @@ __d(
         draft: "neutral",
         submitted: "warning",
         under_review: "warning",
+        info_requested: "warning",
         approved: "success",
         rejected: "danger",
         suspended: "danger",
@@ -37281,7 +37524,7 @@ __d(
   1832,
   [
     33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 1627, 630, 615, 616, 671, 1311, 1626,
-    675, 1171, 13,
+    675, 1171, 13, 9001,
   ],
 );
 __d(
@@ -37295,31 +37538,69 @@ __d(
           L = (0, I.useT)(),
           [B, D] = (0, t.useState)([]),
           [E, H] = (0, t.useState)(!0),
-          [O, F] = (0, t.useState)(!1),
+          [O, F] = (0, t.useState)(null),
           [N, V] = (0, t.useState)(null),
           [$, q] = (0, t.useState)(""),
           [G, U] = (0, t.useState)([]),
           [J, K] = (0, t.useState)(""),
           [Q, X] = (0, t.useState)(!1),
+          [ra, setRa] = (0, t.useState)(null),
+          [rr, setRr] = (0, t.useState)(""),
+          [busy, setBusy] = (0, t.useState)(null),
+          [hid, setHid] = (0, t.useState)(0),
+          logged = (0, t.useRef)(!1),
+          reqId = (0, t.useRef)(0),
+          gate = (0, G9.useRoleGate)(["admin"]),
           Y = (0, t.useCallback)(async () => {
-            if (e)
+            if (e) {
+              F(null);
               try {
-                (D(await (0, w.fetchAdminPlayerIntel)(e.id)), F(!1));
-              } catch {
-                F(!0);
+                // Access to the full intel roster is logged once per screen mount, not on every refresh.
+                const [t, a] = await Promise.all([
+                  (0, w.fetchAdminPlayerIntel)(e.id, { logAccess: !logged.current }),
+                  (0, w.fetchMyPartitionStance)(e.id).catch(() => null),
+                ]);
+                ((logged.current = !0), D(t), setHid(a?.hidden?.players ?? 0));
+              } catch (e) {
+                F(e);
               } finally {
                 H(!1);
               }
+            }
           }, [e]);
         (0, t.useEffect)(() => {
-          Y();
-        }, [Y]);
-        const Z = async (t, r) => {
+          gate.ready && gate.allowed && Y();
+        }, [Y, gate.ready, gate.allowed]);
+        // Rating adjustments need a reason and confirm the before/after values.
+        const Z = async (t, r, a) => {
           if (!e) return;
-          const o = v.SPORT_SCALES[t.sport].step;
-          (await (0, w.adminAdjustRating)(e.id, t.user_id, t.sport, t.rating + r * o, "admin panel"),
-            await Y());
+          const stp = v.SPORT_SCALES[t.sport].step,
+            i = Math.round(100 * (t.rating + r * stp)) / 100;
+          setBusy(`${t.user_id}:${t.sport}`);
+          try {
+            (await (0, w.adminAdjustRating)(e.id, t.user_id, t.sport, i, a),
+              setRa(null),
+              setRr(""),
+              await Y(),
+              o.default.alert(L("ratingAdjusted", { from: t.rating.toFixed(1), to: i.toFixed(1) }), ""));
+          } catch (e) {
+            o.default.alert(L("error"), (0, G9.classifyError)(e).message || L("error"));
+          } finally {
+            setBusy(null);
+          }
         };
+        if (gate.ready && !gate.allowed) return (0, P.jsx)(G9.GateScreen, { kind: "denied", onBack: () => _.back() });
+        if (O) {
+          const e = (0, G9.classifyError)(O);
+          return (0, P.jsx)(G9.GateScreen, {
+            kind: e.isAuth ? "denied" : "error",
+            body: e.isAuth ? void 0 : e.message,
+            onRetry: () => {
+              (H(!0), Y());
+            },
+            onBack: () => _.back(),
+          });
+        }
         return (0, P.jsxs)(h.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: c.bg },
@@ -37349,30 +37630,31 @@ __d(
                 }),
               ],
             }),
-            E
+            E || !gate.ready
               ? (0, P.jsx)(y.default, {
                   style: { flex: 1, alignItems: "center", justifyContent: "center" },
                   children: (0, P.jsx)(r.default, { color: c.accentText }),
                 })
-              : O
-                ? (0, P.jsx)(j.EmptyState, {
-                    icon: "lock-closed-outline",
-                    title: L("organizerGateTitle"),
-                    body: L("adminPanel"),
-                  })
+              : !1
+                ? null
                 : (0, P.jsxs)(n.default, {
                     contentContainerStyle: { padding: k.spacing.lg, paddingBottom: k.spacing.xxxl },
                     children: [
                       (0, P.jsx)(p.default, {
                         value: $,
-                        onChangeText: async (t) => {
-                          if ((q(t), !e || t.trim().length < 2)) U([]);
-                          else
+                        onChangeText: (t) => {
+                          q(t);
+                          const a = ++reqId.current;
+                          if (!e || t.trim().length < 2) return void U([]);
+                          setTimeout(async () => {
+                            if (a !== reqId.current) return;
                             try {
-                              U(await (0, w.adminFindPlayers)(e.id, t));
-                            } catch {
-                              U([]);
+                              const r = await (0, w.adminFindPlayers)(e.id, t);
+                              a === reqId.current && U(r);
+                            } catch (e) {
+                              a === reqId.current && (U([]), o.default.alert(L("error"), (0, G9.classifyError)(e).message));
                             }
+                          }, 300);
                         },
                         placeholder: L("adminFindPlayer"),
                         placeholderTextColor: c.textMuted,
@@ -37443,11 +37725,41 @@ __d(
                         ],
                         children: L("adminPlayersHint"),
                       }),
+                      hid > 0 &&
+                        (0, P.jsxs)(y.default, {
+                          style: {
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 10,
+                            borderWidth: 1,
+                            borderRadius: 12,
+                            padding: 10,
+                            marginBottom: k.spacing.md,
+                            backgroundColor: c.surfaceAlt,
+                            borderColor: c.border,
+                          },
+                          children: [
+                            (0, P.jsx)(f.Ionicons, { name: "eye-off-outline", size: 16, color: c.textMuted }),
+                            (0, P.jsxs)(y.default, {
+                              style: { flex: 1 },
+                              children: [
+                                (0, P.jsx)(u.default, {
+                                  style: [k.typography.smallStrong, { color: c.text }],
+                                  children: L("hiddenOtherWorld", { n: String(hid) }),
+                                }),
+                                (0, P.jsx)(u.default, {
+                                  style: [k.typography.caption, { color: c.textMuted }],
+                                  children: L("hiddenOtherWorldBody"),
+                                }),
+                              ],
+                            }),
+                          ],
+                        }),
                       0 === B.length
                         ? (0, P.jsx)(j.EmptyState, {
                             icon: "people-outline",
-                            title: L("noOrganizerMatches"),
-                            body: "",
+                            title: L("noPlayerProfilesTitle"),
+                            body: L("noPlayerProfilesBody"),
                           })
                         : B.map((e) =>
                             (0, P.jsxs)(
@@ -37516,7 +37828,8 @@ __d(
                                         ],
                                       }),
                                       (0, P.jsx)(s.default, {
-                                        onPress: () => Z(e, -1),
+                                        onPress: () => (setRa({ key: `${e.user_id}:${e.sport}`, dir: -1 }), setRr("")),
+                                        disabled: !!busy,
                                         accessibilityRole: "button",
                                         accessibilityLabel: L("decreaseRating"),
                                         style: [
@@ -37537,7 +37850,8 @@ __d(
                                         children: e.rating.toFixed(1),
                                       }),
                                       (0, P.jsx)(s.default, {
-                                        onPress: () => Z(e, 1),
+                                        onPress: () => (setRa({ key: `${e.user_id}:${e.sport}`, dir: 1 }), setRr("")),
+                                        disabled: !!busy,
                                         accessibilityRole: "button",
                                         accessibilityLabel: L("increaseRating"),
                                         style: [
@@ -37552,6 +37866,48 @@ __d(
                                       }),
                                     ],
                                   }),
+                                  ra?.key === `${e.user_id}:${e.sport}` &&
+                                    (0, P.jsxs)(y.default, {
+                                      style: { marginTop: k.spacing.sm },
+                                      children: [
+                                        (0, P.jsx)(u.default, {
+                                          style: [k.typography.smallStrong, { color: c.text, marginBottom: 4 }],
+                                          children: `${L("adjustRatingTitle")}: ${e.rating.toFixed(1)} \u2192 ${(Math.round(100 * (e.rating + ra.dir * v.SPORT_SCALES[e.sport].step)) / 100).toFixed(1)}`,
+                                        }),
+                                        (0, P.jsx)(p.default, {
+                                          value: rr,
+                                          onChangeText: setRr,
+                                          placeholder: L("adjustRatingReason"),
+                                          placeholderTextColor: c.textMuted,
+                                          accessibilityLabel: L("adjustRatingReason"),
+                                          maxLength: 200,
+                                          style: [
+                                            A.reason,
+                                            { marginTop: 0, color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border },
+                                          ],
+                                        }),
+                                        (0, P.jsxs)(y.default, {
+                                          style: { flexDirection: "row", gap: k.spacing.sm, marginTop: k.spacing.sm },
+                                          children: [
+                                            (0, P.jsx)(W.Button, {
+                                              title: L("cancel"),
+                                              size: "sm",
+                                              variant: "ghost",
+                                              style: { flex: 1 },
+                                              onPress: () => (setRa(null), setRr("")),
+                                            }),
+                                            (0, P.jsx)(W.Button, {
+                                              title: L("adjustRatingConfirm"),
+                                              size: "sm",
+                                              style: { flex: 1 },
+                                              loading: busy === `${e.user_id}:${e.sport}`,
+                                              disabled: rr.trim().length < 3,
+                                              onPress: () => Z(e, ra.dir, rr.trim()),
+                                            }),
+                                          ],
+                                        }),
+                                      ],
+                                    }),
                                   (0, P.jsxs)(y.default, {
                                     style: [A.scores, { borderTopColor: c.border }],
                                     children: [
@@ -37623,7 +37979,7 @@ __d(
                       }),
                     (0, P.jsx)(u.default, {
                       style: [k.typography.small, { color: c.textMuted, marginTop: k.spacing.sm }],
-                      children: L("adminCorrectWorldBody"),
+                      children: `${L("adminCorrectWorldBody")} ${L("adminCorrectWorldFollowsNote")}`,
                     }),
                     (0, P.jsx)(p.default, {
                       value: J,
@@ -37662,10 +38018,14 @@ __d(
                               const t = "female" === N.audience ? "male" : "female";
                               X(!0);
                               try {
+                                const a = N.display_name ?? N.full_name ?? "";
                                 (await (0, w.adminCorrectAudience)(e.id, N.user_id, t, J.trim()),
                                   V(null),
                                   K(""),
-                                  Y());
+                                  U([]),
+                                  q(""),
+                                  Y(),
+                                  o.default.alert(L("playerMovedToOtherWorld", { name: a }), ""));
                               } catch (e) {
                                 o.default.alert(
                                   L("error"),
@@ -37709,6 +38069,7 @@ __d(
       v = _r(d[21]),
       S = _r(d[22]),
       I = _r(d[23]),
+      G9 = _r(d[27]),
       R = _r(d[24]),
       M = _r(d[25]),
       P = _r(d[26]);
@@ -37780,7 +38141,7 @@ __d(
   1833,
   [
     33, 15, 461, 445, 467, 369, 281, 158, 146, 394, 273, 381, 1086, 20, 1623, 1627, 630, 615, 616, 671, 626,
-    648, 1311, 675, 1171, 674, 13,
+    648, 1311, 675, 1171, 674, 13, 9001,
   ],
 );
 __d(
@@ -37795,57 +38156,61 @@ __d(
           [D, R] = (0, t.useState)([]),
           [E, F] = (0, t.useState)(null),
           [H, K] = (0, t.useState)(!0),
-          [N, M] = (0, t.useState)(!1),
-          [G, O] = (0, t.useState)(!1),
+          [N, M] = (0, t.useState)(null),
+          [G, O] = (0, t.useState)(null),
           [$, q] = (0, t.useState)(null),
           [J, Q] = (0, t.useState)("percentage"),
           [U, X] = (0, t.useState)("10"),
+          [cr, setCr] = (0, t.useState)(""),
+          [pa, setPa] = (0, t.useState)(null),
+          [rs, setRs] = (0, t.useState)(""),
+          gate = (0, G9.useRoleGate)(["admin"]),
           Y = (0, t.useCallback)(async () => {
             if (e) {
+              M(null);
               try {
-                (R(await (0, S.fetchPendingVenues)(e.id)), F(await (0, S.fetchAdminFinancials)(e.id)));
-              } catch {
-                M(!0);
+                const [t, a] = await Promise.all([(0, S.fetchPendingVenues)(e.id), (0, S.fetchAdminFinancials)(e.id)]);
+                (R(t), F(a));
+              } catch (e) {
+                M(e);
               }
               K(!1);
             }
           }, [e]);
         (0, h.useFocusEffect)(
           (0, t.useCallback)(() => {
-            Y();
-          }, [Y]),
+            gate.ready && gate.allowed && Y();
+          }, [Y, gate.ready, gate.allowed]),
         );
-        const Z = async (e) => {
-          O(!0);
+        // One action for one venue: per-record busy state, localized error, success feedback.
+        const Z = async (t, a, i) => {
+          O(t);
           try {
-            (await e(), await Y());
+            (await a(), setPa(null), setRs(""), await Y(), A9.default.alert(i ?? I("actionDone"), ""));
           } catch (e) {
-            n.default.alert(I("error"), (0, z.storeErrorText)(e?.message ?? "") || I("error"));
+            A9.default.alert(I("error"), (0, G9.classifyError)(e).message || I("error"));
           } finally {
-            O(!1);
+            O(null);
           }
         };
-        if (H)
+        if (gate.ready && !gate.allowed)
+          return (0, W.jsx)(G9.GateScreen, { kind: "denied", onBack: () => V.back() });
+        if (H || !gate.ready)
           return (0, W.jsx)(f.SafeAreaView, {
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: x.bg },
             children: (0, W.jsx)(s.default, { color: x.accentText }),
           });
-        if (N)
-          return (0, W.jsxs)(f.SafeAreaView, {
-            edges: ["top"],
-            style: { flex: 1, backgroundColor: x.bg },
-            children: [
-              (0, W.jsx)(_, { colors: x, title: I("adminVenuesTitle"), onBack: () => V.back() }),
-              (0, W.jsx)(p.default, {
-                style: { padding: B.spacing.lg },
-                children: (0, W.jsx)(w.EmptyState, {
-                  icon: "lock-closed-outline",
-                  title: I("organizerGateTitle"),
-                  body: I("adminPanel"),
-                }),
-              }),
-            ],
+        if (N) {
+          const e = (0, G9.classifyError)(N);
+          return (0, W.jsx)(G9.GateScreen, {
+            kind: e.isAuth ? "denied" : "error",
+            body: e.isAuth ? void 0 : e.message,
+            onRetry: () => {
+              (K(!0), Y());
+            },
+            onBack: () => V.back(),
           });
+        }
         return (0, W.jsxs)(f.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: x.bg },
@@ -37867,17 +38232,32 @@ __d(
                         children: [
                           (0, W.jsx)(L, {
                             label: I("totalGross"),
-                            value: (0, P.formatPrice)(E.grossKwd),
+                            value: (0, P.formatAmount)(E.grossKwd),
                             colors: x,
                           }),
                           (0, W.jsx)(L, {
-                            label: I("commissionEarned"),
-                            value: (0, P.formatPrice)(E.commissionKwd),
+                            label: I("grossNetOfRefunds"),
+                            value: (0, P.formatAmount)(E.netGrossKwd ?? E.grossKwd),
                             colors: x,
                           }),
                           (0, W.jsx)(L, {
-                            label: I("payoutsLabel"),
-                            value: (0, P.formatPrice)(E.payoutsKwd),
+                            label: I("commissionSettled"),
+                            value: (0, P.formatAmount)(E.commissionSettledKwd ?? E.commissionKwd),
+                            colors: x,
+                          }),
+                          (0, W.jsx)(L, {
+                            label: I("commissionPending"),
+                            value: (0, P.formatAmount)(E.commissionPendingKwd ?? 0),
+                            colors: x,
+                          }),
+                          (0, W.jsx)(L, {
+                            label: I("payoutsSettled"),
+                            value: (0, P.formatAmount)(E.payoutsSettledKwd ?? E.payoutsKwd),
+                            colors: x,
+                          }),
+                          (0, W.jsx)(L, {
+                            label: I("payoutsPending"),
+                            value: (0, P.formatAmount)(E.payoutsPendingKwd ?? 0),
                             colors: x,
                           }),
                           (0, W.jsx)(L, {
@@ -37892,7 +38272,7 @@ __d(
                           }),
                           (0, W.jsx)(L, {
                             label: I("refundsLabel"),
-                            value: (0, P.formatPrice)(E.refundsKwd),
+                            value: (0, P.formatAmount)(E.refundsKwd),
                             colors: x,
                           }),
                         ],
@@ -37901,7 +38281,7 @@ __d(
                   }),
                 (0, W.jsx)(u.default, {
                   style: [B.typography.h3, { color: x.text, marginBottom: B.spacing.sm }],
-                  children: I("venueApprovals"),
+                  children: I("venueRegistrationsAll"),
                 }),
                 0 === D.length
                   ? (0, W.jsx)(w.EmptyState, { icon: "business-outline", title: I("noVenuesFound") })
@@ -37943,42 +38323,129 @@ __d(
                                 marginTop: B.spacing.sm,
                                 flexWrap: "wrap",
                               },
-                              children: [
-                                "approved" !== s.status &&
-                                  (0, W.jsx)(j.Button, {
-                                    title: I("approveVenue"),
-                                    size: "sm",
-                                    loading: G,
-                                    onPress: () => Z(() => (0, S.reviewVenue)(e.id, t.id, "approve")),
-                                  }),
-                                "pending" === s.status &&
-                                  (0, W.jsx)(j.Button, {
-                                    title: I("rejectVenueLabel"),
-                                    size: "sm",
-                                    variant: "secondary",
-                                    loading: G,
-                                    onPress: () => Z(() => (0, S.reviewVenue)(e.id, t.id, "reject")),
-                                  }),
-                                "approved" === s.status &&
-                                  (0, W.jsx)(j.Button, {
-                                    title: I("suspendVenue"),
-                                    size: "sm",
-                                    variant: "danger",
-                                    loading: G,
-                                    onPress: () => Z(() => (0, S.reviewVenue)(e.id, t.id, "suspend")),
-                                  }),
-                                (0, W.jsx)(j.Button, {
-                                  title: I("commissionLabel"),
-                                  size: "sm",
-                                  variant: "secondary",
-                                  onPress: () => {
-                                    (q($ === t.id ? null : t.id),
-                                      Q(s.commission_type),
-                                      X(String(s.commission_value)));
-                                  },
-                                }),
-                              ],
+                              children:
+                                s.owner_id === e?.id
+                                  ? (0, W.jsx)(u.default, {
+                                      style: [B.typography.caption, { color: x.warning }],
+                                      children: I("ownVenueNotice"),
+                                    })
+                                  : [
+                                      "approved" !== s.status &&
+                                        (0, W.jsx)(
+                                          j.Button,
+                                          {
+                                            title: I("approveVenue"),
+                                            size: "sm",
+                                            loading: G === t.id,
+                                            disabled: !!G && G !== t.id,
+                                            onPress: () =>
+                                              "pending" === s.status
+                                                ? A9.default.alert(
+                                                    I("confirmVenueApproveTitle"),
+                                                    I("confirmVenueApproveBody", { name: t.name }),
+                                                    [
+                                                      { text: I("cancel"), style: "cancel" },
+                                                      {
+                                                        text: I("confirmDecision"),
+                                                        onPress: () =>
+                                                          Z(t.id, () => (0, S.reviewVenue)(e.id, t.id, "approve", "")),
+                                                      },
+                                                    ],
+                                                  )
+                                                : (setPa({ id: t.id, action: "approve" }), setRs("")),
+                                          },
+                                          "approve",
+                                        ),
+                                      "pending" === s.status &&
+                                        (0, W.jsx)(
+                                          j.Button,
+                                          {
+                                            title: I("rejectVenueLabel"),
+                                            size: "sm",
+                                            variant: "secondary",
+                                            loading: G === t.id,
+                                            disabled: !!G && G !== t.id,
+                                            onPress: () => (setPa({ id: t.id, action: "reject" }), setRs("")),
+                                          },
+                                          "reject",
+                                        ),
+                                      "approved" === s.status &&
+                                        (0, W.jsx)(
+                                          j.Button,
+                                          {
+                                            title: I("suspendVenue"),
+                                            size: "sm",
+                                            variant: "danger",
+                                            loading: G === t.id,
+                                            disabled: !!G && G !== t.id,
+                                            onPress: () => (setPa({ id: t.id, action: "suspend" }), setRs("")),
+                                          },
+                                          "suspend",
+                                        ),
+                                      (0, W.jsx)(
+                                        j.Button,
+                                        {
+                                          title: I("commissionLabel"),
+                                          size: "sm",
+                                          variant: "secondary",
+                                          disabled: !!G,
+                                          onPress: () => {
+                                            (q($ === t.id ? null : t.id),
+                                              Q(s.commission_type),
+                                              X(String(s.commission_value)),
+                                              setCr(""));
+                                          },
+                                        },
+                                        "commission",
+                                      ),
+                                    ],
                             }),
+                            pa?.id === t.id &&
+                              (0, W.jsxs)(p.default, {
+                                style: {
+                                  marginTop: B.spacing.sm,
+                                  borderTopWidth: c.default.hairlineWidth,
+                                  borderTopColor: x.border,
+                                  paddingTop: B.spacing.sm,
+                                },
+                                children: [
+                                  (0, W.jsx)(v.Input, {
+                                    label: I("venueDecisionReason"),
+                                    value: rs,
+                                    onChangeText: setRs,
+                                    multiline: !0,
+                                    numberOfLines: 2,
+                                    maxLength: 300,
+                                    style: { minHeight: 48, textAlignVertical: "top" },
+                                  }),
+                                  (0, W.jsxs)(p.default, {
+                                    style: { flexDirection: "row", gap: B.spacing.sm, marginTop: B.spacing.sm },
+                                    children: [
+                                      (0, W.jsx)(j.Button, {
+                                        title: I("cancel"),
+                                        size: "sm",
+                                        variant: "ghost",
+                                        style: { flex: 1 },
+                                        onPress: () => (setPa(null), setRs("")),
+                                      }),
+                                      (0, W.jsx)(j.Button, {
+                                        title:
+                                          "approve" === pa.action
+                                            ? I("approveVenue")
+                                            : "reject" === pa.action
+                                              ? I("rejectVenueLabel")
+                                              : I("suspendVenue"),
+                                        size: "sm",
+                                        variant: "suspend" === pa.action ? "danger" : "primary",
+                                        style: { flex: 1 },
+                                        loading: G === t.id,
+                                        disabled: rs.trim().length < 3,
+                                        onPress: () => Z(t.id, () => (0, S.reviewVenue)(e.id, t.id, pa.action, rs.trim())),
+                                      }),
+                                    ],
+                                  }),
+                                ],
+                              }),
                             $ === t.id &&
                               (0, W.jsxs)(p.default, {
                                 style: {
@@ -38022,26 +38489,44 @@ __d(
                                       ),
                                     ),
                                   }),
-                                  (0, W.jsxs)(p.default, {
-                                    style: { flexDirection: "row", gap: B.spacing.sm },
-                                    children: [
-                                      (0, W.jsx)(v.Input, {
-                                        value: U,
-                                        onChangeText: (e) => X(e.replace(/[^0-9.]/g, "")),
-                                        keyboardType: "numeric",
-                                        style: { flex: 1 },
-                                      }),
-                                      (0, W.jsx)(j.Button, {
-                                        title: I("setCommission"),
-                                        size: "sm",
-                                        loading: G,
-                                        onPress: () =>
-                                          Z(async () => {
-                                            (await (0, S.setVenueCommission)(e.id, t.id, J, Number(U) || 0),
-                                              q(null));
-                                          }),
-                                      }),
-                                    ],
+                                  (0, W.jsx)(v.Input, {
+                                    value: U,
+                                    onChangeText: (e) => X(e.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1")),
+                                    keyboardType: "numeric",
+                                    label: "percentage" === J ? I("commissionPercentage") : I("commissionFixed"),
+                                  }),
+                                  (0, W.jsx)(v.Input, {
+                                    value: cr,
+                                    onChangeText: setCr,
+                                    label: I("commissionReasonLabel"),
+                                    maxLength: 200,
+                                  }),
+                                  (0, W.jsx)(j.Button, {
+                                    title: I("setCommission"),
+                                    size: "sm",
+                                    fullWidth: !0,
+                                    loading: G === t.id,
+                                    disabled: cr.trim().length < 3 || "" === U.trim(),
+                                    style: { marginTop: B.spacing.sm },
+                                    onPress: () => {
+                                      const a = Number(U);
+                                      if (!Number.isFinite(a) || a < 0 || a > 100)
+                                        return void A9.default.alert(I("error"), I("commissionInvalid"));
+                                      const i = (e, t) =>
+                                          "percentage" === e ? `${(0, P.formatNumber)(t)}%` : (0, P.formatPrice)(t),
+                                        r = i(s.commission_type, s.commission_value),
+                                        o = i(J, a);
+                                      A9.default.alert(I("confirmCommissionTitle"), I("confirmCommissionBody", { name: t.name, from: r, to: o }), [
+                                        { text: I("cancel"), style: "cancel" },
+                                        {
+                                          text: I("confirmDecision"),
+                                          onPress: () =>
+                                            Z(t.id, async () => {
+                                              (await (0, S.setVenueCommission)(e.id, t.id, J, a, cr.trim()), q(null), setCr(""));
+                                            }),
+                                        },
+                                      ]);
+                                    },
                                   }),
                                 ],
                               }),
@@ -38079,7 +38564,9 @@ __d(
       T = r(d[22]),
       V = r(d[23]),
       z = r(d[24]),
-      W = r(d[25]);
+      W = r(d[25]),
+      G9 = r(d[26]),
+      A9 = n;
     const _ = ({ colors: e, title: t, onBack: s }) => {
         const n = (0, T.useT)();
         return (0, W.jsxs)(p.default, {
@@ -38144,7 +38631,7 @@ __d(
   1834,
   [
     33, 15, 461, 445, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 626, 625, 1627, 630, 615, 616, 671,
-    1311, 675, 1171, 674, 13,
+    1311, 675, 1171, 674, 13, 9001,
   ],
 );
 __d(function(g,r,i,_a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{gameId:t}=(0,f.useLocalSearchParams)(),{user:T}=(0,C.useAuth)(),{colors:L}=(0,_.useTheme)(),M=(0,f.useRouter)(),H=(0,A.useT)(),[N,W]=(0,a.useState)(null),[D,O]=(0,a.useState)(null),[V,E]=(0,a.useState)(!1),[F,$]=(0,a.useState)(''),[q,U]=(0,a.useState)(!1),G=(0,a.useCallback)(async()=>{T&&t&&W(await(0,R.fetchAwardBallot)(T.id,t))},[T,t]);(0,f.useFocusEffect)((0,a.useCallback)(()=>{G()},[G]));const J=async a=>{if(!T||!t||!D)return;const s=D.key;O(null),await(0,R.castAwardVote)(T.id,t,s,a),await G()},K=t=>t.custom_label??H(t.label_key);return(0,z.jsxs)(x.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:L.bg},children:[(0,z.jsxs)(y.default,{style:P.header,children:[(0,z.jsx)(l.default,{onPress:()=>M.back(),accessibilityRole:"button",accessibilityLabel:H('back'),style:[P.iconBtn,{backgroundColor:L.surface,borderColor:L.border}],children:(0,z.jsx)(p.Ionicons,{name:(0,I.chevronBack)(),size:22,color:L.text})}),(0,z.jsxs)(y.default,{style:{flex:1,marginHorizontal:k.spacing.md},children:[(0,z.jsx)(u.default,{style:[k.typography.h2,{color:L.text}],children:H('matchAwards')}),N&&'not_completed'!==N.state&&(0,z.jsx)(u.default,{style:[k.typography.small,{color:L.textMuted}],children:'published'===N.state?H('awardResults'):N.closes_at?H('voteClosesLabel',{when:(0,B.formatRelative)(N.closes_at)}):H('votingOpen')})]}),N&&(0,z.jsx)(j.Badge,{label:'published'===N.state?H('votingClosed'):'voting'===N.state?H('votingOpen'):'',tone:'published'===N.state?'neutral':'success'})]}),N?'not_completed'===N.state?(0,z.jsx)(v.EmptyState,{icon:"trophy-outline",title:H('matchAwards'),body:H('matchCompletedSoon')}):(0,z.jsxs)(n.default,{contentContainerStyle:{padding:k.spacing.lg,paddingBottom:k.spacing.xxxl},children:['voting'===N.state&&(0,z.jsx)(u.default,{style:[k.typography.small,{color:L.textMuted,marginBottom:k.spacing.md}],children:N.can_vote?H('matchAwardsSub'):H('noNominees')}),'published'===N.state&&(0===N.winners.length?(0,z.jsx)(v.EmptyState,{icon:"trophy-outline",title:H('awardResults'),body:H('noNominees')}):N.winners.map(t=>(0,z.jsx)(b.Card,{padding:"md",style:{marginBottom:k.spacing.sm},children:(0,z.jsxs)(y.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,z.jsx)(u.default,{style:{fontSize:26},children:t.emoji}),(0,z.jsxs)(y.default,{style:{flex:1,marginHorizontal:k.spacing.md},children:[(0,z.jsx)(u.default,{style:[k.typography.caption,{color:L.textMuted}],children:K(t)}),(0,z.jsx)(l.default,{onPress:()=>M.push(`/player/${t.winner_id}`),accessibilityRole:"button",accessibilityLabel:t.winner_name,children:(0,z.jsxs)(u.default,{style:[k.typography.bodyStrong,{color:L.text}],children:["\ud83c\udfc6 ",t.winner_name]})})]}),(0,z.jsx)(j.Badge,{label:H('votesLabel',{n:(0,S.formatNumber)(t.votes)}),tone:"accent"}),N.is_admin&&(0,z.jsx)(l.default,{onPress:async()=>{T&&(await(0,R.revokeAward)(T.id,t.id),await G())},accessibilityRole:"button",accessibilityLabel:H('revokeBtn'),hitSlop:8,style:{marginStart:k.spacing.sm},children:(0,z.jsx)(p.Ionicons,{name:"trash-outline",size:18,color:L.danger})})]})},t.award_key))),'voting'===N.state&&N.awards.map(t=>{return(0,z.jsx)(b.Card,{padding:"md",style:{marginBottom:k.spacing.sm},children:(0,z.jsxs)(l.default,{onPress:()=>N.can_vote&&O(t),accessibilityRole:"button",disabled:!N.can_vote,style:{flexDirection:'row',alignItems:'center'},children:[(0,z.jsx)(u.default,{style:{fontSize:24},children:t.emoji}),(0,z.jsxs)(y.default,{style:{flex:1,marginHorizontal:k.spacing.md},children:[(0,z.jsx)(u.default,{style:[k.typography.bodyStrong,{color:L.text}],children:K(t)}),(0,z.jsx)(u.default,{style:[k.typography.small,{color:t.my_vote?L.accentText:L.textMuted}],children:t.my_vote?`\u2713 ${H('votedForLabel')}: ${a=t.my_vote,N?.nominees.find(t=>t.id===a)?.name??'\u2014'}`:N.can_vote?H('pickNominee'):H('votesLabel',{n:(0,S.formatNumber)(t.total_votes)})})]}),N.can_vote&&(0,z.jsx)(p.Ionicons,{name:(0,I.chevronForward)(),size:18,color:L.textMuted})]})},t.key);var a}),N.is_manager&&'voting'===N.state&&(0,z.jsxs)(y.default,{style:{marginTop:k.spacing.lg,gap:k.spacing.sm},children:[V?(0,z.jsxs)(y.default,{style:{flexDirection:'row',gap:k.spacing.sm},children:[(0,z.jsx)(y.default,{style:{flex:1},children:(0,z.jsx)(h.default,{value:F,onChangeText:$,placeholder:H('customAwardName'),placeholderTextColor:L.textMuted,style:[k.typography.body,{color:L.text,backgroundColor:L.surface,borderColor:L.border,borderWidth:c.default.hairlineWidth,borderRadius:k.radius.md,paddingHorizontal:k.spacing.md,height:44}]})}),(0,z.jsx)(w.Button,{title:H('addCustomAward'),size:"sm",onPress:async()=>{T&&t&&F.trim()&&(await(0,R.createCustomAward)(T.id,{label:F.trim(),emoji:'\ud83c\udfc5',matchId:t}),$(''),E(!1),await G())},disabled:!F.trim()})]}):(0,z.jsx)(w.Button,{title:H('addCustomAward'),variant:"secondary",onPress:()=>E(!0),leftIcon:(0,z.jsx)(p.Ionicons,{name:"add",size:16,color:L.text})}),(0,z.jsx)(w.Button,{title:H('publishResults'),onPress:async()=>{if(T&&t){U(!0);try{await(0,R.publishAwards)(T.id,t),await G()}finally{U(!1)}}},loading:q,leftIcon:(0,z.jsx)(p.Ionicons,{name:"trophy-outline",size:16,color:"#fff"})})]})]}):(0,z.jsx)(s.default,{color:L.accentText,style:{marginTop:k.spacing.xl}}),(0,z.jsx)(o.default,{visible:!!D,transparent:!0,animationType:"fade",onRequestClose:()=>O(null),children:(0,z.jsx)(l.default,{style:P.scrim,onPress:()=>O(null),children:(0,z.jsxs)(l.default,{style:[P.sheet,{backgroundColor:L.surface}],onPress:()=>{},children:[(0,z.jsx)(u.default,{style:[k.typography.h3,{color:L.text,marginBottom:k.spacing.sm}],children:D?K(D):''}),(0,z.jsx)(n.default,{style:{maxHeight:360},children:0===(N?.nominees??[]).length?(0,z.jsx)(u.default,{style:[k.typography.small,{color:L.textMuted}],children:H('noNominees')}):N.nominees.map(t=>{const a=D?.my_vote===t.id;return(0,z.jsxs)(l.default,{onPress:()=>J(t.id),accessibilityRole:"button",style:[P.nomRow,{borderBottomColor:L.border}],children:[(0,z.jsx)(y.default,{style:[P.nomAvatar,{backgroundColor:L.surfaceAlt}],children:(0,z.jsx)(u.default,{style:[k.typography.bodyStrong,{color:L.text}],children:t.name.slice(0,1).toUpperCase()})}),(0,z.jsx)(u.default,{style:[k.typography.body,{color:L.text,flex:1,marginHorizontal:k.spacing.md}],numberOfLines:1,children:t.name}),a&&(0,z.jsx)(p.Ionicons,{name:"checkmark-circle",size:20,color:L.accentText})]},t.id)})})]})})})]})};var a=r(d[1]),s=t(r(d[2])),o=t(r(d[3])),l=t(r(d[4])),n=t(r(d[5])),c=t(r(d[6])),u=t(r(d[7])),h=t(r(d[8])),y=t(r(d[9])),x=r(d[10]),p=r(d[11]),f=r(d[12]),b=r(d[13]),j=r(d[14]),w=r(d[15]),v=r(d[16]),C=r(d[17]),_=r(d[18]),k=r(d[19]),R=r(d[20]),S=r(d[21]),B=r(d[22]),A=r(d[23]),I=r(d[24]),z=r(d[25]);const P=c.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:k.spacing.lg,paddingVertical:k.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:c.default.hairlineWidth},scrim:{flex:1,backgroundColor:'rgba(0,0,0,0.4)',justifyContent:'flex-end'},sheet:{borderTopLeftRadius:k.radius.xl,borderTopRightRadius:k.radius.xl,padding:k.spacing.lg,paddingBottom:k.spacing.xxxl},nomRow:{flexDirection:'row',alignItems:'center',paddingVertical:k.spacing.sm,borderBottomWidth:c.default.hairlineWidth},nomAvatar:{width:36,height:36,borderRadius:18,alignItems:'center',justifyContent:'center'}})},1835,[33,15,461,467,369,281,158,146,394,273,381,1086,20,1623,1624,626,1627,630,615,616,671,1311,1626,675,1171,13]);
@@ -46752,7 +47239,7 @@ __d(
     var e = r(d[0]);
     (Object.defineProperty(_e, "__esModule", { value: !0 }),
       (_e.default = function () {
-        const { user: e } = (0, v.useAuth)(),
+        const { user: e, profile: pr } = (0, v.useAuth)(),
           { colors: s } = (0, C.useTheme)(),
           I = (0, y.useRouter)(),
           R = (0, k.useT)(),
@@ -46761,6 +47248,14 @@ __d(
           [_, D] = (0, t.useState)(["padel"]),
           [M, N] = (0, t.useState)(!1),
           E = (e) => D((t) => (t.includes(e) ? t.filter((t) => t !== e) : [...t, e]));
+        // Administrators review venue registrations, so they cannot submit one themselves (F-ADM1-19).
+        if ("admin" === pr?.role)
+          return (0, H.jsx)(G9.GateScreen, {
+            kind: "denied",
+            title: R("adminCannotRegisterVenueTitle"),
+            body: R("adminCannotRegisterVenueBody"),
+            onBack: () => I.back(),
+          });
         return (0, H.jsxs)(p.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: s.bg },
@@ -46885,7 +47380,8 @@ __d(
       k = r(d[19]),
       P = r(d[20]),
       T = r(d[21]),
-      H = r(d[22]);
+      H = r(d[22]),
+      G9 = r(d[23]);
     const w = ["padel", "tennis", "football"];
     const A = s.default.create({
       header: {
@@ -46915,7 +47411,7 @@ __d(
   2503,
   [
     33, 15, 445, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 626, 625, 1841, 630, 615, 616, 671, 675, 1171,
-    674, 13,
+    674, 13, 9001,
   ],
 );
 __d(function(g,r,i,a,m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{user:e}=(0,B.useAuth)(),{colors:c}=(0,w.useTheme)(),M=(0,h.useRouter)(),W=(0,I.useT)(),[L,N]=(0,t.useState)(null),[O,$]=(0,t.useState)([]),[E,K]=(0,t.useState)([]),[F,G]=(0,t.useState)(null),[q,J]=(0,t.useState)(!0),[Q,U]=(0,t.useState)(!1),[X,Y]=(0,t.useState)(null),[Z,ee]=(0,t.useState)(''),[te,se]=(0,t.useState)(''),le=(0,t.useCallback)(async()=>{if(!e)return;const t=(await(0,S.fetchMyVenues)(e.id))[0]??null;if(N(t),t){const s=t.venue.id;$(await(0,S.fetchCourts)(s,e.id).catch(()=>[])),K(await(0,S.fetchVenueBookings)(e.id,s).catch(()=>[])),G(await(0,S.fetchVenueRevenue)(e.id,s).catch(()=>null))}J(!1)},[e]);(0,h.useFocusEffect)((0,t.useCallback)(()=>{le()},[le]));const oe=async e=>{U(!0);try{await e(),await le()}catch(e){l.default.alert(W('error'),(0,H.storeErrorText)(e?.message??'')||W('error'))}finally{U(!1)}};if(q)return(0,A.jsx)(x.SafeAreaView,{style:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:c.bg},children:(0,A.jsx)(s.default,{color:c.accentText})});if(!L)return(0,A.jsxs)(x.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:c.bg},children:[(0,A.jsx)(D,{colors:c,title:W('venuePortal'),onBack:()=>M.back()}),(0,A.jsxs)(f.default,{style:{padding:k.spacing.lg},children:[(0,A.jsx)(_.EmptyState,{icon:"business-outline",title:W('venueApplicationTitle'),body:W('venueApplicationHint')}),(0,A.jsx)(C.Button,{title:W('applyAsVenue'),fullWidth:!0,style:{marginTop:k.spacing.lg},onPress:()=>M.push('/venue/apply')})]})]});const{profile:ae,venue:re}=L,ne=E.filter(e=>'reserved'===e.status),ie=E.filter(e=>'reserved'!==e.status),ce='approved'===ae.status?'success':'pending'===ae.status?'warning':'danger';return(0,A.jsxs)(x.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:c.bg},children:[(0,A.jsx)(D,{colors:c,title:re.name,onBack:()=>M.back()}),(0,A.jsxs)(n.default,{contentContainerStyle:{padding:k.spacing.lg,paddingBottom:k.spacing.xxxl},children:[(0,A.jsxs)(f.default,{style:{flexDirection:'row',alignItems:'center',marginBottom:k.spacing.md},children:[(0,A.jsx)(b.Badge,{label:W(`vstatus_${ae.status}`),tone:ce}),(0,A.jsx)(f.default,{style:{flex:1}}),(0,A.jsx)(C.Button,{title:W('scanCheckin'),size:"sm",variant:"secondary",leftIcon:(0,A.jsx)(y.Ionicons,{name:"qr-code-outline",size:15,color:c.text}),onPress:()=>M.push('/venue/scan')})]}),'approved'!==ae.status&&(0,A.jsx)(j.Card,{style:{marginBottom:k.spacing.md,borderColor:c.warning},children:(0,A.jsx)(p.default,{style:[k.typography.small,{color:c.textMuted}],children:'pending'===ae.status?W('venuePendingHint'):W('venueSuspendedHint')})}),F&&(0,A.jsxs)(A.Fragment,{children:[(0,A.jsx)(p.default,{style:[k.typography.h3,{color:c.text,marginBottom:k.spacing.sm}],children:W('venueRevenueTitle')}),(0,A.jsxs)(f.default,{style:R.grid,children:[(0,A.jsx)(z,{label:W('grossRevenue'),value:(0,P.formatAmount)(F.grossKwd),colors:c}),(0,A.jsx)(z,{label:W('platformCommission'),value:(0,P.formatAmount)(F.commissionKwd),colors:c}),(0,A.jsx)(z,{label:W('netPayout'),value:(0,P.formatAmount)(F.netKwd),colors:c}),(0,A.jsx)(z,{label:W('settledLabel'),value:(0,P.formatAmount)(F.settledKwd),colors:c}),(0,A.jsx)(z,{label:W('confirmedBookings'),value:(0,P.formatNumber)(F.confirmed),colors:c}),(0,A.jsx)(z,{label:W('paidPlayersLabel'),value:(0,P.formatNumber)(F.paidPlayers),colors:c})]})]}),ne.length>0&&(0,A.jsxs)(A.Fragment,{children:[(0,A.jsxs)(p.default,{style:[k.typography.h3,{color:c.text,marginTop:k.spacing.lg,marginBottom:k.spacing.sm}],children:[W('pendingBookings')," \xb7 ",(0,P.formatNumber)(ne.length)]}),ne.map(t=>(0,A.jsxs)(j.Card,{style:{marginBottom:k.spacing.sm},children:[(0,A.jsxs)(p.default,{style:[k.typography.smallStrong,{color:c.text}],children:[t.court_name," \xb7 ",(0,P.formatPrice)(t.court_price_kwd)]}),(0,A.jsx)(p.default,{style:[k.typography.caption,{color:c.textMuted,marginBottom:k.spacing.sm}],children:(0,P.formatGameTime)(t.starts_at)}),(0,A.jsxs)(f.default,{style:{flexDirection:'row',gap:k.spacing.sm},children:[(0,A.jsx)(C.Button,{title:W('acceptBooking'),size:"sm",loading:Q,onPress:()=>oe(()=>(0,S.venueDecideBooking)(e.id,t.id,!0)),style:{flex:1}}),(0,A.jsx)(C.Button,{title:W('rejectBooking'),size:"sm",variant:"secondary",loading:Q,onPress:()=>oe(()=>(0,S.venueDecideBooking)(e.id,t.id,!1)),style:{flex:1}})]})]},t.id))]}),(0,A.jsxs)(f.default,{style:{flexDirection:'row',alignItems:'center',marginTop:k.spacing.lg,marginBottom:k.spacing.sm},children:[(0,A.jsx)(p.default,{style:[k.typography.h3,{color:c.text,flex:1}],children:W('manageCourts')}),(0,A.jsx)(C.Button,{title:W('addCourt'),size:"sm",onPress:()=>{ee('12.000'),Y({sport:'padel',open_minutes:480,close_minutes:1440,price_per_hour_kwd:12})}})]}),O.map(t=>(0,A.jsx)(j.Card,{style:{marginBottom:k.spacing.sm},children:(0,A.jsxs)(f.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,A.jsx)(f.default,{style:[R.cIcon,{backgroundColor:(0,P.sportColor)(t.sport)}],children:(0,A.jsx)(y.Ionicons,{name:P.sportIcon[t.sport],size:16,color:"#fff"})}),(0,A.jsxs)(f.default,{style:{flex:1,marginHorizontal:k.spacing.sm},children:[(0,A.jsx)(p.default,{style:[k.typography.smallStrong,{color:c.text}],children:t.name}),(0,A.jsxs)(p.default,{style:[k.typography.caption,{color:c.textMuted}],children:[(0,P.formatPrice)(t.price_per_hour_kwd),W('perHour')," \xb7 ",(0,T.fmtHHMM)(t.open_minutes),"\u2013",(0,T.fmtHHMM)(t.close_minutes)]})]}),(0,A.jsx)(o.default,{onPress:()=>{ee(String(t.price_per_hour_kwd??'')),Y(t)},hitSlop:8,style:{padding:6},children:(0,A.jsx)(y.Ionicons,{name:"create-outline",size:20,color:c.textMuted})}),(0,A.jsx)(u.default,{value:t.active,onValueChange:s=>oe(()=>(0,S.setCourtActive)(e.id,t.id,s))})]})},t.id)),X&&(0,A.jsxs)(j.Card,{style:{marginBottom:k.spacing.md,borderColor:c.accent},children:[(0,A.jsx)(p.default,{style:[k.typography.h3,{color:c.text,marginBottom:k.spacing.sm}],children:X.id?W('editCourt'):W('addCourt')}),(0,A.jsx)(v.Input,{value:X.name??'',onChangeText:e=>Y(Object.assign({},X,{name:e})),placeholder:W('courtName')}),(0,A.jsx)(f.default,{style:{flexDirection:'row',gap:k.spacing.sm,marginTop:k.spacing.sm},children:V.map(e=>(0,A.jsx)(o.default,{onPress:()=>Y(Object.assign({},X,{sport:e})),accessibilityRole:"button",accessibilityState:{selected:X.sport===e},style:[R.sportChip,{backgroundColor:X.sport===e?c.accent:c.surface,borderColor:X.sport===e?c.accent:c.border}],children:(0,A.jsx)(p.default,{style:[k.typography.smallStrong,{color:X.sport===e?'#fff':c.text}],children:W(e)})},e))}),(0,A.jsxs)(f.default,{style:{marginTop:k.spacing.sm},children:[(0,A.jsx)(p.default,{style:[k.typography.caption,{color:c.textMuted,marginBottom:4}],children:W('pricePerHour')}),(0,A.jsx)(v.Input,{value:Z,onChangeText:e=>{const t=e.replace(/[^0-9.]/g,''),[s,...l]=t.split('.');ee(l.length?`${s}.${l.join('').slice(0,3)}`:s)},keyboardType:"decimal-pad",placeholder:"12.000"})]}),(0,A.jsxs)(f.default,{style:{flexDirection:'row',gap:k.spacing.sm,marginTop:k.spacing.md},children:[(0,A.jsx)(C.Button,{title:W('cancel'),variant:"secondary",onPress:()=>Y(null),style:{flex:1}}),(0,A.jsx)(C.Button,{title:W('saveCourt'),loading:Q,onPress:async()=>{e&&L&&X&&(await oe(()=>(0,S.upsertCourt)(e.id,L.venue.id,{id:X.id,name:X.name??'',sport:X.sport??'padel',price_per_hour_kwd:Number(Z)||0,open_minutes:X.open_minutes??480,close_minutes:X.close_minutes??1440})),Y(null))},style:{flex:1}})]})]}),(0,A.jsx)(p.default,{style:[k.typography.h3,{color:c.text,marginTop:k.spacing.lg,marginBottom:k.spacing.sm}],children:W('venueSettings')}),(0,A.jsxs)(j.Card,{style:{marginBottom:k.spacing.md},children:[(0,A.jsxs)(f.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,A.jsxs)(f.default,{style:{flex:1},children:[(0,A.jsx)(p.default,{style:[k.typography.smallStrong,{color:c.text}],children:W('autoAccept')}),(0,A.jsx)(p.default,{style:[k.typography.caption,{color:c.textMuted}],children:W('autoAcceptHint')})]}),(0,A.jsx)(u.default,{value:ae.auto_accept,onValueChange:t=>oe(()=>(0,S.updateVenueProfile)(e.id,re.id,{auto_accept:t}))})]}),(0,A.jsxs)(f.default,{style:[R.line,{borderTopColor:c.border}],children:[(0,A.jsx)(p.default,{style:[k.typography.small,{color:c.textMuted}],children:W('cancellationPolicyLabel')}),(0,A.jsx)(p.default,{style:[k.typography.caption,{color:c.text,marginTop:2}],children:ae.cancellation_policy})]}),ae.payout_iban_last4&&(0,A.jsxs)(f.default,{style:[R.line,{borderTopColor:c.border}],children:[(0,A.jsx)(p.default,{style:[k.typography.small,{color:c.textMuted}],children:W('payoutAccount')}),(0,A.jsxs)(p.default,{style:[k.typography.smallStrong,{color:c.text}],children:["\u2022\u2022\u2022\u2022 ",ae.payout_iban_last4]})]})]}),(0,A.jsx)(p.default,{style:[k.typography.h3,{color:c.text,marginBottom:k.spacing.sm}],children:W('staffAccounts')}),(0,A.jsxs)(j.Card,{style:{marginBottom:k.spacing.md},children:[0===ae.staff.length?(0,A.jsx)(p.default,{style:[k.typography.small,{color:c.textMuted,paddingVertical:k.spacing.xs}],children:"\u2014"}):ae.staff.map(t=>(0,A.jsxs)(f.default,{style:[R.line,{borderTopColor:c.border,flexDirection:'row',alignItems:'center'}],children:[(0,A.jsxs)(f.default,{style:{flex:1},children:[(0,A.jsx)(p.default,{style:[k.typography.small,{color:c.text}],children:t.name}),(0,A.jsx)(p.default,{style:[k.typography.caption,{color:c.textMuted}],children:W(`role_${t.role}`)})]}),(0,A.jsx)(o.default,{onPress:()=>oe(()=>(0,S.removeVenueStaff)(e.id,re.id,t.user_id)),hitSlop:8,children:(0,A.jsx)(p.default,{style:[k.typography.caption,{color:c.danger}],children:W('removeStaff')})})]},t.user_id)),(0,A.jsxs)(f.default,{style:{flexDirection:'row',gap:k.spacing.sm,marginTop:k.spacing.sm},children:[(0,A.jsx)(v.Input,{value:te,onChangeText:se,placeholder:W('staffName'),style:{flex:1}}),(0,A.jsx)(C.Button,{title:W('addStaff'),size:"sm",loading:Q,disabled:!te.trim(),onPress:()=>oe(async()=>{await(0,S.addVenueStaff)(e.id,re.id,te.trim(),'scanner'),se('')})})]})]}),(0,A.jsx)(p.default,{style:[k.typography.h3,{color:c.text,marginBottom:k.spacing.sm}],children:W('bookingHistory')}),0===ie.length?(0,A.jsx)(p.default,{style:[k.typography.small,{color:c.textMuted}],children:W('noBookings')}):ie.slice(0,20).map(e=>(0,A.jsxs)(f.default,{style:[R.line,{borderTopColor:c.border,flexDirection:'row',alignItems:'center'}],children:[(0,A.jsxs)(p.default,{style:[k.typography.small,{color:c.text,flex:1}],numberOfLines:1,children:[e.court_name," \xb7 ",(0,P.formatGameTime)(e.starts_at)]}),(0,A.jsx)(p.default,{style:[k.typography.caption,{color:c.textMuted,marginEnd:k.spacing.sm}],children:(0,P.formatPrice)(e.court_price_kwd)}),(0,A.jsx)(b.Badge,{label:W(`bstatus_${e.status}`),tone:'confirmed'===e.status||'released'===e.status?'success':'neutral'})]},e.id))]})]})};var t=r(d[1]),s=e(r(d[2])),l=e(r(d[3])),o=e(r(d[4])),n=e(r(d[5])),c=e(r(d[6])),u=e(r(d[7])),p=e(r(d[8])),f=e(r(d[9])),x=r(d[10]),y=r(d[11]),h=r(d[12]),j=r(d[13]),b=r(d[14]),C=r(d[15]),v=r(d[16]),_=r(d[17]),B=r(d[18]),w=r(d[19]),k=r(d[20]),S=r(d[21]),T=r(d[22]),P=r(d[23]),I=r(d[24]),M=r(d[25]),H=r(d[26]),A=r(d[27]);const V=['padel','tennis','football'];const D=({colors:e,title:t,onBack:s})=>{const l=(0,I.useT)();return(0,A.jsxs)(f.default,{style:R.header,children:[(0,A.jsx)(o.default,{onPress:s,accessibilityRole:"button",accessibilityLabel:l('back'),style:[R.iconBtn,{backgroundColor:e.surface,borderColor:e.border}],children:(0,A.jsx)(y.Ionicons,{name:(0,M.chevronBack)(),size:22,color:e.text})}),(0,A.jsx)(p.default,{style:[k.typography.h2,{color:e.text,flex:1,marginHorizontal:k.spacing.md}],numberOfLines:1,children:t})]})},z=({label:e,value:t,colors:s})=>(0,A.jsxs)(f.default,{style:[R.tile,{backgroundColor:s.surface,borderColor:s.border}],children:[(0,A.jsx)(p.default,{style:[k.typography.h3,{color:s.text}],children:t}),(0,A.jsx)(p.default,{style:[k.typography.caption,{color:s.textMuted}],children:e})]}),R=c.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:k.spacing.lg,paddingVertical:k.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:c.default.hairlineWidth},grid:{flexDirection:'row',flexWrap:'wrap',gap:k.spacing.sm},tile:{width:'31.5%',borderRadius:k.radius.md,borderWidth:c.default.hairlineWidth,padding:k.spacing.md,minHeight:70,justifyContent:'center'},cIcon:{width:36,height:36,borderRadius:10,alignItems:'center',justifyContent:'center'},sportChip:{minHeight:34,paddingHorizontal:k.spacing.md,borderRadius:999,borderWidth:c.default.hairlineWidth,alignItems:'center',justifyContent:'center'},line:{paddingVertical:k.spacing.sm,borderTopWidth:c.default.hairlineWidth}})},2504,[33,15,461,445,369,281,158,477,146,273,381,1086,20,1623,1624,626,625,1627,630,615,616,671,669,1311,675,1171,674,13]);

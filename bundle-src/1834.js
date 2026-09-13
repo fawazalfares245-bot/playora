@@ -10,57 +10,61 @@ __d(
           [D, R] = (0, t.useState)([]),
           [E, F] = (0, t.useState)(null),
           [H, K] = (0, t.useState)(!0),
-          [N, M] = (0, t.useState)(!1),
-          [G, O] = (0, t.useState)(!1),
+          [N, M] = (0, t.useState)(null),
+          [G, O] = (0, t.useState)(null),
           [$, q] = (0, t.useState)(null),
           [J, Q] = (0, t.useState)("percentage"),
           [U, X] = (0, t.useState)("10"),
+          [cr, setCr] = (0, t.useState)(""),
+          [pa, setPa] = (0, t.useState)(null),
+          [rs, setRs] = (0, t.useState)(""),
+          gate = (0, G9.useRoleGate)(["admin"]),
           Y = (0, t.useCallback)(async () => {
             if (e) {
+              M(null);
               try {
-                (R(await (0, S.fetchPendingVenues)(e.id)), F(await (0, S.fetchAdminFinancials)(e.id)));
-              } catch {
-                M(!0);
+                const [t, a] = await Promise.all([(0, S.fetchPendingVenues)(e.id), (0, S.fetchAdminFinancials)(e.id)]);
+                (R(t), F(a));
+              } catch (e) {
+                M(e);
               }
               K(!1);
             }
           }, [e]);
         (0, h.useFocusEffect)(
           (0, t.useCallback)(() => {
-            Y();
-          }, [Y]),
+            gate.ready && gate.allowed && Y();
+          }, [Y, gate.ready, gate.allowed]),
         );
-        const Z = async (e) => {
-          O(!0);
+        // One action for one venue: per-record busy state, localized error, success feedback.
+        const Z = async (t, a, i) => {
+          O(t);
           try {
-            (await e(), await Y());
+            (await a(), setPa(null), setRs(""), await Y(), A9.default.alert(i ?? I("actionDone"), ""));
           } catch (e) {
-            n.default.alert(I("error"), (0, z.storeErrorText)(e?.message ?? "") || I("error"));
+            A9.default.alert(I("error"), (0, G9.classifyError)(e).message || I("error"));
           } finally {
-            O(!1);
+            O(null);
           }
         };
-        if (H)
+        if (gate.ready && !gate.allowed)
+          return (0, W.jsx)(G9.GateScreen, { kind: "denied", onBack: () => V.back() });
+        if (H || !gate.ready)
           return (0, W.jsx)(f.SafeAreaView, {
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: x.bg },
             children: (0, W.jsx)(s.default, { color: x.accentText }),
           });
-        if (N)
-          return (0, W.jsxs)(f.SafeAreaView, {
-            edges: ["top"],
-            style: { flex: 1, backgroundColor: x.bg },
-            children: [
-              (0, W.jsx)(_, { colors: x, title: I("adminVenuesTitle"), onBack: () => V.back() }),
-              (0, W.jsx)(p.default, {
-                style: { padding: B.spacing.lg },
-                children: (0, W.jsx)(w.EmptyState, {
-                  icon: "lock-closed-outline",
-                  title: I("organizerGateTitle"),
-                  body: I("adminPanel"),
-                }),
-              }),
-            ],
+        if (N) {
+          const e = (0, G9.classifyError)(N);
+          return (0, W.jsx)(G9.GateScreen, {
+            kind: e.isAuth ? "denied" : "error",
+            body: e.isAuth ? void 0 : e.message,
+            onRetry: () => {
+              (K(!0), Y());
+            },
+            onBack: () => V.back(),
           });
+        }
         return (0, W.jsxs)(f.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: x.bg },
@@ -82,17 +86,32 @@ __d(
                         children: [
                           (0, W.jsx)(L, {
                             label: I("totalGross"),
-                            value: (0, P.formatPrice)(E.grossKwd),
+                            value: (0, P.formatAmount)(E.grossKwd),
                             colors: x,
                           }),
                           (0, W.jsx)(L, {
-                            label: I("commissionEarned"),
-                            value: (0, P.formatPrice)(E.commissionKwd),
+                            label: I("grossNetOfRefunds"),
+                            value: (0, P.formatAmount)(E.netGrossKwd ?? E.grossKwd),
                             colors: x,
                           }),
                           (0, W.jsx)(L, {
-                            label: I("payoutsLabel"),
-                            value: (0, P.formatPrice)(E.payoutsKwd),
+                            label: I("commissionSettled"),
+                            value: (0, P.formatAmount)(E.commissionSettledKwd ?? E.commissionKwd),
+                            colors: x,
+                          }),
+                          (0, W.jsx)(L, {
+                            label: I("commissionPending"),
+                            value: (0, P.formatAmount)(E.commissionPendingKwd ?? 0),
+                            colors: x,
+                          }),
+                          (0, W.jsx)(L, {
+                            label: I("payoutsSettled"),
+                            value: (0, P.formatAmount)(E.payoutsSettledKwd ?? E.payoutsKwd),
+                            colors: x,
+                          }),
+                          (0, W.jsx)(L, {
+                            label: I("payoutsPending"),
+                            value: (0, P.formatAmount)(E.payoutsPendingKwd ?? 0),
                             colors: x,
                           }),
                           (0, W.jsx)(L, {
@@ -107,7 +126,7 @@ __d(
                           }),
                           (0, W.jsx)(L, {
                             label: I("refundsLabel"),
-                            value: (0, P.formatPrice)(E.refundsKwd),
+                            value: (0, P.formatAmount)(E.refundsKwd),
                             colors: x,
                           }),
                         ],
@@ -116,7 +135,7 @@ __d(
                   }),
                 (0, W.jsx)(u.default, {
                   style: [B.typography.h3, { color: x.text, marginBottom: B.spacing.sm }],
-                  children: I("venueApprovals"),
+                  children: I("venueRegistrationsAll"),
                 }),
                 0 === D.length
                   ? (0, W.jsx)(w.EmptyState, { icon: "business-outline", title: I("noVenuesFound") })
@@ -158,42 +177,129 @@ __d(
                                 marginTop: B.spacing.sm,
                                 flexWrap: "wrap",
                               },
-                              children: [
-                                "approved" !== s.status &&
-                                  (0, W.jsx)(j.Button, {
-                                    title: I("approveVenue"),
-                                    size: "sm",
-                                    loading: G,
-                                    onPress: () => Z(() => (0, S.reviewVenue)(e.id, t.id, "approve")),
-                                  }),
-                                "pending" === s.status &&
-                                  (0, W.jsx)(j.Button, {
-                                    title: I("rejectVenueLabel"),
-                                    size: "sm",
-                                    variant: "secondary",
-                                    loading: G,
-                                    onPress: () => Z(() => (0, S.reviewVenue)(e.id, t.id, "reject")),
-                                  }),
-                                "approved" === s.status &&
-                                  (0, W.jsx)(j.Button, {
-                                    title: I("suspendVenue"),
-                                    size: "sm",
-                                    variant: "danger",
-                                    loading: G,
-                                    onPress: () => Z(() => (0, S.reviewVenue)(e.id, t.id, "suspend")),
-                                  }),
-                                (0, W.jsx)(j.Button, {
-                                  title: I("commissionLabel"),
-                                  size: "sm",
-                                  variant: "secondary",
-                                  onPress: () => {
-                                    (q($ === t.id ? null : t.id),
-                                      Q(s.commission_type),
-                                      X(String(s.commission_value)));
-                                  },
-                                }),
-                              ],
+                              children:
+                                s.owner_id === e?.id
+                                  ? (0, W.jsx)(u.default, {
+                                      style: [B.typography.caption, { color: x.warning }],
+                                      children: I("ownVenueNotice"),
+                                    })
+                                  : [
+                                      "approved" !== s.status &&
+                                        (0, W.jsx)(
+                                          j.Button,
+                                          {
+                                            title: I("approveVenue"),
+                                            size: "sm",
+                                            loading: G === t.id,
+                                            disabled: !!G && G !== t.id,
+                                            onPress: () =>
+                                              "pending" === s.status
+                                                ? A9.default.alert(
+                                                    I("confirmVenueApproveTitle"),
+                                                    I("confirmVenueApproveBody", { name: t.name }),
+                                                    [
+                                                      { text: I("cancel"), style: "cancel" },
+                                                      {
+                                                        text: I("confirmDecision"),
+                                                        onPress: () =>
+                                                          Z(t.id, () => (0, S.reviewVenue)(e.id, t.id, "approve", "")),
+                                                      },
+                                                    ],
+                                                  )
+                                                : (setPa({ id: t.id, action: "approve" }), setRs("")),
+                                          },
+                                          "approve",
+                                        ),
+                                      "pending" === s.status &&
+                                        (0, W.jsx)(
+                                          j.Button,
+                                          {
+                                            title: I("rejectVenueLabel"),
+                                            size: "sm",
+                                            variant: "secondary",
+                                            loading: G === t.id,
+                                            disabled: !!G && G !== t.id,
+                                            onPress: () => (setPa({ id: t.id, action: "reject" }), setRs("")),
+                                          },
+                                          "reject",
+                                        ),
+                                      "approved" === s.status &&
+                                        (0, W.jsx)(
+                                          j.Button,
+                                          {
+                                            title: I("suspendVenue"),
+                                            size: "sm",
+                                            variant: "danger",
+                                            loading: G === t.id,
+                                            disabled: !!G && G !== t.id,
+                                            onPress: () => (setPa({ id: t.id, action: "suspend" }), setRs("")),
+                                          },
+                                          "suspend",
+                                        ),
+                                      (0, W.jsx)(
+                                        j.Button,
+                                        {
+                                          title: I("commissionLabel"),
+                                          size: "sm",
+                                          variant: "secondary",
+                                          disabled: !!G,
+                                          onPress: () => {
+                                            (q($ === t.id ? null : t.id),
+                                              Q(s.commission_type),
+                                              X(String(s.commission_value)),
+                                              setCr(""));
+                                          },
+                                        },
+                                        "commission",
+                                      ),
+                                    ],
                             }),
+                            pa?.id === t.id &&
+                              (0, W.jsxs)(p.default, {
+                                style: {
+                                  marginTop: B.spacing.sm,
+                                  borderTopWidth: c.default.hairlineWidth,
+                                  borderTopColor: x.border,
+                                  paddingTop: B.spacing.sm,
+                                },
+                                children: [
+                                  (0, W.jsx)(v.Input, {
+                                    label: I("venueDecisionReason"),
+                                    value: rs,
+                                    onChangeText: setRs,
+                                    multiline: !0,
+                                    numberOfLines: 2,
+                                    maxLength: 300,
+                                    style: { minHeight: 48, textAlignVertical: "top" },
+                                  }),
+                                  (0, W.jsxs)(p.default, {
+                                    style: { flexDirection: "row", gap: B.spacing.sm, marginTop: B.spacing.sm },
+                                    children: [
+                                      (0, W.jsx)(j.Button, {
+                                        title: I("cancel"),
+                                        size: "sm",
+                                        variant: "ghost",
+                                        style: { flex: 1 },
+                                        onPress: () => (setPa(null), setRs("")),
+                                      }),
+                                      (0, W.jsx)(j.Button, {
+                                        title:
+                                          "approve" === pa.action
+                                            ? I("approveVenue")
+                                            : "reject" === pa.action
+                                              ? I("rejectVenueLabel")
+                                              : I("suspendVenue"),
+                                        size: "sm",
+                                        variant: "suspend" === pa.action ? "danger" : "primary",
+                                        style: { flex: 1 },
+                                        loading: G === t.id,
+                                        disabled: rs.trim().length < 3,
+                                        onPress: () => Z(t.id, () => (0, S.reviewVenue)(e.id, t.id, pa.action, rs.trim())),
+                                      }),
+                                    ],
+                                  }),
+                                ],
+                              }),
                             $ === t.id &&
                               (0, W.jsxs)(p.default, {
                                 style: {
@@ -237,26 +343,44 @@ __d(
                                       ),
                                     ),
                                   }),
-                                  (0, W.jsxs)(p.default, {
-                                    style: { flexDirection: "row", gap: B.spacing.sm },
-                                    children: [
-                                      (0, W.jsx)(v.Input, {
-                                        value: U,
-                                        onChangeText: (e) => X(e.replace(/[^0-9.]/g, "")),
-                                        keyboardType: "numeric",
-                                        style: { flex: 1 },
-                                      }),
-                                      (0, W.jsx)(j.Button, {
-                                        title: I("setCommission"),
-                                        size: "sm",
-                                        loading: G,
-                                        onPress: () =>
-                                          Z(async () => {
-                                            (await (0, S.setVenueCommission)(e.id, t.id, J, Number(U) || 0),
-                                              q(null));
-                                          }),
-                                      }),
-                                    ],
+                                  (0, W.jsx)(v.Input, {
+                                    value: U,
+                                    onChangeText: (e) => X(e.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1")),
+                                    keyboardType: "numeric",
+                                    label: "percentage" === J ? I("commissionPercentage") : I("commissionFixed"),
+                                  }),
+                                  (0, W.jsx)(v.Input, {
+                                    value: cr,
+                                    onChangeText: setCr,
+                                    label: I("commissionReasonLabel"),
+                                    maxLength: 200,
+                                  }),
+                                  (0, W.jsx)(j.Button, {
+                                    title: I("setCommission"),
+                                    size: "sm",
+                                    fullWidth: !0,
+                                    loading: G === t.id,
+                                    disabled: cr.trim().length < 3 || "" === U.trim(),
+                                    style: { marginTop: B.spacing.sm },
+                                    onPress: () => {
+                                      const a = Number(U);
+                                      if (!Number.isFinite(a) || a < 0 || a > 100)
+                                        return void A9.default.alert(I("error"), I("commissionInvalid"));
+                                      const i = (e, t) =>
+                                          "percentage" === e ? `${(0, P.formatNumber)(t)}%` : (0, P.formatPrice)(t),
+                                        r = i(s.commission_type, s.commission_value),
+                                        o = i(J, a);
+                                      A9.default.alert(I("confirmCommissionTitle"), I("confirmCommissionBody", { name: t.name, from: r, to: o }), [
+                                        { text: I("cancel"), style: "cancel" },
+                                        {
+                                          text: I("confirmDecision"),
+                                          onPress: () =>
+                                            Z(t.id, async () => {
+                                              (await (0, S.setVenueCommission)(e.id, t.id, J, a, cr.trim()), q(null), setCr(""));
+                                            }),
+                                        },
+                                      ]);
+                                    },
                                   }),
                                 ],
                               }),
@@ -294,7 +418,9 @@ __d(
       T = r(d[22]),
       V = r(d[23]),
       z = r(d[24]),
-      W = r(d[25]);
+      W = r(d[25]),
+      G9 = r(d[26]),
+      A9 = n;
     const _ = ({ colors: e, title: t, onBack: s }) => {
         const n = (0, T.useT)();
         return (0, W.jsxs)(p.default, {
@@ -359,6 +485,6 @@ __d(
   1834,
   [
     33, 15, 461, 445, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 626, 625, 1627, 630, 615, 616, 671,
-    1311, 675, 1171, 674, 13,
+    1311, 675, 1171, 674, 13, 9001,
   ],
 );

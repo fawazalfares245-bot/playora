@@ -8,7 +8,9 @@ __d(
           D = (0, x.useRouter)(),
           W = (0, N.useT)(),
           [M, P] = (0, l.useState)(!0),
-          [$, F] = (0, l.useState)(!1),
+          [$, F] = (0, l.useState)(null),
+          [hid, setHid] = (0, l.useState)(0),
+          gate = (0, G9.useRoleGate)(["admin"]),
           [O, E] = (0, l.useState)([]),
           [H, L] = (0, l.useState)("under_review"),
           [U, V] = (0, l.useState)(null),
@@ -16,40 +18,44 @@ __d(
           [G, Q] = (0, l.useState)(null),
           [K, X] = (0, l.useState)(null),
           Y = (0, l.useCallback)(async () => {
-            if (t)
+            if (t) {
+              F(null);
               try {
-                (E(await (0, S.fetchOrganizerApplications)(t.id)),
-                  V(await (0, S.fetchNpnAdminStats)(t.id).catch(() => null)),
-                  J(await (0, S.fetchSkillAdminStats)(t.id).catch(() => null)),
-                  Q(await (0, S.fetchGrowthAdminStats)(t.id).catch(() => null)),
-                  X(await (0, S.fetchCompatAdminStats)(t.id).catch(() => null)),
-                  F(!1));
-              } catch (err) {
-                (console.error("[admin/organizers] load failed:", err?.code ?? err?.message), F(!0));
+                const [e, a, i, n, r, o] = await Promise.all([
+                  (0, S.fetchOrganizerApplications)(t.id),
+                  (0, S.fetchNpnAdminStats)(t.id).catch(() => null),
+                  (0, S.fetchSkillAdminStats)(t.id).catch(() => null),
+                  (0, S.fetchGrowthAdminStats)(t.id).catch(() => null),
+                  (0, S.fetchCompatAdminStats)(t.id).catch(() => null),
+                  (0, S.fetchMyPartitionStance)(t.id).catch(() => null),
+                ]);
+                (E(e), V(a), J(i), Q(n), X(r), setHid(o?.hidden?.applications ?? 0));
+              } catch (e) {
+                F(e);
               } finally {
                 P(!1);
               }
+            }
           }, [t]);
         (0, x.useFocusEffect)(
           (0, l.useCallback)(() => {
-            Y();
-          }, [Y]),
+            gate.ready && gate.allowed && Y();
+          }, [Y, gate.ready, gate.allowed]),
         );
         const Z = O.filter((t) => "all" === H || t.status === H),
           ee = O.filter((t) => "under_review" === t.status).length;
-        if (!M && ($ || "admin" !== n?.role))
-          return (0, B.jsxs)(p.SafeAreaView, {
-            edges: ["top"],
-            style: { flex: 1, backgroundColor: I.bg },
-            children: [
-              (0, B.jsx)(R, { colors: I, t: W, onBack: () => D.back(), count: 0 }),
-              (0, B.jsx)(b.EmptyState, {
-                icon: "lock-closed-outline",
-                title: W("organizerGateTitle"),
-                body: W("adminPanel"),
-              }),
-            ],
+        if (gate.ready && !gate.allowed) return (0, B.jsx)(G9.GateScreen, { kind: "denied", onBack: () => D.back() });
+        if ($) {
+          const e = (0, G9.classifyError)($);
+          return (0, B.jsx)(G9.GateScreen, {
+            kind: e.isAuth ? "denied" : "error",
+            body: e.isAuth ? void 0 : e.message,
+            onRetry: () => {
+              (P(!0), Y());
+            },
+            onBack: () => D.back(),
           });
+        }
         return (0, B.jsxs)(p.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: I.bg },
@@ -334,6 +340,36 @@ __d(
                           }),
                         ],
                       }),
+                    hid > 0 &&
+                      (0, B.jsxs)(u.default, {
+                        style: {
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 10,
+                          borderWidth: 1,
+                          borderRadius: 12,
+                          padding: 10,
+                          marginBottom: w.spacing.md,
+                          backgroundColor: I.surfaceAlt,
+                          borderColor: I.border,
+                        },
+                        children: [
+                          (0, B.jsx)(f.Ionicons, { name: "eye-off-outline", size: 16, color: I.textMuted }),
+                          (0, B.jsxs)(u.default, {
+                            style: { flex: 1 },
+                            children: [
+                              (0, B.jsx)(c.default, {
+                                style: [w.typography.smallStrong, { color: I.text }],
+                                children: W("hiddenOtherWorld", { n: String(hid) }),
+                              }),
+                              (0, B.jsx)(c.default, {
+                                style: [w.typography.caption, { color: I.textMuted }],
+                                children: W("hiddenOtherWorldBody"),
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
                     0 === Z.length
                       ? (0, B.jsx)(b.EmptyState, {
                           icon: "checkmark-done-outline",
@@ -474,9 +510,11 @@ __d(
       C = r(d[19]),
       N = r(d[20]),
       I = r(d[21]),
-      B = r(d[22]);
+      B = r(d[22]),
+      G9 = r(d[23]);
     const A = [
         { value: "under_review", key: "filterUnderReview" },
+        { value: "info_requested", key: "filterInfoRequested" },
         { value: "approved", key: "filterApproved" },
         { value: "rejected", key: "filterRejected" },
         { value: "suspended", key: "filterSuspended" },
@@ -486,6 +524,7 @@ __d(
         draft: "neutral",
         submitted: "warning",
         under_review: "warning",
+        info_requested: "warning",
         approved: "success",
         rejected: "danger",
         suspended: "danger",
@@ -585,6 +624,6 @@ __d(
   1832,
   [
     33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 1627, 630, 615, 616, 671, 1311, 1626,
-    675, 1171, 13,
+    675, 1171, 13, 9001,
   ],
 );
