@@ -11,10 +11,12 @@ edited through the module tooling described below.
   bundle (`__d(function(){...},<id>,[deps])` modules) and the entry call `__r(0)`.
 - `bundle-src/<id>.js` – prettified copies of the modules that have been modified. `tools/bundle.py build`
   splices them back into `index.html` (idempotent). `bundle-src/new/<id>.js` are modules added by this repo
-  (9001 = shared role-gate / error helpers, 9002 = `/organizer/new` redirect, 9003 = `/admin/audit` screen).
+  (9001 = shared role-gate / error helpers, 9002 = `/organizer/new` redirect, 9003 = `/admin/audit` screen,
+  9004 = kid UI kit, 9005 = `/kids` specimen screen).
 - `tools/bundle.py` – `split <id...>` extracts modules from index.html into bundle-src; `build` rebuilds.
 - `tools/flows-admin.mjs`, `tools/flows-organizer.mjs`, `tools/flows-org1.mjs`, `tools/flows-search.mjs`,
-  `tools/flows-xcut.mjs`, `tools/rules.mjs` – the regression suites. Run all six after any bundle change.
+  `tools/flows-xcut.mjs`, `tools/flows-kids.mjs`, `tools/rules.mjs` – the regression suites. Run all seven
+  after any bundle change.
 - `tools/smoke.mjs` – headless Playwright harness: `node tools/smoke.mjs /admin/organizers --role admin`
   boots the app with a seeded session and prints visible text and console/page errors. Import `openApp`
   from it to script flows.
@@ -29,7 +31,20 @@ edited through the module tooling described below.
 674 error-code → i18n key map, 909 translations (`en`/`ar`, keep both in sync — no duplicate keys), 643 audit log
 (`playora.audit.v1` general, `playora.audit.admin.v1` privileged), 630 AuthProvider, 1809 root layout,
 18 Expo Router context (route table), 9001 shared role-gate/error helpers, 9002 `/organizer/new` redirect,
-9003 `/admin/audit` privileged-action log screen. Route → module map: `docs/audit/findings/route-module-map.txt`.
+9003 `/admin/audit` privileged-action log screen, 9004 kid UI kit (snap/virtualised `KidScroll`,
+`BigButton`, `LazyImage`, `CoachHand`, WebAudio feedback), 9005 `/kids` specimen screen.
+
+## Kid UI kit (module 9004)
+
+Web-only CSS that React Native Web's StyleSheet drops (scroll-snap, overscroll-behavior, keyframes) is
+injected once as a `<style>` tag and targeted through the `dataSet` prop, which RNW turns into a
+`data-` attribute. Two rules are load-bearing and easy to break:
+
+- Snap must stay `proximity`. `mandatory` traps a fast flick and strands the scroller when a
+  virtualised row unmounts mid-snap.
+- `onViewableItemsChanged` and `viewabilityConfig` must never change identity, or VirtualizedList
+  throws and unmounts the tree. Both are pinned with `useRef` and read live handlers from a ref.
+  Any hook feeding them (`useKidSound`) therefore returns stable function identities. Route → module map: `docs/audit/findings/route-module-map.txt`.
 
 ## Working in this repo
 
