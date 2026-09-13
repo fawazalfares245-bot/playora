@@ -4581,6 +4581,8 @@ __d(
           const i = hi(e);
           if (!i) throw new Error("E_MATCH_NOT_FOUND");
           (zi(i, t), await Di(i));
+          if ("scheduled" !== i.status || new Date(i.ends_at).getTime() < Date.now())
+            throw new Error("E_THIS_MATCH_CAN_NO_LONGER_BE");
           const n = Qt.bookings.find((t) => t.id === a && t.game_id === e);
           if (!n || "pending" !== n.status) return;
           if (ki(e) >= i.max_players) throw new Error("E_MATCH_IS_FULL_FREE_A_SLOT");
@@ -4615,14 +4617,17 @@ __d(
             }));
         }));
     };
-    r.mockRejectParticipant = async (e, t, a) => {
+    r.mockRejectParticipant = async (e, t, a, r9) => {
       (await ei(),
         await on(t),
         await Xt(e, async () => {
           const i = hi(e);
           if (!i) throw new Error("E_MATCH_NOT_FOUND");
           zi(i, t);
+          if ("scheduled" !== i.status || new Date(i.ends_at).getTime() < Date.now())
+            throw new Error("E_THIS_MATCH_CAN_NO_LONGER_BE");
           const n = Qt.bookings.find((t) => t.id === a && t.game_id === e);
+          n && r9 && (n.rejection_reason = (0, v.sanitizeText)(String(r9), 200));
           n &&
             "pending" === n.status &&
             ((n.status = "rejected"),
@@ -4681,8 +4686,9 @@ __d(
           const n = hi(t);
           if (!n) throw new Error("E_MATCH_NOT_FOUND");
           if ((zi(n, e), "cancelled" === n.status)) throw new Error("E_THIS_MATCH_IS_NO_LONGER_OPEN");
-          if (new Date(n.ends_at).getTime() < Date.now()) throw new Error("E_THIS_MATCH_HAS_ALREADY_STARTED");
+          if (new Date(n.starts_at).getTime() < Date.now()) throw new Error("E_THIS_MATCH_HAS_ALREADY_STARTED");
           if (a === e) throw new Error("E_CANNOT_REMOVE_THE_ORGANIZER");
+          if ((0, v.sanitizeText)(i || "", 200).length < 3) throw new Error("E_A_REASON_IS_REQUIRED");
           const r = Qt.bookings.find(
             (e) => e.game_id === t && e.user_id === a && "cancelled" !== e.status && "rejected" !== e.status,
           );
@@ -4964,12 +4970,24 @@ __d(
         if ((zi(n, t), "scheduled" !== n.status)) throw new Error("E_THIS_MATCH_CAN_NO_LONGER_BE");
         const r = [],
           o = Object.assign({}, n);
+        // ORG2 (F-ORG2-10): a match cannot be moved into the past, its duration must stay sane, and
+        // a match tied to a court booking keeps its slot.
+        if ((a.starts_at && a.starts_at !== n.starts_at) || (a.ends_at && a.ends_at !== n.ends_at)) {
+          if (n.court_booking_id) throw new Error("E_TIME_LOCKED_BY_COURT_BOOKING");
+          const t9 = new Date(a.starts_at ?? n.starts_at).getTime();
+          if (!Number.isFinite(t9)) throw new Error("E_INVALID_VALUE");
+          if (t9 < Date.now() - 6e4) throw new Error("E_MATCH_CANNOT_START_IN_PAST");
+        }
         if (
           (a.starts_at && a.starts_at !== n.starts_at && ((o.starts_at = a.starts_at), r.push("time")),
           a.ends_at && a.ends_at !== n.ends_at && (o.ends_at = a.ends_at),
           new Date(o.ends_at).getTime() <= new Date(o.starts_at).getTime())
         )
           throw new Error("E_END_TIME_MUST_BE_AFTER_THE");
+        {
+          const d9 = (new Date(o.ends_at).getTime() - new Date(o.starts_at).getTime()) / 6e4;
+          if (d9 < 30 || d9 > 360) throw new Error("E_DURATION_OUT_OF_RANGE");
+        }
         if (
           ((o.duration_minutes = Math.round(
             (new Date(o.ends_at).getTime() - new Date(o.starts_at).getTime()) / 6e4,
@@ -4981,7 +4999,8 @@ __d(
             ((o.skill_level = a.skill_level), r.push("skill level")),
           a.max_players && a.max_players !== n.max_players)
         ) {
-          const t = Qt.bookings.filter((t) => t.game_id === e && "confirmed" === t.status).length;
+          if (!Number.isInteger(a.max_players) || a.max_players < 2 || a.max_players > 40) throw new Error("E_INVALID_VALUE");
+          const t = ki(e);
           if (a.max_players < t) throw new Error(`E_CAPACITY_BELOW_CONFIRMED:${t}`);
           ((o.max_players = a.max_players), (o.format = Ia(n.sport, a.max_players)), r.push("capacity"));
         }
@@ -5009,7 +5028,82 @@ __d(
         );
       })
     );
+    // ORG2 (F-ORG2-1/11/12/23): one cancel routine shared by single-match and series cancellation.
+    // Must be called inside the game lock. Releases holds, refunds paid seats, cancels the court
+    // booking (recording a failure instead of swallowing it) and writes an audit entry with the reason.
+    const cancelGameLocked = async (e, t, r, o9 = {}) => {
+      const i = Qt.games.findIndex((t) => t.id === e);
+      if (i < 0) throw new Error("E_MATCH_NOT_FOUND");
+      const n = Qt.games[i];
+      if ("cancelled" === n.status) return { court_released: !0, refunded: 0 };
+      (await Bi(n, (t) => ({
+        id: ea(),
+        user_id: t,
+        type: "match_cancelled",
+        game_id: e,
+        venue_name: Ai(n.venue_id),
+        sport: n.sport,
+        reason: r,
+        read: !1,
+        created_at: new Date().toISOString(),
+      })),
+        (Qt.games[i] = Object.assign({}, n, {
+          status: "cancelled",
+          cancelled_at: new Date().toISOString(),
+          cancellation_reason: r,
+          cancelled_by: t,
+        })),
+        await Za(te, Qt.games));
+      const o = [];
+      for (const t of Qt.bookings)
+        t.game_id === e &&
+          "cancelled" !== t.status &&
+          "rejected" !== t.status &&
+          ((t.status = "cancelled"),
+          (t.reserved_until = null),
+          (t.updated_at = new Date().toISOString()),
+          o.push(t.user_id));
+      await Za(W, Qt.bookings);
+      for (const e of o) await Br(n, e, !0);
+      let s = !0;
+      if (n.court_booking_id)
+        try {
+          await Mr(t, n.court_booking_id, `Match cancelled: ${r}`);
+        } catch (a) {
+          ((s = !1),
+            await (0, w.logAudit)("court.cancel_failed", (0, w.actorRef)(t), {
+              game: e.slice(-6),
+              court_booking: String(n.court_booking_id).slice(-6),
+              error: a instanceof Error ? a.message : String(a),
+            }));
+        }
+      return (
+        await (0, w.logAudit)("match.cancelled", (0, w.actorRef)(t), {
+          game: e.slice(-6),
+          reason: r,
+          refunded: o.length,
+          court_released: s,
+          series: o9.series ?? null,
+        }),
+        { court_released: s, refunded: o.length }
+      );
+    };
     r.mockCancelMatch = async (e, t, a) => {
+      await ei();
+      await on(t);
+      // The reason is mandatory and the cut-off is the kick-off, not the end of the match.
+      const r = (0, v.sanitizeText)(a || "", 200);
+      if (r.length < 3) throw new Error("E_A_REASON_IS_REQUIRED");
+      return Xt(e, async () => {
+        const i = Qt.games.findIndex((t) => t.id === e);
+        if (i < 0) throw new Error("E_ONLY_MATCHES_YOU_CREATED_CAN_BE");
+        const n = Qt.games[i];
+        if ((zi(n, t), "cancelled" === n.status)) return { court_released: !0, refunded: 0 };
+        if (new Date(n.starts_at).getTime() < Date.now()) throw new Error("E_THIS_MATCH_HAS_ALREADY_STARTED");
+        return cancelGameLocked(e, t, r);
+      });
+    };
+    const legacyCancelMatchBody = async (e, t, a) => {
       (await ei(),
         await on(t),
         await Xt(e, async () => {
@@ -5059,13 +5153,21 @@ __d(
       const n = hi(e);
       if (!n) throw new Error("E_MATCH_NOT_FOUND");
       zi(n, t);
+      // ORG2 (F-ORG2-14): attendance is recorded after the match, never on a cancelled one, and is
+      // frozen 48 h after the score was submitted.
+      if ("cancelled" === n.status) throw new Error("E_THIS_MATCH_IS_NO_LONGER_OPEN");
+      if (new Date(n.ends_at).getTime() > Date.now()) throw new Error("E_MATCH_NOT_FINISHED");
+      if (n.score_submitted_at && Date.now() - new Date(n.score_submitted_at).getTime() > 1728e5)
+        throw new Error("E_ATTENDANCE_LOCKED");
       const r = Qt.bookings.find((t) => t.id === a && t.game_id === e);
       r &&
         ((r.attendance = i),
         (r.updated_at = new Date().toISOString()),
         await Za(W, Qt.bookings),
+        await Yi(e, t, "attendance_marked", { targetUserId: r.user_id, note: i ?? "cleared" }),
         await (0, w.logAudit)("attendance.marked", (0, w.actorRef)(t), {
           game: e.slice(-6),
+          target: r.user_id.slice(-6),
           value: i ?? "cleared",
         }));
     };
@@ -6506,9 +6608,11 @@ __d(
         const n = Qt.games[i];
         if ((zi(n, t), !n.npn_active)) throw new Error("E_NEED_PLAYER_NOW_IS_NOT_ACTIVE");
         (void 0 !== a.radius_km && (n.npn_radius_km = a.radius_km), (n.npn_urgency = kn(n.starts_at)));
-        const r = fi().find((e) => e.id === n.venue_id);
+        const r = fi().find((e) => e.id === n.venue_id),
+          // ORG2 (F-ORG2-15): at most one broadcast per 10 minutes per match.
+          c9 = n.npn_last_broadcast_at && Date.now() - new Date(n.npn_last_broadcast_at).getTime() < 6e5;
         return (
-          (n.npn_notifications_sent += await En(n, r)),
+          c9 || ((n.npn_notifications_sent += await En(n, r)), (n.npn_last_broadcast_at = new Date().toISOString())),
           await Za(te, Qt.games),
           await (0, w.logAudit)("npn.updated", (0, w.actorRef)(t), {
             game: e.slice(-6),
@@ -7285,46 +7389,33 @@ __d(
       if (!i) throw new Error("E_SERIES_NOT_FOUND");
       if (i.organizer_id !== t) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE_3");
       await on(t);
-      const n = (0, v.sanitizeText)(a || "", 200) || "Series cancelled";
-      let r = 0;
-      for (const t of Kn(e))
-        await Xt(t.id, async () => {
-          const e = Qt.games.findIndex((e) => e.id === t.id),
-            a = Qt.games[e];
-          (await Bi(a, (e) => ({
-            id: ea(),
-            user_id: e,
-            type: "match_cancelled",
-            game_id: a.id,
-            venue_name: Ai(a.venue_id),
-            sport: a.sport,
-            reason: n,
-            read: !1,
-            created_at: new Date().toISOString(),
-          })),
-            (Qt.games[e] = Object.assign({}, a, {
-              status: "cancelled",
-              cancelled_at: new Date().toISOString(),
-              cancellation_reason: n,
-            })));
-          for (const e of Qt.bookings)
-            e.game_id === a.id &&
-              "cancelled" !== e.status &&
-              "rejected" !== e.status &&
-              ((e.status = "cancelled"),
-              (e.reserved_until = null),
-              (e.updated_at = new Date().toISOString()));
-          r += 1;
+      const n = (0, v.sanitizeText)(a || "", 200);
+      if (n.length < 3) throw new Error("E_A_REASON_IS_REQUIRED");
+      let r = 0,
+        r9 = 0,
+        c9 = 0;
+      for (const t9 of Kn(e))
+        await Xt(t9.id, async () => {
+          if ("cancelled" === t9.status) return;
+          const a = await cancelGameLocked(t9.id, t, n, { series: e.slice(-6) });
+          ((r += 1), (r9 += a.refunded), a.court_released || (c9 += 1));
         });
       const o = Qt.templates.findIndex((t) => t.id === e);
       return (
-        (Qt.templates[o] = Object.assign({}, i, { status: "ended" })),
+        (Qt.templates[o] = Object.assign({}, i, {
+          status: "cancelled",
+          cancelled_at: new Date().toISOString(),
+          cancellation_reason: n,
+        })),
         await Promise.all([Za(Ft, Qt.templates), Za(te, Qt.games), Za(W, Qt.bookings)]),
         await (0, w.logAudit)("series.cancelled", (0, w.actorRef)(t), {
           series: e.slice(-6),
           occurrences: r,
+          refunded: r9,
+          courts_not_released: c9,
+          reason: n,
         }),
-        r
+        { occurrences: r, refunded: r9, courts_not_released: c9 }
       );
     };
     r.mockJoinSeries = async (e, t) => {
@@ -7369,10 +7460,18 @@ __d(
     r.mockGetSeries = async (e, t) => {
       await ei();
       const a = Wn(e);
-      return a ? (await jn(a), Vn(a, t)) : null;
+      if (!a) return null;
+      await jn(a);
+      // ORG2 (F-ORG2-18): organizer-only fields are stripped for other users; ownership is explicit.
+      const i = Object.assign({}, Vn(a, t), { organizer_id: a.organizer_id, is_organizer: !!t && a.organizer_id === t });
+      return i.is_organizer || (t && ro(t)) ? i : (delete i.notes, delete i.auto_invite, delete i.resume_from, i);
     };
-    r.mockGetSeriesAnalytics = async (e) => {
+    r.mockGetSeriesAnalytics = async (e, t9) => {
       await ei();
+      // ORG2 (F-ORG2-7): only the organizer of the series (or an admin) can read its analytics.
+      const s9 = Wn(e);
+      if (!s9) throw new Error("E_SERIES_NOT_FOUND");
+      if (!t9 || (s9.organizer_id !== t9 && !ro(t9))) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE_3");
       const t = Qt.games.filter((t) => t.series_id === e),
         a = Date.now(),
         i = t.filter((e) => "cancelled" !== e.status && new Date(e.ends_at).getTime() < a),
@@ -7407,7 +7506,13 @@ __d(
         cancellationRate: t.length ? r.length / t.length : 0,
         returningPlayers: _,
         retentionRate: c ? _ / c : 0,
-        revenueKwd: s * (Wn(e)?.price_kwd ?? 0),
+        // Real takings: paid seat payments for the series' games, minus refunds.
+        revenueKwd: (0, z.roundKwd)(
+          Qt.payments
+            .filter((a) => t.some((t) => t.id === a.game_id))
+            .reduce((e, t) => e + ("paid" === t.status ? t.amount_kwd : "refunded" === t.status ? 0 : 0), 0),
+        ),
+        revenueEstimatedKwd: s * (Wn(e)?.price_kwd ?? 0),
       };
     };
     const Jn = { padel: "PDL", tennis: "TEN", football: "FBX" },
@@ -13206,12 +13311,18 @@ __d(
       const i = hi(t);
       if (!i) throw new Error("E_MATCH_NOT_FOUND");
       zi(i, e);
+      // ORG2 (F-ORG2-15): only for open, scheduled matches; never the same player twice; 10-minute cooldown.
+      if ("scheduled" !== i.status || i.registration_closed_at || new Date(i.starts_at).getTime() < Date.now())
+        throw new Error("E_THIS_MATCH_IS_NO_LONGER_OPEN");
+      if (i.concierge_last_invite_at && Date.now() - new Date(i.concierge_last_invite_at).getTime() < 6e5)
+        throw new Error("E_PLEASE_WAIT_BEFORE_INVITING_AGAIN");
       const n = fi().find((e) => e.id === i.venue_id),
         r = Qs(),
         o = new Set(
           Qt.bookings.filter((e) => e.game_id === t && "cancelled" !== e.status).map((e) => e.user_id),
         );
       o.add(e);
+      for (const e of i.concierge_invited_ids ?? []) o.add(e);
       const s = await ed(i, n, a ?? r.autoInviteCount, o),
         d = Math.max(
           0,
@@ -13265,13 +13376,8 @@ __d(
         );
       o.add(e);
       const s = await ed(i, n, a ?? r.replacementsCount, o);
-      return (
-        await (0, w.logAudit)("concierge.replacement_suggested", (0, w.actorRef)(e), {
-          game: t.slice(-6),
-          n: s.length,
-        }),
-        s
-      );
+      // ORG2 (F-ORG2-16): this read path no longer writes to the audit log.
+      return s;
     };
     r.mockGetConciergeNotificationPlan = async (e, t) => {
       await ei();
@@ -13699,6 +13805,14 @@ __d(
       const i = ro(e) ? "admin" : "organizer";
       if (("organizer" === i && (await on(e), oa(e, t)), e === t))
         throw new Error("E_YOU_CANNOT_SANCTION_YOURSELF");
+      if ("organizer" === i) {
+        // ORG2 (F-ORG2-8): organizers can only sanction players of a match they organized.
+        const g9 = a?.game_id ? hi(a.game_id) : null;
+        if (!g9) throw new Error("E_MATCH_NOT_FOUND");
+        zi(g9, e);
+        if (!Qt.bookings.some((e) => e.game_id === g9.id && e.user_id === t && "cancelled" !== e.status && "rejected" !== e.status))
+          throw new Error("E_PLAYER_NOT_IN_THIS_MATCH");
+      }
       const n = (0, v.sanitizeText)(a.reason, 400);
       if (!n) throw new Error("E_A_REASON_IS_REQUIRED");
       if ("organizer" === i && ro(t))
@@ -15129,8 +15243,8 @@ __d(
     r.mockGetGameGroups = async (e, t) => {
       await ei();
       const a = hi(t);
-      if (!a) throw new Error("not_found");
-      if (a.organizer_id !== e && !Id(e)) throw new Error("forbidden");
+      if (!a) throw new Error("E_MATCH_NOT_FOUND");
+      if (a.organizer_id !== e && !Id(e)) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE_2");
       return (
         await Xt(t, async () => {
           await Bd(a);
@@ -18188,12 +18302,41 @@ __d(
       const a = await Ni(t, e),
         i = await Qi(t);
       if (!(!!a && !!e && a.organizer_id === e))
-        return { game: a, participants: i, candidates: [], intel: [] };
+        return { game: a, participants: { confirmed: [], reserved: [], pending: [], waitlist: [] }, candidates: [], intel: [] };
       const [n, r] = await Promise.all([
         bn(t, e).catch(() => []),
         i.pending.length > 0 ? Pn(e, t).catch(() => []) : Promise.resolve([]),
       ]);
       return { game: a, participants: i, candidates: n, intel: r };
+    };
+    // ORG2 (F-ORG2-22): the only way to change a final score is an audited admin correction.
+    r.mockCorrectMatchScore = async (e, t, a, i, n) => {
+      (await ei(), await sn(e));
+      const r = Qt.games.findIndex((e) => e.id === t);
+      if (r < 0) throw new Error("E_MATCH_NOT_FOUND");
+      const o = Qt.games[r];
+      if (!o.score_submitted_at) throw new Error("E_INVALID_TRANSITION");
+      if (![a, i].every((e) => Number.isInteger(e) && e >= 0 && e <= 99)) throw new Error("E_ENTER_A_REAL_SCORE");
+      const s = (0, v.sanitizeText)(n ?? "", 300);
+      if (s.length < 3) throw new Error("E_A_REASON_IS_REQUIRED");
+      const d = { home: o.score_home, away: o.score_away };
+      return (
+        (Qt.games[r] = Object.assign({}, o, {
+          score_home: a,
+          score_away: i,
+          score_corrected_at: new Date().toISOString(),
+          score_corrected_by: e,
+        })),
+        await Za(te, Qt.games),
+        await Yi(t, e, "score_corrected", { note: `${d.home}-${d.away} \u2192 ${a}-${i}: ${s}` }),
+        await (0, w.logAdminAudit)("match.score_corrected", e, o.organizer_id, {
+          game: t.slice(-6),
+          from: `${d.home}-${d.away}`,
+          to: `${a}-${i}`,
+          reason: s,
+        }),
+        Qt.games[r]
+      );
     };
   },
   631,
@@ -18897,7 +19040,8 @@ __d(
     e.updateMatch = (o, c, s) => t.store.mockUpdateMatch(o, c, s);
     e.cancelMatch = (o, c, s) => t.store.mockCancelMatch(o, c, s);
     e.approveParticipant = (o, c, s) => t.store.mockApproveParticipant(o, c, s);
-    e.rejectParticipant = (o, c, s) => t.store.mockRejectParticipant(o, c, s);
+    e.rejectParticipant = (o, c, s, n) => t.store.mockRejectParticipant(o, c, s, n);
+    e.correctMatchScore = (o, c, s, n, l) => t.store.mockCorrectMatchScore(o, c, s, n, l);
     e.setAttendance = (o, c, s, n) => t.store.mockSetAttendance(o, c, s, n);
     e.fetchSmartDefaults = (o, c, s) => t.store.mockGetSmartDefaults(o, c, s);
     e.quickCreateMatch = (o, c) => t.store.mockQuickCreateMatch(o, c);
@@ -18954,7 +19098,7 @@ __d(
     e.joinSeries = (o, c) => t.store.mockJoinSeries(o, c);
     e.fetchOrganizerSeries = (o) => t.store.mockGetOrganizerSeries(o);
     e.fetchSeries = (o, c) => t.store.mockGetSeries(o, c);
-    e.fetchSeriesAnalytics = (o) => t.store.mockGetSeriesAnalytics(o);
+    e.fetchSeriesAnalytics = (o, c) => t.store.mockGetSeriesAnalytics(o, c);
     e.activateNeedPlayer = (o, c, s) => t.store.mockActivateNeedPlayer(o, c, s);
     e.updateNeedPlayer = (o, c, s) => t.store.mockUpdateNeedPlayer(o, c, s);
     e.deactivateNeedPlayer = (o, c) => t.store.mockDeactivateNeedPlayer(o, c);
@@ -19603,6 +19747,12 @@ __d(
         // ADM1
         E_ADMINS_CANNOT_REGISTER_VENUES: "seAdminsCannotRegisterVenues",
         E_NO_SKILL_PROFILE: "seNoSkillProfile",
+        // ORG2
+        E_MATCH_NOT_FINISHED: "seMatchNotFinishedYet",
+        E_DURATION_OUT_OF_RANGE: "seDurationOutOfRange",
+        E_TIME_LOCKED_BY_COURT_BOOKING: "seTimeLockedByCourtBooking",
+        E_ATTENDANCE_LOCKED: "seAttendanceLocked",
+        E_PLEASE_WAIT_BEFORE_INVITING_AGAIN: "sePleaseWaitBeforeInvitingAgain",
       },
       E = {
         E_TOO_MANY_ATTEMPTS_MINUTES: "seTooManyAttemptsMinutes",
@@ -19943,6 +20093,37 @@ __d(
         // --- ADM2 keys (fix batch) ---
         // --- ORG1 keys (fix batch) ---
         // --- ORG2 keys (fix batch) ---
+        seDurationOutOfRange: "A match must last between 30 minutes and 6 hours.",
+        seTimeLockedByCourtBooking: "This match is tied to a court booking, so its time cannot be changed here. Cancel and rebook the court instead.",
+        seAttendanceLocked: "Attendance is locked 48 hours after the score was submitted. Ask an administrator to correct it.",
+        sePleaseWaitBeforeInvitingAgain: "Invitations were sent a few minutes ago. Please wait before inviting again.",
+        seriesStatus_cancelled: "Cancelled",
+        endSeriesConfirmTitle: "End this series?",
+        endSeriesConfirmBody: "No new sessions will be generated. Sessions that are already scheduled stay open \u2014 cancel them individually if needed. This cannot be undone.",
+        keepSeries: "Keep series",
+        cancelSeriesRefundNote: "Paid players on every upcoming session are refunded to their wallet and the court bookings are released. A reason is required.",
+        cancelMatchRefundNote: "Paid players are refunded in full to their wallet. A reason is required.",
+        removePlayerRefundNote: "If the player paid, the seat is refunded in full to their wallet. A reason is required.",
+        showAllOccurrences: "Show all %{n} sessions",
+        showFewerOccurrences: "Show fewer",
+        editFutureSessions: "Edit future sessions",
+        editFutureBody: "Changes apply to all upcoming sessions of this series.",
+        editFutureTime: "Start time (HH:MM)",
+        editFuturePrice: "Price per player (KWD)",
+        editFutureCapacity: "Players",
+        editFutureApply: "Apply to future sessions",
+        editFutureDone: "%{n} upcoming session(s) updated.",
+        seriesRevenueEstimated: "Estimated",
+        confirmScoreTitle: "Submit this final score?",
+        confirmScoreBody: "%{home} \u2013 %{away}. Players are notified immediately and only an administrator can correct it afterwards.",
+        sanctionPendingReviewToast: "Sent for administrator review. The player is not notified until it is approved.",
+        rejectReasonLabel: "Reason (optional, shown to the player)",
+        loadPanelFailed: "Couldn\u2019t load this section.",
+        occurrencesCancelled: "%{n} session(s) cancelled, %{r} seat(s) refunded.",
+        courtNotReleased: "The court booking could not be released \u2014 contact the venue.",
+        actAttendanceMarked: "Attendance marked",
+        actScoreCorrected: "Score corrected by an administrator",
+        notOrganizerOfSeries: "Only the organizer of this series can manage it.",
         resultBlindBody:
           "The other captain has submitted. You won\u2019t see their score until you submit yours \u2014 then we compare.",
         resultTheirTurnTitle: "Your turn \u2014 enter the score",
@@ -23308,6 +23489,37 @@ __d(
         // --- ADM2 keys (fix batch) ---
         // --- ORG1 keys (fix batch) ---
         // --- ORG2 keys (fix batch) ---
+        seDurationOutOfRange: "\u064a\u062c\u0628 \u0623\u0646 \u062a\u0633\u062a\u063a\u0631\u0642 \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629 \u0628\u064a\u0646 30 \u062f\u0642\u064a\u0642\u0629 \u0648 6 \u0633\u0627\u0639\u0627\u062a.",
+        seTimeLockedByCourtBooking: "\u0647\u0630\u0647 \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629 \u0645\u0631\u062a\u0628\u0637\u0629 \u0628\u062d\u062c\u0632 \u0645\u0644\u0639\u0628\u060c \u0644\u0630\u0627 \u0644\u0627 \u064a\u0645\u0643\u0646 \u062a\u063a\u064a\u064a\u0631 \u0648\u0642\u062a\u0647\u0627 \u0647\u0646\u0627.",
+        seAttendanceLocked: "\u064a\u064f\u0642\u0641\u0644 \u0627\u0644\u062d\u0636\u0648\u0631 \u0628\u0639\u062f 48 \u0633\u0627\u0639\u0629 \u0645\u0646 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0646\u062a\u064a\u062c\u0629. \u0627\u0637\u0644\u0628 \u0645\u0646 \u0645\u0634\u0631\u0641 \u062a\u0635\u062d\u064a\u062d\u0647.",
+        sePleaseWaitBeforeInvitingAgain: "\u0623\u064f\u0631\u0633\u0644\u062a \u0627\u0644\u062f\u0639\u0648\u0627\u062a \u0642\u0628\u0644 \u062f\u0642\u0627\u0626\u0642. \u064a\u0631\u062c\u0649 \u0627\u0644\u0627\u0646\u062a\u0638\u0627\u0631 \u0642\u0628\u0644 \u0627\u0644\u062f\u0639\u0648\u0629 \u0645\u062c\u062f\u062f\u064b\u0627.",
+        seriesStatus_cancelled: "\u0645\u0644\u063a\u0627\u0629",
+        endSeriesConfirmTitle: "\u0625\u0646\u0647\u0627\u0621 \u0647\u0630\u0647 \u0627\u0644\u0633\u0644\u0633\u0644\u0629\u061f",
+        endSeriesConfirmBody: "\u0644\u0646 \u062a\u064f\u0646\u0634\u0623 \u062c\u0644\u0633\u0627\u062a \u062c\u062f\u064a\u062f\u0629. \u0627\u0644\u062c\u0644\u0633\u0627\u062a \u0627\u0644\u0645\u062c\u062f\u0648\u0644\u0629 \u062a\u0628\u0642\u0649 \u0645\u0641\u062a\u0648\u062d\u0629. \u0644\u0627 \u064a\u0645\u0643\u0646 \u0627\u0644\u062a\u0631\u0627\u062c\u0639.",
+        keepSeries: "\u0627\u0644\u0625\u0628\u0642\u0627\u0621 \u0639\u0644\u0649 \u0627\u0644\u0633\u0644\u0633\u0644\u0629",
+        cancelSeriesRefundNote: "\u062a\u064f\u0631\u062f \u0627\u0644\u0645\u0628\u0627\u0644\u063a \u0644\u0644\u0627\u0639\u0628\u064a\u0646 \u0641\u064a \u0643\u0644 \u062c\u0644\u0633\u0629 \u0642\u0627\u062f\u0645\u0629 \u0625\u0644\u0649 \u0645\u062d\u0641\u0638\u062a\u0647\u0645 \u0648\u062a\u064f\u062d\u0631\u0631 \u062d\u062c\u0648\u0632\u0627\u062a \u0627\u0644\u0645\u0644\u0627\u0639\u0628. \u0627\u0644\u0633\u0628\u0628 \u0645\u0637\u0644\u0648\u0628.",
+        cancelMatchRefundNote: "\u062a\u064f\u0631\u062f \u0627\u0644\u0645\u0628\u0627\u0644\u063a \u0643\u0627\u0645\u0644\u0629 \u0644\u0644\u0627\u0639\u0628\u064a\u0646 \u0625\u0644\u0649 \u0645\u062d\u0641\u0638\u062a\u0647\u0645. \u0627\u0644\u0633\u0628\u0628 \u0645\u0637\u0644\u0648\u0628.",
+        removePlayerRefundNote: "\u0625\u0630\u0627 \u0643\u0627\u0646 \u0627\u0644\u0644\u0627\u0639\u0628 \u0642\u062f \u062f\u0641\u0639\u060c \u064a\u064f\u0631\u062f \u0627\u0644\u0645\u0642\u0639\u062f \u0643\u0627\u0645\u0644\u064b\u0627 \u0625\u0644\u0649 \u0645\u062d\u0641\u0638\u062a\u0647. \u0627\u0644\u0633\u0628\u0628 \u0645\u0637\u0644\u0648\u0628.",
+        showAllOccurrences: "\u0639\u0631\u0636 \u0643\u0644 \u0627\u0644\u062c\u0644\u0633\u0627\u062a (%{n})",
+        showFewerOccurrences: "\u0639\u0631\u0636 \u0623\u0642\u0644",
+        editFutureSessions: "\u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u062c\u0644\u0633\u0627\u062a \u0627\u0644\u0642\u0627\u062f\u0645\u0629",
+        editFutureBody: "\u062a\u0646\u0637\u0628\u0642 \u0627\u0644\u062a\u063a\u064a\u064a\u0631\u0627\u062a \u0639\u0644\u0649 \u062c\u0645\u064a\u0639 \u0627\u0644\u062c\u0644\u0633\u0627\u062a \u0627\u0644\u0642\u0627\u062f\u0645\u0629.",
+        editFutureTime: "\u0648\u0642\u062a \u0627\u0644\u0628\u062f\u0627\u064a\u0629 (HH:MM)",
+        editFuturePrice: "\u0627\u0644\u0633\u0639\u0631 \u0644\u0644\u0627\u0639\u0628 (\u062f.\u0643)",
+        editFutureCapacity: "\u0627\u0644\u0644\u0627\u0639\u0628\u0648\u0646",
+        editFutureApply: "\u062a\u0637\u0628\u064a\u0642 \u0639\u0644\u0649 \u0627\u0644\u062c\u0644\u0633\u0627\u062a \u0627\u0644\u0642\u0627\u062f\u0645\u0629",
+        editFutureDone: "\u062a\u0645 \u062a\u062d\u062f\u064a\u062b %{n} \u062c\u0644\u0633\u0629 \u0642\u0627\u062f\u0645\u0629.",
+        seriesRevenueEstimated: "\u062a\u0642\u062f\u064a\u0631\u064a",
+        confirmScoreTitle: "\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0646\u062a\u064a\u062c\u0629 \u0627\u0644\u0646\u0647\u0627\u0626\u064a\u0629\u061f",
+        confirmScoreBody: "%{home} \u2013 %{away}. \u064a\u064f\u0628\u0644\u0651\u063a \u0627\u0644\u0644\u0627\u0639\u0628\u0648\u0646 \u0641\u0648\u0631\u064b\u0627 \u0648\u0644\u0627 \u064a\u0645\u0643\u0646 \u0627\u0644\u062a\u0635\u062d\u064a\u062d \u0628\u0639\u062f \u0630\u0644\u0643 \u0625\u0644\u0627 \u0639\u0628\u0631 \u0645\u0634\u0631\u0641.",
+        sanctionPendingReviewToast: "\u0623\u064f\u0631\u0633\u0644 \u0644\u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0645\u0634\u0631\u0641. \u0644\u0646 \u064a\u064f\u0628\u0644\u0651\u063a \u0627\u0644\u0644\u0627\u0639\u0628 \u062d\u062a\u0649 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629.",
+        rejectReasonLabel: "\u0627\u0644\u0633\u0628\u0628 (\u0627\u062e\u062a\u064a\u0627\u0631\u064a\u060c \u064a\u0638\u0647\u0631 \u0644\u0644\u0627\u0639\u0628)",
+        loadPanelFailed: "\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0647\u0630\u0627 \u0627\u0644\u0642\u0633\u0645.",
+        occurrencesCancelled: "\u0623\u064f\u0644\u063a\u064a\u062a %{n} \u062c\u0644\u0633\u0629 \u0648\u0631\u064f\u062f\u0651 %{r} \u0645\u0642\u0639\u062f.",
+        courtNotReleased: "\u062a\u0639\u0630\u0631 \u062a\u062d\u0631\u064a\u0631 \u062d\u062c\u0632 \u0627\u0644\u0645\u0644\u0639\u0628 \u2014 \u062a\u0648\u0627\u0635\u0644 \u0645\u0639 \u0627\u0644\u0645\u0644\u0639\u0628.",
+        actAttendanceMarked: "\u062a\u0645 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062d\u0636\u0648\u0631",
+        actScoreCorrected: "\u0635\u064f\u062d\u0651\u062d\u062a \u0627\u0644\u0646\u062a\u064a\u062c\u0629 \u0628\u0648\u0627\u0633\u0637\u0629 \u0645\u0634\u0631\u0641",
+        notOrganizerOfSeries: "\u0644\u0627 \u064a\u0645\u0643\u0646 \u0625\u062f\u0627\u0631\u0629 \u0647\u0630\u0647 \u0627\u0644\u0633\u0644\u0633\u0644\u0629 \u0625\u0644\u0627 \u0645\u0646 \u0645\u0646\u0638\u0645\u0647\u0627.",
         resultBlindBody:
           "\u0633\u062c\u0651\u0644 \u0627\u0644\u0642\u0627\u0626\u062f \u0627\u0644\u0622\u062e\u0631 \u0646\u062a\u064a\u062c\u062a\u0647. \u0644\u0646 \u062a\u0631\u0649 \u0646\u062a\u064a\u062c\u062a\u0647 \u062d\u062a\u0649 \u062a\u064f\u062f\u062e\u0644 \u0646\u062a\u064a\u062c\u062a\u0643\u060c \u062b\u0645 \u0646\u0642\u0627\u0631\u0646 \u0628\u064a\u0646\u0647\u0645\u0627.",
         resultTheirTurnTitle:
@@ -42741,14 +42953,21 @@ __d(
           [Ee, $e] = (0, t.useState)(!1),
           [Oe, Ve] = (0, t.useState)(new Map()),
           [Ke, Fe] = (0, t.useState)(null),
+          [er, setEr] = (0, t.useState)(null),
+          [rj, setRj] = (0, t.useState)(null),
+          [rjText, setRjText] = (0, t.useState)(""),
+          [actErr, setActErr] = (0, t.useState)(!1),
           qe = (0, t.useCallback)(async () => {
             if (!e) return;
-            const t = await (0, w.fetchOrganizerMatchScreen)(o?.id ?? "", e);
-            (M(t.game),
-              $(t.participants),
-              He(t.candidates),
-              Ve(new Map(t.intel.map((e) => [e.user_id, e]))),
-              X(!1));
+            setEr(null);
+            try {
+              const t = await (0, w.fetchOrganizerMatchScreen)(o?.id ?? "", e);
+              (M(t.game), $(t.participants), He(t.candidates), Ve(new Map(t.intel.map((e) => [e.user_id, e]))));
+            } catch (e) {
+              setEr(e);
+            } finally {
+              X(!1);
+            }
           }, [e, o?.id]);
         ((0, t.useEffect)(() => {
           qe();
@@ -42756,13 +42975,14 @@ __d(
           (0, t.useEffect)(() => {
             if (!Ce || !o || !e) return void (Ce || Me(null));
             let t = !0;
+            setActErr(!1);
             return (
               (0, w.fetchMatchActivity)(o.id, e)
                 .then((e) => {
                   t && Me(e);
                 })
                 .catch(() => {
-                  t && Me([]);
+                  t && (Me([]), setActErr(!0));
                 }),
               () => {
                 t = !1;
@@ -42815,14 +43035,18 @@ __d(
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: v.bg },
             children: (0, W.jsx)(l.default, { color: v.accentText }),
           });
-        if (!k || !L)
-          return (0, W.jsx)(u.SafeAreaView, {
-            style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: v.bg },
-            children: (0, W.jsx)(i.default, {
-              style: [S.typography.body, { color: v.text }],
-              children: C("error"),
-            }),
+        if (!k || !L) {
+          const e = er ? (0, G9.classifyError)(er) : null;
+          return (0, W.jsx)(G9.GateScreen, {
+            kind: e?.isAuth ? "denied" : "error",
+            title: e ? void 0 : C("seMatchNotFound"),
+            body: e && !e.isAuth ? e.message : void 0,
+            onRetry: () => {
+              (X(!0), qe());
+            },
+            onBack: () => T.back(),
           });
+        }
         const Xe = k.organizer_id === o?.id,
           Ze = "cancelled" === k.status,
           et = !Ze && new Date(k.ends_at).getTime() < Date.now(),
@@ -43145,7 +43369,13 @@ __d(
                                 fullWidth: !0,
                                 disabled: "" === Be || "" === Re,
                                 onPress: () =>
-                                  Ue(() => (0, w.submitMatchScore)(o.id, k.id, Number(Be), Number(Re))),
+                                  r.default.alert(C("confirmScoreTitle"), C("confirmScoreBody", { home: Be, away: Re }), [
+                                    { text: C("cancel"), style: "cancel" },
+                                    {
+                                      text: C("submitScoreCta"),
+                                      onPress: () => Ue(() => (0, w.submitMatchScore)(o.id, k.id, Number(Be), Number(Re))),
+                                    },
+                                  ]),
                                 style: { marginTop: S.spacing.sm },
                               }),
                               (0, W.jsx)(i.default, {
@@ -43353,7 +43583,7 @@ __d(
                       }),
                       (0, W.jsx)(i.default, {
                         style: [S.typography.small, { color: v.textMuted, marginVertical: S.spacing.sm }],
-                        children: C("cancelMatchBody"),
+                        children: `${C("cancelMatchBody")} ${C("cancelMatchRefundNote")}`,
                       }),
                       (0, W.jsx)(h.Input, {
                         label: C("cancelReasonLabel"),
@@ -43375,16 +43605,15 @@ __d(
                             title: C("confirmCancelMatch"),
                             variant: "danger",
                             loading: Z,
+                            disabled: ze.trim().length < 3,
                             onPress: async () => {
                               if (k && o) {
                                 ee(!0);
                                 try {
-                                  (await (0, w.cancelMatch)(k.id, o.id, ze), fe(!1), await qe());
+                                  const e = await (0, w.cancelMatch)(k.id, o.id, ze.trim());
+                                  (fe(!1), await qe(), e && !1 === e.court_released && r.default.alert(C("courtNotReleased"), ""));
                                 } catch (e) {
-                                  r.default.alert(
-                                    C("error"),
-                                    (0, z.storeErrorText)(e?.message ?? "") || C("error"),
-                                  );
+                                  r.default.alert(C("error"), (0, G9.classifyError)(e).message || C("error"));
                                 } finally {
                                   ee(!1);
                                 }
@@ -43409,20 +43638,68 @@ __d(
                             (0, W.jsxs)(N, {
                               b: e,
                               colors: v,
-                              children: [
-                                (0, W.jsx)(y.Button, {
-                                  title: C("approve"),
-                                  size: "sm",
-                                  onPress: () => Ue(() => (0, w.approveParticipant)(k.id, o.id, e.id)),
-                                }),
-                                (0, W.jsx)(y.Button, {
-                                  title: C("reject"),
-                                  size: "sm",
-                                  variant: "secondary",
-                                  onPress: () => Ue(() => (0, w.rejectParticipant)(k.id, o.id, e.id)),
-                                }),
-                              ],
+                              children:
+                                et || Ze
+                                  ? [(0, W.jsx)(x.Badge, { label: C("pendingLabel"), tone: "warning" }, "pending")]
+                                  : [
+                                      (0, W.jsx)(
+                                        y.Button,
+                                        {
+                                          title: C("approve"),
+                                          size: "sm",
+                                          loading: Z,
+                                          onPress: () => Ue(() => (0, w.approveParticipant)(k.id, o.id, e.id)),
+                                        },
+                                        "approve",
+                                      ),
+                                      (0, W.jsx)(
+                                        y.Button,
+                                        {
+                                          title: C("reject"),
+                                          size: "sm",
+                                          variant: "secondary",
+                                          loading: Z,
+                                          onPress: () => (setRj(e.id), setRjText("")),
+                                        },
+                                        "reject",
+                                      ),
+                                    ],
                             }),
+                            rj === e.id &&
+                              (0, W.jsxs)(d.default, {
+                                style: { marginTop: S.spacing.xs, marginBottom: S.spacing.sm },
+                                children: [
+                                  (0, W.jsx)(h.Input, {
+                                    label: C("rejectReasonLabel"),
+                                    value: rjText,
+                                    onChangeText: setRjText,
+                                    maxLength: 200,
+                                  }),
+                                  (0, W.jsxs)(d.default, {
+                                    style: { flexDirection: "row", gap: S.spacing.sm, marginTop: S.spacing.xs },
+                                    children: [
+                                      (0, W.jsx)(y.Button, {
+                                        title: C("back"),
+                                        size: "sm",
+                                        variant: "ghost",
+                                        style: { flex: 1 },
+                                        onPress: () => setRj(null),
+                                      }),
+                                      (0, W.jsx)(y.Button, {
+                                        title: C("reject"),
+                                        size: "sm",
+                                        variant: "danger",
+                                        style: { flex: 1 },
+                                        loading: Z,
+                                        onPress: () => {
+                                          const t = rjText.trim();
+                                          (setRj(null), Ue(() => (0, w.rejectParticipant)(k.id, o.id, e.id, t || void 0)));
+                                        },
+                                      }),
+                                    ],
+                                  }),
+                                ],
+                              }),
                             t &&
                               (0, W.jsxs)(d.default, {
                                 style: q.intelRow,
@@ -43505,7 +43782,8 @@ __d(
                                       ],
                                     })
                                   : (0, W.jsx)(x.Badge, { label: C("confirmedLabel"), tone: "success" }),
-                                (0, W.jsx)(n.default, {
+                                e.user_id !== k.organizer_id &&
+                                  (0, W.jsx)(n.default, {
                                   onPress: () => Fe({ id: e.user_id, name: e.display_name ?? "Player" }),
                                   hitSlop: 8,
                                   accessibilityLabel: C("cardPlayer"),
@@ -43551,7 +43829,7 @@ __d(
                       }),
                       (0, W.jsx)(i.default, {
                         style: [S.typography.small, { color: v.textMuted, marginTop: 4 }],
-                        children: C("removePlayerBody"),
+                        children: `${C("removePlayerBody")} ${C("removePlayerRefundNote")}`,
                       }),
                       (0, W.jsx)(c.default, {
                         value: ve,
@@ -43578,9 +43856,10 @@ __d(
                             title: C("removePlayer"),
                             variant: "danger",
                             loading: Z,
+                            disabled: ve.trim().length < 3,
                             onPress: () => {
                               const e = Se;
-                              (we(null), Ue(() => (0, w.kickPlayer)(o.id, k.id, e.id, ve || void 0)));
+                              (we(null), Ue(() => (0, w.kickPlayer)(o.id, k.id, e.id, ve.trim())));
                             },
                             style: { flex: 1 },
                           }),
@@ -43732,14 +44011,23 @@ __d(
                                     e,
                                   ),
                                 )
-                              : 0 === ke.length
-                                ? (0, W.jsx)(i.default, {
-                                    style: [
-                                      S.typography.small,
-                                      { color: v.textMuted, padding: S.spacing.sm },
-                                    ],
-                                    children: C("noActivityYet"),
+                              : actErr
+                                ? (0, W.jsx)(y.Button, {
+                                    title: `${C("loadPanelFailed")} \u00b7 ${C("retry")}`,
+                                    variant: "ghost",
+                                    size: "sm",
+                                    onPress: () => {
+                                      (Pe(!1), setTimeout(() => Pe(!0), 0));
+                                    },
                                   })
+                                : 0 === ke.length
+                                  ? (0, W.jsx)(i.default, {
+                                      style: [
+                                        S.typography.small,
+                                        { color: v.textMuted, padding: S.spacing.sm },
+                                      ],
+                                      children: C("noActivityYet"),
+                                    })
                                 : ke.map((e) => (0, W.jsx)(H, { e: e, colors: v, t: C }, e.id)),
                         }),
                     ],
@@ -43782,7 +44070,8 @@ __d(
       R = _r(_d[31]),
       D = _r(_d[32]),
       z = _r(_d[33]),
-      W = _r(_d[34]);
+      W = _r(_d[34]),
+      G9 = _r(_d[35]);
     const A = ["beginner", "intermediate", "advanced", "all"];
     const N = ({ b: e, colors: t, children: l, index: r }) => {
         return (0, W.jsxs)(d.default, {
@@ -43834,9 +44123,11 @@ __d(
           tone: "success",
         },
         score_submitted: { icon: "trophy-outline", labelKey: "actScoreSubmitted", tone: "accent" },
+        attendance_marked: { icon: "checkmark-done-outline", labelKey: "actAttendanceMarked", tone: "muted" },
+        score_corrected: { icon: "create-outline", labelKey: "actScoreCorrected", tone: "accent" },
       },
       H = ({ e: e, colors: t, t: l }) => {
-        const r = L[e.action],
+        const r = L[e.action] ?? { icon: "ellipse-outline", labelKey: "noActivityYet", tone: "muted" },
           n =
             "danger" === r.tone
               ? t.danger
@@ -44252,8 +44543,15 @@ __d(
       G = ({ gameId: e, userId: l, hasOpenSlots: n, colors: s, t: o }) => {
         const [c, u] = (0, t.useState)([]),
           [p, x] = (0, t.useState)(!1),
+          [pe9, setPe9] = (0, t.useState)(!1),
           h = (0, t.useCallback)(async () => {
-            u(n ? await (0, w.fetchConciergeReplacements)(l, e).catch(() => []) : []);
+            if (!n) return void u([]);
+            setPe9(!1);
+            try {
+              u(await (0, w.fetchConciergeReplacements)(l, e));
+            } catch {
+              (u([]), setPe9(!0));
+            }
           }, [e, l, n]);
         if (
           ((0, t.useEffect)(() => {
@@ -44275,11 +44573,13 @@ __d(
                 }),
               ],
             }),
-            0 === c.length
-              ? (0, W.jsx)(i.default, {
-                  style: [S.typography.small, { color: s.textMuted }],
-                  children: "\u2014",
-                })
+            pe9
+              ? (0, W.jsx)(y.Button, { title: `${o("loadPanelFailed")} \u00b7 ${o("retry")}`, variant: "ghost", size: "sm", onPress: h })
+              : 0 === c.length
+                ? (0, W.jsx)(i.default, {
+                    style: [S.typography.small, { color: s.textMuted }],
+                    children: "\u2014",
+                  })
               : c.map((e) =>
                   (0, W.jsxs)(
                     d.default,
@@ -44327,9 +44627,15 @@ __d(
         const [u, p] = (0, t.useState)(null),
           [y, h] = (0, t.useState)(null),
           [f, j] = (0, t.useState)(!1),
+          [ue9, setUe9] = (0, t.useState)(!1),
           b = (0, t.useCallback)(async () => {
-            (p(await (0, w.fetchReplacementState)(l, e).catch(() => null)),
-              h(await (0, w.fetchReplacementMetrics)(l, e).catch(() => null)));
+            setUe9(!1);
+            try {
+              p(await (0, w.fetchReplacementState)(l, e));
+            } catch {
+              (p(null), setUe9(!0));
+            }
+            h(await (0, w.fetchReplacementMetrics)(l, e).catch(() => null));
           }, [e, l]);
         (0, t.useEffect)(() => {
           b();
@@ -44344,7 +44650,13 @@ __d(
             j(!1);
           }
         };
-        if (!u) return null;
+        if (!u)
+          return ue9
+            ? (0, W.jsx)(m.Card, {
+                style: { marginTop: S.spacing.md },
+                children: (0, W.jsx)(y.Button, { title: `${c("loadPanelFailed")} \u00b7 ${c("retry")}`, variant: "ghost", size: "sm", onPress: b }),
+              })
+            : null;
         const T = u.settings.mode;
         return (0, W.jsxs)(m.Card, {
           style: { marginTop: S.spacing.md },
@@ -44529,14 +44841,24 @@ __d(
           ],
         }),
       J = ({ gameId: e, userId: l, colors: r, t: n }) => {
-        const [s, c] = (0, t.useState)(null);
-        return (
-          (0, t.useEffect)(() => {
+        const [s, c] = (0, t.useState)(null),
+          [je9, setJe9] = (0, t.useState)(!1),
+          ld9 = (0, t.useCallback)(() => {
+            setJe9(!1);
             (0, w.fetchGameGroups)(l, e)
               .then(c)
-              .catch(() => c([]));
-          }, [e, l]),
-          s && 0 !== s.length
+              .catch(() => (c([]), setJe9(!0)));
+          }, [e, l]);
+        return (
+          (0, t.useEffect)(() => {
+            ld9();
+          }, [ld9]),
+          je9
+            ? (0, W.jsx)(m.Card, {
+                style: { marginTop: S.spacing.md },
+                children: (0, W.jsx)(y.Button, { title: `${n("loadPanelFailed")} \u00b7 ${n("retry")}`, variant: "ghost", size: "sm", onPress: ld9 }),
+              })
+            : s && 0 !== s.length
             ? (0, W.jsxs)(m.Card, {
                 style: { marginTop: S.spacing.md },
                 children: [
@@ -44758,15 +45080,14 @@ __d(
                 if (!v.trim()) return r.default.alert(u("error"), u("sanctionReasonLabel"));
                 B(!0);
                 try {
-                  (await (0, w.issueSanction)(s, e.id, {
+                  const t = await (0, w.issueSanction)(s, e.id, {
                     type: b,
                     category: f,
                     reason: v.trim(),
                     evidence_url: I.trim() || null,
                     game_id: l,
-                  }),
-                    r.default.alert(u("sanctionIssuedToast"), ""),
-                    x());
+                  });
+                  (r.default.alert("pending_approval" === t?.status ? u("sanctionPendingReviewToast") : u("sanctionIssuedToast"), ""), x());
                 } catch (e) {
                   r.default.alert(u("error"), (0, z.storeErrorText)(e?.message ?? "") || u("error"));
                 } finally {
@@ -44781,7 +45102,7 @@ __d(
   2466,
   [
     33, 15, 461, 445, 369, 281, 158, 146, 394, 273, 381, 1086, 20, 1623, 1624, 626, 625, 2462, 2463, 630, 615,
-    616, 671, 663, 656, 662, 2387, 631, 1626, 1311, 675, 2467, 1171, 674, 13,
+    616, 671, 663, 656, 662, 2387, 631, 1626, 1311, 675, 2467, 1171, 674, 13, 9001,
   ],
 );
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.copyText=void 0;t(r(d[1]));var c=t(r(d[2]));e.copyText=async(t,o)=>{try{const c=globalThis.navigator;if(c?.clipboard?.writeText)return await c.clipboard.writeText(t),'copied'}catch{}try{return(await c.default.share(o?{message:t,title:o}:{message:t})).action===c.default.dismissedAction?'failed':'shared'}catch{return'failed'}}},2467,[33,137,459]);
@@ -46508,38 +46829,68 @@ __d(
           [L, q] = (0, t.useState)(!1),
           [V, F] = (0, t.useState)(!1),
           [E, G] = (0, t.useState)(""),
+          [er, setEr] = (0, t.useState)(null),
+          [showAll, setShowAll] = (0, t.useState)(!1),
+          [ef, setEf] = (0, t.useState)(!1),
+          [efTime, setEfTime] = (0, t.useState)(""),
+          [efPrice, setEfPrice] = (0, t.useState)(""),
+          [efCap, setEfCap] = (0, t.useState)(""),
           K = (0, t.useCallback)(async () => {
             if (!e || !z) return;
-            const [t, s, a] = await Promise.all([
-              (0, b.fetchSeries)(e, z.id),
-              (0, b.fetchSeriesAnalytics)(e),
-              (0, b.fetchOrganizerMatches)(z.id),
-            ]);
-            ($(t), N(s), A(a.filter((t) => t.series_id === e)), H(!1));
+            setEr(null);
+            try {
+              const [t, s, a] = await Promise.all([
+                (0, b.fetchSeries)(e, z.id),
+                (0, b.fetchSeriesAnalytics)(e, z.id).catch(() => null),
+                (0, b.fetchOrganizerMatches)(z.id),
+              ]);
+              ($(t), N(s), A(a.filter((t) => t.series_id === e)));
+            } catch (e) {
+              setEr(e);
+            } finally {
+              H(!1);
+            }
           }, [e, z]);
         (0, g.useFocusEffect)(
           (0, t.useCallback)(() => {
             K();
           }, [K]),
         );
-        const J = async (e) => {
+        // Runs an action; resolves to true on success so callers can keep dialogs open on failure.
+        const J = async (e, t) => {
           q(!0);
           try {
-            (await e(), await K());
+            const s = await e();
+            return (await K(), t && a.default.alert(t(s), ""), !0);
           } catch (e) {
-            a.default.alert(P("error"), (0, C.storeErrorText)(e?.message ?? "") || P("error"));
+            return (a.default.alert(P("error"), (0, G9.classifyError)(e).message || P("error")), !1);
           } finally {
             q(!1);
           }
         };
-        if (D || !T)
+        if (D)
           return (0, _.jsx)(d.SafeAreaView, {
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: B.bg },
             children: (0, _.jsx)(s.default, { color: B.accentText }),
           });
+        if (!T) {
+          const e = er ? (0, G9.classifyError)(er) : null;
+          return (0, _.jsx)(G9.GateScreen, {
+            kind: e?.isAuth ? "denied" : "error",
+            title: e ? void 0 : P("seSeriesNotFound"),
+            body: e && !e.isAuth ? e.message : void 0,
+            onRetry: () => {
+              (H(!0), K());
+            },
+            onBack: () => M.back(),
+          });
+        }
+        if (z && !1 === T.is_organizer && !(T.organizer_id && T.organizer_id === z.id))
+          return (0, _.jsx)(G9.GateScreen, { kind: "denied", body: P("notOrganizerOfSeries"), onBack: () => M.back() });
         const Q = (0, w.sportColor)(T.sport),
           U = "active" === T.status ? "success" : "paused" === T.status ? "warning" : "danger",
-          X = O.filter((e) => "upcoming" === e.effective_status);
+          X = O.filter((e) => "upcoming" === e.effective_status),
+          over = "ended" === T.status || "cancelled" === T.status;
         return (0, _.jsxs)(d.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: B.bg },
@@ -46638,14 +46989,14 @@ __d(
                           }),
                           (0, _.jsx)(k, {
                             label: P("seriesRevenue"),
-                            value: (0, w.formatPrice)(W.revenueKwd),
+                            value: (0, w.formatAmount)(W.revenueKwd),
                             colors: B,
                           }),
                         ],
                       }),
                     ],
                   }),
-                "ended" !== T.status &&
+                !over &&
                   (0, _.jsxs)(c.default, {
                     style: { flexDirection: "row", gap: j.spacing.sm, marginTop: j.spacing.lg },
                     children: [
@@ -46669,12 +47020,74 @@ __d(
                         title: P("endSeries"),
                         variant: "secondary",
                         loading: L,
-                        onPress: () => J(() => (0, b.endSeries)(e, z.id)),
+                        onPress: () =>
+                          a.default.alert(P("endSeriesConfirmTitle"), P("endSeriesConfirmBody"), [
+                            { text: P("cancel"), style: "cancel" },
+                            { text: P("endSeries"), onPress: () => J(() => (0, b.endSeries)(e, z.id)) },
+                          ]),
                         style: { flex: 1 },
                       }),
                     ],
                   }),
-                "ended" !== T.status &&
+                !over &&
+                  (0, _.jsx)(m.Button, {
+                    title: P("editFutureSessions"),
+                    variant: "secondary",
+                    onPress: () => {
+                      const e = Number(T.start_minutes ?? 0);
+                      (setEfTime(`${String(Math.floor(e / 60)).padStart(2, "0")}:${String(e % 60).padStart(2, "0")}`),
+                        setEfPrice(String(T.price_kwd ?? 0)),
+                        setEfCap(String(T.max_players ?? "")),
+                        setEf((e) => !e));
+                    },
+                    style: { marginTop: j.spacing.sm },
+                    fullWidth: !0,
+                    leftIcon: (0, _.jsx)(u.Ionicons, { name: "create-outline", size: 16, color: B.text }),
+                  }),
+                ef &&
+                  !over &&
+                  (0, _.jsxs)(f.Card, {
+                    style: { marginTop: j.spacing.md },
+                    children: [
+                      (0, _.jsx)(i.default, { style: [j.typography.h3, { color: B.text }], children: P("editFutureSessions") }),
+                      (0, _.jsx)(i.default, {
+                        style: [j.typography.small, { color: B.textMuted, marginVertical: j.spacing.sm }],
+                        children: P("editFutureBody"),
+                      }),
+                      (0, _.jsx)(y.Input, { label: P("editFutureTime"), value: efTime, onChangeText: setEfTime, maxLength: 5 }),
+                      (0, _.jsx)(y.Input, {
+                        label: P("editFuturePrice"),
+                        value: efPrice,
+                        onChangeText: (e) => setEfPrice(e.replace(/[^0-9.]/g, "")),
+                        keyboardType: "numeric",
+                      }),
+                      (0, _.jsx)(y.Input, {
+                        label: P("editFutureCapacity"),
+                        value: efCap,
+                        onChangeText: (e) => setEfCap(e.replace(/[^0-9]/g, "")),
+                        keyboardType: "numeric",
+                      }),
+                      (0, _.jsx)(m.Button, {
+                        title: P("editFutureApply"),
+                        loading: L,
+                        fullWidth: !0,
+                        style: { marginTop: j.spacing.sm },
+                        onPress: async () => {
+                          const t = /^(\d{1,2}):(\d{2})$/.exec(efTime.trim()),
+                            s = t ? 60 * Number(t[1]) + Number(t[2]) : NaN,
+                            n = Number(efPrice),
+                            r = Number(efCap);
+                          if (!t || s < 0 || s > 1439 || !Number.isFinite(n) || n < 0 || n > 100 || !Number.isInteger(r) || r < 2 || r > 40)
+                            return void a.default.alert(P("error"), P("seInvalidValue"));
+                          (await J(
+                            () => (0, b.editFutureOccurrences)(e, z.id, { start_minutes: s, price_kwd: n, max_players: r }),
+                            (e) => P("editFutureDone", { n: String(Number(e) || 0) }),
+                          )) && setEf(!1);
+                        },
+                      }),
+                    ],
+                  }),
+                !over &&
                   (0, _.jsx)(m.Button, {
                     title: P("cancelSeries"),
                     variant: "danger",
@@ -46697,7 +47110,7 @@ __d(
                       }),
                       (0, _.jsx)(i.default, {
                         style: [j.typography.small, { color: B.textMuted, marginVertical: j.spacing.sm }],
-                        children: P("cancelSeriesBody"),
+                        children: `${P("cancelSeriesBody")} ${P("cancelSeriesRefundNote")}`,
                       }),
                       (0, _.jsx)(y.Input, {
                         value: E,
@@ -46709,7 +47122,7 @@ __d(
                         style: { flexDirection: "row", gap: j.spacing.sm },
                         children: [
                           (0, _.jsx)(m.Button, {
-                            title: P("keepMatch"),
+                            title: P("keepSeries"),
                             variant: "secondary",
                             onPress: () => F(!1),
                             style: { flex: 1 },
@@ -46718,8 +47131,18 @@ __d(
                             title: P("cancelSeries"),
                             variant: "danger",
                             loading: L,
+                            disabled: E.trim().length < 3,
                             onPress: async () => {
-                              z && e && (await J(() => (0, b.cancelSeries)(e, z.id, E)), F(!1));
+                              z &&
+                                e &&
+                                (await J(
+                                  () => (0, b.cancelSeries)(e, z.id, E.trim()),
+                                  (e) =>
+                                    `${P("occurrencesCancelled", { n: String(e?.occurrences ?? 0), r: String(e?.refunded ?? 0) })}${
+                                      e?.courts_not_released ? ` ${P("courtNotReleased")}` : ""
+                                    }`,
+                                )) &&
+                                F(!1);
                             },
                             style: { flex: 1 },
                           }),
@@ -46734,6 +47157,14 @@ __d(
                   ],
                   children: [P("upcomingOccurrences"), " \xb7 ", (0, w.formatNumber)(X.length)],
                 }),
+                X.length > 12 &&
+                  (0, _.jsx)(m.Button, {
+                    title: showAll ? P("showFewerOccurrences") : P("showAllOccurrences", { n: String(X.length) }),
+                    variant: "ghost",
+                    size: "sm",
+                    onPress: () => setShowAll((e) => !e),
+                    style: { alignSelf: "flex-start", marginBottom: j.spacing.xs },
+                  }),
                 (0, _.jsx)(f.Card, {
                   padding: "sm",
                   children:
@@ -46742,7 +47173,7 @@ __d(
                           style: [j.typography.small, { color: B.textMuted, padding: j.spacing.sm }],
                           children: P("noOrganizerMatches"),
                         })
-                      : X.slice(0, 12).map((e, t) =>
+                      : (showAll ? X : X.slice(0, 12)).map((e, t) =>
                           (0, _.jsxs)(
                             n.default,
                             {
@@ -46826,7 +47257,8 @@ __d(
       v = r(_d[21]),
       S = r(_d[22]),
       C = r(_d[23]),
-      _ = r(_d[24]);
+      _ = r(_d[24]),
+      G9 = r(_d[25]);
     const I = ["dow_0", "dow_1", "dow_2", "dow_3", "dow_4", "dow_5", "dow_6"];
     const k = ({ label: e, value: t, colors: s }) =>
         (0, _.jsxs)(c.default, {
@@ -46879,7 +47311,7 @@ __d(
   2471,
   [
     33, 15, 461, 445, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 626, 625, 630, 615, 616, 671, 1311,
-    675, 1171, 674, 13,
+    675, 1171, 674, 13, 9001,
   ],
 );
 __d(

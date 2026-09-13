@@ -1,0 +1,91 @@
+// Interactive flow checks for the organizer match/series screens. Run: node tools/flows-organizer.mjs
+import { openApp, IDS } from './smoke.mjs';
+import fs from 'node:fs';
+const en = fs.readFileSync(new URL('../bundle-src/909.js', import.meta.url), 'utf8');
+const t = (k) => { const m = en.match(new RegExp(`^\\s+${k}: "((?:[^"\\\\]|\\\\.)*)"`, 'm')); if (!m) throw new Error('missing key ' + k); return JSON.parse('"' + m[1] + '"'); };
+const results = []; const ok = (n, c, x = '') => results.push(`${c ? 'PASS' : 'FAIL'} ${n} ${x}`);
+async function run(name, fn) { try { await fn(); } catch (e) { results.push(`FAIL ${name}: ${e.message.split('\n')[0]}`); } }
+const ORG = IDS.organizer;
+async function seedState() {
+  // Boot once as organizer so demo seeding assigns games/series to the organizer, then read storage.
+  const { browser, page } = await openApp({ role: 'organizer', route: '/organizer' });
+  await page.waitForTimeout(1500);
+  const st = await page.evaluate(() => { const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); o[k] = localStorage.getItem(k); } return o; });
+  await browser.close();
+  return st;
+}
+const st = await seedState();
+const games = JSON.parse(st['playora.mock.games.v1'] || '[]');
+const upcoming = games.find((g) => g.organizer_id === ORG && g.status === 'scheduled' && new Date(g.starts_at) > new Date());
+const ended = games.find((g) => g.organizer_id === ORG && g.status !== 'cancelled' && new Date(g.ends_at) < new Date() && !g.score_submitted_at);
+// Seed one active weekly series for the organizer (demo seeding does not create templates).
+const now = new Date();
+const tpl = { id: 'tpl-test-1', organizer_id: ORG, title: 'Thursday 5-a-side', sport: 'football', format: 'football_5v5', skill_level: 'all', venue_id: upcoming.venue_id, max_players: 10, waitlist_capacity: 4, price_kwd: 2.5, notes: null, visibility: 'public', approval_mode: 'auto', skill_min: null, skill_max: null, skill_policy: 'open', start_date: new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString(), start_minutes: 1080, end_minutes: 1170, frequency: 'weekly', weekdays: [(now.getDay() + 1) % 7], monthly_week: null, monthly_weekday: null, end_date: null, horizon_weeks: 12, auto_invite: false, status: 'active', resume_from: null, generated_until: null, created_at: now.toISOString() };
+st['playora.mock.templates.v1'] = JSON.stringify([tpl]);
+const tplKey = 'playora.mock.templates.v1';
+const restore = `(() => { const s = ${JSON.stringify(st)}; for (const k of Object.keys(s)) if (k !== 'secure.playora_session') localStorage.setItem(k, s[k]); })();`;
+ok('seed has upcoming game / ended game / series', !!upcoming && !!ended && !!tpl, `up=${!!upcoming} ended=${!!ended} tpl=${!!tpl} key=${tplKey}`);
+
+await run('match cancel requires reason + confirms refund note', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: `/organizer/match/${upcoming.id}`, initScript: restore });
+  const d = []; page.on('dialog', (x) => d.push(x.message()));
+  await page.getByRole('button', { name: t('cancelMatch'), exact: true }).first().click().catch(() => {});
+  await page.waitForTimeout(400);
+  const confirm = page.getByRole('button', { name: t('confirmCancelMatch'), exact: true }).last();
+  ok('cancel confirm disabled without reason', await confirm.evaluate((el) => el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true'));
+  const body = await page.evaluate(() => document.body.innerText);
+  ok('refund note shown', body.includes(t('cancelMatchRefundNote').slice(0, 30)));
+  await page.getByPlaceholder(t('cancelReasonPlaceholder')).fill('Pitch flooded after the storm');
+  await confirm.click(); await page.waitForTimeout(1500);
+  const after = await page.evaluate(() => document.body.innerText);
+  ok('match cancelled', /cancelled/i.test(after), `dialogs=${JSON.stringify(d).slice(0, 120)}`);
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
+  await browser.close();
+});
+
+await run('score submission confirmation', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: `/organizer/match/${ended.id}`, initScript: restore });
+  const d = []; page.on('dialog', (x) => d.push(x.message()));
+  const inputs = page.locator('input[inputmode="numeric"], input[type="number"], input');
+  const n = await inputs.count();
+  const body0 = await page.evaluate(() => document.body.innerText);
+  if (!body0.includes(t('finalScoreTitle'))) { ok('score card present', false, 'no score card'); await browser.close(); return; }
+  // the two score inputs are the last two numeric inputs in the card
+  const num = page.locator('input').filter({ hasNot: page.locator('[placeholder]') });
+  const all = page.locator('input'); const c = await all.count();
+  await all.nth(c - 2).fill('3'); await all.nth(c - 1).fill('2'); await page.waitForTimeout(200);
+  await page.getByRole('button', { name: t('submitScoreCta'), exact: true }).first().click(); await page.waitForTimeout(1500);
+  ok('score confirm dialog shown with score', d.some((m) => m.includes(t('confirmScoreTitle')) && m.includes('3') && m.includes('2')), `dialogs=${JSON.stringify(d).slice(0, 160)}`);
+  const after = await page.evaluate(() => document.body.innerText);
+  ok('score now final', /3\s*[–-]\s*2/.test(after));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')));
+  await browser.close();
+});
+
+await run('series: denied for non-organizer', async () => {
+  const { browser, page } = await openApp({ role: 'user', route: `/organizer/series/${tpl.id}`, initScript: restore });
+  const body = await page.evaluate(() => document.body.innerText);
+  ok('non-organizer sees denial', body.includes(t('notOrganizerOfSeries')) || body.includes(t('adminOnlyTitle')), body.slice(0, 80).replace(/\n/g, '|'));
+  await browser.close();
+});
+
+await run('series: end confirm, edit future, cancel with reason', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: `/organizer/series/${tpl.id}`, initScript: restore });
+  const d = []; page.on('dialog', (x) => { d.push(x.message()); });
+  await page.getByRole('button', { name: t('editFutureSessions'), exact: true }).first().click(); await page.waitForTimeout(300);
+  const inputs = page.locator('input'); const c = await inputs.count();
+  await inputs.nth(c - 3).fill('19:30'); await inputs.nth(c - 2).fill('3'); await inputs.nth(c - 1).fill('10');
+  await page.getByRole('button', { name: t('editFutureApply'), exact: true }).first().click(); await page.waitForTimeout(1500);
+  ok('edit future sessions applied', d.some((m) => /updated/i.test(m)), `dialogs=${JSON.stringify(d).slice(0, 120)}`);
+  await page.getByRole('button', { name: t('cancelSeries'), exact: true }).first().click(); await page.waitForTimeout(300);
+  const conf = page.getByRole('button', { name: t('cancelSeries'), exact: true }).last();
+  ok('cancel series disabled without reason', await conf.evaluate((el) => el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true'));
+  await page.getByPlaceholder(t('cancelReasonPlaceholder')).fill('Venue closing for renovation');
+  await conf.click(); await page.waitForTimeout(2000);
+  const after = await page.evaluate(() => document.body.innerText);
+  ok('series cancelled with summary toast', d.some((m) => /cancelled/i.test(m) && /refunded/i.test(m)) && /cancelled/i.test(after), `dialogs=${JSON.stringify(d).slice(-160)}`);
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
+  await browser.close();
+});
+console.log(results.join('\n'));
+process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

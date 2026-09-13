@@ -283,6 +283,12 @@ __d(
         // ADM1
         E_ADMINS_CANNOT_REGISTER_VENUES: "seAdminsCannotRegisterVenues",
         E_NO_SKILL_PROFILE: "seNoSkillProfile",
+        // ORG2
+        E_MATCH_NOT_FINISHED: "seMatchNotFinishedYet",
+        E_DURATION_OUT_OF_RANGE: "seDurationOutOfRange",
+        E_TIME_LOCKED_BY_COURT_BOOKING: "seTimeLockedByCourtBooking",
+        E_ATTENDANCE_LOCKED: "seAttendanceLocked",
+        E_PLEASE_WAIT_BEFORE_INVITING_AGAIN: "sePleaseWaitBeforeInvitingAgain",
       },
       E = {
         E_TOO_MANY_ATTEMPTS_MINUTES: "seTooManyAttemptsMinutes",

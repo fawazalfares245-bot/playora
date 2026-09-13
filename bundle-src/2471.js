@@ -15,38 +15,68 @@ __d(
           [L, q] = (0, t.useState)(!1),
           [V, F] = (0, t.useState)(!1),
           [E, G] = (0, t.useState)(""),
+          [er, setEr] = (0, t.useState)(null),
+          [showAll, setShowAll] = (0, t.useState)(!1),
+          [ef, setEf] = (0, t.useState)(!1),
+          [efTime, setEfTime] = (0, t.useState)(""),
+          [efPrice, setEfPrice] = (0, t.useState)(""),
+          [efCap, setEfCap] = (0, t.useState)(""),
           K = (0, t.useCallback)(async () => {
             if (!e || !z) return;
-            const [t, s, a] = await Promise.all([
-              (0, b.fetchSeries)(e, z.id),
-              (0, b.fetchSeriesAnalytics)(e),
-              (0, b.fetchOrganizerMatches)(z.id),
-            ]);
-            ($(t), N(s), A(a.filter((t) => t.series_id === e)), H(!1));
+            setEr(null);
+            try {
+              const [t, s, a] = await Promise.all([
+                (0, b.fetchSeries)(e, z.id),
+                (0, b.fetchSeriesAnalytics)(e, z.id).catch(() => null),
+                (0, b.fetchOrganizerMatches)(z.id),
+              ]);
+              ($(t), N(s), A(a.filter((t) => t.series_id === e)));
+            } catch (e) {
+              setEr(e);
+            } finally {
+              H(!1);
+            }
           }, [e, z]);
         (0, g.useFocusEffect)(
           (0, t.useCallback)(() => {
             K();
           }, [K]),
         );
-        const J = async (e) => {
+        // Runs an action; resolves to true on success so callers can keep dialogs open on failure.
+        const J = async (e, t) => {
           q(!0);
           try {
-            (await e(), await K());
+            const s = await e();
+            return (await K(), t && a.default.alert(t(s), ""), !0);
           } catch (e) {
-            a.default.alert(P("error"), (0, C.storeErrorText)(e?.message ?? "") || P("error"));
+            return (a.default.alert(P("error"), (0, G9.classifyError)(e).message || P("error")), !1);
           } finally {
             q(!1);
           }
         };
-        if (D || !T)
+        if (D)
           return (0, _.jsx)(d.SafeAreaView, {
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: B.bg },
             children: (0, _.jsx)(s.default, { color: B.accentText }),
           });
+        if (!T) {
+          const e = er ? (0, G9.classifyError)(er) : null;
+          return (0, _.jsx)(G9.GateScreen, {
+            kind: e?.isAuth ? "denied" : "error",
+            title: e ? void 0 : P("seSeriesNotFound"),
+            body: e && !e.isAuth ? e.message : void 0,
+            onRetry: () => {
+              (H(!0), K());
+            },
+            onBack: () => M.back(),
+          });
+        }
+        if (z && !1 === T.is_organizer && !(T.organizer_id && T.organizer_id === z.id))
+          return (0, _.jsx)(G9.GateScreen, { kind: "denied", body: P("notOrganizerOfSeries"), onBack: () => M.back() });
         const Q = (0, w.sportColor)(T.sport),
           U = "active" === T.status ? "success" : "paused" === T.status ? "warning" : "danger",
-          X = O.filter((e) => "upcoming" === e.effective_status);
+          X = O.filter((e) => "upcoming" === e.effective_status),
+          over = "ended" === T.status || "cancelled" === T.status;
         return (0, _.jsxs)(d.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: B.bg },
@@ -145,14 +175,14 @@ __d(
                           }),
                           (0, _.jsx)(k, {
                             label: P("seriesRevenue"),
-                            value: (0, w.formatPrice)(W.revenueKwd),
+                            value: (0, w.formatAmount)(W.revenueKwd),
                             colors: B,
                           }),
                         ],
                       }),
                     ],
                   }),
-                "ended" !== T.status &&
+                !over &&
                   (0, _.jsxs)(c.default, {
                     style: { flexDirection: "row", gap: j.spacing.sm, marginTop: j.spacing.lg },
                     children: [
@@ -176,12 +206,74 @@ __d(
                         title: P("endSeries"),
                         variant: "secondary",
                         loading: L,
-                        onPress: () => J(() => (0, b.endSeries)(e, z.id)),
+                        onPress: () =>
+                          a.default.alert(P("endSeriesConfirmTitle"), P("endSeriesConfirmBody"), [
+                            { text: P("cancel"), style: "cancel" },
+                            { text: P("endSeries"), onPress: () => J(() => (0, b.endSeries)(e, z.id)) },
+                          ]),
                         style: { flex: 1 },
                       }),
                     ],
                   }),
-                "ended" !== T.status &&
+                !over &&
+                  (0, _.jsx)(m.Button, {
+                    title: P("editFutureSessions"),
+                    variant: "secondary",
+                    onPress: () => {
+                      const e = Number(T.start_minutes ?? 0);
+                      (setEfTime(`${String(Math.floor(e / 60)).padStart(2, "0")}:${String(e % 60).padStart(2, "0")}`),
+                        setEfPrice(String(T.price_kwd ?? 0)),
+                        setEfCap(String(T.max_players ?? "")),
+                        setEf((e) => !e));
+                    },
+                    style: { marginTop: j.spacing.sm },
+                    fullWidth: !0,
+                    leftIcon: (0, _.jsx)(u.Ionicons, { name: "create-outline", size: 16, color: B.text }),
+                  }),
+                ef &&
+                  !over &&
+                  (0, _.jsxs)(f.Card, {
+                    style: { marginTop: j.spacing.md },
+                    children: [
+                      (0, _.jsx)(i.default, { style: [j.typography.h3, { color: B.text }], children: P("editFutureSessions") }),
+                      (0, _.jsx)(i.default, {
+                        style: [j.typography.small, { color: B.textMuted, marginVertical: j.spacing.sm }],
+                        children: P("editFutureBody"),
+                      }),
+                      (0, _.jsx)(y.Input, { label: P("editFutureTime"), value: efTime, onChangeText: setEfTime, maxLength: 5 }),
+                      (0, _.jsx)(y.Input, {
+                        label: P("editFuturePrice"),
+                        value: efPrice,
+                        onChangeText: (e) => setEfPrice(e.replace(/[^0-9.]/g, "")),
+                        keyboardType: "numeric",
+                      }),
+                      (0, _.jsx)(y.Input, {
+                        label: P("editFutureCapacity"),
+                        value: efCap,
+                        onChangeText: (e) => setEfCap(e.replace(/[^0-9]/g, "")),
+                        keyboardType: "numeric",
+                      }),
+                      (0, _.jsx)(m.Button, {
+                        title: P("editFutureApply"),
+                        loading: L,
+                        fullWidth: !0,
+                        style: { marginTop: j.spacing.sm },
+                        onPress: async () => {
+                          const t = /^(\d{1,2}):(\d{2})$/.exec(efTime.trim()),
+                            s = t ? 60 * Number(t[1]) + Number(t[2]) : NaN,
+                            n = Number(efPrice),
+                            r = Number(efCap);
+                          if (!t || s < 0 || s > 1439 || !Number.isFinite(n) || n < 0 || n > 100 || !Number.isInteger(r) || r < 2 || r > 40)
+                            return void a.default.alert(P("error"), P("seInvalidValue"));
+                          (await J(
+                            () => (0, b.editFutureOccurrences)(e, z.id, { start_minutes: s, price_kwd: n, max_players: r }),
+                            (e) => P("editFutureDone", { n: String(Number(e) || 0) }),
+                          )) && setEf(!1);
+                        },
+                      }),
+                    ],
+                  }),
+                !over &&
                   (0, _.jsx)(m.Button, {
                     title: P("cancelSeries"),
                     variant: "danger",
@@ -204,7 +296,7 @@ __d(
                       }),
                       (0, _.jsx)(i.default, {
                         style: [j.typography.small, { color: B.textMuted, marginVertical: j.spacing.sm }],
-                        children: P("cancelSeriesBody"),
+                        children: `${P("cancelSeriesBody")} ${P("cancelSeriesRefundNote")}`,
                       }),
                       (0, _.jsx)(y.Input, {
                         value: E,
@@ -216,7 +308,7 @@ __d(
                         style: { flexDirection: "row", gap: j.spacing.sm },
                         children: [
                           (0, _.jsx)(m.Button, {
-                            title: P("keepMatch"),
+                            title: P("keepSeries"),
                             variant: "secondary",
                             onPress: () => F(!1),
                             style: { flex: 1 },
@@ -225,8 +317,18 @@ __d(
                             title: P("cancelSeries"),
                             variant: "danger",
                             loading: L,
+                            disabled: E.trim().length < 3,
                             onPress: async () => {
-                              z && e && (await J(() => (0, b.cancelSeries)(e, z.id, E)), F(!1));
+                              z &&
+                                e &&
+                                (await J(
+                                  () => (0, b.cancelSeries)(e, z.id, E.trim()),
+                                  (e) =>
+                                    `${P("occurrencesCancelled", { n: String(e?.occurrences ?? 0), r: String(e?.refunded ?? 0) })}${
+                                      e?.courts_not_released ? ` ${P("courtNotReleased")}` : ""
+                                    }`,
+                                )) &&
+                                F(!1);
                             },
                             style: { flex: 1 },
                           }),
@@ -241,6 +343,14 @@ __d(
                   ],
                   children: [P("upcomingOccurrences"), " \xb7 ", (0, w.formatNumber)(X.length)],
                 }),
+                X.length > 12 &&
+                  (0, _.jsx)(m.Button, {
+                    title: showAll ? P("showFewerOccurrences") : P("showAllOccurrences", { n: String(X.length) }),
+                    variant: "ghost",
+                    size: "sm",
+                    onPress: () => setShowAll((e) => !e),
+                    style: { alignSelf: "flex-start", marginBottom: j.spacing.xs },
+                  }),
                 (0, _.jsx)(f.Card, {
                   padding: "sm",
                   children:
@@ -249,7 +359,7 @@ __d(
                           style: [j.typography.small, { color: B.textMuted, padding: j.spacing.sm }],
                           children: P("noOrganizerMatches"),
                         })
-                      : X.slice(0, 12).map((e, t) =>
+                      : (showAll ? X : X.slice(0, 12)).map((e, t) =>
                           (0, _.jsxs)(
                             n.default,
                             {
@@ -333,7 +443,8 @@ __d(
       v = r(_d[21]),
       S = r(_d[22]),
       C = r(_d[23]),
-      _ = r(_d[24]);
+      _ = r(_d[24]),
+      G9 = r(_d[25]);
     const I = ["dow_0", "dow_1", "dow_2", "dow_3", "dow_4", "dow_5", "dow_6"];
     const k = ({ label: e, value: t, colors: s }) =>
         (0, _.jsxs)(c.default, {
@@ -386,6 +497,6 @@ __d(
   2471,
   [
     33, 15, 461, 445, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 626, 625, 630, 615, 616, 671, 1311,
-    675, 1171, 674, 13,
+    675, 1171, 674, 13, 9001,
   ],
 );

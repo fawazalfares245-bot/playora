@@ -34,14 +34,21 @@ __d(
           [Ee, $e] = (0, t.useState)(!1),
           [Oe, Ve] = (0, t.useState)(new Map()),
           [Ke, Fe] = (0, t.useState)(null),
+          [er, setEr] = (0, t.useState)(null),
+          [rj, setRj] = (0, t.useState)(null),
+          [rjText, setRjText] = (0, t.useState)(""),
+          [actErr, setActErr] = (0, t.useState)(!1),
           qe = (0, t.useCallback)(async () => {
             if (!e) return;
-            const t = await (0, w.fetchOrganizerMatchScreen)(o?.id ?? "", e);
-            (M(t.game),
-              $(t.participants),
-              He(t.candidates),
-              Ve(new Map(t.intel.map((e) => [e.user_id, e]))),
-              X(!1));
+            setEr(null);
+            try {
+              const t = await (0, w.fetchOrganizerMatchScreen)(o?.id ?? "", e);
+              (M(t.game), $(t.participants), He(t.candidates), Ve(new Map(t.intel.map((e) => [e.user_id, e]))));
+            } catch (e) {
+              setEr(e);
+            } finally {
+              X(!1);
+            }
           }, [e, o?.id]);
         ((0, t.useEffect)(() => {
           qe();
@@ -49,13 +56,14 @@ __d(
           (0, t.useEffect)(() => {
             if (!Ce || !o || !e) return void (Ce || Me(null));
             let t = !0;
+            setActErr(!1);
             return (
               (0, w.fetchMatchActivity)(o.id, e)
                 .then((e) => {
                   t && Me(e);
                 })
                 .catch(() => {
-                  t && Me([]);
+                  t && (Me([]), setActErr(!0));
                 }),
               () => {
                 t = !1;
@@ -108,14 +116,18 @@ __d(
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: v.bg },
             children: (0, W.jsx)(l.default, { color: v.accentText }),
           });
-        if (!k || !L)
-          return (0, W.jsx)(u.SafeAreaView, {
-            style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: v.bg },
-            children: (0, W.jsx)(i.default, {
-              style: [S.typography.body, { color: v.text }],
-              children: C("error"),
-            }),
+        if (!k || !L) {
+          const e = er ? (0, G9.classifyError)(er) : null;
+          return (0, W.jsx)(G9.GateScreen, {
+            kind: e?.isAuth ? "denied" : "error",
+            title: e ? void 0 : C("seMatchNotFound"),
+            body: e && !e.isAuth ? e.message : void 0,
+            onRetry: () => {
+              (X(!0), qe());
+            },
+            onBack: () => T.back(),
           });
+        }
         const Xe = k.organizer_id === o?.id,
           Ze = "cancelled" === k.status,
           et = !Ze && new Date(k.ends_at).getTime() < Date.now(),
@@ -438,7 +450,13 @@ __d(
                                 fullWidth: !0,
                                 disabled: "" === Be || "" === Re,
                                 onPress: () =>
-                                  Ue(() => (0, w.submitMatchScore)(o.id, k.id, Number(Be), Number(Re))),
+                                  r.default.alert(C("confirmScoreTitle"), C("confirmScoreBody", { home: Be, away: Re }), [
+                                    { text: C("cancel"), style: "cancel" },
+                                    {
+                                      text: C("submitScoreCta"),
+                                      onPress: () => Ue(() => (0, w.submitMatchScore)(o.id, k.id, Number(Be), Number(Re))),
+                                    },
+                                  ]),
                                 style: { marginTop: S.spacing.sm },
                               }),
                               (0, W.jsx)(i.default, {
@@ -646,7 +664,7 @@ __d(
                       }),
                       (0, W.jsx)(i.default, {
                         style: [S.typography.small, { color: v.textMuted, marginVertical: S.spacing.sm }],
-                        children: C("cancelMatchBody"),
+                        children: `${C("cancelMatchBody")} ${C("cancelMatchRefundNote")}`,
                       }),
                       (0, W.jsx)(h.Input, {
                         label: C("cancelReasonLabel"),
@@ -668,16 +686,15 @@ __d(
                             title: C("confirmCancelMatch"),
                             variant: "danger",
                             loading: Z,
+                            disabled: ze.trim().length < 3,
                             onPress: async () => {
                               if (k && o) {
                                 ee(!0);
                                 try {
-                                  (await (0, w.cancelMatch)(k.id, o.id, ze), fe(!1), await qe());
+                                  const e = await (0, w.cancelMatch)(k.id, o.id, ze.trim());
+                                  (fe(!1), await qe(), e && !1 === e.court_released && r.default.alert(C("courtNotReleased"), ""));
                                 } catch (e) {
-                                  r.default.alert(
-                                    C("error"),
-                                    (0, z.storeErrorText)(e?.message ?? "") || C("error"),
-                                  );
+                                  r.default.alert(C("error"), (0, G9.classifyError)(e).message || C("error"));
                                 } finally {
                                   ee(!1);
                                 }
@@ -702,20 +719,68 @@ __d(
                             (0, W.jsxs)(N, {
                               b: e,
                               colors: v,
-                              children: [
-                                (0, W.jsx)(y.Button, {
-                                  title: C("approve"),
-                                  size: "sm",
-                                  onPress: () => Ue(() => (0, w.approveParticipant)(k.id, o.id, e.id)),
-                                }),
-                                (0, W.jsx)(y.Button, {
-                                  title: C("reject"),
-                                  size: "sm",
-                                  variant: "secondary",
-                                  onPress: () => Ue(() => (0, w.rejectParticipant)(k.id, o.id, e.id)),
-                                }),
-                              ],
+                              children:
+                                et || Ze
+                                  ? [(0, W.jsx)(x.Badge, { label: C("pendingLabel"), tone: "warning" }, "pending")]
+                                  : [
+                                      (0, W.jsx)(
+                                        y.Button,
+                                        {
+                                          title: C("approve"),
+                                          size: "sm",
+                                          loading: Z,
+                                          onPress: () => Ue(() => (0, w.approveParticipant)(k.id, o.id, e.id)),
+                                        },
+                                        "approve",
+                                      ),
+                                      (0, W.jsx)(
+                                        y.Button,
+                                        {
+                                          title: C("reject"),
+                                          size: "sm",
+                                          variant: "secondary",
+                                          loading: Z,
+                                          onPress: () => (setRj(e.id), setRjText("")),
+                                        },
+                                        "reject",
+                                      ),
+                                    ],
                             }),
+                            rj === e.id &&
+                              (0, W.jsxs)(d.default, {
+                                style: { marginTop: S.spacing.xs, marginBottom: S.spacing.sm },
+                                children: [
+                                  (0, W.jsx)(h.Input, {
+                                    label: C("rejectReasonLabel"),
+                                    value: rjText,
+                                    onChangeText: setRjText,
+                                    maxLength: 200,
+                                  }),
+                                  (0, W.jsxs)(d.default, {
+                                    style: { flexDirection: "row", gap: S.spacing.sm, marginTop: S.spacing.xs },
+                                    children: [
+                                      (0, W.jsx)(y.Button, {
+                                        title: C("back"),
+                                        size: "sm",
+                                        variant: "ghost",
+                                        style: { flex: 1 },
+                                        onPress: () => setRj(null),
+                                      }),
+                                      (0, W.jsx)(y.Button, {
+                                        title: C("reject"),
+                                        size: "sm",
+                                        variant: "danger",
+                                        style: { flex: 1 },
+                                        loading: Z,
+                                        onPress: () => {
+                                          const t = rjText.trim();
+                                          (setRj(null), Ue(() => (0, w.rejectParticipant)(k.id, o.id, e.id, t || void 0)));
+                                        },
+                                      }),
+                                    ],
+                                  }),
+                                ],
+                              }),
                             t &&
                               (0, W.jsxs)(d.default, {
                                 style: q.intelRow,
@@ -798,7 +863,8 @@ __d(
                                       ],
                                     })
                                   : (0, W.jsx)(x.Badge, { label: C("confirmedLabel"), tone: "success" }),
-                                (0, W.jsx)(n.default, {
+                                e.user_id !== k.organizer_id &&
+                                  (0, W.jsx)(n.default, {
                                   onPress: () => Fe({ id: e.user_id, name: e.display_name ?? "Player" }),
                                   hitSlop: 8,
                                   accessibilityLabel: C("cardPlayer"),
@@ -844,7 +910,7 @@ __d(
                       }),
                       (0, W.jsx)(i.default, {
                         style: [S.typography.small, { color: v.textMuted, marginTop: 4 }],
-                        children: C("removePlayerBody"),
+                        children: `${C("removePlayerBody")} ${C("removePlayerRefundNote")}`,
                       }),
                       (0, W.jsx)(c.default, {
                         value: ve,
@@ -871,9 +937,10 @@ __d(
                             title: C("removePlayer"),
                             variant: "danger",
                             loading: Z,
+                            disabled: ve.trim().length < 3,
                             onPress: () => {
                               const e = Se;
-                              (we(null), Ue(() => (0, w.kickPlayer)(o.id, k.id, e.id, ve || void 0)));
+                              (we(null), Ue(() => (0, w.kickPlayer)(o.id, k.id, e.id, ve.trim())));
                             },
                             style: { flex: 1 },
                           }),
@@ -1025,14 +1092,23 @@ __d(
                                     e,
                                   ),
                                 )
-                              : 0 === ke.length
-                                ? (0, W.jsx)(i.default, {
-                                    style: [
-                                      S.typography.small,
-                                      { color: v.textMuted, padding: S.spacing.sm },
-                                    ],
-                                    children: C("noActivityYet"),
+                              : actErr
+                                ? (0, W.jsx)(y.Button, {
+                                    title: `${C("loadPanelFailed")} \u00b7 ${C("retry")}`,
+                                    variant: "ghost",
+                                    size: "sm",
+                                    onPress: () => {
+                                      (Pe(!1), setTimeout(() => Pe(!0), 0));
+                                    },
                                   })
+                                : 0 === ke.length
+                                  ? (0, W.jsx)(i.default, {
+                                      style: [
+                                        S.typography.small,
+                                        { color: v.textMuted, padding: S.spacing.sm },
+                                      ],
+                                      children: C("noActivityYet"),
+                                    })
                                 : ke.map((e) => (0, W.jsx)(H, { e: e, colors: v, t: C }, e.id)),
                         }),
                     ],
@@ -1075,7 +1151,8 @@ __d(
       R = _r(_d[31]),
       D = _r(_d[32]),
       z = _r(_d[33]),
-      W = _r(_d[34]);
+      W = _r(_d[34]),
+      G9 = _r(_d[35]);
     const A = ["beginner", "intermediate", "advanced", "all"];
     const N = ({ b: e, colors: t, children: l, index: r }) => {
         return (0, W.jsxs)(d.default, {
@@ -1127,9 +1204,11 @@ __d(
           tone: "success",
         },
         score_submitted: { icon: "trophy-outline", labelKey: "actScoreSubmitted", tone: "accent" },
+        attendance_marked: { icon: "checkmark-done-outline", labelKey: "actAttendanceMarked", tone: "muted" },
+        score_corrected: { icon: "create-outline", labelKey: "actScoreCorrected", tone: "accent" },
       },
       H = ({ e: e, colors: t, t: l }) => {
-        const r = L[e.action],
+        const r = L[e.action] ?? { icon: "ellipse-outline", labelKey: "noActivityYet", tone: "muted" },
           n =
             "danger" === r.tone
               ? t.danger
@@ -1545,8 +1624,15 @@ __d(
       G = ({ gameId: e, userId: l, hasOpenSlots: n, colors: s, t: o }) => {
         const [c, u] = (0, t.useState)([]),
           [p, x] = (0, t.useState)(!1),
+          [pe9, setPe9] = (0, t.useState)(!1),
           h = (0, t.useCallback)(async () => {
-            u(n ? await (0, w.fetchConciergeReplacements)(l, e).catch(() => []) : []);
+            if (!n) return void u([]);
+            setPe9(!1);
+            try {
+              u(await (0, w.fetchConciergeReplacements)(l, e));
+            } catch {
+              (u([]), setPe9(!0));
+            }
           }, [e, l, n]);
         if (
           ((0, t.useEffect)(() => {
@@ -1568,11 +1654,13 @@ __d(
                 }),
               ],
             }),
-            0 === c.length
-              ? (0, W.jsx)(i.default, {
-                  style: [S.typography.small, { color: s.textMuted }],
-                  children: "\u2014",
-                })
+            pe9
+              ? (0, W.jsx)(y.Button, { title: `${o("loadPanelFailed")} \u00b7 ${o("retry")}`, variant: "ghost", size: "sm", onPress: h })
+              : 0 === c.length
+                ? (0, W.jsx)(i.default, {
+                    style: [S.typography.small, { color: s.textMuted }],
+                    children: "\u2014",
+                  })
               : c.map((e) =>
                   (0, W.jsxs)(
                     d.default,
@@ -1620,9 +1708,15 @@ __d(
         const [u, p] = (0, t.useState)(null),
           [y, h] = (0, t.useState)(null),
           [f, j] = (0, t.useState)(!1),
+          [ue9, setUe9] = (0, t.useState)(!1),
           b = (0, t.useCallback)(async () => {
-            (p(await (0, w.fetchReplacementState)(l, e).catch(() => null)),
-              h(await (0, w.fetchReplacementMetrics)(l, e).catch(() => null)));
+            setUe9(!1);
+            try {
+              p(await (0, w.fetchReplacementState)(l, e));
+            } catch {
+              (p(null), setUe9(!0));
+            }
+            h(await (0, w.fetchReplacementMetrics)(l, e).catch(() => null));
           }, [e, l]);
         (0, t.useEffect)(() => {
           b();
@@ -1637,7 +1731,13 @@ __d(
             j(!1);
           }
         };
-        if (!u) return null;
+        if (!u)
+          return ue9
+            ? (0, W.jsx)(m.Card, {
+                style: { marginTop: S.spacing.md },
+                children: (0, W.jsx)(y.Button, { title: `${c("loadPanelFailed")} \u00b7 ${c("retry")}`, variant: "ghost", size: "sm", onPress: b }),
+              })
+            : null;
         const T = u.settings.mode;
         return (0, W.jsxs)(m.Card, {
           style: { marginTop: S.spacing.md },
@@ -1822,14 +1922,24 @@ __d(
           ],
         }),
       J = ({ gameId: e, userId: l, colors: r, t: n }) => {
-        const [s, c] = (0, t.useState)(null);
-        return (
-          (0, t.useEffect)(() => {
+        const [s, c] = (0, t.useState)(null),
+          [je9, setJe9] = (0, t.useState)(!1),
+          ld9 = (0, t.useCallback)(() => {
+            setJe9(!1);
             (0, w.fetchGameGroups)(l, e)
               .then(c)
-              .catch(() => c([]));
-          }, [e, l]),
-          s && 0 !== s.length
+              .catch(() => (c([]), setJe9(!0)));
+          }, [e, l]);
+        return (
+          (0, t.useEffect)(() => {
+            ld9();
+          }, [ld9]),
+          je9
+            ? (0, W.jsx)(m.Card, {
+                style: { marginTop: S.spacing.md },
+                children: (0, W.jsx)(y.Button, { title: `${n("loadPanelFailed")} \u00b7 ${n("retry")}`, variant: "ghost", size: "sm", onPress: ld9 }),
+              })
+            : s && 0 !== s.length
             ? (0, W.jsxs)(m.Card, {
                 style: { marginTop: S.spacing.md },
                 children: [
@@ -2051,15 +2161,14 @@ __d(
                 if (!v.trim()) return r.default.alert(u("error"), u("sanctionReasonLabel"));
                 B(!0);
                 try {
-                  (await (0, w.issueSanction)(s, e.id, {
+                  const t = await (0, w.issueSanction)(s, e.id, {
                     type: b,
                     category: f,
                     reason: v.trim(),
                     evidence_url: I.trim() || null,
                     game_id: l,
-                  }),
-                    r.default.alert(u("sanctionIssuedToast"), ""),
-                    x());
+                  });
+                  (r.default.alert("pending_approval" === t?.status ? u("sanctionPendingReviewToast") : u("sanctionIssuedToast"), ""), x());
                 } catch (e) {
                   r.default.alert(u("error"), (0, z.storeErrorText)(e?.message ?? "") || u("error"));
                 } finally {
@@ -2074,6 +2183,6 @@ __d(
   2466,
   [
     33, 15, 461, 445, 369, 281, 158, 146, 394, 273, 381, 1086, 20, 1623, 1624, 626, 625, 2462, 2463, 630, 615,
-    616, 671, 663, 656, 662, 2387, 631, 1626, 1311, 675, 2467, 1171, 674, 13,
+    616, 671, 663, 656, 662, 2387, 631, 1626, 1311, 675, 2467, 1171, 674, 13, 9001,
   ],
 );

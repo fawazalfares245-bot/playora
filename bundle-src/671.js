@@ -424,7 +424,8 @@ __d(
     e.updateMatch = (o, c, s) => t.store.mockUpdateMatch(o, c, s);
     e.cancelMatch = (o, c, s) => t.store.mockCancelMatch(o, c, s);
     e.approveParticipant = (o, c, s) => t.store.mockApproveParticipant(o, c, s);
-    e.rejectParticipant = (o, c, s) => t.store.mockRejectParticipant(o, c, s);
+    e.rejectParticipant = (o, c, s, n) => t.store.mockRejectParticipant(o, c, s, n);
+    e.correctMatchScore = (o, c, s, n, l) => t.store.mockCorrectMatchScore(o, c, s, n, l);
     e.setAttendance = (o, c, s, n) => t.store.mockSetAttendance(o, c, s, n);
     e.fetchSmartDefaults = (o, c, s) => t.store.mockGetSmartDefaults(o, c, s);
     e.quickCreateMatch = (o, c) => t.store.mockQuickCreateMatch(o, c);
@@ -481,7 +482,7 @@ __d(
     e.joinSeries = (o, c) => t.store.mockJoinSeries(o, c);
     e.fetchOrganizerSeries = (o) => t.store.mockGetOrganizerSeries(o);
     e.fetchSeries = (o, c) => t.store.mockGetSeries(o, c);
-    e.fetchSeriesAnalytics = (o) => t.store.mockGetSeriesAnalytics(o);
+    e.fetchSeriesAnalytics = (o, c) => t.store.mockGetSeriesAnalytics(o, c);
     e.activateNeedPlayer = (o, c, s) => t.store.mockActivateNeedPlayer(o, c, s);
     e.updateNeedPlayer = (o, c, s) => t.store.mockUpdateNeedPlayer(o, c, s);
     e.deactivateNeedPlayer = (o, c) => t.store.mockDeactivateNeedPlayer(o, c);

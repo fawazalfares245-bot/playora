@@ -3211,6 +3211,8 @@ __d(
           const i = hi(e);
           if (!i) throw new Error("E_MATCH_NOT_FOUND");
           (zi(i, t), await Di(i));
+          if ("scheduled" !== i.status || new Date(i.ends_at).getTime() < Date.now())
+            throw new Error("E_THIS_MATCH_CAN_NO_LONGER_BE");
           const n = Qt.bookings.find((t) => t.id === a && t.game_id === e);
           if (!n || "pending" !== n.status) return;
           if (ki(e) >= i.max_players) throw new Error("E_MATCH_IS_FULL_FREE_A_SLOT");
@@ -3245,14 +3247,17 @@ __d(
             }));
         }));
     };
-    r.mockRejectParticipant = async (e, t, a) => {
+    r.mockRejectParticipant = async (e, t, a, r9) => {
       (await ei(),
         await on(t),
         await Xt(e, async () => {
           const i = hi(e);
           if (!i) throw new Error("E_MATCH_NOT_FOUND");
           zi(i, t);
+          if ("scheduled" !== i.status || new Date(i.ends_at).getTime() < Date.now())
+            throw new Error("E_THIS_MATCH_CAN_NO_LONGER_BE");
           const n = Qt.bookings.find((t) => t.id === a && t.game_id === e);
+          n && r9 && (n.rejection_reason = (0, v.sanitizeText)(String(r9), 200));
           n &&
             "pending" === n.status &&
             ((n.status = "rejected"),
@@ -3311,8 +3316,9 @@ __d(
           const n = hi(t);
           if (!n) throw new Error("E_MATCH_NOT_FOUND");
           if ((zi(n, e), "cancelled" === n.status)) throw new Error("E_THIS_MATCH_IS_NO_LONGER_OPEN");
-          if (new Date(n.ends_at).getTime() < Date.now()) throw new Error("E_THIS_MATCH_HAS_ALREADY_STARTED");
+          if (new Date(n.starts_at).getTime() < Date.now()) throw new Error("E_THIS_MATCH_HAS_ALREADY_STARTED");
           if (a === e) throw new Error("E_CANNOT_REMOVE_THE_ORGANIZER");
+          if ((0, v.sanitizeText)(i || "", 200).length < 3) throw new Error("E_A_REASON_IS_REQUIRED");
           const r = Qt.bookings.find(
             (e) => e.game_id === t && e.user_id === a && "cancelled" !== e.status && "rejected" !== e.status,
           );
@@ -3594,12 +3600,24 @@ __d(
         if ((zi(n, t), "scheduled" !== n.status)) throw new Error("E_THIS_MATCH_CAN_NO_LONGER_BE");
         const r = [],
           o = Object.assign({}, n);
+        // ORG2 (F-ORG2-10): a match cannot be moved into the past, its duration must stay sane, and
+        // a match tied to a court booking keeps its slot.
+        if ((a.starts_at && a.starts_at !== n.starts_at) || (a.ends_at && a.ends_at !== n.ends_at)) {
+          if (n.court_booking_id) throw new Error("E_TIME_LOCKED_BY_COURT_BOOKING");
+          const t9 = new Date(a.starts_at ?? n.starts_at).getTime();
+          if (!Number.isFinite(t9)) throw new Error("E_INVALID_VALUE");
+          if (t9 < Date.now() - 6e4) throw new Error("E_MATCH_CANNOT_START_IN_PAST");
+        }
         if (
           (a.starts_at && a.starts_at !== n.starts_at && ((o.starts_at = a.starts_at), r.push("time")),
           a.ends_at && a.ends_at !== n.ends_at && (o.ends_at = a.ends_at),
           new Date(o.ends_at).getTime() <= new Date(o.starts_at).getTime())
         )
           throw new Error("E_END_TIME_MUST_BE_AFTER_THE");
+        {
+          const d9 = (new Date(o.ends_at).getTime() - new Date(o.starts_at).getTime()) / 6e4;
+          if (d9 < 30 || d9 > 360) throw new Error("E_DURATION_OUT_OF_RANGE");
+        }
         if (
           ((o.duration_minutes = Math.round(
             (new Date(o.ends_at).getTime() - new Date(o.starts_at).getTime()) / 6e4,
@@ -3611,7 +3629,8 @@ __d(
             ((o.skill_level = a.skill_level), r.push("skill level")),
           a.max_players && a.max_players !== n.max_players)
         ) {
-          const t = Qt.bookings.filter((t) => t.game_id === e && "confirmed" === t.status).length;
+          if (!Number.isInteger(a.max_players) || a.max_players < 2 || a.max_players > 40) throw new Error("E_INVALID_VALUE");
+          const t = ki(e);
           if (a.max_players < t) throw new Error(`E_CAPACITY_BELOW_CONFIRMED:${t}`);
           ((o.max_players = a.max_players), (o.format = Ia(n.sport, a.max_players)), r.push("capacity"));
         }
@@ -3639,7 +3658,82 @@ __d(
         );
       })
     );
+    // ORG2 (F-ORG2-1/11/12/23): one cancel routine shared by single-match and series cancellation.
+    // Must be called inside the game lock. Releases holds, refunds paid seats, cancels the court
+    // booking (recording a failure instead of swallowing it) and writes an audit entry with the reason.
+    const cancelGameLocked = async (e, t, r, o9 = {}) => {
+      const i = Qt.games.findIndex((t) => t.id === e);
+      if (i < 0) throw new Error("E_MATCH_NOT_FOUND");
+      const n = Qt.games[i];
+      if ("cancelled" === n.status) return { court_released: !0, refunded: 0 };
+      (await Bi(n, (t) => ({
+        id: ea(),
+        user_id: t,
+        type: "match_cancelled",
+        game_id: e,
+        venue_name: Ai(n.venue_id),
+        sport: n.sport,
+        reason: r,
+        read: !1,
+        created_at: new Date().toISOString(),
+      })),
+        (Qt.games[i] = Object.assign({}, n, {
+          status: "cancelled",
+          cancelled_at: new Date().toISOString(),
+          cancellation_reason: r,
+          cancelled_by: t,
+        })),
+        await Za(te, Qt.games));
+      const o = [];
+      for (const t of Qt.bookings)
+        t.game_id === e &&
+          "cancelled" !== t.status &&
+          "rejected" !== t.status &&
+          ((t.status = "cancelled"),
+          (t.reserved_until = null),
+          (t.updated_at = new Date().toISOString()),
+          o.push(t.user_id));
+      await Za(W, Qt.bookings);
+      for (const e of o) await Br(n, e, !0);
+      let s = !0;
+      if (n.court_booking_id)
+        try {
+          await Mr(t, n.court_booking_id, `Match cancelled: ${r}`);
+        } catch (a) {
+          ((s = !1),
+            await (0, w.logAudit)("court.cancel_failed", (0, w.actorRef)(t), {
+              game: e.slice(-6),
+              court_booking: String(n.court_booking_id).slice(-6),
+              error: a instanceof Error ? a.message : String(a),
+            }));
+        }
+      return (
+        await (0, w.logAudit)("match.cancelled", (0, w.actorRef)(t), {
+          game: e.slice(-6),
+          reason: r,
+          refunded: o.length,
+          court_released: s,
+          series: o9.series ?? null,
+        }),
+        { court_released: s, refunded: o.length }
+      );
+    };
     r.mockCancelMatch = async (e, t, a) => {
+      await ei();
+      await on(t);
+      // The reason is mandatory and the cut-off is the kick-off, not the end of the match.
+      const r = (0, v.sanitizeText)(a || "", 200);
+      if (r.length < 3) throw new Error("E_A_REASON_IS_REQUIRED");
+      return Xt(e, async () => {
+        const i = Qt.games.findIndex((t) => t.id === e);
+        if (i < 0) throw new Error("E_ONLY_MATCHES_YOU_CREATED_CAN_BE");
+        const n = Qt.games[i];
+        if ((zi(n, t), "cancelled" === n.status)) return { court_released: !0, refunded: 0 };
+        if (new Date(n.starts_at).getTime() < Date.now()) throw new Error("E_THIS_MATCH_HAS_ALREADY_STARTED");
+        return cancelGameLocked(e, t, r);
+      });
+    };
+    const legacyCancelMatchBody = async (e, t, a) => {
       (await ei(),
         await on(t),
         await Xt(e, async () => {
@@ -3689,13 +3783,21 @@ __d(
       const n = hi(e);
       if (!n) throw new Error("E_MATCH_NOT_FOUND");
       zi(n, t);
+      // ORG2 (F-ORG2-14): attendance is recorded after the match, never on a cancelled one, and is
+      // frozen 48 h after the score was submitted.
+      if ("cancelled" === n.status) throw new Error("E_THIS_MATCH_IS_NO_LONGER_OPEN");
+      if (new Date(n.ends_at).getTime() > Date.now()) throw new Error("E_MATCH_NOT_FINISHED");
+      if (n.score_submitted_at && Date.now() - new Date(n.score_submitted_at).getTime() > 1728e5)
+        throw new Error("E_ATTENDANCE_LOCKED");
       const r = Qt.bookings.find((t) => t.id === a && t.game_id === e);
       r &&
         ((r.attendance = i),
         (r.updated_at = new Date().toISOString()),
         await Za(W, Qt.bookings),
+        await Yi(e, t, "attendance_marked", { targetUserId: r.user_id, note: i ?? "cleared" }),
         await (0, w.logAudit)("attendance.marked", (0, w.actorRef)(t), {
           game: e.slice(-6),
+          target: r.user_id.slice(-6),
           value: i ?? "cleared",
         }));
     };
@@ -5136,9 +5238,11 @@ __d(
         const n = Qt.games[i];
         if ((zi(n, t), !n.npn_active)) throw new Error("E_NEED_PLAYER_NOW_IS_NOT_ACTIVE");
         (void 0 !== a.radius_km && (n.npn_radius_km = a.radius_km), (n.npn_urgency = kn(n.starts_at)));
-        const r = fi().find((e) => e.id === n.venue_id);
+        const r = fi().find((e) => e.id === n.venue_id),
+          // ORG2 (F-ORG2-15): at most one broadcast per 10 minutes per match.
+          c9 = n.npn_last_broadcast_at && Date.now() - new Date(n.npn_last_broadcast_at).getTime() < 6e5;
         return (
-          (n.npn_notifications_sent += await En(n, r)),
+          c9 || ((n.npn_notifications_sent += await En(n, r)), (n.npn_last_broadcast_at = new Date().toISOString())),
           await Za(te, Qt.games),
           await (0, w.logAudit)("npn.updated", (0, w.actorRef)(t), {
             game: e.slice(-6),
@@ -5915,46 +6019,33 @@ __d(
       if (!i) throw new Error("E_SERIES_NOT_FOUND");
       if (i.organizer_id !== t) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE_3");
       await on(t);
-      const n = (0, v.sanitizeText)(a || "", 200) || "Series cancelled";
-      let r = 0;
-      for (const t of Kn(e))
-        await Xt(t.id, async () => {
-          const e = Qt.games.findIndex((e) => e.id === t.id),
-            a = Qt.games[e];
-          (await Bi(a, (e) => ({
-            id: ea(),
-            user_id: e,
-            type: "match_cancelled",
-            game_id: a.id,
-            venue_name: Ai(a.venue_id),
-            sport: a.sport,
-            reason: n,
-            read: !1,
-            created_at: new Date().toISOString(),
-          })),
-            (Qt.games[e] = Object.assign({}, a, {
-              status: "cancelled",
-              cancelled_at: new Date().toISOString(),
-              cancellation_reason: n,
-            })));
-          for (const e of Qt.bookings)
-            e.game_id === a.id &&
-              "cancelled" !== e.status &&
-              "rejected" !== e.status &&
-              ((e.status = "cancelled"),
-              (e.reserved_until = null),
-              (e.updated_at = new Date().toISOString()));
-          r += 1;
+      const n = (0, v.sanitizeText)(a || "", 200);
+      if (n.length < 3) throw new Error("E_A_REASON_IS_REQUIRED");
+      let r = 0,
+        r9 = 0,
+        c9 = 0;
+      for (const t9 of Kn(e))
+        await Xt(t9.id, async () => {
+          if ("cancelled" === t9.status) return;
+          const a = await cancelGameLocked(t9.id, t, n, { series: e.slice(-6) });
+          ((r += 1), (r9 += a.refunded), a.court_released || (c9 += 1));
         });
       const o = Qt.templates.findIndex((t) => t.id === e);
       return (
-        (Qt.templates[o] = Object.assign({}, i, { status: "ended" })),
+        (Qt.templates[o] = Object.assign({}, i, {
+          status: "cancelled",
+          cancelled_at: new Date().toISOString(),
+          cancellation_reason: n,
+        })),
         await Promise.all([Za(Ft, Qt.templates), Za(te, Qt.games), Za(W, Qt.bookings)]),
         await (0, w.logAudit)("series.cancelled", (0, w.actorRef)(t), {
           series: e.slice(-6),
           occurrences: r,
+          refunded: r9,
+          courts_not_released: c9,
+          reason: n,
         }),
-        r
+        { occurrences: r, refunded: r9, courts_not_released: c9 }
       );
     };
     r.mockJoinSeries = async (e, t) => {
@@ -5999,10 +6090,18 @@ __d(
     r.mockGetSeries = async (e, t) => {
       await ei();
       const a = Wn(e);
-      return a ? (await jn(a), Vn(a, t)) : null;
+      if (!a) return null;
+      await jn(a);
+      // ORG2 (F-ORG2-18): organizer-only fields are stripped for other users; ownership is explicit.
+      const i = Object.assign({}, Vn(a, t), { organizer_id: a.organizer_id, is_organizer: !!t && a.organizer_id === t });
+      return i.is_organizer || (t && ro(t)) ? i : (delete i.notes, delete i.auto_invite, delete i.resume_from, i);
     };
-    r.mockGetSeriesAnalytics = async (e) => {
+    r.mockGetSeriesAnalytics = async (e, t9) => {
       await ei();
+      // ORG2 (F-ORG2-7): only the organizer of the series (or an admin) can read its analytics.
+      const s9 = Wn(e);
+      if (!s9) throw new Error("E_SERIES_NOT_FOUND");
+      if (!t9 || (s9.organizer_id !== t9 && !ro(t9))) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE_3");
       const t = Qt.games.filter((t) => t.series_id === e),
         a = Date.now(),
         i = t.filter((e) => "cancelled" !== e.status && new Date(e.ends_at).getTime() < a),
@@ -6037,7 +6136,13 @@ __d(
         cancellationRate: t.length ? r.length / t.length : 0,
         returningPlayers: _,
         retentionRate: c ? _ / c : 0,
-        revenueKwd: s * (Wn(e)?.price_kwd ?? 0),
+        // Real takings: paid seat payments for the series' games, minus refunds.
+        revenueKwd: (0, z.roundKwd)(
+          Qt.payments
+            .filter((a) => t.some((t) => t.id === a.game_id))
+            .reduce((e, t) => e + ("paid" === t.status ? t.amount_kwd : "refunded" === t.status ? 0 : 0), 0),
+        ),
+        revenueEstimatedKwd: s * (Wn(e)?.price_kwd ?? 0),
       };
     };
     const Jn = { padel: "PDL", tennis: "TEN", football: "FBX" },
@@ -11836,12 +11941,18 @@ __d(
       const i = hi(t);
       if (!i) throw new Error("E_MATCH_NOT_FOUND");
       zi(i, e);
+      // ORG2 (F-ORG2-15): only for open, scheduled matches; never the same player twice; 10-minute cooldown.
+      if ("scheduled" !== i.status || i.registration_closed_at || new Date(i.starts_at).getTime() < Date.now())
+        throw new Error("E_THIS_MATCH_IS_NO_LONGER_OPEN");
+      if (i.concierge_last_invite_at && Date.now() - new Date(i.concierge_last_invite_at).getTime() < 6e5)
+        throw new Error("E_PLEASE_WAIT_BEFORE_INVITING_AGAIN");
       const n = fi().find((e) => e.id === i.venue_id),
         r = Qs(),
         o = new Set(
           Qt.bookings.filter((e) => e.game_id === t && "cancelled" !== e.status).map((e) => e.user_id),
         );
       o.add(e);
+      for (const e of i.concierge_invited_ids ?? []) o.add(e);
       const s = await ed(i, n, a ?? r.autoInviteCount, o),
         d = Math.max(
           0,
@@ -11895,13 +12006,8 @@ __d(
         );
       o.add(e);
       const s = await ed(i, n, a ?? r.replacementsCount, o);
-      return (
-        await (0, w.logAudit)("concierge.replacement_suggested", (0, w.actorRef)(e), {
-          game: t.slice(-6),
-          n: s.length,
-        }),
-        s
-      );
+      // ORG2 (F-ORG2-16): this read path no longer writes to the audit log.
+      return s;
     };
     r.mockGetConciergeNotificationPlan = async (e, t) => {
       await ei();
@@ -12329,6 +12435,14 @@ __d(
       const i = ro(e) ? "admin" : "organizer";
       if (("organizer" === i && (await on(e), oa(e, t)), e === t))
         throw new Error("E_YOU_CANNOT_SANCTION_YOURSELF");
+      if ("organizer" === i) {
+        // ORG2 (F-ORG2-8): organizers can only sanction players of a match they organized.
+        const g9 = a?.game_id ? hi(a.game_id) : null;
+        if (!g9) throw new Error("E_MATCH_NOT_FOUND");
+        zi(g9, e);
+        if (!Qt.bookings.some((e) => e.game_id === g9.id && e.user_id === t && "cancelled" !== e.status && "rejected" !== e.status))
+          throw new Error("E_PLAYER_NOT_IN_THIS_MATCH");
+      }
       const n = (0, v.sanitizeText)(a.reason, 400);
       if (!n) throw new Error("E_A_REASON_IS_REQUIRED");
       if ("organizer" === i && ro(t))
@@ -13759,8 +13873,8 @@ __d(
     r.mockGetGameGroups = async (e, t) => {
       await ei();
       const a = hi(t);
-      if (!a) throw new Error("not_found");
-      if (a.organizer_id !== e && !Id(e)) throw new Error("forbidden");
+      if (!a) throw new Error("E_MATCH_NOT_FOUND");
+      if (a.organizer_id !== e && !Id(e)) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE_2");
       return (
         await Xt(t, async () => {
           await Bd(a);
@@ -16818,12 +16932,41 @@ __d(
       const a = await Ni(t, e),
         i = await Qi(t);
       if (!(!!a && !!e && a.organizer_id === e))
-        return { game: a, participants: i, candidates: [], intel: [] };
+        return { game: a, participants: { confirmed: [], reserved: [], pending: [], waitlist: [] }, candidates: [], intel: [] };
       const [n, r] = await Promise.all([
         bn(t, e).catch(() => []),
         i.pending.length > 0 ? Pn(e, t).catch(() => []) : Promise.resolve([]),
       ]);
       return { game: a, participants: i, candidates: n, intel: r };
+    };
+    // ORG2 (F-ORG2-22): the only way to change a final score is an audited admin correction.
+    r.mockCorrectMatchScore = async (e, t, a, i, n) => {
+      (await ei(), await sn(e));
+      const r = Qt.games.findIndex((e) => e.id === t);
+      if (r < 0) throw new Error("E_MATCH_NOT_FOUND");
+      const o = Qt.games[r];
+      if (!o.score_submitted_at) throw new Error("E_INVALID_TRANSITION");
+      if (![a, i].every((e) => Number.isInteger(e) && e >= 0 && e <= 99)) throw new Error("E_ENTER_A_REAL_SCORE");
+      const s = (0, v.sanitizeText)(n ?? "", 300);
+      if (s.length < 3) throw new Error("E_A_REASON_IS_REQUIRED");
+      const d = { home: o.score_home, away: o.score_away };
+      return (
+        (Qt.games[r] = Object.assign({}, o, {
+          score_home: a,
+          score_away: i,
+          score_corrected_at: new Date().toISOString(),
+          score_corrected_by: e,
+        })),
+        await Za(te, Qt.games),
+        await Yi(t, e, "score_corrected", { note: `${d.home}-${d.away} \u2192 ${a}-${i}: ${s}` }),
+        await (0, w.logAdminAudit)("match.score_corrected", e, o.organizer_id, {
+          game: t.slice(-6),
+          from: `${d.home}-${d.away}`,
+          to: `${a}-${i}`,
+          reason: s,
+        }),
+        Qt.games[r]
+      );
     };
   },
   631,
