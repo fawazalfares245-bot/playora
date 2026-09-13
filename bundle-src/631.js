@@ -11412,10 +11412,13 @@ __d(
           securityEvents: re,
           fraudAlerts: oe,
           notificationsDelivered: Qt.notifications.length,
+          // ADM2 (F-ADM2-19): these three have no infrastructure feed behind them. They are named
+          // here so the dashboard can group and badge them apart from the counts above, which are real.
           errorRatePct: 0.4,
           uptimePct: 99.95,
           apiP95Ms: 180,
           simulated: !0,
+          simulatedKeys: ["uptimePct", "apiP95Ms", "errorRatePct"],
         },
         de = {
           generatedAt: new Date().toISOString(),

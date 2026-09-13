@@ -19,10 +19,12 @@ Files: bundle-src/631.js, 644.js (CSV), 671.js, 674.js, 909.js, 1805.js (admin p
 - F-ADM2-15: Fixed — `toCsv` prefixes values starting with `= + - @`, tab or carriage return with an apostrophe (verified in the flow test).
 - F-ADM2-16: Fixed — the download anchor is attached to the document, the object URL is revoked on a timer, and the success alert names the file only when a download actually started.
 - F-ADM2-17: Fixed — the error flag is cleared at the start of every fetch and the error screen offers Retry, so a transient failure no longer locks the screen.
-- F-ADM2-18: Partially fixed — filters re-fetch with the error state cleared; an explicit inline "refreshing" indicator is available as a string but the dashboard still renders the previous values while loading.
-- F-ADM2-19: Partially fixed — simulated health metrics are labelled in the payload and a "Simulated" badge string is available; the metrics are still shown in the same dashboard section.
+- F-ADM2-18: Fixed — a filter change now shows a spinner and "Refreshing…" beside the generated-at line and dims the figures below to 45% opacity, so the previous period’s numbers cannot be read as the new one’s. Covered in `tools/flows-admin.mjs` (the dashboard read is slowed in the harness so the indicator is observable).
+- F-ADM2-19: Fixed — the health tab is split into "Measured on this device" (real audit-log counts) and "Not measured", the latter under a Simulated badge with a sentence saying nothing on the device measures uptime, latency or error rate. The store names the placeholder fields in `simulatedKeys`. Covered in `tools/flows-admin.mjs`.
 - F-ADM2-20: Fixed — user-driven nudging of the feed weights is capped at 20 per user per day and is skipped while frozen; administrators can freeze/resume tuning and reset the weights to defaults, both audited with a reason.
 - F-ADM2-21: Fixed — the feed screen distinguishes authorization from other failures and offers Retry.
 - F-ADM2-22: Fixed — analysts now see exactly the two screens the backend allows (Insights and Feed analytics) and get the shared "Administrators only" screen elsewhere; the panel label is localized.
 - F-ADM2-23: Fixed — "Player intelligence" is listed in the admin panel.
 - F-ADM2-24: Fixed — zero-denominator tiles render "—" on both analytics screens, and the attended/confirmed predicate is now mutually exclusive, so a booking can no longer be counted twice.
+
+- Additional fix while here: every money figure on the admin analytics, optimizer and venue screens now uses `formatAmount`, so a genuine 0 KWD reads as an amount instead of the word “Free” that `formatPrice` produces for a free match.

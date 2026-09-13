@@ -12893,10 +12893,13 @@ __d(
           securityEvents: re,
           fraudAlerts: oe,
           notificationsDelivered: Qt.notifications.length,
+          // ADM2 (F-ADM2-19): these three have no infrastructure feed behind them. They are named
+          // here so the dashboard can group and badge them apart from the counts above, which are real.
           errorRatePct: 0.4,
           uptimePct: 99.95,
           apiP95Ms: 180,
           simulated: !0,
+          simulatedKeys: ["uptimePct", "apiP95Ms", "errorRatePct"],
         },
         de = {
           generatedAt: new Date().toISOString(),
@@ -20519,6 +20522,9 @@ __d(
     i.translations = {
       en: {
         // --- XC keys (fix batch) ---
+        biHealthMeasured: "Measured on this device",
+        biHealthSimulated: "Not measured",
+        biHealthSimulatedNote: "These three are placeholder values. Nothing on the device measures uptime, latency or error rate, so treat them as illustrative until a server reports them.",
         demandPerfBaselineNote: "Baseline fill predictor. These figures do not move when you change the weights below.",
         demandRiskTitle: "Weighted risk model",
         demandRiskNote: "Scored with the weights below, so these figures move when you change them. A healthy model scores cancelled matches higher than matches that went ahead.",
@@ -23971,6 +23977,9 @@ __d(
       },
       ar: {
         // --- XC keys (fix batch) ---
+        biHealthMeasured: "\u0645\u0642\u0627\u0633\u0629 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632",
+        biHealthSimulated: "\u063a\u064a\u0631 \u0645\u0642\u0627\u0633\u0629",
+        biHealthSimulatedNote: "\u0647\u0630\u0647 \u0627\u0644\u0642\u064a\u0645 \u0627\u0644\u062b\u0644\u0627\u062b \u062a\u0642\u0631\u064a\u0628\u064a\u0629. \u0644\u0627 \u0634\u064a\u0621 \u0639\u0644\u0649 \u0627\u0644\u062c\u0647\u0627\u0632 \u064a\u0642\u064a\u0633 \u0632\u0645\u0646 \u0627\u0644\u062a\u0634\u063a\u064a\u0644 \u0623\u0648 \u0627\u0644\u0627\u0633\u062a\u062c\u0627\u0628\u0629 \u0623\u0648 \u0646\u0633\u0628\u0629 \u0627\u0644\u0623\u062e\u0637\u0627\u0621\u060c \u0641\u0627\u0639\u062a\u0628\u0631\u0647\u0627 \u0625\u064a\u0636\u0627\u062d\u064a\u0629 \u062d\u062a\u0649 \u064a\u0648\u0641\u0631\u0647\u0627 \u0627\u0644\u062e\u0627\u062f\u0645.",
         demandPerfBaselineNote: "\u0645\u062a\u0646\u0628\u0626 \u0627\u0644\u0625\u0634\u063a\u0627\u0644 \u0627\u0644\u0623\u0633\u0627\u0633\u064a. \u0647\u0630\u0647 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0644\u0627 \u062a\u062a\u063a\u064a\u0631 \u0639\u0646\u062f \u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u0623\u0648\u0632\u0627\u0646 \u0623\u062f\u0646\u0627\u0647.",
         demandRiskTitle: "\u0646\u0645\u0648\u0630\u062c \u0627\u0644\u0645\u062e\u0627\u0637\u0631 \u0627\u0644\u0645\u0648\u0632\u0648\u0646",
         demandRiskNote: "\u062a\u064f\u062d\u0633\u0628 \u0628\u0627\u0644\u0623\u0648\u0632\u0627\u0646 \u0623\u062f\u0646\u0627\u0647\u060c \u0644\u0630\u0627 \u062a\u062a\u063a\u064a\u0631 \u0639\u0646\u062f \u062a\u0639\u062f\u064a\u0644\u0647\u0627. \u0627\u0644\u0646\u0645\u0648\u0630\u062c \u0627\u0644\u062c\u064a\u062f \u064a\u0639\u0637\u064a \u0627\u0644\u0645\u0628\u0627\u0631\u064a\u0627\u062a \u0627\u0644\u0645\u0644\u063a\u0627\u0629 \u062f\u0631\u062c\u0629 \u0623\u0639\u0644\u0649 \u0645\u0646 \u0627\u0644\u0645\u0628\u0627\u0631\u064a\u0627\u062a \u0627\u0644\u062a\u064a \u0623\u0642\u064a\u0645\u062a.",
@@ -36891,7 +36900,11 @@ __d(
             children: (0, N.jsx)(l.default, { color: m.accentText }),
           });
         if (gate.ready && !gate.allowed)
-          return (0, N.jsx)(G9.GateScreen, { kind: "denied", roles: ["admin", "analyst"], onBack: () => j.back() });
+          return (0, N.jsx)(G9.GateScreen, {
+            kind: "denied",
+            roles: ["admin", "analyst"],
+            onBack: () => j.back(),
+          });
         if (Q || !V) {
           const e = Q ? (0, G9.classifyError)(Q) : null;
           return (0, N.jsx)(G9.GateScreen, {
@@ -36922,7 +36935,8 @@ __d(
                 if (!EXPORTABLE.includes(E)) return r.default.alert(w("biExport"), w("exportNotAvailable"));
                 try {
                   const { filename: t, csv: l } = await (0, h.exportBIReport)(e.id, E, Z());
-                  if ("undefined" == typeof document) return void r.default.alert(w("error"), w("exportNotAvailable"));
+                  if ("undefined" == typeof document)
+                    return void r.default.alert(w("error"), w("exportNotAvailable"));
                   const o = new Blob([l], { type: "text/csv" }),
                     n = URL.createObjectURL(o),
                     s = document.createElement("a");
@@ -37016,22 +37030,46 @@ __d(
             (0, N.jsxs)(a.default, {
               contentContainerStyle: { padding: y.spacing.lg, paddingBottom: y.spacing.xxxl },
               children: [
-                (0, N.jsxs)(i.default, {
-                  style: [y.typography.caption, { color: m.textMuted, marginBottom: y.spacing.md }],
+                // ADM2 (F-ADM2-18): a filter change re-fetches. Say so inline and dim the figures
+                // below, so the previous period's numbers are never mistaken for the new one's.
+                (0, N.jsxs)(n.default, {
+                  style: {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: y.spacing.sm,
+                    marginBottom: y.spacing.md,
+                  },
+                  accessibilityLiveRegion: "polite",
                   children: [
-                    w("biGenerated", { time: (0, v.formatRelative)(V.generatedAt) }),
-                    V.cached ? ` \xb7 ${w("biCached")}` : "",
+                    (0, N.jsxs)(i.default, {
+                      style: [y.typography.caption, { color: m.textMuted, flex: 1 }],
+                      children: [
+                        w("biGenerated", { time: (0, v.formatRelative)(V.generatedAt) }),
+                        V.cached ? ` \xb7 ${w("biCached")}` : "",
+                      ],
+                    }),
+                    q && (0, N.jsx)(l.default, { size: "small", color: m.accentText }),
+                    q &&
+                      (0, N.jsx)(i.default, {
+                        style: [y.typography.caption, { color: m.accentText, fontWeight: "700" }],
+                        children: w("refreshing"),
+                      }),
                   ],
                 }),
-                "executive" === E && (0, N.jsx)(R, { d: V, colors: m, t: w }),
-                "financial" === E && (0, N.jsx)(z, { d: V, colors: m, t: w }),
-                "users" === E && (0, N.jsx)(K, { d: V, colors: m, t: w }),
-                "matches" === E && (0, N.jsx)(M, { d: V, colors: m, t: w }),
-                "venues" === E && (0, N.jsx)(T, { d: V, colors: m, t: w }),
-                "sports" === E && (0, N.jsx)(D, { d: V, colors: m, t: w }),
-                "geographic" === E && (0, N.jsx)($, { d: V, colors: m, t: w }),
-                "organizers" === E && (0, N.jsx)(O, { d: V, colors: m, t: w }),
-                "health" === E && (0, N.jsx)(H, { d: V, colors: m, t: w }),
+                (0, N.jsxs)(n.default, {
+                  style: { opacity: q ? 0.45 : 1 },
+                  children: [
+                    "executive" === E && (0, N.jsx)(R, { d: V, colors: m, t: w }),
+                    "financial" === E && (0, N.jsx)(z, { d: V, colors: m, t: w }),
+                    "users" === E && (0, N.jsx)(K, { d: V, colors: m, t: w }),
+                    "matches" === E && (0, N.jsx)(M, { d: V, colors: m, t: w }),
+                    "venues" === E && (0, N.jsx)(T, { d: V, colors: m, t: w }),
+                    "sports" === E && (0, N.jsx)(D, { d: V, colors: m, t: w }),
+                    "geographic" === E && (0, N.jsx)($, { d: V, colors: m, t: w }),
+                    "organizers" === E && (0, N.jsx)(O, { d: V, colors: m, t: w }),
+                    "health" === E && (0, N.jsx)(H, { d: V, colors: m, t: w }),
+                  ],
+                }),
               ],
             }),
           ],
@@ -37122,13 +37160,13 @@ __d(
             }),
             (0, N.jsx)(V, {
               label: l("kpiRevenue"),
-              value: (0, j.formatPrice)(r.revenueKwd),
+              value: (0, j.formatAmount)(r.revenueKwd),
               colors: t,
               accent: !0,
             }),
             (0, N.jsx)(V, {
               label: l("kpiCommission"),
-              value: (0, j.formatPrice)(r.commissionKwd),
+              value: (0, j.formatAmount)(r.commissionKwd),
               colors: t,
               accent: !0,
             }),
@@ -37150,40 +37188,44 @@ __d(
               children: [
                 (0, N.jsx)(V, {
                   label: l("finWeek"),
-                  value: (0, j.formatPrice)(r.revenueWeekKwd),
+                  value: (0, j.formatAmount)(r.revenueWeekKwd),
                   colors: t,
                 }),
                 (0, N.jsx)(V, {
                   label: l("finMonth"),
-                  value: (0, j.formatPrice)(r.revenueMonthKwd),
+                  value: (0, j.formatAmount)(r.revenueMonthKwd),
                   colors: t,
                 }),
                 (0, N.jsx)(V, {
                   label: l("finYear"),
-                  value: (0, j.formatPrice)(r.revenueYearKwd),
+                  value: (0, j.formatAmount)(r.revenueYearKwd),
                   colors: t,
                 }),
                 (0, N.jsx)(V, {
                   label: l("kpiCommission"),
-                  value: (0, j.formatPrice)(r.commissionKwd),
+                  value: (0, j.formatAmount)(r.commissionKwd),
                   colors: t,
                 }),
-                (0, N.jsx)(V, { label: l("finRefunds"), value: (0, j.formatPrice)(r.refundsKwd), colors: t }),
+                (0, N.jsx)(V, {
+                  label: l("finRefunds"),
+                  value: (0, j.formatAmount)(r.refundsKwd),
+                  colors: t,
+                }),
                 (0, N.jsx)(V, {
                   label: l("finOutstanding"),
-                  value: (0, j.formatPrice)(r.outstandingKwd),
+                  value: (0, j.formatAmount)(r.outstandingKwd),
                   colors: t,
                 }),
                 (0, N.jsx)(V, {
                   label: l("finAvgBooking"),
-                  value: (0, j.formatPrice)(r.avgBookingValueKwd),
+                  value: (0, j.formatAmount)(r.avgBookingValueKwd),
                   colors: t,
                 }),
-                (0, N.jsx)(V, { label: l("finArpu"), value: (0, j.formatPrice)(r.arpuKwd), colors: t }),
-                (0, N.jsx)(V, { label: l("finLtv"), value: (0, j.formatPrice)(r.ltvKwd), colors: t }),
+                (0, N.jsx)(V, { label: l("finArpu"), value: (0, j.formatAmount)(r.arpuKwd), colors: t }),
+                (0, N.jsx)(V, { label: l("finLtv"), value: (0, j.formatAmount)(r.ltvKwd), colors: t }),
                 (0, N.jsx)(V, {
                   label: l("finCac"),
-                  value: (0, j.formatPrice)(r.cacKwd),
+                  value: (0, j.formatAmount)(r.cacKwd),
                   colors: t,
                   sub: l("biModeled"),
                 }),
@@ -37191,17 +37233,17 @@ __d(
             }),
             (0, N.jsx)(E, {
               title: l("finBySport"),
-              rows: r.revenueBySport.map((e) => [e.label, (0, j.formatPrice)(e.value)]),
+              rows: r.revenueBySport.map((e) => [e.label, (0, j.formatAmount)(e.value)]),
               colors: t,
             }),
             (0, N.jsx)(E, {
               title: l("finByVenue"),
-              rows: r.revenueByVenue.map((e) => [e.label, (0, j.formatPrice)(e.value)]),
+              rows: r.revenueByVenue.map((e) => [e.label, (0, j.formatAmount)(e.value)]),
               colors: t,
             }),
             (0, N.jsx)(E, {
               title: l("finByOrganizer"),
-              rows: r.revenueByOrganizer.map((e) => [e.label, (0, j.formatPrice)(e.value)]),
+              rows: r.revenueByOrganizer.map((e) => [e.label, (0, j.formatAmount)(e.value)]),
               colors: t,
             }),
           ],
@@ -37395,7 +37437,7 @@ __d(
             }),
             (0, N.jsx)(E, {
               title: l("finByVenue"),
-              rows: r.revenuePerVenue.map((e) => [e.label, (0, j.formatPrice)(e.value)]),
+              rows: r.revenuePerVenue.map((e) => [e.label, (0, j.formatAmount)(e.value)]),
               colors: t,
             }),
           ],
@@ -37528,7 +37570,7 @@ __d(
                     }),
                     (0, N.jsx)(i.default, {
                       style: [y.typography.smallStrong, { color: t.success }],
-                      children: (0, j.formatPrice)(e.revenueKwd),
+                      children: (0, j.formatAmount)(e.revenueKwd),
                     }),
                   ],
                 },
@@ -37539,56 +37581,105 @@ __d(
         }),
       H = ({ d: e, colors: t, t: l }) => {
         const r = e.health;
-        return (0, N.jsx)(N.Fragment, {
-          children: (0, N.jsxs)(n.default, {
-            style: F.grid,
-            children: [
-              (0, N.jsx)(V, {
-                label: l("hUptime"),
-                value: `${r.uptimePct}%`,
-                colors: t,
-                sub: l("biSimulated"),
-              }),
-              (0, N.jsx)(V, {
-                label: l("hApiP95"),
-                value: `${r.apiP95Ms}ms`,
-                colors: t,
-                sub: l("biSimulated"),
-              }),
-              (0, N.jsx)(V, {
-                label: l("hErrorRate"),
-                value: `${r.errorRatePct}%`,
-                colors: t,
-                sub: l("biSimulated"),
-              }),
-              (0, N.jsx)(V, { label: l("hLogins"), value: (0, j.formatNumber)(r.loginActivity), colors: t }),
-              (0, N.jsx)(V, {
-                label: l("hFailedLogins"),
-                value: (0, j.formatNumber)(r.failedLogins),
-                colors: t,
-              }),
-              (0, N.jsx)(V, {
-                label: l("hFailedPayments"),
-                value: (0, j.formatNumber)(r.failedPayments),
-                colors: t,
-              }),
-              (0, N.jsx)(V, {
-                label: l("hSecurityEvents"),
-                value: (0, j.formatNumber)(r.securityEvents),
-                colors: t,
-              }),
-              (0, N.jsx)(V, {
-                label: l("hFraudAlerts"),
-                value: (0, j.formatNumber)(r.fraudAlerts),
-                colors: t,
-              }),
-              (0, N.jsx)(V, {
-                label: l("hNotifications"),
-                value: (0, j.formatNumber)(r.notificationsDelivered),
-                colors: t,
-              }),
-            ],
-          }),
+        // ADM2 (F-ADM2-19): measured counts and placeholder infrastructure figures are never mixed
+        // in the same grid. The placeholders sit under their own heading with a badge and a note.
+        return (0, N.jsxs)(N.Fragment, {
+          children: [
+            (0, N.jsx)(i.default, {
+              style: [y.typography.smallStrong, { color: t.textMuted, marginBottom: y.spacing.xs }],
+              children: l("biHealthMeasured"),
+            }),
+            (0, N.jsxs)(n.default, {
+              style: F.grid,
+              children: [
+                (0, N.jsx)(V, {
+                  label: l("hLogins"),
+                  value: (0, j.formatNumber)(r.loginActivity),
+                  colors: t,
+                }),
+                (0, N.jsx)(V, {
+                  label: l("hFailedLogins"),
+                  value: (0, j.formatNumber)(r.failedLogins),
+                  colors: t,
+                }),
+                (0, N.jsx)(V, {
+                  label: l("hFailedPayments"),
+                  value: (0, j.formatNumber)(r.failedPayments),
+                  colors: t,
+                }),
+                (0, N.jsx)(V, {
+                  label: l("hSecurityEvents"),
+                  value: (0, j.formatNumber)(r.securityEvents),
+                  colors: t,
+                }),
+                (0, N.jsx)(V, {
+                  label: l("hFraudAlerts"),
+                  value: (0, j.formatNumber)(r.fraudAlerts),
+                  colors: t,
+                }),
+                (0, N.jsx)(V, {
+                  label: l("hNotifications"),
+                  value: (0, j.formatNumber)(r.notificationsDelivered),
+                  colors: t,
+                }),
+              ],
+            }),
+            (0, N.jsxs)(n.default, {
+              style: {
+                flexDirection: "row",
+                alignItems: "center",
+                gap: y.spacing.sm,
+                marginTop: y.spacing.md,
+                marginBottom: y.spacing.xs,
+              },
+              children: [
+                (0, N.jsx)(i.default, {
+                  style: [y.typography.smallStrong, { color: t.textMuted }],
+                  children: l("biHealthSimulated"),
+                }),
+                (0, N.jsx)(n.default, {
+                  style: {
+                    borderRadius: y.radius.pill,
+                    borderWidth: s.default.hairlineWidth,
+                    borderColor: t.warning ?? t.border,
+                    paddingHorizontal: y.spacing.sm,
+                    paddingVertical: 2,
+                  },
+                  children: (0, N.jsx)(i.default, {
+                    style: [y.typography.caption, { color: t.warning ?? t.textMuted, fontWeight: "800" }],
+                    children: l("simulatedBadge"),
+                  }),
+                }),
+              ],
+            }),
+            (0, N.jsx)(i.default, {
+              style: [y.typography.caption, { color: t.textMuted, marginBottom: y.spacing.sm }],
+              children: l("biHealthSimulatedNote"),
+            }),
+            (0, N.jsxs)(n.default, {
+              style: F.grid,
+              children: [
+                (0, N.jsx)(V, {
+                  label: l("hUptime"),
+                  value: `${r.uptimePct}%`,
+                  colors: t,
+                  sub: l("simulatedBadge"),
+                }),
+                (0, N.jsx)(V, {
+                  label: l("hApiP95"),
+                  value: `${r.apiP95Ms}ms`,
+                  colors: t,
+                  sub: l("simulatedBadge"),
+                }),
+                (0, N.jsx)(V, {
+                  label: l("hErrorRate"),
+                  value: `${r.errorRatePct}%`,
+                  colors: t,
+                  sub: l("simulatedBadge"),
+                }),
+              ],
+            }),
+          ],
         });
       },
       I = ({ colors: e, t: t, onBack: l, onExport: r, hideExport: a }) =>
@@ -37787,7 +37878,8 @@ __d(
   },
   1830,
   [
-    33, 15, 461, 445, 137, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 1627, 630, 615, 616, 671, 1311, 1626, 675, 1171, 674, 13, 9001,
+    33, 15, 461, 445, 137, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 1627, 630, 615, 616, 671, 1311,
+    1626, 675, 1171, 674, 13, 9001,
   ],
 );
 __d(
@@ -37980,7 +38072,7 @@ __d(
                       data: v.revenue_forecast,
                       colors: i,
                       t: y,
-                      fmt: (t) => (0, w.formatPrice)(t),
+                      fmt: (t) => (0, w.formatAmount)(t),
                     }),
                     (0, B.jsx)(n.default, { style: { height: j.spacing.md } }),
                     (0, B.jsx)(c.default, {
@@ -39616,7 +39708,7 @@ __d(
                                 " ",
                                 "percentage" === s.commission_type
                                   ? `${(0, P.formatNumber)(s.commission_value)}%`
-                                  : (0, P.formatPrice)(s.commission_value),
+                                  : (0, P.formatAmount)(s.commission_value),
                               ],
                             }),
                             (0, W.jsxs)(p.default, {
@@ -39816,7 +39908,7 @@ __d(
                                       if (!Number.isFinite(a) || a < 0 || a > 100)
                                         return void A9.default.alert(I("error"), I("commissionInvalid"));
                                       const i = (e, t) =>
-                                          "percentage" === e ? `${(0, P.formatNumber)(t)}%` : (0, P.formatPrice)(t),
+                                          "percentage" === e ? `${(0, P.formatNumber)(t)}%` : (0, P.formatAmount)(t),
                                         r = i(s.commission_type, s.commission_value),
                                         o = i(J, a);
                                       A9.default.alert(I("confirmCommissionTitle"), I("confirmCommissionBody", { name: t.name, from: r, to: o }), [

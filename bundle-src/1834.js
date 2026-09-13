@@ -167,7 +167,7 @@ __d(
                                 " ",
                                 "percentage" === s.commission_type
                                   ? `${(0, P.formatNumber)(s.commission_value)}%`
-                                  : (0, P.formatPrice)(s.commission_value),
+                                  : (0, P.formatAmount)(s.commission_value),
                               ],
                             }),
                             (0, W.jsxs)(p.default, {
@@ -367,7 +367,7 @@ __d(
                                       if (!Number.isFinite(a) || a < 0 || a > 100)
                                         return void A9.default.alert(I("error"), I("commissionInvalid"));
                                       const i = (e, t) =>
-                                          "percentage" === e ? `${(0, P.formatNumber)(t)}%` : (0, P.formatPrice)(t),
+                                          "percentage" === e ? `${(0, P.formatNumber)(t)}%` : (0, P.formatAmount)(t),
                                         r = i(s.commission_type, s.commission_value),
                                         o = i(J, a);
                                       A9.default.alert(I("confirmCommissionTitle"), I("confirmCommissionBody", { name: t.name, from: r, to: o }), [

@@ -117,5 +117,56 @@ await run('insights export is guarded and audited', async () => {
   await browser.close();
 });
 
+await run('analytics honesty (ADM2)', async () => {
+  const { browser, page, errors } = await openApp({
+    role: 'admin',
+    route: '/admin/insights',
+    initScript: () => {
+      // Slow the dashboard read so the inline refreshing indicator is observable.
+      const patch = () => {
+        try {
+          const api = globalThis.__r && globalThis.__r(671);
+          if (!api || api.__slowed) return false;
+          const orig = api.fetchBIDashboard;
+          api.fetchBIDashboard = (...a) =>
+            new Promise((res, rej) => setTimeout(() => orig(...a).then(res, rej), 1200));
+          api.__slowed = true;
+          return true;
+        } catch { return false; }
+      };
+      const iv = setInterval(() => { if (patch()) clearInterval(iv); }, 50);
+    },
+  });
+  await page.waitForTimeout(4000);
+
+  // F-ADM2-18: a filter change says it is refetching and dims the stale figures.
+  await page.getByRole('button', { name: /^30/ }).first().click();
+  await page.waitForTimeout(400);
+  const during = await page.evaluate(() => document.body.innerText);
+  ok('a filter change shows the refreshing indicator', during.includes(t('refreshing')));
+  await page.waitForTimeout(2200);
+  const after = await page.evaluate(() => document.body.innerText);
+  ok('the refreshing indicator clears when the data lands', !after.includes(t('refreshing')));
+
+  // F-ADM2-19: placeholder infrastructure figures sit apart, badged.
+  await page.getByText(t('secHealth'), { exact: true }).first().click();
+  await page.waitForTimeout(2500);
+  const health = await page.evaluate(() => document.body.innerText);
+  const measured = health.indexOf(t('biHealthMeasured'));
+  const simulated = health.indexOf(t('biHealthSimulated'));
+  ok('measured counts are headed separately', measured >= 0, String(measured));
+  ok('placeholder figures are headed separately and come after', simulated > measured, String(simulated));
+  ok('the placeholder group carries the note', health.includes(t('biHealthSimulatedNote')));
+  ok('every placeholder tile is badged', (health.match(new RegExp(t('simulatedBadge'), 'g')) || []).length >= 4);
+
+  // Revenue of zero must read as an amount, never as "Free".
+  await page.getByText(t('secFinancial'), { exact: true }).first().click();
+  await page.waitForTimeout(2500);
+  const fin = await page.evaluate(() => document.body.innerText);
+  ok('zero revenue is an amount, not "Free"', !new RegExp(`\\b${t('free')}\\b`, 'i').test(fin), fin.slice(0, 0));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

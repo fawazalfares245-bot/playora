@@ -188,7 +188,7 @@ __d(
                       data: v.revenue_forecast,
                       colors: i,
                       t: y,
-                      fmt: (t) => (0, w.formatPrice)(t),
+                      fmt: (t) => (0, w.formatAmount)(t),
                     }),
                     (0, B.jsx)(n.default, { style: { height: j.spacing.md } }),
                     (0, B.jsx)(c.default, {
