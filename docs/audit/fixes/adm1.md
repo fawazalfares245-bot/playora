@@ -33,5 +33,5 @@ Backend: commit f203091 (bundle-src/631.js, 656.js, 671.js, 674.js, 909.js). Scr
 - F-ADM1-29: Fixed — every ban/suspension (admin-issued included) enters `pending_approval`, and the issuer cannot review their own sanction (screen shows "You issued this sanction").
 - F-ADM1-30: Fixed — busy state is tracked per record; other cards' buttons are disabled, not spinning.
 - F-ADM1-31: Fixed — list and detail DTOs strip phone/document hashes and registration references.
-- F-ADM1-32: Fixed for the client — admin actions go to a separate 5,000-row store with the full actor id and no placeholder IP, and an administrator can now read that log in the app at `/admin/audit` (see F-XC-7) rather than through devtools. A tamper-evident server-side log still needs the backend.
+- F-ADM1-32: Fixed — admin actions go to a separate 5,000-row store with the full actor id and no placeholder IP, and an administrator can now read that log in the app at `/admin/audit` (see F-XC-7) rather than through devtools. A tamper-evident server-side log still needs the backend.
 - F-ADM1-33: Not fixed — the role check still evaluates a client-held profile; enforcing it requires the server-side backend (see F-XC-1).
