@@ -2482,8 +2482,15 @@ __d(
         return { shifted: a };
       };
     r.mockRefreshDemoGames = wi;
+    // ORG1 (F-ORG1-22): demo fixtures carry `seeded: true` so a seeded venue or match is never
+    // indistinguishable from a row a real organizer created. The rows only exist when the demo flag
+    // is on (see F-XC-5), and the dock shows a demo banner whenever it is.
+    for (const s9 of Ta) s9.seeded = !0;
+    for (const s9 of La) s9.seeded = !0;
     const pi = async () => (await ei(), fi().sort((e, t) => t.rating - e.rating));
-    r.mockGetVenues = pi;
+    // ORG1 (F-ORG1-19): pi() stays the complete lookup used to resolve a match's venue. The public
+    // directory only lists venues that have not been withheld pending review.
+    r.mockGetVenues = async () => (await pi()).filter((e) => !1 !== e.listed);
     r.mockGetVenue = async (e) => {
       const t = (await pi()).find((t) => t.id === e);
       if (!t) return null;
@@ -3439,15 +3446,18 @@ __d(
       }
       if (l) d = l.venue_id;
       else if (t.custom_venue) {
-        const e = (0, v.sanitizeText)(t.custom_venue.name, 80);
-        if (!e) throw new Error("E_ADD_A_VENUE_NAME");
+        // ORG1 (F-ORG1-19): a venue an organizer types in is usable for their own match straight away
+        // but stays out of the public directory (listed: false) until an admin reviews the pending
+        // registration created below. `created_by` records the organizer, not the venue name.
+        const vn9 = (0, v.sanitizeText)(t.custom_venue.name, 80);
+        if (!vn9) throw new Error("E_ADD_A_VENUE_NAME");
         const a = Number(t.custom_venue.lat),
           i = Number(t.custom_venue.lng);
         if (Number.isNaN(a) || Number.isNaN(i)) throw new Error("E_PICK_THE_VENUE_LOCATION_ON_THE");
         const n = (0, v.sanitizeText)(t.custom_venue.address, 160),
           r = {
             id: ea(),
-            name: e,
+            name: vn9,
             city: "Kuwait",
             area: n ? n.split(",")[0] : "Custom location",
             sports: [t.sport],
@@ -3459,12 +3469,47 @@ __d(
             lat: a,
             lng: i,
             custom: !0,
+            listed: !1,
+            review_status: "pending",
             created_by: e,
             created_at: new Date().toISOString(),
           };
-        (Qt.venues.push(r),
-          await Za(ae, Qt.venues),
-          await (0, w.logAudit)("venue.created", (0, w.actorRef)(e), { venue: r.id.slice(-6), name: e9(r.name) }),
+        (Qt.venues.push(r), await Za(ae, Qt.venues));
+        const vp9 = {
+          venue_id: r.id,
+          owner_id: e,
+          status: "pending",
+          commission_type: he,
+          commission_value: 10,
+          payout_iban_last4: null,
+          cancellation_policy: "Free cancellation up to 6 hours before start.",
+          cancellation_cutoff_hours: 6,
+          amenities: [],
+          photos: [],
+          auto_accept: !1,
+          staff: [],
+          origin: "organizer_custom",
+          created_at: new Date().toISOString(),
+          reviewed_at: null,
+          reviewed_by: null,
+          review_note: null,
+        };
+        (Qt.venueProfiles.push(vp9),
+          await Za(ce, Qt.venueProfiles),
+          await br((t9) => ({
+            id: ea(),
+            user_id: t9,
+            type: "venue_application",
+            venue_id: r.id,
+            venue_name: r.name,
+            read: !1,
+            created_at: new Date().toISOString(),
+          })),
+          await (0, w.logAudit)("venue.created", (0, w.actorRef)(e), {
+            venue: r.id.slice(-6),
+            name: e9(r.name),
+            listed: !1,
+          }),
           (d = r.id));
       } else {
         const v9 = fi().find((e) => e.id === t.venue_id);
@@ -7128,6 +7173,15 @@ __d(
         (n.reviewed_by = e),
         (n.review_note = r || null),
         await Za(ce, Qt.venueProfiles),
+        // ORG1 (F-ORG1-19): the review decides whether the venue appears in the public directory.
+        await (async () => {
+          const vi9 = Qt.venues.findIndex((e) => e.id === t);
+          if (vi9 < 0) return;
+          const lst9 = "approved" === s;
+          if (Qt.venues[vi9].listed === lst9 && Qt.venues[vi9].review_status === s) return;
+          ((Qt.venues[vi9] = Object.assign({}, Qt.venues[vi9], { listed: lst9, review_status: s })),
+            await Za(ae, Qt.venues));
+        })(),
         await bi({
           id: ea(),
           user_id: n.owner_id,

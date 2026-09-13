@@ -78,6 +78,25 @@ __d(
           backgroundColor: M.bg,
         },
         children: [
+          // XC (F-XC-5): when the demo flag is on, every screen says so. Seeded venues, the fixed
+          // verification code and auto-approved organizers must never be mistaken for real data.
+          !0 === globalThis.__PLAYORA_CONFIG__?.demo &&
+            (0, C.jsxs)(l.default, {
+              style: [R.guestBar, { backgroundColor: M.warning ?? M.surfaceAlt }],
+              accessibilityLiveRegion: "polite",
+              children: [
+                (0, C.jsx)(c.Ionicons, {
+                  name: "flask-outline",
+                  size: 14,
+                  color: M.warning ? "#131A03" : M.textMuted,
+                }),
+                (0, C.jsx)(i.default, {
+                  style: [x.typography.smallStrong, { color: M.warning ? "#131A03" : M.textMuted, flex: 1 }],
+                  numberOfLines: 1,
+                  children: L("demoModeBanner"),
+                }),
+              ],
+            }),
           // Only warn about being offline when a server is configured but unreachable; a purely
           // client-side build has nothing to be offline from.
           !!globalThis.__PLAYORA_CONFIG__?.backendUrl &&

@@ -35,7 +35,7 @@ __d(
         analystOrAdminBody: "This area is restricted to administrators and analysts.",
         loadFailedTitle: "Couldn\u2019t load this screen",
         goBack: "Go back",
-        demoModeBanner: "Demo mode \u2014 data is stored on this device only",
+        demoModeBanner: "Demo mode \u00b7 seeded data on this device, no real bookings or payments",
         sessionExpired: "Your session has expired. Please sign in again.",
         // --- ADM1 keys (fix batch) ---
         seAdminsCannotRegisterVenues: "Administrators review venues and cannot register one.",
@@ -1571,8 +1571,8 @@ __d(
         notifBookingConfirmedBody: "%{venue} confirmed your court reservation.",
         notifBookingRejectedTitle: "Court declined",
         notifBookingRejectedBody: "%{venue} could not accept your reservation.",
-        notifRefundTitle: "Refund issued",
-        notifRefundBody: "%{amount} was refunded for %{venue}.",
+        notifRefundTitle: "Refunded to your wallet",
+        notifRefundBody: "%{amount} for %{venue} is now credit in your Playora wallet. Use it on your next booking or ask support to pay it out.",
         notifVenueApplicationTitle: "New venue application",
         notifVenueApplicationBody: "%{venue} applied to join as a venue.",
         notifVenueApprovedTitle: "Venue approved",
@@ -3490,7 +3490,7 @@ __d(
         analystOrAdminBody: "\u0647\u0630\u0647 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0645\u062e\u0635\u0635\u0629 \u0644\u0644\u0645\u0634\u0631\u0641\u064a\u0646 \u0648\u0627\u0644\u0645\u062d\u0644\u0644\u064a\u0646.",
         loadFailedTitle: "\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0647\u0630\u0647 \u0627\u0644\u0634\u0627\u0634\u0629",
         goBack: "\u0631\u062c\u0648\u0639",
-        demoModeBanner: "\u0648\u0636\u0639 \u0627\u0644\u0639\u0631\u0636 \u2014 \u062a\u064f\u062d\u0641\u0638 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632 \u0641\u0642\u0637",
+        demoModeBanner: "\u0648\u0636\u0639 \u0627\u0644\u0639\u0631\u0636 \u00b7 \u0628\u064a\u0627\u0646\u0627\u062a \u062a\u062c\u0631\u064a\u0628\u064a\u0629 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632\u060c \u0644\u0627 \u062d\u062c\u0648\u0632\u0627\u062a \u0623\u0648 \u0645\u062f\u0641\u0648\u0639\u0627\u062a \u062d\u0642\u064a\u0642\u064a\u0629",
         sessionExpired: "\u0627\u0646\u062a\u0647\u062a \u062c\u0644\u0633\u062a\u0643. \u064a\u0631\u062c\u0649 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0645\u062c\u062f\u062f\u064b\u0627.",
         // --- ADM1 keys (fix batch) ---
         seAdminsCannotRegisterVenues: "المشرفون يراجعون الملاعب ولا يمكنهم تسجيل ملعب.",
@@ -5653,9 +5653,9 @@ __d(
         notifBookingRejectedBody:
           "\u0644\u0645 \u064a\u062a\u0645\u0643\u0646 %{venue} \u0645\u0646 \u0642\u0628\u0648\u0644 \u062d\u062c\u0632\u0643.",
         notifRefundTitle:
-          "\u062a\u0645 \u0625\u0635\u062f\u0627\u0631 \u0627\u0633\u062a\u0631\u062f\u0627\u062f",
+          "\u062a\u0645\u062a \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u0628\u0644\u063a \u0625\u0644\u0649 \u0645\u062d\u0641\u0638\u062a\u0643",
         notifRefundBody:
-          "\u062a\u0645 \u0627\u0633\u062a\u0631\u062f\u0627\u062f %{amount} \u0645\u0642\u0627\u0628\u0644 %{venue}.",
+          "\u0623\u0635\u0628\u062d %{amount} \u0645\u0642\u0627\u0628\u0644 %{venue} \u0631\u0635\u064a\u062f\u064b\u0627 \u0641\u064a \u0645\u062d\u0641\u0638\u0629 \u0628\u0644\u0627\u064a\u0648\u0631\u0627. \u0627\u0633\u062a\u062e\u062f\u0645\u0647 \u0641\u064a \u062d\u062c\u0632\u0643 \u0627\u0644\u0642\u0627\u062f\u0645 \u0623\u0648 \u0627\u0637\u0644\u0628 \u0635\u0631\u0641\u0647 \u0645\u0646 \u0627\u0644\u062f\u0639\u0645.",
         notifVenueApplicationTitle:
           "\u0637\u0644\u0628 \u0627\u0646\u0636\u0645\u0627\u0645 \u0645\u0644\u0639\u0628 \u062c\u062f\u064a\u062f",
         notifVenueApplicationBody:

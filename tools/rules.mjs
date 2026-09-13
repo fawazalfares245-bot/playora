@@ -88,6 +88,33 @@ const out = await page.evaluate(async (ids) => {
   res.fillUnchanged = low?.fillAccuracyPct === high?.fillAccuracyPct;
   await api.setDemandWeights(ids.admin, { cancelLowFill: 0.3 }, 'rules restore');
 
+  // --- an organizer-typed venue is not published to the directory until reviewed (F-ORG1-19) ---
+  const customName = `Probe Pitch ${Date.now().toString(36)}`;
+  const customGame = await api
+    .createMatch(ids.organizer, {
+      sport: 'football', title: 'Custom venue probe', format: 'football_5v5', skill_level: 'all',
+      starts_at: new Date(Date.now() + 3456e5).toISOString(),
+      ends_at: new Date(Date.now() + 3456e5 + 54e5).toISOString(),
+      max_players: 10, price_kwd: 2, visibility: 'public', approval_mode: 'auto',
+      custom_venue: { name: customName, lat: 29.37, lng: 47.98, address: 'Probe Street, Salmiya' },
+    })
+    .catch((e) => ({ error: e.message }));
+  res.customVenueCreated = !customGame?.error;
+  const venueRow = JSON.parse(localStorage.getItem('playora.mock.venues.v1') || '[]').find((v) => v.name === customName);
+  res.customVenueId = venueRow?.id ?? null;
+  res.customVenueListed = venueRow ? venueRow.listed : 'no-row';
+  res.customVenueCreatedBy = venueRow ? venueRow.created_by : 'no-row';
+  const directory = await api.fetchVenues().catch(() => []);
+  res.customVenueInDirectory = directory.some((v) => v.id === res.customVenueId);
+  const queue = await api.fetchPendingVenues(ids.admin).catch(() => []);
+  res.customVenueInQueue = queue.some((r) => r.venue.id === res.customVenueId && r.profile.status === 'pending');
+  // Approving it publishes it.
+  if (res.customVenueId) await code(() => api.reviewVenue(ids.admin, res.customVenueId, 'approve', ''));
+  const afterRow = JSON.parse(localStorage.getItem('playora.mock.venues.v1') || '[]').find((v) => v.id === res.customVenueId);
+  res.customVenueListedAfterApproval = afterRow ? afterRow.listed : 'no-row';
+  const directory2 = await api.fetchVenues().catch(() => []);
+  res.customVenueInDirectoryAfter = directory2.some((v) => v.id === res.customVenueId);
+
   // --- self review ---
   const apps = JSON.parse(localStorage.getItem('playora.mock.applications.v1') || '[]');
   res.appsSeen = apps.length;
@@ -125,6 +152,13 @@ ok('the weighted model has something to score', out.riskEvaluated > 0, String(ou
 ok('the weighted risk figure moves with the weights', out.riskLow !== null && out.riskHigh !== null && out.riskLow !== out.riskHigh, `${out.riskLow} -> ${out.riskHigh}`);
 ok('the baseline fill tiles are labelled as baseline', out.fillModelLabel === 'baseline', String(out.fillModelLabel));
 ok('the baseline fill accuracy does not move with the weights', out.fillUnchanged === true, String(out.fillUnchanged));
+ok('a match with a typed-in venue is created', out.customVenueCreated === true, String(out.customVenueCreated));
+ok('the typed-in venue records the organizer, not its own name', out.customVenueCreatedBy === IDS.organizer, String(out.customVenueCreatedBy));
+ok('the typed-in venue is withheld from the directory', out.customVenueListed === false, String(out.customVenueListed));
+ok('the typed-in venue is absent from the public venue list', out.customVenueInDirectory === false, String(out.customVenueInDirectory));
+ok('the typed-in venue lands in the admin review queue', out.customVenueInQueue === true, String(out.customVenueInQueue));
+ok('approving the registration lists the venue', out.customVenueListedAfterApproval === true, String(out.customVenueListedAfterApproval));
+ok('the approved venue appears in the public venue list', out.customVenueInDirectoryAfter === true, String(out.customVenueInDirectoryAfter));
 ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
 await browser.close();
 console.log(results.join('\n'));

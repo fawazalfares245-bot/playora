@@ -3963,8 +3963,15 @@ __d(
         return { shifted: a };
       };
     r.mockRefreshDemoGames = wi;
+    // ORG1 (F-ORG1-22): demo fixtures carry `seeded: true` so a seeded venue or match is never
+    // indistinguishable from a row a real organizer created. The rows only exist when the demo flag
+    // is on (see F-XC-5), and the dock shows a demo banner whenever it is.
+    for (const s9 of Ta) s9.seeded = !0;
+    for (const s9 of La) s9.seeded = !0;
     const pi = async () => (await ei(), fi().sort((e, t) => t.rating - e.rating));
-    r.mockGetVenues = pi;
+    // ORG1 (F-ORG1-19): pi() stays the complete lookup used to resolve a match's venue. The public
+    // directory only lists venues that have not been withheld pending review.
+    r.mockGetVenues = async () => (await pi()).filter((e) => !1 !== e.listed);
     r.mockGetVenue = async (e) => {
       const t = (await pi()).find((t) => t.id === e);
       if (!t) return null;
@@ -4920,15 +4927,18 @@ __d(
       }
       if (l) d = l.venue_id;
       else if (t.custom_venue) {
-        const e = (0, v.sanitizeText)(t.custom_venue.name, 80);
-        if (!e) throw new Error("E_ADD_A_VENUE_NAME");
+        // ORG1 (F-ORG1-19): a venue an organizer types in is usable for their own match straight away
+        // but stays out of the public directory (listed: false) until an admin reviews the pending
+        // registration created below. `created_by` records the organizer, not the venue name.
+        const vn9 = (0, v.sanitizeText)(t.custom_venue.name, 80);
+        if (!vn9) throw new Error("E_ADD_A_VENUE_NAME");
         const a = Number(t.custom_venue.lat),
           i = Number(t.custom_venue.lng);
         if (Number.isNaN(a) || Number.isNaN(i)) throw new Error("E_PICK_THE_VENUE_LOCATION_ON_THE");
         const n = (0, v.sanitizeText)(t.custom_venue.address, 160),
           r = {
             id: ea(),
-            name: e,
+            name: vn9,
             city: "Kuwait",
             area: n ? n.split(",")[0] : "Custom location",
             sports: [t.sport],
@@ -4940,12 +4950,47 @@ __d(
             lat: a,
             lng: i,
             custom: !0,
+            listed: !1,
+            review_status: "pending",
             created_by: e,
             created_at: new Date().toISOString(),
           };
-        (Qt.venues.push(r),
-          await Za(ae, Qt.venues),
-          await (0, w.logAudit)("venue.created", (0, w.actorRef)(e), { venue: r.id.slice(-6), name: e9(r.name) }),
+        (Qt.venues.push(r), await Za(ae, Qt.venues));
+        const vp9 = {
+          venue_id: r.id,
+          owner_id: e,
+          status: "pending",
+          commission_type: he,
+          commission_value: 10,
+          payout_iban_last4: null,
+          cancellation_policy: "Free cancellation up to 6 hours before start.",
+          cancellation_cutoff_hours: 6,
+          amenities: [],
+          photos: [],
+          auto_accept: !1,
+          staff: [],
+          origin: "organizer_custom",
+          created_at: new Date().toISOString(),
+          reviewed_at: null,
+          reviewed_by: null,
+          review_note: null,
+        };
+        (Qt.venueProfiles.push(vp9),
+          await Za(ce, Qt.venueProfiles),
+          await br((t9) => ({
+            id: ea(),
+            user_id: t9,
+            type: "venue_application",
+            venue_id: r.id,
+            venue_name: r.name,
+            read: !1,
+            created_at: new Date().toISOString(),
+          })),
+          await (0, w.logAudit)("venue.created", (0, w.actorRef)(e), {
+            venue: r.id.slice(-6),
+            name: e9(r.name),
+            listed: !1,
+          }),
           (d = r.id));
       } else {
         const v9 = fi().find((e) => e.id === t.venue_id);
@@ -8609,6 +8654,15 @@ __d(
         (n.reviewed_by = e),
         (n.review_note = r || null),
         await Za(ce, Qt.venueProfiles),
+        // ORG1 (F-ORG1-19): the review decides whether the venue appears in the public directory.
+        await (async () => {
+          const vi9 = Qt.venues.findIndex((e) => e.id === t);
+          if (vi9 < 0) return;
+          const lst9 = "approved" === s;
+          if (Qt.venues[vi9].listed === lst9 && Qt.venues[vi9].review_status === s) return;
+          ((Qt.venues[vi9] = Object.assign({}, Qt.venues[vi9], { listed: lst9, review_status: s })),
+            await Za(ae, Qt.venues));
+        })(),
         await bi({
           id: ea(),
           user_id: n.owner_id,
@@ -20553,7 +20607,7 @@ __d(
         analystOrAdminBody: "This area is restricted to administrators and analysts.",
         loadFailedTitle: "Couldn\u2019t load this screen",
         goBack: "Go back",
-        demoModeBanner: "Demo mode \u2014 data is stored on this device only",
+        demoModeBanner: "Demo mode \u00b7 seeded data on this device, no real bookings or payments",
         sessionExpired: "Your session has expired. Please sign in again.",
         // --- ADM1 keys (fix batch) ---
         seAdminsCannotRegisterVenues: "Administrators review venues and cannot register one.",
@@ -22089,8 +22143,8 @@ __d(
         notifBookingConfirmedBody: "%{venue} confirmed your court reservation.",
         notifBookingRejectedTitle: "Court declined",
         notifBookingRejectedBody: "%{venue} could not accept your reservation.",
-        notifRefundTitle: "Refund issued",
-        notifRefundBody: "%{amount} was refunded for %{venue}.",
+        notifRefundTitle: "Refunded to your wallet",
+        notifRefundBody: "%{amount} for %{venue} is now credit in your Playora wallet. Use it on your next booking or ask support to pay it out.",
         notifVenueApplicationTitle: "New venue application",
         notifVenueApplicationBody: "%{venue} applied to join as a venue.",
         notifVenueApprovedTitle: "Venue approved",
@@ -24008,7 +24062,7 @@ __d(
         analystOrAdminBody: "\u0647\u0630\u0647 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0645\u062e\u0635\u0635\u0629 \u0644\u0644\u0645\u0634\u0631\u0641\u064a\u0646 \u0648\u0627\u0644\u0645\u062d\u0644\u0644\u064a\u0646.",
         loadFailedTitle: "\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0647\u0630\u0647 \u0627\u0644\u0634\u0627\u0634\u0629",
         goBack: "\u0631\u062c\u0648\u0639",
-        demoModeBanner: "\u0648\u0636\u0639 \u0627\u0644\u0639\u0631\u0636 \u2014 \u062a\u064f\u062d\u0641\u0638 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632 \u0641\u0642\u0637",
+        demoModeBanner: "\u0648\u0636\u0639 \u0627\u0644\u0639\u0631\u0636 \u00b7 \u0628\u064a\u0627\u0646\u0627\u062a \u062a\u062c\u0631\u064a\u0628\u064a\u0629 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632\u060c \u0644\u0627 \u062d\u062c\u0648\u0632\u0627\u062a \u0623\u0648 \u0645\u062f\u0641\u0648\u0639\u0627\u062a \u062d\u0642\u064a\u0642\u064a\u0629",
         sessionExpired: "\u0627\u0646\u062a\u0647\u062a \u062c\u0644\u0633\u062a\u0643. \u064a\u0631\u062c\u0649 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0645\u062c\u062f\u062f\u064b\u0627.",
         // --- ADM1 keys (fix batch) ---
         seAdminsCannotRegisterVenues: "المشرفون يراجعون الملاعب ولا يمكنهم تسجيل ملعب.",
@@ -26171,9 +26225,9 @@ __d(
         notifBookingRejectedBody:
           "\u0644\u0645 \u064a\u062a\u0645\u0643\u0646 %{venue} \u0645\u0646 \u0642\u0628\u0648\u0644 \u062d\u062c\u0632\u0643.",
         notifRefundTitle:
-          "\u062a\u0645 \u0625\u0635\u062f\u0627\u0631 \u0627\u0633\u062a\u0631\u062f\u0627\u062f",
+          "\u062a\u0645\u062a \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u0628\u0644\u063a \u0625\u0644\u0649 \u0645\u062d\u0641\u0638\u062a\u0643",
         notifRefundBody:
-          "\u062a\u0645 \u0627\u0633\u062a\u0631\u062f\u0627\u062f %{amount} \u0645\u0642\u0627\u0628\u0644 %{venue}.",
+          "\u0623\u0635\u0628\u062d %{amount} \u0645\u0642\u0627\u0628\u0644 %{venue} \u0631\u0635\u064a\u062f\u064b\u0627 \u0641\u064a \u0645\u062d\u0641\u0638\u0629 \u0628\u0644\u0627\u064a\u0648\u0631\u0627. \u0627\u0633\u062a\u062e\u062f\u0645\u0647 \u0641\u064a \u062d\u062c\u0632\u0643 \u0627\u0644\u0642\u0627\u062f\u0645 \u0623\u0648 \u0627\u0637\u0644\u0628 \u0635\u0631\u0641\u0647 \u0645\u0646 \u0627\u0644\u062f\u0639\u0645.",
         notifVenueApplicationTitle:
           "\u0637\u0644\u0628 \u0627\u0646\u0636\u0645\u0627\u0645 \u0645\u0644\u0639\u0628 \u062c\u062f\u064a\u062f",
         notifVenueApplicationBody:
@@ -30616,6 +30670,25 @@ __d(
           backgroundColor: M.bg,
         },
         children: [
+          // XC (F-XC-5): when the demo flag is on, every screen says so. Seeded venues, the fixed
+          // verification code and auto-approved organizers must never be mistaken for real data.
+          !0 === globalThis.__PLAYORA_CONFIG__?.demo &&
+            (0, C.jsxs)(l.default, {
+              style: [R.guestBar, { backgroundColor: M.warning ?? M.surfaceAlt }],
+              accessibilityLiveRegion: "polite",
+              children: [
+                (0, C.jsx)(c.Ionicons, {
+                  name: "flask-outline",
+                  size: 14,
+                  color: M.warning ? "#131A03" : M.textMuted,
+                }),
+                (0, C.jsx)(i.default, {
+                  style: [x.typography.smallStrong, { color: M.warning ? "#131A03" : M.textMuted, flex: 1 }],
+                  numberOfLines: 1,
+                  children: L("demoModeBanner"),
+                }),
+              ],
+            }),
           // Only warn about being offline when a server is configured but unreachable; a purely
           // client-side build has nothing to be offline from.
           !!globalThis.__PLAYORA_CONFIG__?.backendUrl &&
