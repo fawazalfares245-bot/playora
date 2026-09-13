@@ -280,6 +280,9 @@ __d(
         E_A_REASON_IS_REQUIRED: "seAReasonIsRequired",
         E_INVALID_TRANSITION: "seInvalidTransition",
         E_INVALID_VALUE: "seInvalidValue",
+        // ADM1
+        E_ADMINS_CANNOT_REGISTER_VENUES: "seAdminsCannotRegisterVenues",
+        E_NO_SKILL_PROFILE: "seNoSkillProfile",
       },
       E = {
         E_TOO_MANY_ATTEMPTS_MINUTES: "seTooManyAttemptsMinutes",

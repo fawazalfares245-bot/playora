@@ -96,7 +96,8 @@ __d(
             ? "yellow_card"
             : "warning";
     };
-    e.needsAdminApproval = (n, o) => "organizer" === o && ("ban" === n || "suspension" === n);
+    // ADM1 (F-ADM1-29): bans and suspensions always need a second administrator, whoever issues them.
+    e.needsAdminApproval = (n, o) => "ban" === n || "suspension" === n;
   },
   656,
   [],

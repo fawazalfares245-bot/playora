@@ -4393,7 +4393,15 @@ __d(
           viewer_world: i,
         });
       },
-      un = (e) => aa(e);
+      un = (e) => aa(e),
+      // ADM1 (F-ADM1-9/10): same partition rule as `cn` but without the audit side effect, for stats and
+      // "hidden in the other world" counters shown next to partitioned lists.
+      adm1Visible = (e, t, a) => {
+        if (ln(e)) return t;
+        const i = aa(e);
+        return t.filter((e) => ia(a(e), i));
+      },
+      adm1Hidden = (e, t, a) => t.length - adm1Visible(e, t, a).length;
     r.mockGrantCrossPartition = async (e, t, a) => {
       if ((await ei(), await sn(e), e === t)) throw new Error("E_YOU_CANNOT_GRANT_THIS_TO_YOURSELF");
       const i = (0, v.sanitizeText)(a ?? "").slice(0, 200);
@@ -4436,9 +4444,22 @@ __d(
         .sort((e, t) => new Date(t.created_at).getTime() - new Date(e.created_at).getTime())
     );
     r.mockGetMyPartitionStance = async (e) => {
-      (await ei(), await sn(e));
-      const t = ln(e);
-      return { world: aa(e), crossing: !!t, expires_at: t?.expires_at ?? null, reason: t?.reason ?? null };
+      (await ei(), await sn(e), await hn());
+      const t = ln(e),
+        a = (e) => un(e.user_id);
+      return {
+        world: aa(e),
+        crossing: !!t,
+        expires_at: t?.expires_at ?? null,
+        reason: t?.reason ?? null,
+        // ADM1 (F-ADM1-9): how many records each admin list is withholding because they belong to the
+        // other world (0 while a cross-partition grant is active).
+        hidden: {
+          applications: adm1Hidden(e, Qt.applications, a),
+          players: adm1Hidden(e, Qt.skillProfiles, a),
+          sanctions: adm1Hidden(e, Qt.sanctions, a),
+        },
+      };
     };
     r.mockAdminFindPlayers = async (e, t) => {
       (await ei(), await sn(e));
@@ -4471,23 +4492,31 @@ __d(
       if (r < 0) throw new Error("E_NO_SUCH_PLAYER");
       const o = Qt.profiles[r].audience;
       if (o === a) throw new Error("E_THAT_PLAYER_IS_ALREADY_IN_THIS");
-      (await _n(e, o ?? "male", "admin.correct_audience"),
-        (Qt.profiles[r] = Object.assign({}, Qt.profiles[r], { audience: a })),
-        await Za(Y, Qt.profiles),
-        (Qt.follows = Qt.follows.filter((e) => e.follower_id !== t && e.followee_id !== t)),
-        await Za(Ne, Qt.follows),
-        await (0, w.logAudit)("admin.audience_corrected", (0, w.actorRef)(e), {
-          target: t,
-          from: o ?? "unset",
-          to: a,
-          reason: n,
-        }));
+      await _n(e, o ?? "male", "admin.correct_audience");
+      ((Qt.profiles[r] = Object.assign({}, Qt.profiles[r], { audience: a })), await Za(Y, Qt.profiles));
+      // ADM1 (F-ADM1-16): moving worlds severs follow links across the partition; record how many.
+      const s = Qt.follows.length;
+      ((Qt.follows = Qt.follows.filter((e) => e.follower_id !== t && e.followee_id !== t)),
+        await Za(Ne, Qt.follows));
+      const d = s - Qt.follows.length;
+      // ADM1 (F-ADM1-17): privileged change -> admin audit store with before/after values.
+      await (0, w.logAdminAudit)("admin.audience_corrected", e, t, {
+        from: o ?? "unset",
+        to: a,
+        reason: n,
+        follows_removed: d,
+      });
+      return { from: o ?? null, to: a, follows_removed: d };
     };
-    const mn = async (e, t) => {
-        const a = Qt.profiles.findIndex((t) => t.id === e);
-        a >= 0 &&
-          "admin" !== Qt.profiles[a].role &&
-          ((Qt.profiles[a] = Object.assign({}, Qt.profiles[a], { role: t })), await Za(Y, Qt.profiles));
+    const mn = async (e, t, a) => {
+        // ADM1 (F-ADM1-7): organizer decisions never overwrite a privileged role (admin / analyst), and
+        // every role transition is recorded with before/after values and the acting admin.
+        const i = Qt.profiles.findIndex((t) => t.id === e);
+        if (i < 0) return;
+        const n = Qt.profiles[i].role ?? "user";
+        if (n === t || "admin" === n || "analyst" === n) return;
+        ((Qt.profiles[i] = Object.assign({}, Qt.profiles[i], { role: t })), await Za(Y, Qt.profiles));
+        await (0, w.logAdminAudit)("profile.role_changed", a ?? null, e, { from: n, to: t });
       },
       wn = async (e, t, a, i) => {
         await bi({
@@ -4606,65 +4635,135 @@ __d(
         account_age_days: t ? Math.floor((Date.now() - new Date(t.created_at).getTime()) / 864e5) : 0,
       });
     };
+    // ADM1 (F-ADM1-31): the queue only renders names, sports, flags and dates -> slim list DTO; the
+    // detail DTO drops hashed identity references (phone / document / registration / licence hashes).
+    const adm1AppListDto = (e) => ({
+        id: e.id,
+        user_id: e.user_id,
+        status: e.status,
+        display_name: e.display_name,
+        full_legal_name: e.full_legal_name,
+        sports: e.sports,
+        organizer_type: e.organizer_type,
+        risk_flags: e.risk_flags ?? [],
+        submitted_at: e.submitted_at,
+        reviewed_at: e.reviewed_at,
+        info_requested_at: e.info_requested_at ?? null,
+      }),
+      adm1AppDetailDto = (e) => {
+        const t = pn(e);
+        (delete t.phone_hash, delete t.id_doc_ref);
+        t.business &&
+          ((t.business = Object.assign({}, t.business)),
+          delete t.business.registration_number_ref,
+          delete t.business.license_ref);
+        return t;
+      };
     r.mockGetOrganizerApplications = async (e, t) => {
       (await ei(), await hn(), await sn(e));
       return (await cn(e, Qt.applications, (e) => un(e.user_id), "admin.applications"))
         .filter((e) => !t?.status || e.status === t.status)
         .sort((e, t) => new Date(t.submitted_at).getTime() - new Date(e.submitted_at).getTime())
-        .map(pn);
+        .map(adm1AppListDto);
     };
     r.mockGetApplicationDetail = async (e, t) => {
       (await ei(), await hn(), await sn(e));
       const a = Qt.applications.find((e) => e.id === t);
-      return a ? (await _n(e, un(a.user_id), "admin.application_detail"), pn(a)) : null;
+      return a ? (await _n(e, un(a.user_id), "admin.application_detail"), adm1AppDetailDto(a)) : null;
     };
+    // ADM1 (F-ADM1-8): server-side transition table; mirrors the actions the detail screen offers.
+    const adm1AppTransitions = { approved: ["suspend"], suspended: ["approve"], rejected: ["approve"] },
+      adm1AppAllowed = (e) => adm1AppTransitions[e] ?? ["approve", "request_info", "reject"];
     r.mockReviewApplication = async (e, t, a, i) => {
       (await ei(), await sn(e));
       const n = Qt.applications.find((e) => e.id === t);
       if (!n) throw new Error("E_APPLICATION_NOT_FOUND");
+      // ADM1 (F-ADM1-1): the reviewer must not be the applicant; the attempt is audited.
+      if (n.user_id === e)
+        throw (
+          await (0, w.logAdminAudit)("organizer.self_review_blocked", e, n.user_id, {
+            application: t.slice(-6),
+            action: String(a),
+          }),
+          new Error("E_YOU_CANNOT_REVIEW_YOUR_OWN")
+        );
+      if (!["approve", "reject", "request_info", "suspend"].includes(a) || !adm1AppAllowed(n.status).includes(a))
+        throw new Error("E_INVALID_TRANSITION");
       await _n(e, un(n.user_id), "admin.review_application");
+      // ADM1 (F-ADM1-5): `reason` is the message delivered to the applicant, `notes` the internal note.
       const r = new Date().toISOString(),
-        o = i?.notes ? (0, v.sanitizeText)(i.notes, 500) : n.admin_notes;
+        o = (0, v.sanitizeText)(i?.reason ?? "", 200),
+        s = (0, v.sanitizeText)(i?.notes ?? "", 500),
+        d = n.status,
+        l = t.slice(-6);
+      // ADM1 (F-ADM1-2): adverse decisions and info requests require an explicit message; nothing is
+      // back-filled with boilerplate any more.
+      if ("approve" !== a && !o) throw new Error("E_A_REASON_IS_REQUIRED");
       if ("approve" === a)
         ((n.status = "approved"),
           (n.reviewed_by = e),
           (n.reviewed_at = r),
-          (n.admin_notes = o),
+          (n.admin_notes = s || n.admin_notes),
           (n.rejection_reason = null),
           (n.reapply_after = null),
-          await mn(n.user_id, "organizer"),
-          await (0, w.logAdminAudit)("organizer.application_approved", e, n.user_id),
-          await wn(n.user_id, n.id, "approved", ""));
-      else if ("reject" === a) {
-        const t = (0, v.sanitizeText)(i?.reason ?? "", 200) || "Did not meet verification requirements.";
+          (n.info_requested_at = null),
+          await mn(n.user_id, "organizer", e),
+          await (0, w.logAdminAudit)("organizer.application_approved", e, n.user_id, {
+            application: l,
+            from: d,
+            to: "approved",
+            message: o || null,
+            note: s || null,
+          }),
+          await wn(n.user_id, n.id, "approved", o));
+      else if ("reject" === a)
         ((n.status = "rejected"),
           (n.reviewed_by = e),
           (n.reviewed_at = r),
-          (n.rejection_reason = t),
-          (n.admin_notes = o),
+          (n.rejection_reason = o),
+          (n.admin_notes = s || n.admin_notes),
           (n.reapply_after = new Date(Date.now() + 2592e6).toISOString()),
-          await mn(n.user_id, "user"),
-          await (0, w.logAdminAudit)("organizer.application_rejected", e, n.user_id, { reason: t }),
-          await wn(n.user_id, n.id, "rejected", t));
-      } else if ("request_info" === a) {
-        const t = (0, v.sanitizeText)(i?.notes ?? "", 500) || "Please provide additional information.";
-        ((n.status = "under_review"),
-          (n.admin_notes = t),
+          (n.info_requested_at = null),
+          await mn(n.user_id, "user", e),
+          await (0, w.logAdminAudit)("organizer.application_rejected", e, n.user_id, {
+            application: l,
+            from: d,
+            to: "rejected",
+            reason: o,
+            note: s || null,
+          }),
+          await wn(n.user_id, n.id, "rejected", o));
+      else if ("request_info" === a)
+        // ADM1 (F-ADM1-4): explicit `info_requested` status so the queue shows it and the applicant can
+        // resubmit (the applicant side reads the request from `admin_notes`).
+        ((n.status = "info_requested"),
+          (n.admin_notes = o),
+          (n.info_requested_at = r),
           (n.reviewed_by = e),
           (n.reviewed_at = r),
-          await (0, w.logAdminAudit)("organizer.application_info_requested", e, n.user_id),
-          await wn(n.user_id, n.id, "info_requested", t));
-      } else {
-        const t = (0, v.sanitizeText)(i?.reason ?? "", 200) || "Policy violation.";
+          await (0, w.logAdminAudit)("organizer.application_info_requested", e, n.user_id, {
+            application: l,
+            from: d,
+            to: "info_requested",
+            message: o,
+            note: s || null,
+          }),
+          await wn(n.user_id, n.id, "info_requested", o));
+      else
         ((n.status = "suspended"),
           (n.reviewed_by = e),
           (n.reviewed_at = r),
-          (n.rejection_reason = t),
-          (n.admin_notes = o),
-          await mn(n.user_id, "user"),
-          await (0, w.logAdminAudit)("organizer.application_suspended", e, n.user_id, { reason: t }),
-          await wn(n.user_id, n.id, "suspended", t));
-      }
+          (n.rejection_reason = o),
+          (n.admin_notes = s || n.admin_notes),
+          await mn(n.user_id, "user", e),
+          await (0, w.logAdminAudit)("organizer.application_suspended", e, n.user_id, {
+            application: l,
+            from: d,
+            to: "suspended",
+            reason: o,
+            note: s || null,
+          }),
+          await wn(n.user_id, n.id, "suspended", o));
       return (await Za(ne, Qt.applications), n);
     };
     r.mockGetOrganizerTrustScore = async (e) => {
@@ -5449,7 +5548,7 @@ __d(
         );
       };
     r.mockGetJoinRequestIntel = Pn;
-    r.mockAdminGetPlayerIntel = async (e) => {
+    r.mockAdminGetPlayerIntel = async (e, adm1Opts) => {
       await ei();
       try {
         await sn(e);
@@ -5478,24 +5577,32 @@ __d(
           audience: Qt.profiles.find((t) => t.id === e.user_id)?.audience ?? null,
         });
       }
+      // ADM1 (F-ADM1-14): the screen asks for an access record once per mount; plain refreshes after an
+      // adjustment do not flood the audit store.
       return (
-        await (0, w.logAdminAudit)("intel.accessed", e, null, { scope: "full", rows: t.length }),
+        adm1Opts?.logAccess &&
+          (await (0, w.logAdminAudit)("intel.accessed", e, null, { scope: "full", rows: t.length })),
         t.sort((e, t) => e.display_name.localeCompare(t.display_name))
       );
     };
     r.mockAdminAdjustRating = async (e, t, a, i, n) => {
       (await ei(), await sn(e));
-      const r = await Dn(t, a),
-        o = r.rating;
-      ((r.rating = (0, y.clampRating)(a, i)),
-        On(r),
+      // ADM1 (F-ADM1-12): a real reason is mandatory and stored with before/after values.
+      const r = (0, v.sanitizeText)(n ?? "", 200);
+      if (!r) throw new Error("E_A_REASON_IS_REQUIRED");
+      // ADM1 (F-ADM1-13): the player must exist, be in the admin's world (or a grant must be active),
+      // and already have a skill profile for that sport (no side-effect creation on the admin path).
+      if (!Qt.profiles.some((e) => e.id === t)) throw new Error("E_NO_SUCH_PLAYER");
+      await _n(e, un(t), "admin.adjust_rating");
+      const o = Qt.skillProfiles.find((e) => e.user_id === t && e.sport === a);
+      if (!o) throw new Error("E_NO_SKILL_PROFILE");
+      if ("number" != typeof i || !Number.isFinite(i)) throw new Error("E_INVALID_VALUE");
+      const s = o.rating;
+      ((o.rating = (0, y.clampRating)(a, i)),
+        On(o),
         await Za(jt, Qt.skillProfiles),
-        await (0, w.logAdminAudit)("skill.admin_adjusted", e, t, {
-          sport: a,
-          from: o,
-          to: r.rating,
-          note: (0, v.sanitizeText)(n ?? "", 120) || "manual adjustment",
-        }));
+        await (0, w.logAdminAudit)("skill.admin_adjusted", e, t, { sport: a, from: s, to: o.rating, reason: r }));
+      return { from: s, to: o.rating };
     };
     const Ln = (e) => {
         const t = new Date(e);
@@ -6626,6 +6733,8 @@ __d(
     };
     r.mockApplyVenue = async (e, t) => {
       (await ei(), await Dr());
+      // ADM1 (F-ADM1-19): administrators review venues, so they cannot also own one.
+      if (ro(e)) throw new Error("E_ADMINS_CANNOT_REGISTER_VENUES");
       let a = t.venue_id;
       if (a) {
         if (hr(a)) throw new Error("E_THIS_VENUE_IS_ALREADY_REGISTERED");
@@ -6741,6 +6850,8 @@ __d(
       const i = hr(t);
       return ((i.staff = i.staff.filter((e) => e.user_id !== a)), await Za(ce, Qt.venueProfiles), i);
     };
+    // ADM1 (F-ADM1-22/31): returns every venue registration (the screen labels it that way) as a slim
+    // DTO — no staff list, IBAN digits or policy text for a list view.
     r.mockGetPendingVenues = async (e) => (
       await ei(),
       await sn(e),
@@ -6749,16 +6860,49 @@ __d(
         .map((e) => ({ venue: fi().find((t) => t.id === e.venue_id), profile: e }))
         .filter((e) => !!e.venue)
         .sort((e, t) => ("pending" === e.profile.status ? -1 : 1) - ("pending" === t.profile.status ? -1 : 1))
+        .map(({ venue: e, profile: t }) => ({
+          venue: { id: e.id, name: e.name, area: e.area, sports: e.sports },
+          profile: {
+            venue_id: t.venue_id,
+            owner_id: t.owner_id,
+            status: t.status,
+            commission_type: t.commission_type,
+            commission_value: t.commission_value,
+            created_at: t.created_at,
+            reviewed_at: t.reviewed_at,
+            review_note: t.review_note,
+          },
+        }))
     );
+    // ADM1 (F-ADM1-22): allow-listed actions and a transition table for venue registrations.
+    const adm1VenueTransitions = {
+        pending: ["approve", "reject"],
+        approved: ["suspend"],
+        rejected: ["approve"],
+        suspended: ["approve"],
+      },
+      adm1MaxFixedCommissionKwd = 100;
     r.mockAdminReviewVenue = async (e, t, a, i) => {
       (await ei(), await sn(e));
       const n = hr(t);
       if (!n) throw new Error("E_VENUE_NOT_FOUND");
+      // ADM1 (F-ADM1-19): the reviewer must not be the venue owner.
+      if (n.owner_id === e)
+        throw (
+          await (0, w.logAdminAudit)("venue.self_review_blocked", e, t, { action: String(a) }),
+          new Error("E_YOU_CANNOT_REVIEW_YOUR_OWN")
+        );
+      if (!(adm1VenueTransitions[n.status] ?? []).includes(a)) throw new Error("E_INVALID_TRANSITION");
+      // ADM1 (F-ADM1-20): reject / suspend / re-activation need a reason that reaches the owner.
+      const r = (0, v.sanitizeText)(i ?? "", 300);
+      if (("approve" !== a || "pending" !== n.status) && !r) throw new Error("E_A_REASON_IS_REQUIRED");
+      const o = n.status,
+        s = "approve" === a ? "approved" : "reject" === a ? "rejected" : "suspended";
       return (
-        (n.status = "approve" === a ? "approved" : "reject" === a ? "rejected" : "suspended"),
+        (n.status = s),
         (n.reviewed_at = new Date().toISOString()),
         (n.reviewed_by = e),
-        (n.review_note = i ? (0, v.sanitizeText)(i, 300) : null),
+        (n.review_note = r || null),
         await Za(ce, Qt.venueProfiles),
         await bi({
           id: ea(),
@@ -6767,6 +6911,8 @@ __d(
           venue_id: t,
           venue_name: Ai(t),
           approved: "approve" === a,
+          decision: s,
+          note: r || null,
           read: !1,
           created_at: new Date().toISOString(),
         }),
@@ -6778,24 +6924,46 @@ __d(
               : "venue.application_suspended",
           e,
           n.owner_id,
-          { venue: t.slice(-6) },
+          { venue: t.slice(-6), from: o, to: s, reason: r || null },
         ),
         n
       );
     };
-    r.mockAdminSetCommission = async (e, t, a, i) => {
+    r.mockAdminSetCommission = async (e, t, a, i, n) => {
       (await ei(), await sn(e));
-      const n = hr(t);
-      if (!n) throw new Error("E_VENUE_NOT_FOUND");
+      const r = hr(t);
+      if (!r) throw new Error("E_VENUE_NOT_FOUND");
+      // ADM1 (F-ADM1-19): an admin cannot set the commission on a venue they own.
+      if (r.owner_id === e)
+        throw (
+          await (0, w.logAdminAudit)("venue.self_review_blocked", e, t, { action: "commission" }),
+          new Error("E_YOU_CANNOT_REVIEW_YOUR_OWN")
+        );
+      // ADM1 (F-ADM1-21): strict numeric validation, bounded values, mandatory reason, before/after audit.
+      if ("percentage" !== a && "fixed" !== a) throw new Error("E_INVALID_VALUE");
+      const o = "number" == typeof i ? i : Number(String(i ?? "").trim());
+      if (
+        !Number.isFinite(o) ||
+        o < 0 ||
+        ("percentage" === a && o > 100) ||
+        ("fixed" === a && o > adm1MaxFixedCommissionKwd)
+      )
+        throw new Error("E_INVALID_VALUE");
+      const s = (0, v.sanitizeText)(n ?? "", 200);
+      if (!s) throw new Error("E_A_REASON_IS_REQUIRED");
+      const d = `${r.commission_type}:${r.commission_value}`,
+        l = Math.round(100 * o) / 100;
       return (
-        (n.commission_type = a),
-        (n.commission_value = "percentage" === a ? Math.max(0, Math.min(100, i)) : Math.max(0, i)),
+        (r.commission_type = a),
+        (r.commission_value = l),
         await Za(ce, Qt.venueProfiles),
-        await (0, w.logAdminAudit)("venue.updated", e, n.owner_id, {
+        await (0, w.logAdminAudit)("venue.commission_changed", e, r.owner_id, {
           venue: t.slice(-6),
-          commission: `${a}:${n.commission_value}`,
+          from: d,
+          to: `${a}:${l}`,
+          reason: s,
         }),
-        n
+        r
       );
     };
     r.mockGetCourts = async (e, t) => {
@@ -7998,18 +8166,28 @@ __d(
     };
     r.mockGetAdminFinancials = async (e) => {
       (await ei(), await sn(e), await Dr(), await Cr());
+      // ADM1 (F-ADM1-23): pending and settled settlements are reported separately and gross is also
+      // given net of refunds; the legacy totals are kept for compatibility.
       const t = Qt.settlements,
-        a = Qt.payments;
+        a = Qt.payments,
+        i = t.filter((e) => "settled" === e.status),
+        n = t.filter((e) => "pending" === e.status),
+        r = (e, t) => (0, z.roundKwd)(e.reduce((e, a) => e + (a[t] ?? 0), 0)),
+        o = r(t, "gross_kwd"),
+        s = (0, z.roundKwd)(a.filter((e) => "refunded" === e.status).reduce((e, t) => e + t.amount_kwd, 0));
       return {
         venues: Qt.venueProfiles.filter((e) => "approved" === e.status).length,
         pendingVenues: Qt.venueProfiles.filter((e) => "pending" === e.status).length,
         bookings: Qt.courtBookings.filter((e) => "confirmed" === e.status || "released" === e.status).length,
-        grossKwd: (0, z.roundKwd)(t.reduce((e, t) => e + t.gross_kwd, 0)),
-        commissionKwd: (0, z.roundKwd)(t.reduce((e, t) => e + t.commission_kwd, 0)),
-        payoutsKwd: (0, z.roundKwd)(t.reduce((e, t) => e + t.net_to_venue_kwd, 0)),
-        refundsKwd: (0, z.roundKwd)(
-          a.filter((e) => "refunded" === e.status).reduce((e, t) => e + t.amount_kwd, 0),
-        ),
+        grossKwd: o,
+        netGrossKwd: (0, z.roundKwd)(o - s),
+        commissionKwd: r(t, "commission_kwd"),
+        commissionSettledKwd: r(i, "commission_kwd"),
+        commissionPendingKwd: r(n, "commission_kwd"),
+        payoutsKwd: r(t, "net_to_venue_kwd"),
+        payoutsSettledKwd: r(i, "net_to_venue_kwd"),
+        payoutsPendingKwd: r(n, "net_to_venue_kwd"),
+        refundsKwd: s,
         paidPlayers: a.filter((e) => "paid" === e.status).length,
       };
     };
@@ -12211,17 +12389,34 @@ __d(
         o
       );
     };
+    // ADM1 (F-ADM1-25): allow-listed actions and transition table for sanctions.
+    const adm1SanctionTransitions = { pending_approval: ["approve", "reject"], active: ["overturn"] };
     r.mockReviewSanction = async (e, t, a, i) => {
       (await ei(), await sn(e));
       const n = Qt.sanctions.find((e) => e.id === t);
-      if ((n && (await _n(e, un(n.user_id), "admin.review_sanction")), !n))
-        throw new Error("E_SANCTION_NOT_FOUND");
+      if (!n) throw new Error("E_SANCTION_NOT_FOUND");
+      await _n(e, un(n.user_id), "admin.review_sanction");
+      // ADM1 (F-ADM1-29): the issuer cannot approve, reject or overturn their own sanction.
+      if (n.issued_by === e)
+        throw (
+          await (0, w.logAdminAudit)("conduct.self_review_blocked", e, n.user_id, {
+            sanction: t.slice(-6),
+            action: String(a),
+          }),
+          new Error("E_YOU_CANNOT_REVIEW_YOUR_OWN")
+        );
+      if (!(adm1SanctionTransitions[n.status] ?? []).includes(a)) throw new Error("E_INVALID_TRANSITION");
+      // ADM1 (F-ADM1-24): every decision carries a note that is stored, audited and sent to the player.
+      const r = (0, v.sanitizeText)(i ?? "", 300);
+      if (!r) throw new Error("E_A_REASON_IS_REQUIRED");
+      const o = n.status,
+        s = "approve" === a ? "active" : "reject" === a ? "rejected" : "overturned";
       ((n.reviewed_by = e),
         (n.reviewed_at = new Date().toISOString()),
-        (n.review_note = i ? (0, v.sanitizeText)(i, 300) : null),
-        (n.status = "approve" === a ? "active" : "reject" === a ? "rejected" : "overturned"),
+        (n.review_note = r),
+        (n.status = s),
         await Za(gt, Qt.sanctions));
-      const r = "approve" === a;
+      const d = "approve" === a;
       return (
         await bi({
           id: ea(),
@@ -12229,27 +12424,42 @@ __d(
           type: "sanction_reviewed",
           sanction_id: n.id,
           sanction_type: n.type,
-          upheld: r,
+          upheld: d,
+          decision: s,
+          note: r,
           read: !1,
           created_at: new Date().toISOString(),
         }),
-        await (0, w.logAdminAudit)("conduct.sanction_reviewed", e, n.user_id, { decision: a, type: n.type }),
+        await (0, w.logAdminAudit)("conduct.sanction_reviewed", e, n.user_id, {
+          sanction: t.slice(-6),
+          decision: a,
+          type: n.type,
+          from: o,
+          to: s,
+          reason: r,
+        }),
         n
       );
     };
-    r.mockRestoreUser = async (e, t) => {
+    r.mockRestoreUser = async (e, t, a) => {
       (await ei(), await sn(e));
-      let a = 0;
-      for (const i of Qt.sanctions)
-        i.user_id !== t ||
-          "active" !== i.status ||
-          ("ban" !== i.type && "suspension" !== i.type) ||
-          ((i.status = "overturned"),
-          (i.reviewed_by = e),
-          (i.reviewed_at = new Date().toISOString()),
-          (a += 1));
+      // ADM1 (F-ADM1-26): same partition rule as every other conduct action, and a reason on record.
+      if (!Qt.profiles.some((e) => e.id === t)) throw new Error("E_NO_SUCH_PLAYER");
+      await _n(e, un(t), "admin.restore_user");
+      const i = (0, v.sanitizeText)(a ?? "", 300);
+      if (!i) throw new Error("E_A_REASON_IS_REQUIRED");
+      const n = [];
+      for (const a of Qt.sanctions)
+        a.user_id !== t ||
+          "active" !== a.status ||
+          ("ban" !== a.type && "suspension" !== a.type) ||
+          ((a.status = "overturned"),
+          (a.reviewed_by = e),
+          (a.reviewed_at = new Date().toISOString()),
+          (a.review_note = i),
+          n.push(a.id.slice(-6)));
       return (
-        a &&
+        n.length &&
           (await Za(gt, Qt.sanctions),
           await bi({
             id: ea(),
@@ -12258,11 +12468,19 @@ __d(
             sanction_id: "restore",
             sanction_type: "ban",
             upheld: !1,
+            decision: "overturned",
+            note: i,
             read: !1,
             created_at: new Date().toISOString(),
           }),
-          await (0, w.logAdminAudit)("conduct.user_restored", e, t, { lifted: a })),
-        a
+          await (0, w.logAdminAudit)("conduct.user_restored", e, t, {
+            lifted: n.length,
+            sanctions: n,
+            from: "active",
+            to: "overturned",
+            reason: i,
+          })),
+        n.length
       );
     };
     const pd = (e) =>
@@ -12291,7 +12509,8 @@ __d(
     };
     r.mockGetConductAdminStats = async (e) => {
       (await ei(), await sn(e));
-      const t = Qt.sanctions,
+      // ADM1 (F-ADM1-10): tiles are computed over the same partitioned set as the incident queue.
+      const t = adm1Visible(e, Qt.sanctions, (e) => un(e.user_id)),
         a = (e) => t.filter((t) => t.type === e && "active" === t.status).length,
         i = Qt.profiles.filter((e) => "admin" !== e.role && "analyst" !== e.role),
         n = new Set(
