@@ -17,7 +17,7 @@ Files: bundle-src/631.js (backend), 671.js, 674.js, 909.js, 18.js and 1809.js (r
 - F-ORG1-13: Fixed — resubmission appends the previous application to a `history` array instead of overwriting it, and the velocity flag counts submissions across that history.
 - F-ORG1-14: Fixed — the identity document is now captured as an image (file picker, 700 KB cap) and stored as a media reference; the store rejects an application without one.
 - F-ORG1-15: Fixed — the applicant endpoint returns a slim DTO without risk flags, document/phone hashes or reviewer identity (verified in the flow test).
-- F-ORG1-16: Partially fixed — `mockGetBooking` now checks the caller, and the applicant DTO is slim; the remaining organizer read endpoints still take only the organizer id, which is safe while the store is client-side but must gain caller checks with the server.
+- F-ORG1-16: Fixed — `mockGetBooking` checks the caller, the applicant DTO is slim, and the five organizer read endpoints (matches, stats, ratings, series, referral stats) now take the caller and refuse anyone who is neither that organizer nor an admin. The private invite code is stripped for every reader but the organizer. `tools/rules.mjs` asserts all seven cases.
 - F-ORG1-17: Fixed — series creation validates the same inputs as match creation plus start date, end date after start, and a per-organizer rate limit.
 - F-ORG1-18: Fixed — invalid enums, non-integer capacity and out-of-range price are rejected with specific errors instead of being clamped (verified in tools/rules.mjs).
 - F-ORG1-19: Partially fixed — organizer-created venues are tagged with `custom` and `created_by` and the creation is audited; making them private until reviewed still needs a venue moderation flow.

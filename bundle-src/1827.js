@@ -14,6 +14,8 @@ __d(
           [rsn, setRsn] = (0, l.useState)(""),
           [busy, setBusy] = (0, l.useState)(!1),
           gate = (0, G9.useRoleGate)(["admin"]),
+          // ADM2 (F-ADM2-11/24): nothing measured yet reads as an em dash, never as a real 0%.
+          pct9 = (n9) => (null == n9 ? h("noDataDash") : `${(0, v.formatNumber)(n9)}%`),
           M = (0, l.useCallback)(async () => {
             if (t) {
               L(null);
@@ -85,15 +87,19 @@ __d(
                     style: { marginBottom: w.spacing.lg },
                     children: [
                       (0, B.jsx)(c.default, {
-                        style: [w.typography.h3, { color: o.text, marginBottom: w.spacing.sm }],
+                        style: [w.typography.h3, { color: o.text }],
                         children: h("demandPerfTitle"),
+                      }),
+                      (0, B.jsx)(c.default, {
+                        style: [w.typography.caption, { color: o.textMuted, marginBottom: w.spacing.sm }],
+                        children: h("demandPerfBaselineNote"),
                       }),
                       (0, B.jsxs)(u.default, {
                         style: D.grid,
                         children: [
                           (0, B.jsx)(W, {
                             label: h("perfAccuracy"),
-                            value: `${(0, v.formatNumber)(N.fillAccuracyPct)}%`,
+                            value: pct9(N.fillAccuracyPct),
                             colors: o,
                             accent: !0,
                           }),
@@ -104,12 +110,12 @@ __d(
                           }),
                           (0, B.jsx)(W, {
                             label: h("perfAvgPredicted"),
-                            value: `${(0, v.formatNumber)(N.avgPredictedFill)}%`,
+                            value: pct9(N.avgPredictedFill),
                             colors: o,
                           }),
                           (0, B.jsx)(W, {
                             label: h("perfAvgActual"),
-                            value: `${(0, v.formatNumber)(N.avgActualFill)}%`,
+                            value: pct9(N.avgActualFill),
                             colors: o,
                           }),
                           (0, B.jsx)(W, {
@@ -119,7 +125,47 @@ __d(
                           }),
                           (0, B.jsx)(W, {
                             label: h("perfAcceptRate"),
-                            value: `${(0, v.formatNumber)(N.acceptRatePct)}%`,
+                            value: pct9(N.acceptRatePct),
+                            colors: o,
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                N &&
+                  (0, B.jsxs)(f.Card, {
+                    style: { marginBottom: w.spacing.lg },
+                    children: [
+                      (0, B.jsx)(c.default, {
+                        style: [w.typography.h3, { color: o.text }],
+                        children: h("demandRiskTitle"),
+                      }),
+                      (0, B.jsx)(c.default, {
+                        style: [w.typography.caption, { color: o.textMuted, marginBottom: w.spacing.sm }],
+                        children: h("demandRiskNote"),
+                      }),
+                      (0, B.jsxs)(u.default, {
+                        style: D.grid,
+                        children: [
+                          (0, B.jsx)(W, {
+                            label: h("perfRiskSeparation"),
+                            value: pct9(N.riskSeparationPct),
+                            colors: o,
+                            accent: !0,
+                          }),
+                          (0, B.jsx)(W, {
+                            label: h("perfRiskEvaluated"),
+                            value: (0, v.formatNumber)(N.riskEvaluated ?? 0),
+                            colors: o,
+                          }),
+                          (0, B.jsx)(W, {
+                            label: h("perfRiskCancelled"),
+                            value: pct9(N.riskCancelledAvgPct),
+                            colors: o,
+                          }),
+                          (0, B.jsx)(W, {
+                            label: h("perfRiskCompleted"),
+                            value: pct9(N.riskCompletedAvgPct),
                             colors: o,
                           }),
                         ],

@@ -66,6 +66,28 @@ const out = await page.evaluate(async (ids) => {
   res.selfKeepsCode = selfRows.some((r) => r.visibility === 'private' && !!r.invite_code);
   res.adminSeesCode = adminRows.some((r) => !!r.invite_code);
 
+  // --- the demand model statistics move with the weights (F-ADM2-12) ---
+  const mk = (vis) => ({
+    sport: 'football', title: 'Weighted model probe', format: 'football_5v5', skill_level: 'all',
+    starts_at: new Date(Date.now() + 2592e5).toISOString(),
+    ends_at: new Date(Date.now() + 2592e5 + 54e5).toISOString(),
+    max_players: 10, price_kwd: 3, venue_id: anyGame?.venue_id, visibility: vis, approval_mode: 'auto',
+  });
+  const probe = await api.createMatch(ids.organizer, mk('public')).catch(() => null);
+  res.probeCancelled = probe
+    ? await code(() => api.cancelMatch(probe.id, ids.organizer, 'weighted model probe'))
+    : 'no-probe';
+  await api.setDemandWeights(ids.admin, { cancelLowFill: 0.3 }, 'rules baseline');
+  const low = await api.fetchDemandModelStats(ids.admin).catch(() => null);
+  await api.setDemandWeights(ids.admin, { cancelLowFill: 0.9 }, 'rules sensitivity probe');
+  const high = await api.fetchDemandModelStats(ids.admin).catch(() => null);
+  res.riskEvaluated = low?.riskEvaluated ?? 0;
+  res.riskLow = low?.riskCancelledAvgPct ?? null;
+  res.riskHigh = high?.riskCancelledAvgPct ?? null;
+  res.fillModelLabel = low?.fillModel ?? null;
+  res.fillUnchanged = low?.fillAccuracyPct === high?.fillAccuracyPct;
+  await api.setDemandWeights(ids.admin, { cancelLowFill: 0.3 }, 'rules restore');
+
   // --- self review ---
   const apps = JSON.parse(localStorage.getItem('playora.mock.applications.v1') || '[]');
   res.appsSeen = apps.length;
@@ -98,6 +120,11 @@ ok('an organizer can read their own matches', out.orgMatchesSelf === 'accepted',
 ok('an admin can read an organizer\u2019s matches', out.orgMatchesAdmin === 'accepted', out.orgMatchesAdmin);
 ok('the organizer keeps their own invite codes', out.selfHasPrivate && out.selfKeepsCode, `private=${out.selfHasPrivate} code=${out.selfKeepsCode}`);
 ok('an admin never sees an invite code', out.adminSeesCode === false, String(out.adminSeesCode));
+ok('the probe match was cancelled', out.probeCancelled === 'accepted', String(out.probeCancelled));
+ok('the weighted model has something to score', out.riskEvaluated > 0, String(out.riskEvaluated));
+ok('the weighted risk figure moves with the weights', out.riskLow !== null && out.riskHigh !== null && out.riskLow !== out.riskHigh, `${out.riskLow} -> ${out.riskHigh}`);
+ok('the baseline fill tiles are labelled as baseline', out.fillModelLabel === 'baseline', String(out.fillModelLabel));
+ok('the baseline fill accuracy does not move with the weights', out.fillUnchanged === true, String(out.fillUnchanged));
 ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
 await browser.close();
 console.log(results.join('\n'));

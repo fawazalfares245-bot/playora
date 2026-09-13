@@ -14,6 +14,8 @@ __d(
           [rsn, setRsn] = (0, l.useState)(""),
           [busy, setBusy] = (0, l.useState)(!1),
           gate = (0, G9.useRoleGate)(["admin"]),
+          // ADM2 (F-ADM2-11/24): nothing measured yet reads as an em dash, never as a real 0%.
+          pct9 = (n9) => (null == n9 ? h("noDataDash") : `${(0, w.formatNumber)(n9)}%`),
           E = (0, l.useCallback)(async () => {
             if (t) {
               V(null);
@@ -103,18 +105,18 @@ __d(
                           }),
                           (0, A.jsx)(z, {
                             label: h("statAccuracy"),
-                            value: `${(0, w.formatNumber)(W.accuracyPct)}%`,
+                            value: pct9(W.accuracyPct),
                             colors: o,
                             accent: !0,
                           }),
                           (0, A.jsx)(z, {
                             label: h("statAvgPredicted"),
-                            value: `${(0, w.formatNumber)(W.avgPredictedFill)}%`,
+                            value: pct9(W.avgPredictedFill),
                             colors: o,
                           }),
                           (0, A.jsx)(z, {
                             label: h("statAvgActual"),
-                            value: `${(0, w.formatNumber)(W.avgActualFill)}%`,
+                            value: pct9(W.avgActualFill),
                             colors: o,
                           }),
                         ],

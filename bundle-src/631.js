@@ -12197,8 +12197,8 @@ __d(
         predictions: a.length,
         evaluated: o,
         accuracyPct: o ? Math.round(100 - i / o) : null,
-        avgPredictedFill: a.length ? Math.round(n / a.length) : 0,
-        avgActualFill: o ? Math.round(r / o) : 0,
+        avgPredictedFill: a.length ? Math.round(n / a.length) : null,
+        avgActualFill: o ? Math.round(r / o) : null,
       };
     };
     const ad = (e) => {
@@ -12926,7 +12926,6 @@ __d(
       for (const e of d9) {
         const t = Qt.bookings.filter((t) => t.game_id === e.id && "confirmed" === t.status).length,
           a = (new Date(e.starts_at).getTime() - new Date(e.created_at).getTime()) / 36e5,
-          i = Zi ? 0 : 0,
           n = (0, O.cancellationRisk)(
             {
               organizerCancelRate: 0,

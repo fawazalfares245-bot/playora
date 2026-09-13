@@ -12,8 +12,8 @@ Files: bundle-src/631.js, 644.js (CSV), 671.js, 674.js, 909.js, 1805.js (admin p
 - F-ADM2-8: Fixed — the fraud empty state uses its own body text.
 - F-ADM2-9: Fixed — fraud signals carry an id and a review record; reviewing one requires a reason, is audited, and reviewed signals are hidden behind a toggle.
 - F-ADM2-10: Fixed — concierge bounds are exported from the store (`CONCIERGE_BOUNDS`) and applied server-side with the same step rounding the UI uses.
-- F-ADM2-11: Partially fixed — the accuracy tile now comes from the same validated payload; showing "—" for a zero denominator is applied where the store reports one (evaluated count), but the concierge statistic still reports 0% when nothing has been evaluated.
-- F-ADM2-12: Not fixed — the demand model statistics still come from the baseline predictor rather than the tuned weights; making them reflect the weights is a modelling change, not a defect fix.
+- F-ADM2-11: Fixed — every rate the store cannot measure yet is returned as null instead of 0, and both the concierge and demand screens render "—" for it. `tools/rules.mjs` asserts the store side; `node tools/smoke.mjs /admin/demand --role admin` shows the dashes.
+- F-ADM2-12: Fixed — the screen now carries two cards. The baseline fill predictor is labelled as such and says in words that it does not move with the weights. A new "Weighted risk model" card scores every cancelled or completed match with the current cancellation weights and reports the average risk for each group plus their separation, so the numbers move when the weights do. `tools/rules.mjs` cancels a probe match and asserts the weighted figure moves (35 → 59 at the time of writing) while the baseline figure does not.
 - F-ADM2-13: Fixed — saving optimizer weights re-fetches the dashboard so the feature-importance bars match the saved values.
 - F-ADM2-14: Fixed — the export button is hidden on tabs without a report, and it exports the selected tab instead of silently substituting the executive report.
 - F-ADM2-15: Fixed — `toCsv` prefixes values starting with `= + - @`, tab or carriage return with an apostrophe (verified in the flow test).
@@ -25,4 +25,4 @@ Files: bundle-src/631.js, 644.js (CSV), 671.js, 674.js, 909.js, 1805.js (admin p
 - F-ADM2-21: Fixed — the feed screen distinguishes authorization from other failures and offers Retry.
 - F-ADM2-22: Fixed — analysts now see exactly the two screens the backend allows (Insights and Feed analytics) and get the shared "Administrators only" screen elsewhere; the panel label is localized.
 - F-ADM2-23: Fixed — "Player intelligence" is listed in the admin panel.
-- F-ADM2-24: Partially fixed — zero-denominator tiles use the shared "—" string where the store reports the denominator; the attended/confirmed predicate is unchanged.
+- F-ADM2-24: Fixed — zero-denominator tiles render "—" on both analytics screens, and the attended/confirmed predicate is now mutually exclusive, so a booking can no longer be counted twice.

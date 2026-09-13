@@ -4,6 +4,13 @@ __d(
     i.translations = {
       en: {
         // --- XC keys (fix batch) ---
+        demandPerfBaselineNote: "Baseline fill predictor. These figures do not move when you change the weights below.",
+        demandRiskTitle: "Weighted risk model",
+        demandRiskNote: "Scored with the weights below, so these figures move when you change them. A healthy model scores cancelled matches higher than matches that went ahead.",
+        perfRiskEvaluated: "Matches scored",
+        perfRiskCancelled: "Avg risk, cancelled",
+        perfRiskCompleted: "Avg risk, went ahead",
+        perfRiskSeparation: "Separation",
         homeSearchPlaceholder: "Search venue, area or organiser\u2026",
         homeSearchLabel: "Search games by venue, area or organiser",
         homeSearchClear: "Clear search",
@@ -3449,6 +3456,13 @@ __d(
       },
       ar: {
         // --- XC keys (fix batch) ---
+        demandPerfBaselineNote: "\u0645\u062a\u0646\u0628\u0626 \u0627\u0644\u0625\u0634\u063a\u0627\u0644 \u0627\u0644\u0623\u0633\u0627\u0633\u064a. \u0647\u0630\u0647 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0644\u0627 \u062a\u062a\u063a\u064a\u0631 \u0639\u0646\u062f \u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u0623\u0648\u0632\u0627\u0646 \u0623\u062f\u0646\u0627\u0647.",
+        demandRiskTitle: "\u0646\u0645\u0648\u0630\u062c \u0627\u0644\u0645\u062e\u0627\u0637\u0631 \u0627\u0644\u0645\u0648\u0632\u0648\u0646",
+        demandRiskNote: "\u062a\u064f\u062d\u0633\u0628 \u0628\u0627\u0644\u0623\u0648\u0632\u0627\u0646 \u0623\u062f\u0646\u0627\u0647\u060c \u0644\u0630\u0627 \u062a\u062a\u063a\u064a\u0631 \u0639\u0646\u062f \u062a\u0639\u062f\u064a\u0644\u0647\u0627. \u0627\u0644\u0646\u0645\u0648\u0630\u062c \u0627\u0644\u062c\u064a\u062f \u064a\u0639\u0637\u064a \u0627\u0644\u0645\u0628\u0627\u0631\u064a\u0627\u062a \u0627\u0644\u0645\u0644\u063a\u0627\u0629 \u062f\u0631\u062c\u0629 \u0623\u0639\u0644\u0649 \u0645\u0646 \u0627\u0644\u0645\u0628\u0627\u0631\u064a\u0627\u062a \u0627\u0644\u062a\u064a \u0623\u0642\u064a\u0645\u062a.",
+        perfRiskEvaluated: "\u0645\u0628\u0627\u0631\u064a\u0627\u062a \u0645\u064f\u0642\u064a\u0651\u0645\u0629",
+        perfRiskCancelled: "\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0645\u062e\u0627\u0637\u0631\u0629 \u0644\u0644\u0645\u0644\u063a\u0627\u0629",
+        perfRiskCompleted: "\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0645\u062e\u0627\u0637\u0631\u0629 \u0644\u0645\u0627 \u0623\u0642\u064a\u0645",
+        perfRiskSeparation: "\u0627\u0644\u0641\u0627\u0631\u0642",
         homeSearchPlaceholder: "\u0627\u0628\u062d\u062b \u0628\u0627\u0633\u0645 \u0627\u0644\u0645\u0644\u0639\u0628 \u0623\u0648 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0623\u0648 \u0627\u0644\u0645\u0646\u0638\u0651\u0645\u2026",
         homeSearchLabel: "\u0627\u0644\u0628\u062d\u062b \u0639\u0646 \u0627\u0644\u0645\u0628\u0627\u0631\u064a\u0627\u062a \u0628\u0627\u0633\u0645 \u0627\u0644\u0645\u0644\u0639\u0628 \u0623\u0648 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0623\u0648 \u0627\u0644\u0645\u0646\u0638\u0651\u0645",
         homeSearchClear: "\u0645\u0633\u062d \u0627\u0644\u0628\u062d\u062b",
