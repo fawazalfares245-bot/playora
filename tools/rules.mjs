@@ -115,6 +115,23 @@ const out = await page.evaluate(async (ids) => {
   const directory2 = await api.fetchVenues().catch(() => []);
   res.customVenueInDirectoryAfter = directory2.some((v) => v.id === res.customVenueId);
 
+  // --- the privileged action log is admin-only and readable in the product (F-XC-7 / F-ADM1-32) ---
+  res.auditNonAdmin = await code(() => api.fetchAdminAuditLog(ids.user, {}));
+  res.auditAnalyst = await code(() => api.fetchAdminAuditLog(ids.analyst, {}));
+  res.auditAdmin = await code(() => api.fetchAdminAuditLog(ids.admin, {}));
+  const log = await api.fetchAdminAuditLog(ids.admin, {}).catch(() => null);
+  res.auditHasRows = (log?.rows?.length ?? 0) > 0;
+  res.auditRowShape = log?.rows?.[0]
+    ? ['id', 'at', 'type', 'actor_id', 'target_id', 'device', 'meta'].every((k) => k in log.rows[0])
+    : false;
+  res.auditNamesActor = log?.rows?.some((r) => !!r.actor_id) ?? false;
+  const narrowed = log?.rows?.[0]
+    ? await api.fetchAdminAuditLog(ids.admin, { type: log.rows[0].type }).catch(() => null)
+    : null;
+  res.auditTypeFilter = narrowed ? narrowed.rows.every((r) => r.type === log.rows[0].type) : false;
+  const noMatch = await api.fetchAdminAuditLog(ids.admin, { query: 'zzzz-no-such-actor' }).catch(() => null);
+  res.auditQueryFilter = (noMatch?.rows?.length ?? -1) === 0;
+
   // --- self review ---
   const apps = JSON.parse(localStorage.getItem('playora.mock.applications.v1') || '[]');
   res.appsSeen = apps.length;
@@ -159,6 +176,14 @@ ok('the typed-in venue is absent from the public venue list', out.customVenueInD
 ok('the typed-in venue lands in the admin review queue', out.customVenueInQueue === true, String(out.customVenueInQueue));
 ok('approving the registration lists the venue', out.customVenueListedAfterApproval === true, String(out.customVenueListedAfterApproval));
 ok('the approved venue appears in the public venue list', out.customVenueInDirectoryAfter === true, String(out.customVenueInDirectoryAfter));
+ok('a player cannot read the admin activity log', out.auditNonAdmin === 'E_ADMINISTRATOR_AUTHORIZATION_REQUIRED', out.auditNonAdmin);
+ok('an analyst cannot read the admin activity log', out.auditAnalyst === 'E_ADMINISTRATOR_AUTHORIZATION_REQUIRED', out.auditAnalyst);
+ok('an admin can read the admin activity log', out.auditAdmin === 'accepted', out.auditAdmin);
+ok('the log has rows after this run\u2019s admin actions', out.auditHasRows === true, String(out.auditHasRows));
+ok('each row carries actor, target, device and meta', out.auditRowShape === true, String(out.auditRowShape));
+ok('rows name the acting admin by id', out.auditNamesActor === true, String(out.auditNamesActor));
+ok('filtering by action type narrows the log', out.auditTypeFilter === true, String(out.auditTypeFilter));
+ok('a free-text query that matches nothing returns nothing', out.auditQueryFilter === true, String(out.auditQueryFilter));
 ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
 await browser.close();
 console.log(results.join('\n'));

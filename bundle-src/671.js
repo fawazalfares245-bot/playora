@@ -127,6 +127,7 @@ __d(
         e.fetchPrivacy =
         e.fetchPlayerProfile =
         e.fetchPlayerAwards =
+        e.fetchAdminAuditLog =
         e.fetchPendingVenues =
         e.fetchPendingCeremony =
         e.fetchPayment =
@@ -515,6 +516,7 @@ __d(
     e.addVenueStaff = (o, c, s, n) => t.store.mockAddVenueStaff(o, c, s, n);
     e.removeVenueStaff = (o, c, s) => t.store.mockRemoveVenueStaff(o, c, s);
     e.fetchPendingVenues = (o) => t.store.mockGetPendingVenues(o);
+    e.fetchAdminAuditLog = (o, c) => t.store.mockGetAdminAuditLog(o, c);
     e.reviewVenue = (o, c, s, n) => t.store.mockAdminReviewVenue(o, c, s, n);
     e.setVenueCommission = (o, c, s, n, l) => t.store.mockAdminSetCommission(o, c, s, n, l);
     e.fetchAdminFinancials = (o) => t.store.mockGetAdminFinancials(o);

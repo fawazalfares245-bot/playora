@@ -825,6 +825,14 @@ __d(
                             onPress: () => J.push("/admin/optimizer"),
                             colors: q,
                           }),
+                          // XC (F-XC-7) / ADM1 (F-ADM1-32): the privileged action log is reachable in
+                          // the product, not only through devtools.
+                          (0, L.jsx)(O, {
+                            icon: "document-text-outline",
+                            title: X("adminAuditLink"),
+                            onPress: () => J.push("/admin/audit"),
+                            colors: q,
+                          }),
                         ],
                       }),
                   ],

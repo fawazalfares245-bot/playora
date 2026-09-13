@@ -198,6 +198,7 @@ __d(
         "./(tabs)/profile.tsx": { enumerable: !0, get: () => r(d[7]) },
         "./_layout.tsx": { enumerable: !0, get: () => r(d[8]) },
         "./admin/application/[id].tsx": { enumerable: !0, get: () => r(d[9]) },
+        "./admin/audit.tsx": { enumerable: !0, get: () => r(d[90]) },
         "./admin/awards.tsx": { enumerable: !0, get: () => r(d[10]) },
         "./admin/concierge.tsx": { enumerable: !0, get: () => r(d[11]) },
         "./admin/conduct.tsx": { enumerable: !0, get: () => r(d[12]) },
@@ -292,7 +293,7 @@ __d(
   },
   18,
   [
-    19, 613, 917, 1619, 1622, 1629, 1677, 1805, 1809, 1823, 1824, 1825, 1826, 1827, 1828, 1829, 1830, 1831, 1832, 1833, 1834, 1835, 1836, 1837, 1838, 1840, 1842, 1843, 1847, 2370, 2371, 2372, 2373, 2374, 2375, 2376, 2378, 2379, 2444, 2445, 2446, 2447, 2448, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2465, 2466, 2468, 2470, 2471, 2472, 2473, 2474, 2475, 2476, 2477, 2478, 2479, 2480, 2481, 2483, 2484, 2485, 2486, 2487, 2488, 2489, 2495, 2496, 2497, 2498, 2499, 2500, 2501, 2502, 2503, 2504, 2505, 2506, 9002,
+    19, 613, 917, 1619, 1622, 1629, 1677, 1805, 1809, 1823, 1824, 1825, 1826, 1827, 1828, 1829, 1830, 1831, 1832, 1833, 1834, 1835, 1836, 1837, 1838, 1840, 1842, 1843, 1847, 2370, 2371, 2372, 2373, 2374, 2375, 2376, 2378, 2379, 2444, 2445, 2446, 2447, 2448, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2465, 2466, 2468, 2470, 2471, 2472, 2473, 2474, 2475, 2476, 2477, 2478, 2479, 2480, 2481, 2483, 2484, 2485, 2486, 2487, 2488, 2489, 2495, 2496, 2497, 2498, 2499, 2500, 2501, 2502, 2503, 2504, 2505, 2506, 9002, 9003,
   ],
 );
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){return(0,t.jsx)(n.Stack,{screenOptions:{headerShown:!1,animation:'fade'}})};var n=r(d[0]),t=r(d[1])},19,[20,13]);
@@ -6129,6 +6130,51 @@ __d(
         (a.revoked_by = e),
         await Za(ht, Qt.crossPartitionGrants),
         await (0, w.logAdminAudit)("partition.revoked", e, a.admin_id, { grant: a.id.slice(-6) }));
+    };
+    // XC (F-XC-7) / ADM1 (F-ADM1-32): the privileged action log is readable in the product, not only
+    // in devtools. Admin-only, newest first, optionally narrowed by action type or free text.
+    r.mockGetAdminAuditLog = async (e, t) => {
+      (await ei(), await sn(e));
+      const rows9 = await (0, w.readAdminAudit)(),
+        q9 = String(t?.query ?? "")
+          .trim()
+          .toLowerCase(),
+        ty9 = t?.type ? String(t.type) : null,
+        lim9 = Math.max(1, Math.min(500, Number(t?.limit) || 200)),
+        nm9 = (id9) => {
+          if (!id9) return null;
+          const pr9 = Qt.profiles.find((p9) => p9.id === id9);
+          return pr9?.full_name ?? null;
+        },
+        all9 = rows9.map((r9) => ({
+          id: r9.id,
+          at: r9.at,
+          type: r9.type,
+          actor_id: r9.actor ?? null,
+          actor_name: nm9(r9.actor),
+          actor_ref: r9.actorRef ?? null,
+          target_id: r9.target ?? null,
+          target_name: nm9(r9.target),
+          device: r9.device ?? null,
+          meta: r9.meta ?? {},
+        }));
+      return {
+        total: all9.length,
+        types: [...new Set(all9.map((r9) => r9.type))].sort(),
+        rows: all9
+          .filter((r9) => !ty9 || r9.type === ty9)
+          .filter(
+            (r9) =>
+              !q9 ||
+              [r9.type, r9.actor_name, r9.actor_id, r9.target_name, r9.target_id, JSON.stringify(r9.meta)]
+                .some((v9) =>
+                  String(v9 ?? "")
+                    .toLowerCase()
+                    .includes(q9),
+                ),
+          )
+          .slice(0, lim9),
+      };
     };
     r.mockGetCrossPartitionGrants = async (e) => (
       await ei(),
@@ -19286,6 +19332,7 @@ __d(
         e.fetchPrivacy =
         e.fetchPlayerProfile =
         e.fetchPlayerAwards =
+        e.fetchAdminAuditLog =
         e.fetchPendingVenues =
         e.fetchPendingCeremony =
         e.fetchPayment =
@@ -19674,6 +19721,7 @@ __d(
     e.addVenueStaff = (o, c, s, n) => t.store.mockAddVenueStaff(o, c, s, n);
     e.removeVenueStaff = (o, c, s) => t.store.mockRemoveVenueStaff(o, c, s);
     e.fetchPendingVenues = (o) => t.store.mockGetPendingVenues(o);
+    e.fetchAdminAuditLog = (o, c) => t.store.mockGetAdminAuditLog(o, c);
     e.reviewVenue = (o, c, s, n) => t.store.mockAdminReviewVenue(o, c, s, n);
     e.setVenueCommission = (o, c, s, n, l) => t.store.mockAdminSetCommission(o, c, s, n, l);
     e.fetchAdminFinancials = (o) => t.store.mockGetAdminFinancials(o);
@@ -20576,6 +20624,14 @@ __d(
     i.translations = {
       en: {
         // --- XC keys (fix batch) ---
+        adminAuditTitle: "Admin activity log",
+        adminAuditSubtitle: "%{shown} of %{total} privileged actions on this device",
+        adminAuditSearchPlaceholder: "Search actor, target or detail\u2026",
+        adminAuditActorLine: "By %{actor} \u00b7 on %{target}",
+        adminAuditUnknownActor: "Unknown actor",
+        adminAuditEmptyTitle: "Nothing recorded yet",
+        adminAuditEmptyBody: "Privileged actions such as approvals, sanctions and setting changes appear here as they happen.",
+        adminAuditLink: "Admin activity log",
         biHealthMeasured: "Measured on this device",
         biHealthSimulated: "Not measured",
         biHealthSimulatedNote: "These three are placeholder values. Nothing on the device measures uptime, latency or error rate, so treat them as illustrative until a server reports them.",
@@ -24031,6 +24087,14 @@ __d(
       },
       ar: {
         // --- XC keys (fix batch) ---
+        adminAuditTitle: "\u0633\u062c\u0644 \u0646\u0634\u0627\u0637 \u0627\u0644\u0645\u0634\u0631\u0641\u064a\u0646",
+        adminAuditSubtitle: "%{shown} \u0645\u0646 %{total} \u0625\u062c\u0631\u0627\u0621\u064b \u0645\u0645\u064a\u0651\u0632\u064b\u0627 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632",
+        adminAuditSearchPlaceholder: "\u0627\u0628\u062d\u062b \u0641\u064a \u0627\u0644\u0645\u0646\u0641\u0651\u0630 \u0623\u0648 \u0627\u0644\u0647\u062f\u0641 \u0623\u0648 \u0627\u0644\u062a\u0641\u0627\u0635\u064a\u0644\u2026",
+        adminAuditActorLine: "\u0628\u0648\u0627\u0633\u0637\u0629 %{actor} \u00b7 \u0639\u0644\u0649 %{target}",
+        adminAuditUnknownActor: "\u0645\u0646\u0641\u0651\u0630 \u063a\u064a\u0631 \u0645\u0639\u0631\u0648\u0641",
+        adminAuditEmptyTitle: "\u0644\u0627 \u064a\u0648\u062c\u062f \u0634\u064a\u0621 \u0645\u0633\u062c\u0651\u0644 \u0628\u0639\u062f",
+        adminAuditEmptyBody: "\u062a\u0638\u0647\u0631 \u0647\u0646\u0627 \u0627\u0644\u0625\u062c\u0631\u0627\u0621\u0627\u062a \u0627\u0644\u0645\u0645\u064a\u0632\u0629 \u0645\u062b\u0644 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a \u0648\u0627\u0644\u0639\u0642\u0648\u0628\u0627\u062a \u0648\u062a\u063a\u064a\u064a\u0631 \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0641\u0648\u0631 \u062d\u062f\u0648\u062b\u0647\u0627.",
+        adminAuditLink: "\u0633\u062c\u0644 \u0646\u0634\u0627\u0637 \u0627\u0644\u0645\u0634\u0631\u0641\u064a\u0646",
         biHealthMeasured: "\u0645\u0642\u0627\u0633\u0629 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632",
         biHealthSimulated: "\u063a\u064a\u0631 \u0645\u0642\u0627\u0633\u0629",
         biHealthSimulatedNote: "\u0647\u0630\u0647 \u0627\u0644\u0642\u064a\u0645 \u0627\u0644\u062b\u0644\u0627\u062b \u062a\u0642\u0631\u064a\u0628\u064a\u0629. \u0644\u0627 \u0634\u064a\u0621 \u0639\u0644\u0649 \u0627\u0644\u062c\u0647\u0627\u0632 \u064a\u0642\u064a\u0633 \u0632\u0645\u0646 \u0627\u0644\u062a\u0634\u063a\u064a\u0644 \u0623\u0648 \u0627\u0644\u0627\u0633\u062a\u062c\u0627\u0628\u0629 \u0623\u0648 \u0646\u0633\u0628\u0629 \u0627\u0644\u0623\u062e\u0637\u0627\u0621\u060c \u0641\u0627\u0639\u062a\u0628\u0631\u0647\u0627 \u0625\u064a\u0636\u0627\u062d\u064a\u0629 \u062d\u062a\u0649 \u064a\u0648\u0641\u0631\u0647\u0627 \u0627\u0644\u062e\u0627\u062f\u0645.",
@@ -34101,6 +34165,14 @@ __d(
                             icon: "hardware-chip-outline",
                             title: X("adminOptimizerTitle"),
                             onPress: () => J.push("/admin/optimizer"),
+                            colors: q,
+                          }),
+                          // XC (F-XC-7) / ADM1 (F-ADM1-32): the privileged action log is reachable in
+                          // the product, not only through devtools.
+                          (0, L.jsx)(O, {
+                            icon: "document-text-outline",
+                            title: X("adminAuditLink"),
+                            onPress: () => J.push("/admin/audit"),
                             colors: q,
                           }),
                         ],
@@ -49509,6 +49581,297 @@ __d(
   },
   9002,
   [20, 13],
+);
+__d(
+  function (g, _r, _i, a, m, e, d) {
+    // XC (F-XC-7) / ADM1 (F-ADM1-32): the privileged-action log, readable inside the product.
+    // Admin only. Newest first, filterable by action type and by free text over actor, target and meta.
+    var t = _r(d[0]);
+    (Object.defineProperty(e, "__esModule", { value: !0 }),
+      (e.default = function () {
+        const { user: u } = (0, A.useAuth)(),
+          { colors: c } = (0, T.useTheme)(),
+          nav = (0, R.useRouter)(),
+          tr = (0, L.useT)(),
+          [data, setData] = (0, n.useState)(null),
+          [loading, setLoading] = (0, n.useState)(!0),
+          [err, setErr] = (0, n.useState)(null),
+          [type, setType] = (0, n.useState)(null),
+          [q, setQ] = (0, n.useState)(""),
+          gate = (0, G9.useRoleGate)(["admin"]),
+          load = (0, n.useCallback)(async () => {
+            if (!u) return;
+            setErr(null);
+            try {
+              setData(await (0, F.fetchAdminAuditLog)(u.id, { type: type, query: q, limit: 200 }));
+            } catch (x) {
+              setErr(x);
+            }
+            setLoading(!1);
+          }, [u, type, q]);
+        (0, R.useFocusEffect)(
+          (0, n.useCallback)(() => {
+            load();
+          }, [load]),
+        );
+        if (gate.ready && !gate.allowed)
+          return (0, J.jsx)(G9.GateScreen, { kind: "denied", onBack: () => nav.back() });
+        if ((loading && !data) || !gate.ready)
+          return (0, J.jsx)(S.SafeAreaView, {
+            style: [D.center, { backgroundColor: c.bg }],
+            children: (0, J.jsx)(l.default, { color: c.accentText }),
+          });
+        if (err || !data) {
+          const ce = err ? (0, G9.classifyError)(err) : null;
+          return (0, J.jsx)(G9.GateScreen, {
+            kind: ce?.isAuth ? "denied" : "error",
+            body: ce && !ce.isAuth ? ce.message : void 0,
+            onRetry: () => {
+              (setLoading(!0), load());
+            },
+            onBack: () => nav.back(),
+          });
+        }
+        const fmt = (v) => {
+          try {
+            return new Date(v).toLocaleString(void 0, {
+              day: "numeric",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          } catch {
+            return String(v);
+          }
+        };
+        const metaLine = (o) => {
+          const ks = Object.keys(o || {});
+          if (!ks.length) return null;
+          return ks
+            .slice(0, 6)
+            .map((k) => `${k}: ${"object" == typeof o[k] ? JSON.stringify(o[k]) : String(o[k])}`)
+            .join(" · ");
+        };
+        return (0, J.jsxs)(S.SafeAreaView, {
+          edges: ["top"],
+          style: { flex: 1, backgroundColor: c.bg },
+          children: [
+            (0, J.jsxs)(s.default, {
+              style: D.header,
+              children: [
+                (0, J.jsx)(o.default, {
+                  onPress: () => nav.back(),
+                  accessibilityRole: "button",
+                  accessibilityLabel: tr("back"),
+                  style: [D.iconBtn, { backgroundColor: c.surface, borderColor: c.border }],
+                  children: (0, J.jsx)(P.Ionicons, { name: (0, B.chevronBack)(), size: 22, color: c.text }),
+                }),
+                (0, J.jsxs)(s.default, {
+                  style: { flex: 1, marginHorizontal: b.spacing.md },
+                  children: [
+                    (0, J.jsx)(i.default, {
+                      style: [b.typography.h2, { color: c.text }],
+                      children: tr("adminAuditTitle"),
+                    }),
+                    (0, J.jsx)(i.default, {
+                      style: [b.typography.caption, { color: c.textMuted }],
+                      children: tr("adminAuditSubtitle", {
+                        shown: String(data.rows.length),
+                        total: String(data.total),
+                      }),
+                    }),
+                  ],
+                }),
+              ],
+            }),
+            (0, J.jsxs)(s.default, {
+              style: { paddingHorizontal: b.spacing.lg },
+              children: [
+                (0, J.jsxs)(s.default, {
+                  style: [D.searchWrap, { backgroundColor: c.surface, borderColor: c.border }],
+                  children: [
+                    (0, J.jsx)(P.Ionicons, { name: "search-outline", size: 18, color: c.textMuted }),
+                    (0, J.jsx)(X.default, {
+                      value: q,
+                      onChangeText: setQ,
+                      placeholder: tr("adminAuditSearchPlaceholder"),
+                      placeholderTextColor: c.textMuted,
+                      accessibilityLabel: tr("adminAuditSearchPlaceholder"),
+                      autoCapitalize: "none",
+                      autoCorrect: !1,
+                      maxLength: 60,
+                      style: [D.searchInput, { color: c.text }],
+                    }),
+                    q.length > 0 &&
+                      (0, J.jsx)(o.default, {
+                        onPress: () => setQ(""),
+                        accessibilityRole: "button",
+                        accessibilityLabel: tr("homeSearchClear"),
+                        style: [D.clearBtn, { backgroundColor: c.surfaceAlt }],
+                        children: (0, J.jsx)(P.Ionicons, { name: "close", size: 14, color: c.textMuted }),
+                      }),
+                  ],
+                }),
+                (0, J.jsx)(y.default, {
+                  horizontal: !0,
+                  showsHorizontalScrollIndicator: !1,
+                  contentContainerStyle: { gap: b.spacing.sm, paddingBottom: b.spacing.sm },
+                  children: (0, J.jsx)(s.default, {
+                    style: { flexDirection: "row", gap: b.spacing.sm },
+                    children: [null, ...data.types].map((k) => {
+                      const on = type === k;
+                      return (0, J.jsx)(
+                        o.default,
+                        {
+                          onPress: () => setType(on ? null : k),
+                          accessibilityRole: "button",
+                          accessibilityState: { selected: on },
+                          style: [
+                            D.chip,
+                            {
+                              backgroundColor: on ? c.accent : c.surface,
+                              borderColor: on ? c.accent : c.border,
+                            },
+                          ],
+                          children: (0, J.jsx)(i.default, {
+                            style: [b.typography.caption, { color: on ? c.accentInk : c.text, fontWeight: "700" }],
+                            children: null === k ? tr("all") : k,
+                          }),
+                        },
+                        k ?? "all",
+                      );
+                    }),
+                  }),
+                }),
+              ],
+            }),
+            (0, J.jsx)(y.default, {
+              contentContainerStyle: {
+                paddingHorizontal: b.spacing.lg,
+                paddingBottom: b.spacing.xxxl,
+              },
+              children:
+                0 === data.rows.length
+                  ? (0, J.jsx)(V.EmptyState, {
+                      icon: "document-text-outline",
+                      title: tr("adminAuditEmptyTitle"),
+                      body: tr("adminAuditEmptyBody"),
+                    })
+                  : data.rows.map((row) =>
+                      (0, J.jsxs)(
+                        s.default,
+                        {
+                          style: [D.row, { borderColor: c.border }],
+                          children: [
+                            (0, J.jsxs)(s.default, {
+                              style: { flexDirection: "row", alignItems: "center", gap: b.spacing.sm },
+                              children: [
+                                (0, J.jsx)(i.default, {
+                                  style: [b.typography.smallStrong, { color: c.text, flex: 1 }],
+                                  numberOfLines: 1,
+                                  children: row.type,
+                                }),
+                                (0, J.jsx)(i.default, {
+                                  style: [b.typography.caption, { color: c.textMuted }],
+                                  children: fmt(row.at),
+                                }),
+                              ],
+                            }),
+                            (0, J.jsx)(i.default, {
+                              style: [b.typography.caption, { color: c.textMuted, marginTop: 2 }],
+                              children: tr("adminAuditActorLine", {
+                                actor: row.actor_name || row.actor_ref || tr("adminAuditUnknownActor"),
+                                target: row.target_name || row.target_id || "—",
+                              }),
+                            }),
+                            !!metaLine(row.meta) &&
+                              (0, J.jsx)(i.default, {
+                                style: [b.typography.caption, { color: c.textMuted, marginTop: 2, opacity: 0.85 }],
+                                children: metaLine(row.meta),
+                              }),
+                            !!row.device &&
+                              (0, J.jsx)(i.default, {
+                                style: [b.typography.caption, { color: c.textMuted, marginTop: 2, opacity: 0.6 }],
+                                numberOfLines: 1,
+                                children: row.device,
+                              }),
+                          ],
+                        },
+                        row.id,
+                      ),
+                    ),
+            }),
+          ],
+        });
+      }));
+    var n = _r(d[1]),
+      l = t(_r(d[2])),
+      o = t(_r(d[3])),
+      y = t(_r(d[4])),
+      k = t(_r(d[5])),
+      i = t(_r(d[6])),
+      s = t(_r(d[7])),
+      S = _r(d[8]),
+      P = _r(d[9]),
+      R = _r(d[10]),
+      V = _r(d[11]),
+      A = _r(d[12]),
+      T = _r(d[13]),
+      b = _r(d[14]),
+      F = _r(d[15]),
+      L = _r(d[16]),
+      B = _r(d[17]),
+      J = _r(d[18]),
+      G9 = _r(d[19]),
+      X = t(_r(d[20]));
+    const D = k.default.create({
+      center: { flex: 1, alignItems: "center", justifyContent: "center" },
+      header: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: b.spacing.lg,
+        paddingVertical: b.spacing.md,
+      },
+      iconBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: k.default.hairlineWidth,
+      },
+      searchWrap: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: b.spacing.sm,
+        borderRadius: b.radius.pill,
+        borderWidth: k.default.hairlineWidth,
+        paddingHorizontal: b.spacing.md,
+        height: 44,
+        marginBottom: b.spacing.sm,
+      },
+      searchInput: { flex: 1, paddingVertical: 0, fontSize: 14, fontWeight: "600" },
+      clearBtn: {
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      chip: {
+        borderRadius: b.radius.pill,
+        borderWidth: k.default.hairlineWidth,
+        paddingHorizontal: b.spacing.md,
+        paddingVertical: 6,
+      },
+      row: {
+        borderTopWidth: k.default.hairlineWidth,
+        paddingVertical: b.spacing.md,
+      },
+    });
+  },
+  9003,
+  [33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1627, 630, 615, 616, 671, 675, 1171, 13, 9001, 394],
 );
 __r(0);</script>
 </body>

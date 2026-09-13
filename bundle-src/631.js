@@ -4649,6 +4649,51 @@ __d(
         await Za(ht, Qt.crossPartitionGrants),
         await (0, w.logAdminAudit)("partition.revoked", e, a.admin_id, { grant: a.id.slice(-6) }));
     };
+    // XC (F-XC-7) / ADM1 (F-ADM1-32): the privileged action log is readable in the product, not only
+    // in devtools. Admin-only, newest first, optionally narrowed by action type or free text.
+    r.mockGetAdminAuditLog = async (e, t) => {
+      (await ei(), await sn(e));
+      const rows9 = await (0, w.readAdminAudit)(),
+        q9 = String(t?.query ?? "")
+          .trim()
+          .toLowerCase(),
+        ty9 = t?.type ? String(t.type) : null,
+        lim9 = Math.max(1, Math.min(500, Number(t?.limit) || 200)),
+        nm9 = (id9) => {
+          if (!id9) return null;
+          const pr9 = Qt.profiles.find((p9) => p9.id === id9);
+          return pr9?.full_name ?? null;
+        },
+        all9 = rows9.map((r9) => ({
+          id: r9.id,
+          at: r9.at,
+          type: r9.type,
+          actor_id: r9.actor ?? null,
+          actor_name: nm9(r9.actor),
+          actor_ref: r9.actorRef ?? null,
+          target_id: r9.target ?? null,
+          target_name: nm9(r9.target),
+          device: r9.device ?? null,
+          meta: r9.meta ?? {},
+        }));
+      return {
+        total: all9.length,
+        types: [...new Set(all9.map((r9) => r9.type))].sort(),
+        rows: all9
+          .filter((r9) => !ty9 || r9.type === ty9)
+          .filter(
+            (r9) =>
+              !q9 ||
+              [r9.type, r9.actor_name, r9.actor_id, r9.target_name, r9.target_id, JSON.stringify(r9.meta)]
+                .some((v9) =>
+                  String(v9 ?? "")
+                    .toLowerCase()
+                    .includes(q9),
+                ),
+          )
+          .slice(0, lim9),
+      };
+    };
     r.mockGetCrossPartitionGrants = async (e) => (
       await ei(),
       await sn(e),

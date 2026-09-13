@@ -168,5 +168,36 @@ await run('analytics honesty (ADM2)', async () => {
   await browser.close();
 });
 
+await run('admin activity log screen (XC-7 / ADM1-32)', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/admin/audit' });
+  await page.waitForTimeout(1200);
+  // Take a privileged action, then reload so the screen has something to show.
+  await page.evaluate(
+    (ids) => __r(671).setDemandWeights(ids.admin, { cancelLowFill: 0.4 }, 'audit screen probe'),
+    IDS,
+  );
+  await page.reload();
+  await page.waitForTimeout(1800);
+  let body = await page.evaluate(() => document.body.innerText);
+  ok('the log lists the action just taken', body.includes('demand.weights_changed'), body.slice(0, 0));
+  ok('the row names the acting admin', /By\s+\S/.test(body));
+  ok('the row shows the reason that was required', body.includes('audit screen probe'));
+  await page.locator('input').first().fill('zzzz-no-such-actor');
+  await page.waitForTimeout(900);
+  body = await page.evaluate(() => document.body.innerText);
+  ok('a query matching nothing shows the empty state', body.includes(t('adminAuditEmptyTitle')));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
+  await browser.close();
+});
+
+await run('admin activity log is denied to a player', async () => {
+  const { browser, page, errors } = await openApp({ role: 'user', route: '/admin/audit' });
+  await page.waitForTimeout(2500);
+  const body = await page.evaluate(() => document.body.innerText);
+  ok('a player sees the denied gate, not the log', body.includes(t('adminOnlyTitle')), body.slice(0, 0));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

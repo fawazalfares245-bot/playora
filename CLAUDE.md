@@ -11,8 +11,10 @@ edited through the module tooling described below.
   bundle (`__d(function(){...},<id>,[deps])` modules) and the entry call `__r(0)`.
 - `bundle-src/<id>.js` – prettified copies of the modules that have been modified. `tools/bundle.py build`
   splices them back into `index.html` (idempotent). `bundle-src/new/<id>.js` are modules added by this repo
-  (9001 = shared role-gate / error helpers).
+  (9001 = shared role-gate / error helpers, 9002 = `/organizer/new` redirect, 9003 = `/admin/audit` screen).
 - `tools/bundle.py` – `split <id...>` extracts modules from index.html into bundle-src; `build` rebuilds.
+- `tools/flows-admin.mjs`, `tools/flows-organizer.mjs`, `tools/flows-org1.mjs`, `tools/flows-search.mjs`,
+  `tools/flows-xcut.mjs`, `tools/rules.mjs` – the regression suites. Run all six after any bundle change.
 - `tools/smoke.mjs` – headless Playwright harness: `node tools/smoke.mjs /admin/organizers --role admin`
   boots the app with a seeded session and prints visible text and console/page errors. Import `openApp`
   from it to script flows.
@@ -24,9 +26,10 @@ edited through the module tooling described below.
 
 631 mock backend (all business rules, `Qt` in-memory DB, persistence via localStorage keys `playora.mock.*.v1`),
 671 API facade, 672 store proxy (tries `POST {backendUrl}/rpc`, falls back to the mock), 673 backend transport,
-674 error-code → i18n key map, 909 translations (`en`/`ar`, keep both in sync), 643 audit log
+674 error-code → i18n key map, 909 translations (`en`/`ar`, keep both in sync — no duplicate keys), 643 audit log
 (`playora.audit.v1` general, `playora.audit.admin.v1` privileged), 630 AuthProvider, 1809 root layout,
-18 Expo Router context (route table). Route → module map: `docs/audit/findings/route-module-map.txt`.
+18 Expo Router context (route table), 9001 shared role-gate/error helpers, 9002 `/organizer/new` redirect,
+9003 `/admin/audit` privileged-action log screen. Route → module map: `docs/audit/findings/route-module-map.txt`.
 
 ## Working in this repo
 
