@@ -54,7 +54,8 @@ __d(
           [Dt, zt] = (0, t.useState)(!1),
           [At, Lt] = (0, t.useState)(new Set()),
           [Ht, Et] = (0, t.useState)(new Set()),
-          [Nt, Bt] = (0, t.useState)("quick");
+          [Nt, Bt] = (0, t.useState)("quick"),
+          [apErr, setApErr] = (0, t.useState)(null);
         (0, t.useEffect)(() => {
           l.default
             .getItem("playora.createLane.v1")
@@ -72,9 +73,11 @@ __d(
             if (!e || X || Dt) return void It(null);
             let t = !1;
             Rt(!0);
-            const l = ye && null != ve ? N(ye, ve).toISOString() : null,
-              a = ye && null != Se ? N(ye, Se).toISOString() : null;
-            return (
+            // ORG1 (F-ORG1-6): re-evaluated (debounced) whenever the inputs that feed it change.
+            const dbTimer = setTimeout(() => {
+              if (t) return;
+              const l = ye && null != ve ? N(ye, ve).toISOString() : null,
+                a = ye && null != Se ? N(ye, Se).toISOString() : null;
               (0, T.fetchMatchOptimization)(e.id, {
                 sport: ne,
                 venue_id: "list" === Fe ? Ke : null,
@@ -94,12 +97,13 @@ __d(
                 })
                 .finally(() => {
                   t || Rt(!1);
-                }),
-              () => {
-                t = !0;
-              }
-            );
-          }, [e, ne, X, Dt]));
+                });
+            }, 400);
+            
+            return () => {
+              ((t = !0), clearTimeout(dbTimer));
+            };
+          }, [e, ne, X, Dt, Fe, Ke, ye, ve, Se, pt, gt, pe, lt, dt, $e]));
         const Ot = (e) => {
           if (!Mt) return;
           const t = Mt.optimal,
@@ -150,8 +154,8 @@ __d(
               .then((e) => {
                 "approved" === e?.status ? Ct(!0) : (Ct(!1), Q.replace("/organizer/apply"));
               })
-              .catch(() => {
-                (Ct(!1), Q.replace("/organizer/apply"));
+              .catch((e) => {
+                setApErr(e);
               });
         }, [e, Q]);
         const Wt = "football_custom" === de,
@@ -197,7 +201,7 @@ __d(
               (async () => {
                 const e = await (0, T.fetchBooking)(X);
                 if (!e) return;
-                (re(`${e.venue_name} \xb7 ${e.court_name}`), ce(e.sport));
+                (re(`${e.venue_name} \xb7 ${e.court_name}`), ce(e.sport), ("football" === e.sport || "padel" === e.sport || "tennis" === e.sport) && Vt(e.sport));
                 const t = new Date(e.starts_at),
                   l = new Date(e.ends_at),
                   a = new Date(t);
@@ -219,6 +223,16 @@ __d(
           }, [kt, ne, Ge]),
           Kt = "" !== gt.trim() ? Number(gt) || 0 : pt,
           Qt = ye ? (0, P.format)(ye, "EEE, d MMM yyyy", { locale: J }) : G("fieldDate");
+        if (apErr)
+          return (0, A.jsx)(G9.GateScreen, {
+            kind: "error",
+            title: G("applicationLoadFailed"),
+            body: (0, G9.classifyError)(apErr).message,
+            onRetry: () => {
+              (setApErr(null), Q.replace("/organizer/create"));
+            },
+            onBack: () => Q.back(),
+          });
         if (!0 !== Tt)
           return (0, A.jsx)(u.SafeAreaView, {
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: K.bg },
@@ -747,12 +761,25 @@ __d(
                           }),
                         ],
                       }),
-                      Pt || !Mt
+                      Pt
                         ? (0, A.jsx)(a.default, {
                             color: K.accentText,
                             style: { marginVertical: w.spacing.sm },
                           })
-                        : (0, A.jsx)(c.default, {
+                        : !Mt
+                          ? (0, A.jsxs)(c.default, {
+                              style: [w.typography.small, { color: K.text }],
+                              children: [
+                                G("noRecommendationTitle"),
+                                " \u2014 ",
+                                G("noRecommendationBody", {
+                                  price: (0, C.formatPrice)(Kt),
+                                  n: (0, C.formatNumber)(pe),
+                                  level: G(lt),
+                                }),
+                              ],
+                            })
+                          : (0, A.jsx)(c.default, {
                             style: [w.typography.small, { color: K.text }],
                             children: G("quickAiSummary", {
                               price: (0, C.formatPrice)(Mt.optimal.price_kwd),
@@ -1154,7 +1181,8 @@ __d(
       R = _r(_d[29]),
       D = _r(_d[30]),
       z = _r(_d[31]),
-      A = _r(_d[32]);
+      A = _r(_d[32]),
+      G9 = _r(_d[33]);
     const L = ["football", "padel", "tennis"],
       H = ["beginner", "intermediate", "advanced", "all"],
       E = [0, 3, 5, 10],
@@ -1739,6 +1767,6 @@ __d(
   2461,
   [
     33, 15, 618, 461, 445, 369, 281, 158, 477, 146, 273, 381, 1086, 20, 1623, 1624, 626, 625, 2462, 2463,
-    2464, 630, 615, 616, 671, 1311, 675, 1171, 1312, 1848, 648, 674, 13,
+    2464, 630, 615, 616, 671, 1311, 675, 1171, 1312, 1848, 648, 674, 13, 9001,
   ],
 );

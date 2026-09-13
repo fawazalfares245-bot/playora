@@ -6,7 +6,7 @@ __d(
     //   GateScreen props    -> { kind: "denied" | "error", title?, body?, onRetry?, onBack? }
     var t = _r(d[0]);
     (Object.defineProperty(e, "__esModule", { value: !0 }),
-      (e.useRoleGate = e.classifyError = e.GateScreen = e.AUTH_CODES = void 0));
+      (e.useRoleGate = e.classifyError = e.GateScreen = e.RetryButton = e.AUTH_CODES = void 0));
     var n = _r(d[1]),
       s = _r(d[2]),
       o = _r(d[3]),
@@ -55,6 +55,14 @@ __d(
       const t = e && "object" == typeof e ? (e.code ?? e.message ?? String(e)) : String(e ?? ""),
         r = "string" == typeof t ? t.split(":")[0] : "";
       return { code: r, message: (0, o.storeErrorText)("string" == typeof t ? t : ""), isAuth: C.has(r) };
+    };
+    // Small inline retry control for panels that are not full screens.
+    e.RetryButton = ({ onPress: t, label: n }) => {
+      const s = (0, u.useT)();
+      return (0, k.jsx)(v.default, {
+        style: { alignItems: "center", marginTop: h.spacing.md },
+        children: (0, k.jsx)(b.Button, { title: n ?? s("retry"), variant: "secondary", size: "sm", onPress: t }),
+      });
     };
     e.GateScreen = ({ kind: t = "denied", title: n, body: s, onRetry: o, onBack: I, roles: S }) => {
       const { colors: _ } = (0, c.useTheme)(),

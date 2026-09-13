@@ -183,7 +183,118 @@ __d(function(_g,_r,i,_a,_m,_e,_d){
    */
 'use strict';var e=Symbol.for("react.element"),t=Symbol.for("react.portal"),r=Symbol.for("react.fragment"),n=Symbol.for("react.strict_mode"),o=Symbol.for("react.profiler"),u=Symbol.for("react.provider"),c=Symbol.for("react.context"),a=Symbol.for("react.forward_ref"),f=Symbol.for("react.suspense"),l=Symbol.for("react.memo"),s=Symbol.for("react.lazy"),p=Symbol.iterator;function y(e){return null===e||"object"!=typeof e?null:"function"==typeof(e=p&&e[p]||e["@@iterator"])?e:null}var d={isMounted:function(){return!1},enqueueForceUpdate:function(){},enqueueReplaceState:function(){},enqueueSetState:function(){}},_=Object.assign,h={};function m(e,t,r){this.props=e,this.context=t,this.refs=h,this.updater=r||d}function v(){}function b(e,t,r){this.props=e,this.context=t,this.refs=h,this.updater=r||d}m.prototype.isReactComponent={},m.prototype.setState=function(e,t){if("object"!=typeof e&&"function"!=typeof e&&null!=e)throw Error("setState(...): takes an object of state variables to update or a function which returns an object of state variables.");this.updater.enqueueSetState(this,e,t,"setState")},m.prototype.forceUpdate=function(e){this.updater.enqueueForceUpdate(this,e,"forceUpdate")},v.prototype=m.prototype;var S=b.prototype=new v;S.constructor=b,_(S,m.prototype),S.isPureReactComponent=!0;var E=Array.isArray,$=Object.prototype.hasOwnProperty,w={current:null},R={key:!0,ref:!0,__self:!0,__source:!0};function k(t,r,n){var o,u={},c=null,a=null;if(null!=r)for(o in void 0!==r.ref&&(a=r.ref),void 0!==r.key&&(c=""+r.key),r)$.call(r,o)&&!R.hasOwnProperty(o)&&(u[o]=r[o]);var f=arguments.length-2;if(1===f)u.children=n;else if(1<f){for(var l=Array(f),s=0;s<f;s++)l[s]=arguments[s+2];u.children=l}if(t&&t.defaultProps)for(o in f=t.defaultProps)void 0===u[o]&&(u[o]=f[o]);return{$$typeof:e,type:t,key:c,ref:a,props:u,_owner:w.current}}function C(t,r){return{$$typeof:e,type:t.type,key:r,ref:t.ref,props:t.props,_owner:t._owner}}function g(t){return"object"==typeof t&&null!==t&&t.$$typeof===e}function j(e){var t={"=":"=0",":":"=2"};return"$"+e.replace(/[=:]/g,function(e){return t[e]})}var O=/\/+/g;function P(e,t){return"object"==typeof e&&null!==e&&null!=e.key?j(""+e.key):t.toString(36)}function x(r,n,o,u,c){var a=typeof r;"undefined"!==a&&"boolean"!==a||(r=null);var f=!1;if(null===r)f=!0;else switch(a){case"string":case"number":f=!0;break;case"object":switch(r.$$typeof){case e:case t:f=!0}}if(f)return c=c(f=r),r=""===u?"."+P(f,0):u,E(c)?(o="",null!=r&&(o=r.replace(O,"$&/")+"/"),x(c,n,o,"",function(e){return e})):null!=c&&(g(c)&&(c=C(c,o+(!c.key||f&&f.key===c.key?"":(""+c.key).replace(O,"$&/")+"/")+r)),n.push(c)),1;if(f=0,u=""===u?".":u+":",E(r))for(var l=0;l<r.length;l++){var s=u+P(a=r[l],l);f+=x(a,n,o,s,c)}else if("function"==typeof(s=y(r)))for(r=s.call(r),l=0;!(a=r.next()).done;)f+=x(a=a.value,n,o,s=u+P(a,l++),c);else if("object"===a)throw n=String(r),Error("Objects are not valid as a React child (found: "+("[object Object]"===n?"object with keys {"+Object.keys(r).join(", ")+"}":n)+"). If you meant to render a collection of children, use an array instead.");return f}function I(e,t,r){if(null==e)return e;var n=[],o=0;return x(e,n,"","",function(e){return t.call(r,e,o++)}),n}function T(e){if(-1===e._status){var t=e._result;(t=t()).then(function(t){0!==e._status&&-1!==e._status||(e._status=1,e._result=t)},function(t){0!==e._status&&-1!==e._status||(e._status=2,e._result=t)}),-1===e._status&&(e._status=0,e._result=t)}if(1===e._status)return e._result.default;throw e._result}var V={current:null},A={transition:null},D={ReactCurrentDispatcher:V,ReactCurrentBatchConfig:A,ReactCurrentOwner:w};function U(){throw Error("act(...) is not supported in production builds of React.")}_e.Children={map:I,forEach:function(e,t,r){I(e,function(){t.apply(this,arguments)},r)},count:function(e){var t=0;return I(e,function(){t++}),t},toArray:function(e){return I(e,function(e){return e})||[]},only:function(e){if(!g(e))throw Error("React.Children.only expected to receive a single React element child.");return e}},_e.Component=m,_e.Fragment=r,_e.Profiler=o,_e.PureComponent=b,_e.StrictMode=n,_e.Suspense=f,_e.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED=D,_e.act=U,_e.cloneElement=function(t,r,n){if(null==t)throw Error("React.cloneElement(...): The argument must be a React element, but you passed "+t+".");var o=_({},t.props),u=t.key,c=t.ref,a=t._owner;if(null!=r){if(void 0!==r.ref&&(c=r.ref,a=w.current),void 0!==r.key&&(u=""+r.key),t.type&&t.type.defaultProps)var f=t.type.defaultProps;for(l in r)$.call(r,l)&&!R.hasOwnProperty(l)&&(o[l]=void 0===r[l]&&void 0!==f?f[l]:r[l])}var l=arguments.length-2;if(1===l)o.children=n;else if(1<l){f=Array(l);for(var s=0;s<l;s++)f[s]=arguments[s+2];o.children=f}return{$$typeof:e,type:t.type,key:u,ref:c,props:o,_owner:a}},_e.createContext=function(e){return(e={$$typeof:c,_currentValue:e,_currentValue2:e,_threadCount:0,Provider:null,Consumer:null,_defaultValue:null,_globalName:null}).Provider={$$typeof:u,_context:e},e.Consumer=e},_e.createElement=k,_e.createFactory=function(e){var t=k.bind(null,e);return t.type=e,t},_e.createRef=function(){return{current:null}},_e.forwardRef=function(e){return{$$typeof:a,render:e}},_e.isValidElement=g,_e.lazy=function(e){return{$$typeof:s,_payload:{_status:-1,_result:e},_init:T}},_e.memo=function(e,t){return{$$typeof:l,type:e,compare:void 0===t?null:t}},_e.startTransition=function(e){var t=A.transition;A.transition={};try{e()}finally{A.transition=t}},_e.unstable_act=U,_e.useCallback=function(e,t){return V.current.useCallback(e,t)},_e.useContext=function(e){return V.current.useContext(e)},_e.useDebugValue=function(){},_e.useDeferredValue=function(e){return V.current.useDeferredValue(e)},_e.useEffect=function(e,t){return V.current.useEffect(e,t)},_e.useId=function(){return V.current.useId()},_e.useImperativeHandle=function(e,t,r){return V.current.useImperativeHandle(e,t,r)},_e.useInsertionEffect=function(e,t){return V.current.useInsertionEffect(e,t)},_e.useLayoutEffect=function(e,t){return V.current.useLayoutEffect(e,t)},_e.useMemo=function(e,t){return V.current.useMemo(e,t)},_e.useReducer=function(e,t,r){return V.current.useReducer(e,t,r)},_e.useRef=function(e){return V.current.useRef(e)},_e.useState=function(e){return V.current.useState(e)},_e.useSyncExternalStore=function(e,t,r){return V.current.useSyncExternalStore(e,t,r)},_e.useTransition=function(){return V.current.useTransition()},_e.version="18.3.1"},16,[]);
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.ctx=void 0;e.ctx=r(d[0])},17,[18]);
-__d(function(g,r,i,a,m,e,d){const t=Object.defineProperties({},{"./(auth)/_layout.tsx":{enumerable:!0,get:()=>r(d[0])},"./(auth)/sign-in.tsx":{enumerable:!0,get:()=>r(d[1])},"./(auth)/sign-up.tsx":{enumerable:!0,get:()=>r(d[2])},"./(tabs)/_layout.tsx":{enumerable:!0,get:()=>r(d[3])},"./(tabs)/feed.tsx":{enumerable:!0,get:()=>r(d[4])},"./(tabs)/games.tsx":{enumerable:!0,get:()=>r(d[5])},"./(tabs)/index.tsx":{enumerable:!0,get:()=>r(d[6])},"./(tabs)/profile.tsx":{enumerable:!0,get:()=>r(d[7])},"./_layout.tsx":{enumerable:!0,get:()=>r(d[8])},"./admin/application/[id].tsx":{enumerable:!0,get:()=>r(d[9])},"./admin/awards.tsx":{enumerable:!0,get:()=>r(d[10])},"./admin/concierge.tsx":{enumerable:!0,get:()=>r(d[11])},"./admin/conduct.tsx":{enumerable:!0,get:()=>r(d[12])},"./admin/demand.tsx":{enumerable:!0,get:()=>r(d[13])},"./admin/feed.tsx":{enumerable:!0,get:()=>r(d[14])},"./admin/funnel.tsx":{enumerable:!0,get:()=>r(d[15])},"./admin/insights.tsx":{enumerable:!0,get:()=>r(d[16])},"./admin/optimizer.tsx":{enumerable:!0,get:()=>r(d[17])},"./admin/organizers.tsx":{enumerable:!0,get:()=>r(d[18])},"./admin/players.tsx":{enumerable:!0,get:()=>r(d[19])},"./admin/venues.tsx":{enumerable:!0,get:()=>r(d[20])},"./awards/[gameId].tsx":{enumerable:!0,get:()=>r(d[21])},"./awards/leaderboard.tsx":{enumerable:!0,get:()=>r(d[22])},"./blocked.tsx":{enumerable:!0,get:()=>r(d[23])},"./booking/[id].tsx":{enumerable:!0,get:()=>r(d[24])},"./booking/search.tsx":{enumerable:!0,get:()=>r(d[25])},"./booking/venue/[id].tsx":{enumerable:!0,get:()=>r(d[26])},"./chat/[gameId].tsx":{enumerable:!0,get:()=>r(d[27])},"./clubs/[id].tsx":{enumerable:!0,get:()=>r(d[28])},"./clubs/create.tsx":{enumerable:!0,get:()=>r(d[29])},"./clubs/index.tsx":{enumerable:!0,get:()=>r(d[30])},"./conduct/index.tsx":{enumerable:!0,get:()=>r(d[31])},"./contact.tsx":{enumerable:!0,get:()=>r(d[32])},"./discover.tsx":{enumerable:!0,get:()=>r(d[33])},"./feed/compose.tsx":{enumerable:!0,get:()=>r(d[34])},"./follows/[id].tsx":{enumerable:!0,get:()=>r(d[35])},"./friends/index.tsx":{enumerable:!0,get:()=>r(d[36])},"./game/[id].tsx":{enumerable:!0,get:()=>r(d[37])},"./group/[gameId].tsx":{enumerable:!0,get:()=>r(d[38])},"./how-it-works.tsx":{enumerable:!0,get:()=>r(d[39])},"./index.tsx":{enumerable:!0,get:()=>r(d[40])},"./join-code.tsx":{enumerable:!0,get:()=>r(d[41])},"./lineup/[gameId].tsx":{enumerable:!0,get:()=>r(d[42])},"./map.tsx":{enumerable:!0,get:()=>r(d[43])},"./media/[id].tsx":{enumerable:!0,get:()=>r(d[44])},"./media/dashboard.tsx":{enumerable:!0,get:()=>r(d[45])},"./media/index.tsx":{enumerable:!0,get:()=>r(d[46])},"./media/upload.tsx":{enumerable:!0,get:()=>r(d[47])},"./messages/[id].tsx":{enumerable:!0,get:()=>r(d[48])},"./messages/index.tsx":{enumerable:!0,get:()=>r(d[49])},"./my-bookings.tsx":{enumerable:!0,get:()=>r(d[50])},"./notifications.tsx":{enumerable:!0,get:()=>r(d[51])},"./organizer/apply.tsx":{enumerable:!0,get:()=>r(d[52])},"./organizer/concierge.tsx":{enumerable:!0,get:()=>r(d[53])},"./organizer/create.tsx":{enumerable:!0,get:()=>r(d[54])},"./organizer/index.tsx":{enumerable:!0,get:()=>r(d[55])},"./organizer/match/[id].tsx":{enumerable:!0,get:()=>r(d[56])},"./organizer/new.tsx":{enumerable:!0,get:()=>r(d[57])},"./organizer/quick.tsx":{enumerable:!0,get:()=>r(d[58])},"./organizer/series/[id].tsx":{enumerable:!0,get:()=>r(d[59])},"./organizer/smart-schedule.tsx":{enumerable:!0,get:()=>r(d[60])},"./passport/[id].tsx":{enumerable:!0,get:()=>r(d[61])},"./pay/[id].tsx":{enumerable:!0,get:()=>r(d[62])},"./player/[id].tsx":{enumerable:!0,get:()=>r(d[63])},"./preferences.tsx":{enumerable:!0,get:()=>r(d[64])},"./privacy-controls.tsx":{enumerable:!0,get:()=>r(d[65])},"./privacy.tsx":{enumerable:!0,get:()=>r(d[66])},"./refunds.tsx":{enumerable:!0,get:()=>r(d[67])},"./replacement/[id].tsx":{enumerable:!0,get:()=>r(d[68])},"./rewards/index.tsx":{enumerable:!0,get:()=>r(d[69])},"./rewards/ledger.tsx":{enumerable:!0,get:()=>r(d[70])},"./settings/access.tsx":{enumerable:!0,get:()=>r(d[71])},"./settings/region.tsx":{enumerable:!0,get:()=>r(d[72])},"./squad/[gameId].tsx":{enumerable:!0,get:()=>r(d[73])},"./stories/[id].tsx":{enumerable:!0,get:()=>r(d[74])},"./stories/compose.tsx":{enumerable:!0,get:()=>r(d[75])},"./teams/[id].tsx":{enumerable:!0,get:()=>r(d[76])},"./teams/battle/[battleId].tsx":{enumerable:!0,get:()=>r(d[77])},"./teams/battle/ceremony/[battleId].tsx":{enumerable:!0,get:()=>r(d[78])},"./teams/chat/[teamId].tsx":{enumerable:!0,get:()=>r(d[79])},"./teams/create.tsx":{enumerable:!0,get:()=>r(d[80])},"./teams/index.tsx":{enumerable:!0,get:()=>r(d[81])},"./teams/league.tsx":{enumerable:!0,get:()=>r(d[82])},"./teams/rankings.tsx":{enumerable:!0,get:()=>r(d[83])},"./venue/[id].tsx":{enumerable:!0,get:()=>r(d[84])},"./venue/apply.tsx":{enumerable:!0,get:()=>r(d[85])},"./venue/portal.tsx":{enumerable:!0,get:()=>r(d[86])},"./venue/scan.tsx":{enumerable:!0,get:()=>r(d[87])},"./wallet/index.tsx":{enumerable:!0,get:()=>r(d[88])}});function n(n){return t[n]}n.keys=function(){return Object.keys(t)},n.resolve=function(t){throw new Error('Unimplemented Metro module context functionality')},m.exports=n},18,[19,613,917,1619,1622,1629,1677,1805,1809,1823,1824,1825,1826,1827,1828,1829,1830,1831,1832,1833,1834,1835,1836,1837,1838,1840,1842,1843,1847,2370,2371,2372,2373,2374,2375,2376,2378,2379,2444,2445,2446,2447,2448,2450,2451,2452,2453,2454,2455,2456,2457,2458,2459,2460,2461,2465,2466,2468,2470,2471,2472,2473,2474,2475,2476,2477,2478,2479,2480,2481,2483,2484,2485,2486,2487,2488,2489,2495,2496,2497,2498,2499,2500,2501,2502,2503,2504,2505,2506]);
+__d(
+  function (g, r, i, a, m, e, d) {
+    const t = Object.defineProperties(
+      {},
+      {
+        "./(auth)/_layout.tsx": { enumerable: !0, get: () => r(d[0]) },
+        "./(auth)/sign-in.tsx": { enumerable: !0, get: () => r(d[1]) },
+        "./(auth)/sign-up.tsx": { enumerable: !0, get: () => r(d[2]) },
+        "./(tabs)/_layout.tsx": { enumerable: !0, get: () => r(d[3]) },
+        "./(tabs)/feed.tsx": { enumerable: !0, get: () => r(d[4]) },
+        "./(tabs)/games.tsx": { enumerable: !0, get: () => r(d[5]) },
+        "./(tabs)/index.tsx": { enumerable: !0, get: () => r(d[6]) },
+        "./(tabs)/profile.tsx": { enumerable: !0, get: () => r(d[7]) },
+        "./_layout.tsx": { enumerable: !0, get: () => r(d[8]) },
+        "./admin/application/[id].tsx": { enumerable: !0, get: () => r(d[9]) },
+        "./admin/awards.tsx": { enumerable: !0, get: () => r(d[10]) },
+        "./admin/concierge.tsx": { enumerable: !0, get: () => r(d[11]) },
+        "./admin/conduct.tsx": { enumerable: !0, get: () => r(d[12]) },
+        "./admin/demand.tsx": { enumerable: !0, get: () => r(d[13]) },
+        "./admin/feed.tsx": { enumerable: !0, get: () => r(d[14]) },
+        "./admin/funnel.tsx": { enumerable: !0, get: () => r(d[15]) },
+        "./admin/insights.tsx": { enumerable: !0, get: () => r(d[16]) },
+        "./admin/optimizer.tsx": { enumerable: !0, get: () => r(d[17]) },
+        "./admin/organizers.tsx": { enumerable: !0, get: () => r(d[18]) },
+        "./admin/players.tsx": { enumerable: !0, get: () => r(d[19]) },
+        "./admin/venues.tsx": { enumerable: !0, get: () => r(d[20]) },
+        "./awards/[gameId].tsx": { enumerable: !0, get: () => r(d[21]) },
+        "./awards/leaderboard.tsx": { enumerable: !0, get: () => r(d[22]) },
+        "./blocked.tsx": { enumerable: !0, get: () => r(d[23]) },
+        "./booking/[id].tsx": { enumerable: !0, get: () => r(d[24]) },
+        "./booking/search.tsx": { enumerable: !0, get: () => r(d[25]) },
+        "./booking/venue/[id].tsx": { enumerable: !0, get: () => r(d[26]) },
+        "./chat/[gameId].tsx": { enumerable: !0, get: () => r(d[27]) },
+        "./clubs/[id].tsx": { enumerable: !0, get: () => r(d[28]) },
+        "./clubs/create.tsx": { enumerable: !0, get: () => r(d[29]) },
+        "./clubs/index.tsx": { enumerable: !0, get: () => r(d[30]) },
+        "./conduct/index.tsx": { enumerable: !0, get: () => r(d[31]) },
+        "./contact.tsx": { enumerable: !0, get: () => r(d[32]) },
+        "./discover.tsx": { enumerable: !0, get: () => r(d[33]) },
+        "./feed/compose.tsx": { enumerable: !0, get: () => r(d[34]) },
+        "./follows/[id].tsx": { enumerable: !0, get: () => r(d[35]) },
+        "./friends/index.tsx": { enumerable: !0, get: () => r(d[36]) },
+        "./game/[id].tsx": { enumerable: !0, get: () => r(d[37]) },
+        "./group/[gameId].tsx": { enumerable: !0, get: () => r(d[38]) },
+        "./how-it-works.tsx": { enumerable: !0, get: () => r(d[39]) },
+        "./index.tsx": { enumerable: !0, get: () => r(d[40]) },
+        "./join-code.tsx": { enumerable: !0, get: () => r(d[41]) },
+        "./lineup/[gameId].tsx": { enumerable: !0, get: () => r(d[42]) },
+        "./map.tsx": { enumerable: !0, get: () => r(d[43]) },
+        "./media/[id].tsx": { enumerable: !0, get: () => r(d[44]) },
+        "./media/dashboard.tsx": { enumerable: !0, get: () => r(d[45]) },
+        "./media/index.tsx": { enumerable: !0, get: () => r(d[46]) },
+        "./media/upload.tsx": { enumerable: !0, get: () => r(d[47]) },
+        "./messages/[id].tsx": { enumerable: !0, get: () => r(d[48]) },
+        "./messages/index.tsx": { enumerable: !0, get: () => r(d[49]) },
+        "./my-bookings.tsx": { enumerable: !0, get: () => r(d[50]) },
+        "./notifications.tsx": { enumerable: !0, get: () => r(d[51]) },
+        "./organizer/apply.tsx": { enumerable: !0, get: () => r(d[52]) },
+        "./organizer/concierge.tsx": { enumerable: !0, get: () => r(d[53]) },
+        "./organizer/create.tsx": { enumerable: !0, get: () => r(d[54]) },
+        "./organizer/index.tsx": { enumerable: !0, get: () => r(d[55]) },
+        "./organizer/match/[id].tsx": { enumerable: !0, get: () => r(d[56]) },
+        "./organizer/new.tsx": { enumerable: !0, get: () => r(d[89]) },
+        "./organizer/quick.tsx": { enumerable: !0, get: () => r(d[58]) },
+        "./organizer/series/[id].tsx": { enumerable: !0, get: () => r(d[59]) },
+        "./organizer/smart-schedule.tsx": { enumerable: !0, get: () => r(d[60]) },
+        "./passport/[id].tsx": { enumerable: !0, get: () => r(d[61]) },
+        "./pay/[id].tsx": { enumerable: !0, get: () => r(d[62]) },
+        "./player/[id].tsx": { enumerable: !0, get: () => r(d[63]) },
+        "./preferences.tsx": { enumerable: !0, get: () => r(d[64]) },
+        "./privacy-controls.tsx": { enumerable: !0, get: () => r(d[65]) },
+        "./privacy.tsx": { enumerable: !0, get: () => r(d[66]) },
+        "./refunds.tsx": { enumerable: !0, get: () => r(d[67]) },
+        "./replacement/[id].tsx": { enumerable: !0, get: () => r(d[68]) },
+        "./rewards/index.tsx": { enumerable: !0, get: () => r(d[69]) },
+        "./rewards/ledger.tsx": { enumerable: !0, get: () => r(d[70]) },
+        "./settings/access.tsx": { enumerable: !0, get: () => r(d[71]) },
+        "./settings/region.tsx": { enumerable: !0, get: () => r(d[72]) },
+        "./squad/[gameId].tsx": { enumerable: !0, get: () => r(d[73]) },
+        "./stories/[id].tsx": { enumerable: !0, get: () => r(d[74]) },
+        "./stories/compose.tsx": { enumerable: !0, get: () => r(d[75]) },
+        "./teams/[id].tsx": { enumerable: !0, get: () => r(d[76]) },
+        "./teams/battle/[battleId].tsx": { enumerable: !0, get: () => r(d[77]) },
+        "./teams/battle/ceremony/[battleId].tsx": { enumerable: !0, get: () => r(d[78]) },
+        "./teams/chat/[teamId].tsx": { enumerable: !0, get: () => r(d[79]) },
+        "./teams/create.tsx": { enumerable: !0, get: () => r(d[80]) },
+        "./teams/index.tsx": { enumerable: !0, get: () => r(d[81]) },
+        "./teams/league.tsx": { enumerable: !0, get: () => r(d[82]) },
+        "./teams/rankings.tsx": { enumerable: !0, get: () => r(d[83]) },
+        "./venue/[id].tsx": { enumerable: !0, get: () => r(d[84]) },
+        "./venue/apply.tsx": { enumerable: !0, get: () => r(d[85]) },
+        "./venue/portal.tsx": { enumerable: !0, get: () => r(d[86]) },
+        "./venue/scan.tsx": { enumerable: !0, get: () => r(d[87]) },
+        "./wallet/index.tsx": { enumerable: !0, get: () => r(d[88]) },
+      },
+    );
+    function n(n) {
+      return t[n];
+    }
+    ((n.keys = function () {
+      return Object.keys(t);
+    }),
+      (n.resolve = function (t) {
+        throw new Error("Unimplemented Metro module context functionality");
+      }),
+      (m.exports = n));
+  },
+  18,
+  [
+    19, 613, 917, 1619, 1622, 1629, 1677, 1805, 1809, 1823, 1824, 1825, 1826, 1827, 1828, 1829, 1830, 1831, 1832, 1833, 1834, 1835, 1836, 1837, 1838, 1840, 1842, 1843, 1847, 2370, 2371, 2372, 2373, 2374, 2375, 2376, 2378, 2379, 2444, 2445, 2446, 2447, 2448, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2465, 2466, 2468, 2470, 2471, 2472, 2473, 2474, 2475, 2476, 2477, 2478, 2479, 2480, 2481, 2483, 2484, 2485, 2486, 2487, 2488, 2489, 2495, 2496, 2497, 2498, 2499, 2500, 2501, 2502, 2503, 2504, 2505, 2506, 9002,
+  ],
+);
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){return(0,t.jsx)(n.Stack,{screenOptions:{headerShown:!1,animation:'fade'}})};var n=r(d[0]),t=r(d[1])},19,[20,13]);
 __d(function(g,r,i,a,_m,e,d){"use strict";var t=this&&this.__createBinding||(Object.create?function(t,n,o,c){void 0===c&&(c=o);var u=Object.getOwnPropertyDescriptor(n,o);u&&!("get"in u?!n.__esModule:u.writable||u.configurable)||(u={enumerable:!0,get:function(){return n[o]}}),Object.defineProperty(t,c,u)}:function(t,n,o,c){void 0===c&&(c=o),t[c]=n[o]}),n=this&&this.__exportStar||function(n,o){for(var c in n)"default"===c||Object.prototype.hasOwnProperty.call(o,c)||t(o,n,c)};Object.defineProperty(e,"__esModule",{value:!0}),e.Tabs=e.Stack=void 0;var o=r(d[0]);Object.defineProperty(e,"Stack",{enumerable:!0,get:function(){return o.Stack}});var c=r(d[1]);Object.defineProperty(e,"Tabs",{enumerable:!0,get:function(){return c.Tabs}}),n(r(d[2]),e)},20,[21,601,603]);
 __d(function(g,r,i,a,m,e,d){"use strict";var t=this&&this.__importDefault||function(t){return t&&t.__esModule?t:{default:t}};Object.defineProperty(e,"__esModule",{value:!0}),e.Stack=void 0;const u=t(r(d[0]));e.Stack=u.default;const c=r(d[1]);u.default.Screen=c.Screen,e.default=u.default},21,[22,538]);
@@ -4744,17 +4855,49 @@ __d(
         (Qt.matchDrafts = Qt.matchDrafts.filter((t) => t.organizer_id !== e)),
         await Za(dt, Qt.matchDrafts));
     };
+    // ORG1 (F-ORG1-2/17/18): one validator for every match/series creation path. Rejects instead of clamping.
+    const MATCH_ENUMS = {
+      sport: ["football", "padel", "tennis"],
+      skill_level: ["all", "beginner", "intermediate", "advanced"],
+      visibility: ["public", "private"],
+      approval_mode: ["auto", "manual"],
+    };
+    const validateMatchInput = (t, o9 = {}) => {
+      if (!MATCH_ENUMS.sport.includes(t.sport)) throw new Error("E_INVALID_MATCH_OPTION");
+      if (t.skill_level && !MATCH_ENUMS.skill_level.includes(t.skill_level)) throw new Error("E_INVALID_MATCH_OPTION");
+      if (t.visibility && !MATCH_ENUMS.visibility.includes(t.visibility)) throw new Error("E_INVALID_MATCH_OPTION");
+      if (t.approval_mode && !MATCH_ENUMS.approval_mode.includes(t.approval_mode)) throw new Error("E_INVALID_MATCH_OPTION");
+      if (t.format && !/^[a-z0-9_]{2,40}$/.test(String(t.format))) throw new Error("E_INVALID_MATCH_OPTION");
+      if (!Number.isInteger(t.max_players) || t.max_players < 2 || t.max_players > 40)
+        throw new Error("E_PLAYERS_REQUIRED_MUST_BE_BETWEEN_2");
+      const p9 = Number(t.price_kwd ?? 0);
+      if (!Number.isFinite(p9) || p9 < 0 || p9 > 100) throw new Error("E_PRICE_OUT_OF_RANGE");
+      if (void 0 !== t.waitlist_capacity && null !== t.waitlist_capacity) {
+        const w9 = Number(t.waitlist_capacity);
+        if (!Number.isInteger(w9) || w9 < 0 || w9 > 20) throw new Error("E_WAITLIST_OUT_OF_RANGE");
+      }
+      if (o9.starts_at !== void 0) {
+        const i = new Date(o9.starts_at).getTime(),
+          n = new Date(o9.ends_at).getTime();
+        if (Number.isNaN(i) || Number.isNaN(n)) throw new Error("E_PICK_A_DATE_AND_TIME");
+        if (i < Date.now() - 6e4) throw new Error("E_MATCH_CANNOT_START_IN_PAST");
+        if (n <= i) throw new Error("E_END_TIME_MUST_BE_AFTER_THE");
+        if ((n - i) / 6e4 > 360 || (n - i) / 6e4 < 30) throw new Error("E_DURATION_OUT_OF_RANGE");
+      }
+      if (o9.venue && Array.isArray(o9.venue.sports) && o9.venue.sports.length && !o9.venue.sports.includes(t.sport))
+        throw new Error("E_VENUE_DOES_NOT_SUPPORT_SPORT");
+      return { price_kwd: Math.round(100 * p9) / 100 };
+    };
+    r.validateMatchInput = validateMatchInput;
+    const e9 = (e) => String(e ?? "").slice(0, 40);
     const Wi = async (e, t) => {
       (await ei(), await on(e));
       const a = (0, v.sanitizeText)(t.title, 100);
       if (!a) throw new Error("E_ADD_A_MATCH_TITLE");
       const i = new Date(t.starts_at).getTime(),
         n = new Date(t.ends_at).getTime();
-      if (Number.isNaN(i) || Number.isNaN(n)) throw new Error("E_PICK_A_DATE_AND_TIME");
-      if (i < Date.now() - 6e4) throw new Error("E_MATCH_CANNOT_START_IN_PAST");
-      if (n <= i) throw new Error("E_END_TIME_MUST_BE_AFTER_THE");
-      if (t.max_players < 2 || t.max_players > 40) throw new Error("E_PLAYERS_REQUIRED_MUST_BE_BETWEEN_2");
-      const r = Math.max(0, Math.min(100, Number(t.price_kwd ?? 0))),
+      const v9 = validateMatchInput(t, { starts_at: t.starts_at, ends_at: t.ends_at });
+      const r = v9.price_kwd,
         o = t.notes ? (0, v.sanitizeText)(t.notes, 500) : null,
         s = Math.max(0, Math.min(20, t.waitlist_capacity ?? Ma(t.max_players)));
       if (
@@ -4797,11 +4940,17 @@ __d(
             lat: a,
             lng: i,
             custom: !0,
+            created_by: e,
             created_at: new Date().toISOString(),
           };
-        (Qt.venues.push(r), await Za(ae, Qt.venues), (d = r.id));
+        (Qt.venues.push(r),
+          await Za(ae, Qt.venues),
+          await (0, w.logAudit)("venue.created", (0, w.actorRef)(e), { venue: r.id.slice(-6), name: e9(r.name) }),
+          (d = r.id));
       } else {
-        if (!t.venue_id || !fi().some((e) => e.id === t.venue_id)) throw new Error("E_CHOOSE_A_VENUE");
+        const v9 = fi().find((e) => e.id === t.venue_id);
+        if (!t.venue_id || !v9) throw new Error("E_CHOOSE_A_VENUE");
+        validateMatchInput(t, { venue: v9 });
         d = t.venue_id;
       }
       if (
@@ -4921,11 +5070,27 @@ __d(
         based_on_games: r.length,
       };
     };
-    r.mockGetSmartDefaults = Ki;
     const $i = {
       football: { players: 10, price: 2.5 },
       padel: { players: 4, price: 2.5 },
       tennis: { players: 4, price: 2.5 },
+    };
+    // ORG1 (F-ORG1-8): the quick flow always knows the values it will publish with.
+    r.mockGetSmartDefaults = async (e, t, a) => {
+      const i = await Ki(e, t, a);
+      if (i) return Object.assign({ source: "history", duration_minutes: i.duration_minutes ?? 90, visibility: "public", approval_mode: "auto" }, i);
+      const n = $i[t] ?? $i.football;
+      return {
+        source: "default",
+        price_kwd: n.price,
+        max_players: n.players,
+        skill_level: "all",
+        waitlist_on: !0,
+        duration_minutes: 90,
+        visibility: "public",
+        approval_mode: "auto",
+        based_on_games: 0,
+      };
     };
     r.mockQuickCreateMatch = async (e, t) => {
       await ei();
@@ -6002,7 +6167,35 @@ __d(
           created_at: new Date().toISOString(),
         });
       };
-    r.mockGetMyOrganizerApplication = async (e) => (await ei(), await tn(), nn(e) ?? null);
+    // ORG1 (F-ORG1-15): the applicant only receives what the apply screen needs.
+    const applicantDto = (e) =>
+      e
+        ? {
+            id: e.id,
+            status: e.status,
+            submitted_at: e.submitted_at,
+            reviewed_at: e.reviewed_at,
+            rejection_reason: "rejected" === e.status || "suspended" === e.status ? (e.rejection_reason ?? null) : null,
+            reapply_after: e.reapply_after ?? null,
+            applicant_message: "info_requested" === e.status ? (e.admin_notes ?? null) : null,
+            full_legal_name: e.full_legal_name,
+            mobile: e.mobile,
+            email: e.email,
+            display_name: e.display_name,
+            bio: e.bio,
+            sports: e.sports,
+            expected_monthly_matches: e.expected_monthly_matches,
+            organizer_type: e.organizer_type,
+            id_doc_type: e.id_doc_type,
+            id_doc_last4: e.id_doc_last4,
+            id_doc_uploaded: !!e.id_doc_uploaded,
+            business: e.business
+              ? { company_name: e.business.company_name, website: e.business.website, socials: e.business.socials }
+              : null,
+            resubmissions: (e.history ?? []).length,
+          }
+        : null;
+    r.mockGetMyOrganizerApplication = async (e) => (await ei(), await tn(), applicantDto(nn(e)));
     r.mockSubmitOrganizerApplication = async (e, t) => {
       (await ei(), await hn());
       const a = (0, v.sanitizeName)(t.full_legal_name);
@@ -6017,6 +6210,9 @@ __d(
       if (!t.sports.length) throw new Error("E_SELECT_AT_LEAST_ONE_SPORT_YOU");
       const s = (t.id_doc_number || "").replace(/\s+/g, "");
       if (s.length < 6) throw new Error("E_ENTER_A_VALID_IDENTITY_DOCUMENT_NUMBER");
+      // ORG1 (F-ORG1-14): an image of the identity document is mandatory and stored as a media reference.
+      const img9 = "string" == typeof t.id_doc_image ? t.id_doc_image : "";
+      if (!/^data:image\/(?:png|jpe?g|webp);base64,/.test(img9)) throw new Error("E_UPLOAD_YOUR_IDENTITY_DOCUMENT");
       const d = nn(e);
       if ("approved" === d?.status) throw new Error("E_YOU_ARE_ALREADY_AN_APPROVED_ORGANIZER");
       if ("under_review" === d?.status) throw new Error("E_YOUR_APPLICATION_IS_ALREADY_UNDER_REVIEW");
@@ -6030,9 +6226,10 @@ __d(
         u = new Set();
       (Qt.applications.some((t) => t.user_id !== e && t.phone_hash === l) && u.add("duplicate_phone"),
         Qt.applications.some((t) => t.user_id !== e && t.id_doc_ref === _) && u.add("duplicate_document"));
-      Qt.applications.filter(
-        (t) => t.user_id === e && Date.now() - new Date(t.submitted_at).getTime() < 864e5,
-      ).length >= 3 && u.add("velocity");
+      // ORG1 (F-ORG1-13): velocity counts every submission in the record's history, not one row per user.
+      [...(d?.history ?? []), ...(d ? [d] : [])].filter((t) => Date.now() - new Date(t.submitted_at).getTime() < 864e5)
+        .length >= 2 && u.add("velocity");
+      const docRef9 = await Ya(img9);
       let m = null;
       "business" === t.organizer_type &&
         t.business &&
@@ -6063,7 +6260,8 @@ __d(
           id_doc_type: t.id_doc_type,
           id_doc_ref: _,
           id_doc_last4: s.slice(-4),
-          id_doc_uploaded: !!t.id_doc_uploaded,
+          id_doc_uploaded: !0,
+          id_doc_media_ref: docRef9,
           business: m,
           phone_hash: l,
           risk_flags: Array.from(u),
@@ -6074,6 +6272,10 @@ __d(
           submitted_at: p,
           reviewed_at: null,
           created_at: d?.created_at ?? p,
+          // Previous versions of the application are kept (without the document image) for reviewers.
+          history: d
+            ? [...(d.history ?? []), Object.assign({}, d, { history: void 0, id_doc_media_ref: void 0 })].slice(-10)
+            : [],
         },
         g = Qt.applications.findIndex((t) => t.user_id === e);
       (g >= 0 ? (Qt.applications[g] = f) : Qt.applications.push(f),
@@ -6095,7 +6297,8 @@ __d(
           read: !1,
           created_at: p,
         });
-      return f;
+      // ORG1 (F-ORG1-15): the applicant gets the same slim DTO as the read endpoint.
+      return applicantDto(f);
     };
     const pn = (e) => {
       const t = Qt.profiles.find((t) => t.id === e.user_id),
@@ -7235,7 +7438,21 @@ __d(
       const a = (0, v.sanitizeText)(t.title, 100);
       if (!a) throw new Error("E_ADD_A_MATCH_TITLE");
       if (t.end_minutes <= t.start_minutes) throw new Error("E_END_TIME_MUST_BE_AFTER_THE");
-      if (t.max_players < 2 || t.max_players > 40) throw new Error("E_PLAYERS_MUST_BE_BETWEEN_2_AND");
+      if (t.end_minutes - t.start_minutes < 30 || t.end_minutes - t.start_minutes > 360) throw new Error("E_DURATION_OUT_OF_RANGE");
+      validateMatchInput(t);
+      {
+        const s9 = new Date(t.start_date).getTime();
+        if (Number.isNaN(s9)) throw new Error("E_PICK_A_DATE_AND_TIME");
+        if (s9 < Date.now() - 864e5) throw new Error("E_MATCH_CANNOT_START_IN_PAST");
+        if (t.end_date && new Date(t.end_date).getTime() < s9) throw new Error("E_SERIES_END_BEFORE_START");
+        if (Qt.templates.filter((t) => t.organizer_id === e && Date.now() - new Date(t.created_at).getTime() < 36e5).length >= 3)
+          throw new Error("E_YOU_HAVE_CREATED_TOO_MANY_SERIES");
+        if (!t.custom_venue) {
+          const v9 = fi().find((e) => e.id === t.venue_id);
+          if (!v9) throw new Error("E_CHOOSE_A_VENUE");
+          validateMatchInput(t, { venue: v9 });
+        }
+      }
       if ("weekly" === t.frequency && (!t.weekdays || 0 === t.weekdays.length))
         throw new Error("E_PICK_AT_LEAST_ONE_WEEKDAY");
       if ("monthly" === t.frequency && (!t.monthly_week || null == t.monthly_weekday))
@@ -8788,7 +9005,10 @@ __d(
     r.mockGetBooking = async (e, t) => {
       (await ei(), await Cr());
       const a = gr(e);
-      return a ? Pr(a) : null;
+      if (!a) return null;
+      // ORG1 (F-ORG1-16): only the organizer who made the court booking (or an admin) can read it.
+      if (t && a.organizer_id !== t && !ro(t)) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return Pr(a);
     };
     r.mockCreatePaymentPlan = async (e, t, a, i) => {
       await ei();
@@ -12366,7 +12586,7 @@ __d(
       const a = JSON.stringify(t);
       if (Ls && Ls.key === a && Date.now() - Ls.at < 15e3)
         return (
-          await (0, w.logAudit)("bi.accessed", (0, w.actorRef)(e), { cached: !0 }),
+          await adm2LogOncePerDay("bi.accessed", e),
           Object.assign({}, Ls.data, { cached: !0 })
         );
       const i = Date.now(),
@@ -12680,7 +12900,7 @@ __d(
         };
       return (
         (Ls = { key: a, at: Date.now(), data: de }),
-        await (0, w.logAudit)("bi.accessed", (0, w.actorRef)(e), { cached: !1 }),
+        await adm2LogOncePerDay("bi.accessed", e),
         de
       );
     };
@@ -13395,21 +13615,29 @@ __d(
       };
     };
     r.mockGetConciergeRules = async (e) => (await ei(), await sn(e), Qs());
-    r.mockSetConciergeRules = async (e, t) => {
+    // Bounds shared with the admin screen so the UI can never offer a value the store rejects.
+    r.CONCIERGE_BOUNDS = {
+      autoInviteCount: [0, 20, 1],
+      minFillToPublish: [0, 100, 5],
+      replacementsCount: [1, 12, 1],
+      skillTolerance: [0, 5, 0.5],
+      notifyLeadHours: [1, 72, 1],
+      horizonDays: [3, 30, 1],
+      quietStart: [0, 23, 1],
+      quietEnd: [0, 23, 1],
+    };
+    r.mockSetConciergeRules = async (e, t, i) => {
       (await ei(), await sn(e));
-      const a = Object.assign({}, Qs(), t, { updated_at: new Date().toISOString() });
+      const n = adm2Reason(i),
+        o = r.CONCIERGE_BOUNDS,
+        s = {};
+      for (const [e, [t, a, i]] of Object.entries(o))
+        s[e] = (n) => Math.max(t, Math.min(a, Math.round(n / i) * i));
+      const { next: a, diff: d } = adm2Apply(Qs(), t, s);
       return (
-        (a.autoInviteCount = Math.max(0, Math.min(20, Math.round(a.autoInviteCount)))),
-        (a.minFillToPublish = Math.max(0, Math.min(100, Math.round(a.minFillToPublish)))),
-        (a.replacementsCount = Math.max(1, Math.min(12, Math.round(a.replacementsCount)))),
-        (a.skillTolerance = Math.max(0, Math.min(5, a.skillTolerance))),
-        (a.notifyLeadHours = Math.max(1, Math.min(168, Math.round(a.notifyLeadHours)))),
-        (a.horizonDays = Math.max(3, Math.min(30, Math.round(a.horizonDays)))),
-        (a.quietStart = Math.max(0, Math.min(23, Math.round(a.quietStart)))),
-        (a.quietEnd = Math.max(0, Math.min(23, Math.round(a.quietEnd)))),
         (Qt.conciergeRules = a),
         await Za(St, Qt.conciergeRules),
-        await (0, w.logAdminAudit)("concierge.rules_changed", e, null, {}),
+        await (0, w.logAdminAudit)("concierge.rules_changed", e, null, { reason: n, changes: d }),
         a
       );
     };
@@ -14013,6 +14241,33 @@ __d(
       };
     };
     r.mockGetCoCVersion = () => D.CURRENT_COC_VERSION;
+    // ADM2 (F-ADM2-1/4): platform-wide settings are validated against their defaults, require a reason,
+    // and are audited with a per-key before/after diff.
+    const adm2Apply = (e, t, a, i) => {
+      const n = Object.assign({}, e),
+        r = [];
+      for (const [o, s] of Object.entries(t ?? {})) {
+        if ("updated_at" === o) continue;
+        if (!(o in e)) throw new Error("E_INVALID_VALUE");
+        const d = Number(s);
+        if (!Number.isFinite(d)) throw new Error("E_INVALID_VALUE");
+        const l = a[o] ?? a["*"] ?? ((e) => e),
+          c = l(d);
+        c !== e[o] && (r.push({ key: o, from: e[o], to: c }), (n[o] = c));
+      }
+      return ((n.updated_at = new Date().toISOString()), { next: n, diff: r });
+    };
+    // ADM2 (F-ADM2-2): access to a read-only dashboard is recorded once per admin per day.
+    const adm2LoggedToday = new Set();
+    const adm2LogOncePerDay = async (e, t) => {
+      const a = `${e}:${t}:${new Date().toISOString().slice(0, 10)}`;
+      adm2LoggedToday.has(a) || (adm2LoggedToday.add(a), await (0, w.logAudit)(e, (0, w.actorRef)(t), {}));
+    };
+    const adm2Reason = (e) => {
+      const t = (0, v.sanitizeText)(e ?? "", 200);
+      if (t.length < 3) throw new Error("E_A_REASON_IS_REQUIRED");
+      return t;
+    };
     const fd = () => Qt.demandWeights ?? O.DEFAULT_DEMAND_WEIGHTS,
       gd = (e) => Math.min(1, Math.max(0, e)),
       hd = async (e, t) => {
@@ -14099,19 +14354,17 @@ __d(
         }));
     };
     r.mockGetDemandWeights = async (e) => (await ei(), await sn(e), fd());
-    r.mockSetDemandWeights = async (e, t) => {
+    r.mockSetDemandWeights = async (e, t, i) => {
       (await ei(), await sn(e));
-      const a = Object.assign({}, fd(), t, { updated_at: new Date().toISOString() });
-      for (const e of Object.keys(a))
-        "updated_at" !== e &&
-          (a[e] =
-            "timeToFillHours" === e
-              ? Math.max(1, Math.min(72, Math.round(a[e])))
-              : Math.max(0, Math.min(1, Math.round(100 * a[e]) / 100)));
+      const n = adm2Reason(i),
+        { next: a, diff: r } = adm2Apply(fd(), t, {
+          timeToFillHours: (e) => Math.max(1, Math.min(72, Math.round(e))),
+          "*": (e) => Math.max(0, Math.min(1, Math.round(100 * e) / 100)),
+        });
       return (
         (Qt.demandWeights = a),
         await Za(ye, Qt.demandWeights),
-        await (0, w.logAdminAudit)("demand.weights_changed", e, null, {}),
+        await (0, w.logAdminAudit)("demand.weights_changed", e, null, { reason: n, changes: r }),
         a
       );
     };
@@ -14303,15 +14556,14 @@ __d(
       await (0, w.logAudit)(r, (0, w.actorRef)(e), { sport: t, field: i ?? "", success: n });
     };
     r.mockGetOptimizerWeights = async (e) => (await ei(), await sn(e), yd());
-    r.mockSetOptimizerWeights = async (e, t) => {
+    r.mockSetOptimizerWeights = async (e, t, i) => {
       (await ei(), await sn(e));
-      const a = Object.assign({}, yd(), t, { updated_at: new Date().toISOString() });
-      for (const e of Object.keys(a))
-        "updated_at" !== e && (a[e] = Math.max(0, Math.min(1, Math.round(100 * a[e]) / 100)));
+      const n = adm2Reason(i),
+        { next: a, diff: r } = adm2Apply(yd(), t, { "*": (e) => Math.max(0, Math.min(1, Math.round(100 * e) / 100)) });
       return (
         (Qt.optimizerWeights = a),
         await Za(ve, Qt.optimizerWeights),
-        await (0, w.logAdminAudit)("optimizer.weights_changed", e, null, {}),
+        await (0, w.logAdminAudit)("optimizer.weights_changed", e, null, { reason: n, changes: r }),
         a
       );
     };
@@ -16676,8 +16928,28 @@ __d(
           match: a.match_id.slice(-6),
         }));
     };
+    // ADM2 (F-ADM2-9): reviewed fraud signals are remembered so the list shows what is still open.
+    const FRAUD_KEY = "playora.mock.award.fraudreviews.v1";
+    const adm2Fraud = async () => {
+      try {
+        const e = await l.default.getItem(FRAUD_KEY);
+        return e ? JSON.parse(e) : {};
+      } catch {
+        return {};
+      }
+    };
+    r.mockReviewFraudSignal = async (e, t, a) => {
+      (await ei(), await sn(e));
+      const i = adm2Reason(a),
+        n = await adm2Fraud();
+      ((n[String(t)] = { reviewed_by: e, reviewed_at: new Date().toISOString(), reason: i }),
+        await l.default.setItem(FRAUD_KEY, JSON.stringify(n)),
+        await (0, w.logAdminAudit)("award.fraud_reviewed", e, null, { signal: String(t).slice(-12), reason: i }));
+      return n[String(t)];
+    };
     r.mockGetAwardFraudSignals = async (e) => {
       (await ei(), await sn(e));
+      const adm2Reviewed = await adm2Fraud();
       const t = [],
         a = new Map();
       for (const e of Qt.awardVotes) {
@@ -16687,13 +16959,12 @@ __d(
       for (const [i, n] of a) {
         const a = (0, S.detectCollusion)(n.map((e) => ({ voter_id: e.voter_id, nominee_id: e.nominee_id })));
         if (0 === a.length) continue;
-        await (0, w.logAudit)("award.fraud_flagged", (0, w.actorRef)(e), {
-          match: i.slice(-6),
-          signals: a.length,
-        });
+        // ADM2 (F-ADM2-2): a read no longer writes to the audit log.
         const r = hi(i);
-        for (const e of a)
+        for (const e of a) {
+          const n = `${i}:${e.voter_id}:${e.nominee_id}`;
           t.push({
+            id: n,
             match_id: i,
             venue: r ? Ai(r.venue_id) : "",
             voter_id: e.voter_id,
@@ -16701,7 +16972,9 @@ __d(
             nominee_id: e.nominee_id,
             nominee_name: Td(e.nominee_id),
             categories: e.categories,
+            review: adm2Reviewed[n] ?? null,
           });
+        }
       }
       return t;
     };
@@ -16912,22 +17185,48 @@ __d(
         );
       };
     r.mockGetMatchFeed = Gl;
+    // ADM2 (F-ADM2-2/3): funnel counters live in their own store with a fixed event vocabulary and a
+    // per-user daily cap, so they never evict audit records and cannot be poisoned with free text.
+    const FUNNEL_EVENTS = new Set([
+      "app_open", "signup_start", "signup_done", "browse", "game_view", "join_start", "join_paid",
+      "join_done", "organizer_apply", "match_created", "booking_start", "booking_done", "invite_sent",
+    ]);
+    const FUNNEL_KEY = "playora.mock.funnel.v1";
+    const adm2Funnel = async () => {
+      try {
+        const e = await l.default.getItem(FUNNEL_KEY);
+        const t = e ? JSON.parse(e) : null;
+        return t && "object" == typeof t ? { events: t.events ?? {}, quota: t.quota ?? {} } : { events: {}, quota: {} };
+      } catch {
+        return { events: {}, quota: {} };
+      }
+    };
     r.mockLogFunnel = async (e, t) => {
-      (await ei(),
-        await (0, w.logAudit)("funnel.event", (0, w.actorRef)(e), { e: (0, v.sanitizeText)(t, 60) }));
+      await ei();
+      const a = String(t ?? "");
+      if (!FUNNEL_EVENTS.has(a)) return;
+      const i = await adm2Funnel(),
+        n = new Date().toISOString().slice(0, 10),
+        r = `${e ?? "anon"}:${n}`;
+      if ((i.quota[r] ?? 0) >= 200) return;
+      ((i.quota[r] = (i.quota[r] ?? 0) + 1),
+        (i.events[a] = i.events[a] ?? { total: 0, days: {} }),
+        (i.events[a].total += 1),
+        (i.events[a].days[n] = (i.events[a].days[n] ?? 0) + 1));
+      for (const e of Object.keys(i.quota)) e.endsWith(n) || delete i.quota[e];
+      try {
+        await l.default.setItem(FUNNEL_KEY, JSON.stringify(i));
+      } catch (e) {
+        (0, w.noteWriteFailure)(FUNNEL_KEY, e);
+      }
     };
     r.mockGetFunnelStats = async (e) => {
       (await ei(), await sn(e));
-      const t = (await (0, w.readAudit)()).filter((e) => "funnel.event" === e.type),
-        a = Date.now() - 6048e5,
-        i = new Map();
-      for (const e of t) {
-        const t = e.meta?.e ?? "unknown",
-          n = i.get(t) ?? { total: 0, last7d: 0 };
-        ((n.total += 1), new Date(e.at).getTime() > a && (n.last7d += 1), i.set(t, n));
-      }
-      return [...i.entries()]
-        .map(([e, t]) => Object.assign({ event: e }, t))
+      const t = await adm2Funnel(),
+        a = [];
+      for (let e = 0; e < 7; e++) a.push(new Date(Date.now() - 864e5 * e).toISOString().slice(0, 10));
+      return Object.entries(t.events)
+        .map(([e, t]) => ({ event: e, total: t.total, last7d: a.reduce((e, a) => e + (t.days[a] ?? 0), 0) }))
         .sort((e, t) => t.total - e.total);
     };
     r.mockLogFeedSignal = async (e, t, a) => {
@@ -16951,11 +17250,55 @@ __d(
           (a?.preferred_sports.includes(i.sport) && r.push("favorite_sport"),
             n >= 0.5 && r.push("skill_fit"),
             Ll(i.id, Qd(e)).length > 0 && r.push("friends"));
-          const o = (0, E.nudgeWeights)(Ml(), t, r);
-          ((Qt.feedWeights = o), await Za(et, o));
+          // ADM2 (F-ADM2-20): a single user can only nudge the global weights a bounded number of
+          // times per day, and never while an administrator has frozen them.
+          const s9 = Qt.feedWeightsFrozen ?? !1,
+            d9 = new Date().toISOString().slice(0, 10),
+            l9 = (Qt.feedNudgeQuota ??= {}),
+            c9 = `${e}:${d9}`;
+          if (!s9 && (l9[c9] ?? 0) < 20) {
+            l9[c9] = (l9[c9] ?? 0) + 1;
+            for (const e of Object.keys(l9)) e.endsWith(d9) || delete l9[e];
+            const o = (0, E.nudgeWeights)(Ml(), t, r);
+            ((Qt.feedWeights = o), await Za(et, o));
+          }
         }
       }
       await Za(Xe, Qt.feedSignals);
+    };
+    // ADM2 (F-ADM2-20): administrators can freeze or reset the self-tuning feed weights.
+    r.mockSetFeedWeights = async (e, t, a) => {
+      (await ei(), await sn(e));
+      const i = adm2Reason(a),
+        n = Ml(),
+        { next: o, diff: s } = adm2Apply(n, t, { "*": (e) => Math.max(0, Math.min(1, Math.round(100 * e) / 100)) });
+      return (
+        (Qt.feedWeights = o),
+        await Za(et, o),
+        await (0, w.logAdminAudit)("feed.weights_changed", e, null, { reason: i, changes: s }),
+        o
+      );
+    };
+    r.mockResetFeedWeights = async (e, t) => {
+      (await ei(), await sn(e));
+      const a = adm2Reason(t),
+        i = "boolean" == typeof t ? t : void 0;
+      return (
+        (Qt.feedWeights = Object.assign({}, E.DEFAULT_FEED_WEIGHTS)),
+        (Qt.feedNudgeQuota = {}),
+        await Za(et, Qt.feedWeights),
+        await (0, w.logAdminAudit)("feed.weights_reset", e, null, { reason: a }),
+        Qt.feedWeights
+      );
+    };
+    r.mockSetFeedFrozen = async (e, t, a) => {
+      (await ei(), await sn(e));
+      const i = adm2Reason(a);
+      return (
+        (Qt.feedWeightsFrozen = !!t),
+        await (0, w.logAdminAudit)("feed.weights_frozen", e, null, { frozen: !!t, reason: i }),
+        !!t
+      );
     };
     r.mockGetFeedAnalytics = async (e) => {
       (await ei(), await Ms(e));
@@ -16973,6 +17316,7 @@ __d(
         c = new Set(t.map((e) => e.user_id)).size,
         _ = Ml();
       return {
+        frozen: !!Qt.feedWeightsFrozen,
         impressions: i,
         clicks: n,
         joins: r,
@@ -19224,12 +19568,12 @@ __d(
     e.fetchDemandPrediction = (o, c) => t.store.mockGetDemandPrediction(o, c);
     e.recordDemandOutcome = (o, c, s, n) => t.store.mockRecordDemandOutcome(o, c, s, n);
     e.fetchDemandWeights = (o) => t.store.mockGetDemandWeights(o);
-    e.setDemandWeights = (o, c) => t.store.mockSetDemandWeights(o, c);
+    e.setDemandWeights = (o, c, s) => t.store.mockSetDemandWeights(o, c, s);
     e.fetchDemandModelStats = (o) => t.store.mockGetDemandModelStats(o);
     e.fetchMatchOptimization = (o, c) => t.store.mockGetMatchOptimization(o, c);
     e.recordOptimizerDecision = (o, c, s, n, l) => t.store.mockRecordOptimizerDecision(o, c, s, n, l);
     e.fetchOptimizerWeights = (o) => t.store.mockGetOptimizerWeights(o);
-    e.setOptimizerWeights = (o, c) => t.store.mockSetOptimizerWeights(o, c);
+    e.setOptimizerWeights = (o, c, s) => t.store.mockSetOptimizerWeights(o, c, s);
     e.fetchOptimizerDashboard = (o) => t.store.mockGetOptimizerDashboard(o);
     e.createClub = (o, c) => t.store.mockCreateClub(o, c);
     e.listMyClubs = (o) => t.store.mockListMyClubs(o);
@@ -19352,7 +19696,11 @@ __d(
     e.fetchConciergeReplacements = (o, c, s) => t.store.mockGetConciergeReplacements(o, c, s);
     e.fetchConciergeNotificationPlan = (o, c) => t.store.mockGetConciergeNotificationPlan(o, c);
     e.fetchConciergeRules = (o) => t.store.mockGetConciergeRules(o);
-    e.setConciergeRules = (o, c) => t.store.mockSetConciergeRules(o, c);
+    e.setConciergeRules = (o, c, s) => t.store.mockSetConciergeRules(o, c, s);
+    e.reviewFraudSignal = (o, c, s) => t.store.mockReviewFraudSignal(o, c, s);
+    e.setFeedWeights = (o, c, s) => t.store.mockSetFeedWeights(o, c, s);
+    e.setFeedFrozen = (o, c, s) => t.store.mockSetFeedFrozen(o, c, s);
+    e.resetFeedWeights = (o, c) => t.store.mockResetFeedWeights(o, c);
     e.fetchConciergeStats = (o) => t.store.mockGetConciergeStats(o);
     e.acceptReplacement = (o, c) => t.store.mockAcceptReplacement(o, c);
     e.declineReplacement = (o, c) => t.store.mockDeclineReplacement(o, c);
@@ -19753,6 +20101,14 @@ __d(
         E_TIME_LOCKED_BY_COURT_BOOKING: "seTimeLockedByCourtBooking",
         E_ATTENDANCE_LOCKED: "seAttendanceLocked",
         E_PLEASE_WAIT_BEFORE_INVITING_AGAIN: "sePleaseWaitBeforeInvitingAgain",
+        // ORG1
+        E_UPLOAD_YOUR_IDENTITY_DOCUMENT: "seUploadYourIdentityDocument",
+        E_INVALID_MATCH_OPTION: "seInvalidMatchOption",
+        E_PRICE_OUT_OF_RANGE: "sePriceOutOfRange",
+        E_WAITLIST_OUT_OF_RANGE: "seWaitlistOutOfRange",
+        E_VENUE_DOES_NOT_SUPPORT_SPORT: "seVenueDoesNotSupportSport",
+        E_SERIES_END_BEFORE_START: "seSeriesEndBeforeStart",
+        E_YOU_HAVE_CREATED_TOO_MANY_SERIES: "seYouHaveCreatedTooManySeries",
       },
       E = {
         E_TOO_MANY_ATTEMPTS_MINUTES: "seTooManyAttemptsMinutes",
@@ -20035,7 +20391,6 @@ __d(
         adminOnlyBody: "This area is restricted to platform administrators.",
         analystOrAdminBody: "This area is restricted to administrators and analysts.",
         loadFailedTitle: "Couldn\u2019t load this screen",
-        retry: "Retry",
         goBack: "Go back",
         demoModeBanner: "Demo mode \u2014 data is stored on this device only",
         sessionExpired: "Your session has expired. Please sign in again.",
@@ -20092,6 +20447,29 @@ __d(
         confirmDecision: "Confirm",
         // --- ADM2 keys (fix batch) ---
         // --- ORG1 keys (fix batch) ---
+        seUploadYourIdentityDocument: "Please attach a photo of your identity document.",
+        seInvalidMatchOption: "One of the match options is not valid.",
+        sePriceOutOfRange: "Price must be between 0 and 100 KWD.",
+        seWaitlistOutOfRange: "Waitlist size must be between 0 and 20.",
+        seVenueDoesNotSupportSport: "This venue does not offer that sport.",
+        seSeriesEndBeforeStart: "The series end date must be after its start date.",
+        seYouHaveCreatedTooManySeries: "You have created several series in the last hour. Please try again later.",
+        idDocPickImage: "Attach a photo of the document",
+        idDocAttached: "Document photo attached",
+        idDocTooLarge: "The image is too large (max 700 KB). Please pick a smaller photo.",
+        idDocReplace: "Replace photo",
+        statusInfoRequestedTitle: "More information needed",
+        statusInfoRequestedBody: "The reviewer asked for more information. Update your application and resubmit.",
+        updateApplication: "Update application",
+        suspensionReasonLabel: "Reason for suspension",
+        noRecommendationTitle: "No recommendation for this slot",
+        noRecommendationBody: "Publishing with your values: %{price} \u00b7 %{n} players \u00b7 %{level}",
+        quickWillPublishWith: "This game will be posted with",
+        smartDuration: "Duration",
+        smartVisibility: "Visibility",
+        smartApproval: "Approval",
+        smartDefaultsFallback: "No history yet \u2014 standard defaults for this sport. You can change them after posting.",
+        applicationLoadFailed: "We couldn\u2019t load your application.",
         // --- ORG2 keys (fix batch) ---
         seDurationOutOfRange: "A match must last between 30 minutes and 6 hours.",
         seTimeLockedByCourtBooking: "This match is tied to a court booking, so its time cannot be changed here. Cancel and rebook the court instead.",
@@ -23431,7 +23809,6 @@ __d(
         adminOnlyBody: "\u0647\u0630\u0647 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0645\u062e\u0635\u0635\u0629 \u0644\u0645\u0634\u0631\u0641\u064a \u0627\u0644\u0645\u0646\u0635\u0629.",
         analystOrAdminBody: "\u0647\u0630\u0647 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0645\u062e\u0635\u0635\u0629 \u0644\u0644\u0645\u0634\u0631\u0641\u064a\u0646 \u0648\u0627\u0644\u0645\u062d\u0644\u0644\u064a\u0646.",
         loadFailedTitle: "\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0647\u0630\u0647 \u0627\u0644\u0634\u0627\u0634\u0629",
-        retry: "\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629",
         goBack: "\u0631\u062c\u0648\u0639",
         demoModeBanner: "\u0648\u0636\u0639 \u0627\u0644\u0639\u0631\u0636 \u2014 \u062a\u064f\u062d\u0641\u0638 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632 \u0641\u0642\u0637",
         sessionExpired: "\u0627\u0646\u062a\u0647\u062a \u062c\u0644\u0633\u062a\u0643. \u064a\u0631\u062c\u0649 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0645\u062c\u062f\u062f\u064b\u0627.",
@@ -23488,6 +23865,29 @@ __d(
         confirmDecision: "تأكيد",
         // --- ADM2 keys (fix batch) ---
         // --- ORG1 keys (fix batch) ---
+        seUploadYourIdentityDocument: "\u064a\u0631\u062c\u0649 \u0625\u0631\u0641\u0627\u0642 \u0635\u0648\u0631\u0629 \u0645\u0646 \u0648\u062b\u064a\u0642\u0629 \u0627\u0644\u0647\u0648\u064a\u0629.",
+        seInvalidMatchOption: "\u0623\u062d\u062f \u062e\u064a\u0627\u0631\u0627\u062a \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629 \u063a\u064a\u0631 \u0635\u0627\u0644\u062d.",
+        sePriceOutOfRange: "\u064a\u062c\u0628 \u0623\u0646 \u064a\u0643\u0648\u0646 \u0627\u0644\u0633\u0639\u0631 \u0628\u064a\u0646 0 \u0648 100 \u062f.\u0643.",
+        seWaitlistOutOfRange: "\u064a\u062c\u0628 \u0623\u0646 \u064a\u0643\u0648\u0646 \u062d\u062c\u0645 \u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0627\u0646\u062a\u0638\u0627\u0631 \u0628\u064a\u0646 0 \u0648 20.",
+        seVenueDoesNotSupportSport: "\u0647\u0630\u0627 \u0627\u0644\u0645\u0644\u0639\u0628 \u0644\u0627 \u064a\u0648\u0641\u0631 \u0647\u0630\u0647 \u0627\u0644\u0631\u064a\u0627\u0636\u0629.",
+        seSeriesEndBeforeStart: "\u064a\u062c\u0628 \u0623\u0646 \u064a\u0643\u0648\u0646 \u062a\u0627\u0631\u064a\u062e \u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u0633\u0644\u0633\u0644\u0629 \u0628\u0639\u062f \u062a\u0627\u0631\u064a\u062e \u0628\u062f\u0627\u064a\u062a\u0647\u0627.",
+        seYouHaveCreatedTooManySeries: "\u0623\u0646\u0634\u0623\u062a \u0639\u062f\u0629 \u0633\u0644\u0627\u0633\u0644 \u062e\u0644\u0627\u0644 \u0627\u0644\u0633\u0627\u0639\u0629 \u0627\u0644\u0645\u0627\u0636\u064a\u0629. \u062d\u0627\u0648\u0644 \u0644\u0627\u062d\u0642\u064b\u0627.",
+        idDocPickImage: "\u0625\u0631\u0641\u0627\u0642 \u0635\u0648\u0631\u0629 \u0627\u0644\u0648\u062b\u064a\u0642\u0629",
+        idDocAttached: "\u062a\u0645 \u0625\u0631\u0641\u0627\u0642 \u0635\u0648\u0631\u0629 \u0627\u0644\u0648\u062b\u064a\u0642\u0629",
+        idDocTooLarge: "\u0627\u0644\u0635\u0648\u0631\u0629 \u0643\u0628\u064a\u0631\u0629 \u062c\u062f\u064b\u0627 (\u0627\u0644\u062d\u062f 700 \u0643\u064a\u0644\u0648\u0628\u0627\u064a\u062a). \u0627\u062e\u062a\u0631 \u0635\u0648\u0631\u0629 \u0623\u0635\u063a\u0631.",
+        idDocReplace: "\u0627\u0633\u062a\u0628\u062f\u0627\u0644 \u0627\u0644\u0635\u0648\u0631\u0629",
+        statusInfoRequestedTitle: "\u0645\u0637\u0644\u0648\u0628 \u0645\u0632\u064a\u062f \u0645\u0646 \u0627\u0644\u0645\u0639\u0644\u0648\u0645\u0627\u062a",
+        statusInfoRequestedBody: "\u0637\u0644\u0628 \u0627\u0644\u0645\u0631\u0627\u062c\u0639 \u0645\u0632\u064a\u062f\u064b\u0627 \u0645\u0646 \u0627\u0644\u0645\u0639\u0644\u0648\u0645\u0627\u062a. \u062d\u062f\u0651\u062b \u0637\u0644\u0628\u0643 \u0648\u0623\u0639\u062f \u0625\u0631\u0633\u0627\u0644\u0647.",
+        updateApplication: "\u062a\u062d\u062f\u064a\u062b \u0627\u0644\u0637\u0644\u0628",
+        suspensionReasonLabel: "\u0633\u0628\u0628 \u0627\u0644\u0625\u064a\u0642\u0627\u0641",
+        noRecommendationTitle: "\u0644\u0627 \u062a\u0648\u062c\u062f \u062a\u0648\u0635\u064a\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0645\u0648\u0639\u062f",
+        noRecommendationBody: "\u0633\u064a\u064f\u0646\u0634\u0631 \u0628\u0642\u064a\u0645\u0643: %{price} \u00b7 %{n} \u0644\u0627\u0639\u0628\u064a\u0646 \u00b7 %{level}",
+        quickWillPublishWith: "\u0633\u062a\u064f\u0646\u0634\u0631 \u0647\u0630\u0647 \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629 \u0628\u0640",
+        smartDuration: "\u0627\u0644\u0645\u062f\u0629",
+        smartVisibility: "\u0627\u0644\u0638\u0647\u0648\u0631",
+        smartApproval: "\u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629",
+        smartDefaultsFallback: "\u0644\u0627 \u064a\u0648\u062c\u062f \u0633\u062c\u0644 \u0628\u0639\u062f \u2014 \u0642\u064a\u0645 \u0627\u0641\u062a\u0631\u0627\u0636\u064a\u0629 \u0644\u0647\u0630\u0647 \u0627\u0644\u0631\u064a\u0627\u0636\u0629. \u064a\u0645\u0643\u0646\u0643 \u062a\u063a\u064a\u064a\u0631\u0647\u0627 \u0628\u0639\u062f \u0627\u0644\u0646\u0634\u0631.",
+        applicationLoadFailed: "\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0637\u0644\u0628\u0643.",
         // --- ORG2 keys (fix batch) ---
         seDurationOutOfRange: "\u064a\u062c\u0628 \u0623\u0646 \u062a\u0633\u062a\u063a\u0631\u0642 \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629 \u0628\u064a\u0646 30 \u062f\u0642\u064a\u0642\u0629 \u0648 6 \u0633\u0627\u0639\u0627\u062a.",
         seTimeLockedByCourtBooking: "\u0647\u0630\u0647 \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629 \u0645\u0631\u062a\u0628\u0637\u0629 \u0628\u062d\u062c\u0632 \u0645\u0644\u0639\u0628\u060c \u0644\u0630\u0627 \u0644\u0627 \u064a\u0645\u0643\u0646 \u062a\u063a\u064a\u064a\u0631 \u0648\u0642\u062a\u0647\u0627 \u0647\u0646\u0627.",
@@ -33697,10 +34097,6 @@ __d(
               options: { presentation: "card", headerShown: !1 },
             }),
             (0, k.jsx)(t.Stack.Screen, {
-              name: "organizer/new",
-              options: { presentation: "card", headerShown: !1 },
-            }),
-            (0, k.jsx)(t.Stack.Screen, {
               name: "organizer/quick",
               options: { presentation: "card", headerShown: !1 },
             }),
@@ -39502,14 +39898,59 @@ __d(
           [de, ce] = (0, t.useState)("civil_id"),
           [ue, pe] = (0, t.useState)(""),
           [ge, he] = (0, t.useState)(!1),
+          [docImg, setDocImg] = (0, t.useState)(null),
+          [ed, setEd] = (0, t.useState)(!1),
+          [ldErr, setLdErr] = (0, t.useState)(null),
           [me, xe] = (0, t.useState)(""),
           [ye, be] = (0, t.useState)(""),
           [fe, je] = (0, t.useState)(""),
           [Ce, ve] = (0, t.useState)(""),
           [Se, Te] = (0, t.useState)(""),
           we = (0, t.useCallback)(async () => {
-            e && (E(await (0, S.fetchMyOrganizerApplication)(e.id)), V(!1));
-          }, [e]);
+            if (!e) return;
+            setLdErr(null);
+            try {
+              E(await (0, S.fetchMyOrganizerApplication)(e.id));
+            } catch (e) {
+              setLdErr(e);
+            } finally {
+              V(!1);
+            }
+          }, [e]),
+          // Pre-fills the form from the stored application so it can be updated and resubmitted.
+          prefill = (t) => {
+            (X(t.full_legal_name ?? ""),
+              Z(t.mobile ?? ""),
+              ee(t.email ?? e?.email ?? ""),
+              ae(t.display_name ?? ""),
+              se(t.bio ?? ""),
+              ne(new Set(t.sports ?? [])),
+              ie(t.expected_monthly_matches ?? 4),
+              K(t.organizer_type ?? "individual"),
+              ce(t.id_doc_type ?? "civil_id"),
+              xe(t.business?.company_name ?? ""),
+              ve(t.business?.website ?? ""),
+              Te(t.business?.socials ?? ""),
+              setDocImg(null),
+              he(!1),
+              setEd(!0));
+          },
+          pickDoc = () => {
+            if ("undefined" == typeof document) return;
+            const e = document.createElement("input");
+            ((e.type = "file"), (e.accept = "image/*"), (e.style.display = "none"));
+            e.onchange = () => {
+              const t = e.files && e.files[0];
+              if ((document.body.removeChild(e), !t)) return;
+              if (t.size > 716800) return void s.default.alert(O("error"), O("idDocTooLarge"));
+              const a = new FileReader();
+              ((a.onload = () => {
+                (setDocImg(String(a.result)), he(!0));
+              }),
+                a.readAsDataURL(t));
+            };
+            (document.body.appendChild(e), e.click());
+          };
         (0, x.useFocusEffect)(
           (0, t.useCallback)(() => {
             we();
@@ -39520,9 +39961,19 @@ __d(
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: N.bg },
             children: (0, R.jsx)(o.default, { color: N.accentText }),
           });
+        if (ldErr)
+          return (0, R.jsx)(G9.GateScreen, {
+            kind: "error",
+            title: O("applicationLoadFailed"),
+            body: (0, G9.classifyError)(ldErr).message,
+            onRetry: () => {
+              (V(!0), we());
+            },
+            onBack: () => H.back(),
+          });
         const Ie = Date.now(),
           Re = "rejected" === F?.status && (!F.reapply_after || new Date(F.reapply_after).getTime() <= Ie),
-          ze = !F || Re;
+          ze = !F || ed;
         return (0, R.jsxs)(p.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: N.bg },
@@ -39553,7 +40004,8 @@ __d(
                       colors: N,
                       t: O,
                       onDashboard: () => H.replace("/organizer"),
-                      onReapply: () => E(null),
+                      onReapply: () => prefill(F),
+                      onContact: () => H.push("/contact"),
                     })
                   : (0, R.jsxs)(R.Fragment, {
                       children: [
@@ -39720,8 +40172,9 @@ __d(
                           children: O("idDocNumberHint"),
                         }),
                         (0, R.jsxs)(l.default, {
-                          onPress: () => he((e) => !e),
+                          onPress: pickDoc,
                           accessibilityRole: "button",
+                          accessibilityLabel: O(ge ? "idDocReplace" : "idDocPickImage"),
                           style: [
                             P.upload,
                             { borderColor: ge ? N.success : N.border, backgroundColor: N.surface },
@@ -39737,7 +40190,7 @@ __d(
                                 v.typography.bodyStrong,
                                 { color: N.text, marginHorizontal: v.spacing.sm },
                               ],
-                              children: O(ge ? "documentAttached" : "uploadDocument"),
+                              children: O(ge ? "idDocAttached" : "idDocPickImage"),
                             }),
                           ],
                         }),
@@ -39819,6 +40272,7 @@ __d(
                           id_doc_type: de,
                           id_doc_number: ue,
                           id_doc_uploaded: ge,
+                          id_doc_image: docImg,
                           business:
                             "business" === J
                               ? {
@@ -39872,10 +40326,11 @@ __d(
       w = r(_d[20]),
       I = r(_d[21]),
       _ = r(_d[22]),
-      R = r(_d[23]);
+      R = r(_d[23]),
+      G9 = r(_d[24]);
     const z = ["football", "padel", "tennis"],
       k = ["civil_id", "government_id", "passport"];
-    const B = ({ app: e, colors: t, t: o, onDashboard: s, onReapply: l }) => {
+    const B = ({ app: e, colors: t, t: o, onDashboard: s, onReapply: l, onContact: cs }) => {
         const n = {
             approved: {
               icon: "ribbon",
@@ -39900,6 +40355,12 @@ __d(
               tone: t.danger,
               title: o("statusSuspendedTitle"),
               body: o("statusSuspendedBody"),
+            },
+            info_requested: {
+              icon: "chatbubble-ellipses",
+              tone: t.warning,
+              title: o("statusInfoRequestedTitle"),
+              body: o("statusInfoRequestedBody"),
             },
             submitted: {
               icon: "hourglass",
@@ -39938,7 +40399,7 @@ __d(
                 ],
                 children: o("reviewTimeline"),
               }),
-            "rejected" === e.status &&
+            ("rejected" === e.status || "suspended" === e.status) &&
               e.rejection_reason &&
               (0, R.jsxs)(y.Card, {
                 style: { marginTop: v.spacing.lg, alignSelf: "stretch" },
@@ -39946,7 +40407,7 @@ __d(
                 children: [
                   (0, R.jsx)(c.default, {
                     style: [v.typography.smallStrong, { color: t.textMuted }],
-                    children: o("rejectionReasonLabel"),
+                    children: o("suspended" === e.status ? "suspensionReasonLabel" : "rejectionReasonLabel"),
                   }),
                   (0, R.jsx)(c.default, {
                     style: [v.typography.body, { color: t.text, marginTop: 2 }],
@@ -39954,8 +40415,8 @@ __d(
                   }),
                 ],
               }),
-            ("under_review" === e.status || "submitted" === e.status) &&
-              e.admin_notes &&
+            "info_requested" === e.status &&
+              e.applicant_message &&
               (0, R.jsxs)(y.Card, {
                 style: { marginTop: v.spacing.lg, alignSelf: "stretch" },
                 padding: "md",
@@ -39966,13 +40427,17 @@ __d(
                   }),
                   (0, R.jsx)(c.default, {
                     style: [v.typography.body, { color: t.text, marginTop: 2 }],
-                    children: e.admin_notes,
+                    children: e.applicant_message,
                   }),
                 ],
               }),
             (0, R.jsx)(u.default, { style: { height: v.spacing.xl } }),
             "approved" === e.status &&
               (0, R.jsx)(b.Button, { title: o("goToDashboard"), fullWidth: !0, size: "lg", onPress: s }),
+            "info_requested" === e.status &&
+              (0, R.jsx)(b.Button, { title: o("updateApplication"), fullWidth: !0, size: "lg", onPress: l }),
+            "suspended" === e.status &&
+              (0, R.jsx)(b.Button, { title: o("contactSupport"), fullWidth: !0, size: "lg", variant: "secondary", onPress: cs }),
             "rejected" === e.status &&
               (d > 0
                 ? (0, R.jsx)(c.default, {
@@ -40124,7 +40589,7 @@ __d(
   2459,
   [
     33, 15, 461, 445, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 626, 625, 630, 615, 616, 671, 1311, 675,
-    1171, 674, 13,
+    1171, 674, 13, 9001,
   ],
 );
 __d(
@@ -40561,7 +41026,8 @@ __d(
           [Dt, zt] = (0, t.useState)(!1),
           [At, Lt] = (0, t.useState)(new Set()),
           [Ht, Et] = (0, t.useState)(new Set()),
-          [Nt, Bt] = (0, t.useState)("quick");
+          [Nt, Bt] = (0, t.useState)("quick"),
+          [apErr, setApErr] = (0, t.useState)(null);
         (0, t.useEffect)(() => {
           l.default
             .getItem("playora.createLane.v1")
@@ -40579,9 +41045,11 @@ __d(
             if (!e || X || Dt) return void It(null);
             let t = !1;
             Rt(!0);
-            const l = ye && null != ve ? N(ye, ve).toISOString() : null,
-              a = ye && null != Se ? N(ye, Se).toISOString() : null;
-            return (
+            // ORG1 (F-ORG1-6): re-evaluated (debounced) whenever the inputs that feed it change.
+            const dbTimer = setTimeout(() => {
+              if (t) return;
+              const l = ye && null != ve ? N(ye, ve).toISOString() : null,
+                a = ye && null != Se ? N(ye, Se).toISOString() : null;
               (0, T.fetchMatchOptimization)(e.id, {
                 sport: ne,
                 venue_id: "list" === Fe ? Ke : null,
@@ -40601,12 +41069,13 @@ __d(
                 })
                 .finally(() => {
                   t || Rt(!1);
-                }),
-              () => {
-                t = !0;
-              }
-            );
-          }, [e, ne, X, Dt]));
+                });
+            }, 400);
+            
+            return () => {
+              ((t = !0), clearTimeout(dbTimer));
+            };
+          }, [e, ne, X, Dt, Fe, Ke, ye, ve, Se, pt, gt, pe, lt, dt, $e]));
         const Ot = (e) => {
           if (!Mt) return;
           const t = Mt.optimal,
@@ -40657,8 +41126,8 @@ __d(
               .then((e) => {
                 "approved" === e?.status ? Ct(!0) : (Ct(!1), Q.replace("/organizer/apply"));
               })
-              .catch(() => {
-                (Ct(!1), Q.replace("/organizer/apply"));
+              .catch((e) => {
+                setApErr(e);
               });
         }, [e, Q]);
         const Wt = "football_custom" === de,
@@ -40704,7 +41173,7 @@ __d(
               (async () => {
                 const e = await (0, T.fetchBooking)(X);
                 if (!e) return;
-                (re(`${e.venue_name} \xb7 ${e.court_name}`), ce(e.sport));
+                (re(`${e.venue_name} \xb7 ${e.court_name}`), ce(e.sport), ("football" === e.sport || "padel" === e.sport || "tennis" === e.sport) && Vt(e.sport));
                 const t = new Date(e.starts_at),
                   l = new Date(e.ends_at),
                   a = new Date(t);
@@ -40726,6 +41195,16 @@ __d(
           }, [kt, ne, Ge]),
           Kt = "" !== gt.trim() ? Number(gt) || 0 : pt,
           Qt = ye ? (0, P.format)(ye, "EEE, d MMM yyyy", { locale: J }) : G("fieldDate");
+        if (apErr)
+          return (0, A.jsx)(G9.GateScreen, {
+            kind: "error",
+            title: G("applicationLoadFailed"),
+            body: (0, G9.classifyError)(apErr).message,
+            onRetry: () => {
+              (setApErr(null), Q.replace("/organizer/create"));
+            },
+            onBack: () => Q.back(),
+          });
         if (!0 !== Tt)
           return (0, A.jsx)(u.SafeAreaView, {
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: K.bg },
@@ -41254,12 +41733,25 @@ __d(
                           }),
                         ],
                       }),
-                      Pt || !Mt
+                      Pt
                         ? (0, A.jsx)(a.default, {
                             color: K.accentText,
                             style: { marginVertical: w.spacing.sm },
                           })
-                        : (0, A.jsx)(c.default, {
+                        : !Mt
+                          ? (0, A.jsxs)(c.default, {
+                              style: [w.typography.small, { color: K.text }],
+                              children: [
+                                G("noRecommendationTitle"),
+                                " \u2014 ",
+                                G("noRecommendationBody", {
+                                  price: (0, C.formatPrice)(Kt),
+                                  n: (0, C.formatNumber)(pe),
+                                  level: G(lt),
+                                }),
+                              ],
+                            })
+                          : (0, A.jsx)(c.default, {
                             style: [w.typography.small, { color: K.text }],
                             children: G("quickAiSummary", {
                               price: (0, C.formatPrice)(Mt.optimal.price_kwd),
@@ -41661,7 +42153,8 @@ __d(
       R = _r(_d[29]),
       D = _r(_d[30]),
       z = _r(_d[31]),
-      A = _r(_d[32]);
+      A = _r(_d[32]),
+      G9 = _r(_d[33]);
     const L = ["football", "padel", "tennis"],
       H = ["beginner", "intermediate", "advanced", "all"],
       E = [0, 3, 5, 10],
@@ -42246,7 +42739,7 @@ __d(
   2461,
   [
     33, 15, 618, 461, 445, 369, 281, 158, 477, 146, 273, 381, 1086, 20, 1623, 1624, 626, 625, 2462, 2463,
-    2464, 630, 615, 616, 671, 1311, 675, 1171, 1312, 1848, 648, 674, 13,
+    2464, 630, 615, 616, 671, 1311, 675, 1171, 1312, 1848, 648, 674, 13, 9001,
   ],
 );
 __d(function(g,r,_i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.DatePicker=void 0;var o=r(d[1]),s=t(r(d[2])),l=t(r(d[3])),n=t(r(d[4])),i=t(r(d[5])),c=r(d[6]),y=r(d[7]),f=r(d[8]),h=r(d[9]),u=r(d[10]),b=r(d[11]),p=r(d[12]),x=r(d[13]),M=r(d[14]);e.DatePicker=({value:t,onChange:l})=>{const j=(0,u.useT)(),{colors:k}=(0,h.useTheme)(),O=(0,y.startOfDay)(new Date),[S,v]=(0,o.useState)((0,y.startOfMonth)(t??O)),D='ar'===(0,u.getLocale)()?f.ar:void 0,C=(0,o.useMemo)(()=>{const t=(0,y.startOfWeek)((0,y.startOfMonth)(S),{weekStartsOn:0}),o=(0,y.endOfWeek)((0,y.endOfMonth)(S),{weekStartsOn:0}),s=(0,y.eachDayOfInterval)({start:t,end:o}),l=[];for(let t=0;t<s.length;t+=7)l.push(s.slice(t,t+7));return l},[S]),R=(0,o.useMemo)(()=>{const t=(0,y.startOfWeek)(O,{weekStartsOn:0});return Array.from({length:7},(o,s)=>(0,y.format)(new Date(t.getTime()+864e5*s),'EEEEE',{locale:D}))},[(0,u.getLocale)()]),I=(0,y.isBefore)((0,y.startOfMonth)(O),S);return(0,M.jsxs)(i.default,{style:[w.wrap,{backgroundColor:k.surface,borderColor:k.border}],children:[(0,M.jsxs)(i.default,{style:w.header,children:[(0,M.jsx)(s.default,{disabled:!I,onPress:()=>v((0,y.addMonths)(S,-1)),hitSlop:8,accessibilityRole:"button",accessibilityLabel:j('previousMonth'),style:{opacity:I?1:.3,padding:p.spacing.xs},children:(0,M.jsx)(c.Ionicons,{name:(0,b.chevronBack)(),size:22,color:k.text})}),(0,M.jsx)(n.default,{style:[p.typography.bodyStrong,{color:k.text}],children:(0,y.format)(S,'MMMM yyyy',{locale:D})}),(0,M.jsx)(s.default,{onPress:()=>v((0,y.addMonths)(S,1)),hitSlop:8,accessibilityRole:"button",accessibilityLabel:j('nextMonth'),style:{padding:p.spacing.xs},children:(0,M.jsx)(c.Ionicons,{name:(0,b.chevronForward)(),size:22,color:k.text})})]}),(0,M.jsx)(i.default,{style:w.weekRow,children:R.map((t,o)=>(0,M.jsx)(n.default,{style:[p.typography.caption,w.cell,{color:k.textMuted,textAlign:'center'}],children:t},o))}),C.map((o,c)=>(0,M.jsx)(i.default,{style:w.weekRow,children:o.map(o=>{const c=(0,y.isSameMonth)(o,S),f=(0,y.isBefore)(o,O),h=!!t&&(0,y.isSameDay)(o,t),u=f||!c;return(0,M.jsx)(s.default,{disabled:u,onPress:()=>l(o),accessibilityRole:"button",accessibilityState:{selected:h,disabled:u},accessibilityLabel:(0,y.format)(o,'d MMMM yyyy',{locale:D}),style:w.cell,children:(0,M.jsx)(i.default,{style:[w.day,h&&{backgroundColor:k.accent},!h&&(0,y.isToday)(o)&&{borderColor:k.accent,borderWidth:1.5}],children:(0,M.jsx)(n.default,{style:[p.typography.small,{color:h?'#fff':u?k.textMuted:k.text,opacity:u&&!h?.35:1,fontWeight:h||(0,y.isToday)(o)?'700':'400'}],children:(0,x.formatNumber)(o.getDate())})})},o.toISOString())})},c))]})};const w=l.default.create({wrap:{borderRadius:p.radius.lg,borderWidth:l.default.hairlineWidth,padding:p.spacing.md},header:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:p.spacing.sm},weekRow:{flexDirection:'row'},cell:{flex:1,alignItems:'center',justifyContent:'center',paddingVertical:2},day:{width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center'}})},2462,[33,15,369,158,146,273,1086,1312,1848,615,675,1171,616,1311,13]);
@@ -42269,24 +42762,34 @@ __d(
           [V, J] = (0, r.useState)(null),
           [q, U] = (0, r.useState)([]),
           [G, K] = (0, r.useState)("upcoming"),
-          [Q, X] = (0, r.useState)(null);
+          [Q, X] = (0, r.useState)(null),
+          [er, setEr] = (0, r.useState)(null);
         (0, r.useEffect)(() => {
           t &&
-            (0, C.fetchMyOrganizerApplication)(t.id).then((t) => {
-              "approved" === t?.status ? X(!0) : (X(!1), _.replace("/organizer/apply"));
-            });
+            (0, C.fetchMyOrganizerApplication)(t.id)
+              .then((t) => {
+                "approved" === t?.status ? X(!0) : (X(!1), _.replace("/organizer/apply"));
+              })
+              .catch((e) => setEr(e));
         }, [t, _]);
         const Y = (0, r.useCallback)(async () => {
           if (!t) return;
-          const [r, a, s, l, o, n] = await Promise.all([
-            (0, C.fetchOrganizerMatches)(t.id),
-            (0, C.fetchOrganizerStats)(t.id),
-            (0, C.fetchOrganizerReputation)(t.id),
-            (0, C.fetchOrganizerRatings)(t.id),
-            (0, C.fetchOrganizerReferralStats)(t.id),
-            (0, C.fetchOrganizerSeries)(t.id),
-          ]);
-          (P(r), F(a), H(s), A(l), J(o), U(n), $(!1));
+          setEr(null);
+          try {
+            const [r, a, s, l, o, n] = await Promise.all([
+              (0, C.fetchOrganizerMatches)(t.id),
+              (0, C.fetchOrganizerStats)(t.id),
+              (0, C.fetchOrganizerReputation)(t.id),
+              (0, C.fetchOrganizerRatings)(t.id),
+              (0, C.fetchOrganizerReferralStats)(t.id),
+              (0, C.fetchOrganizerSeries)(t.id),
+            ]);
+            (P(r), F(a), H(s), A(l), J(o), U(n));
+          } catch (e) {
+            setEr(e);
+          } finally {
+            $(!1);
+          }
         }, [t]);
         (0, m.useFocusEffect)(
           (0, r.useCallback)(() => {
@@ -42295,6 +42798,15 @@ __d(
         );
         const Z = D.filter((t) => t.effective_status === G),
           ee = (t) => `${(0, w.formatNumber)(Math.round(100 * t))}%`;
+        if (er)
+          return (0, R.jsx)(G9.GateScreen, {
+            kind: "error",
+            body: (0, G9.classifyError)(er).message,
+            onRetry: () => {
+              ($(!0), Y());
+            },
+            onBack: () => _.back(),
+          });
         if (!0 !== Q)
           return (0, R.jsx)(c.SafeAreaView, {
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: k.bg },
@@ -42742,7 +43254,8 @@ __d(
       w = _r(d[19]),
       v = _r(d[20]),
       z = _r(d[21]),
-      R = _r(d[22]);
+      R = _r(d[22]),
+      G9 = _r(d[23]);
     const I = { new: "neutral", rising: "warning", trusted: "success", elite: "accent" };
     const S = ({ label: t, value: r, colors: a }) =>
         (0, R.jsxs)(i.default, {
@@ -42785,7 +43298,7 @@ __d(
                     (0, R.jsxs)(n.default, {
                       style: [j.typography.small, { color: r.textMuted }],
                       numberOfLines: 1,
-                      children: [t.venue.name, " \xb7 ", (0, w.formatGameTime)(t.starts_at)],
+                      children: [t.venue?.name ?? "\u2014", " \xb7 ", (0, w.formatGameTime)(t.starts_at)],
                     }),
                   ],
                 }),
@@ -42914,7 +43427,7 @@ __d(
   2465,
   [
     33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 626, 1627, 630, 615, 616, 671, 1311, 675,
-    1171, 13,
+    1171, 13, 9001,
   ],
 );
 __d(
@@ -46637,6 +47150,9 @@ __d(
                                   [P("smartSquad"), P("playersN", { n: String(F.max_players) })],
                                   [P("smartSkill"), P("all" === F.skill_level ? "allLevels" : F.skill_level)],
                                   [P("smartWaitlist"), F.waitlist_on ? P("switchOn") : P("switchOff")],
+                                  [P("smartDuration"), P("minutesN", { n: String(F.duration_minutes ?? 90) })],
+                                  [P("smartVisibility"), P("public" === (F.visibility ?? "public") ? "visibilityPublic" : "visibilityPrivate")],
+                                  [P("smartApproval"), P("auto" === (F.approval_mode ?? "auto") ? "approvalAuto" : "approvalManual")],
                                 ].map(([e, t]) =>
                                   (0, k.jsxs)(
                                     o.default,
@@ -46669,7 +47185,10 @@ __d(
                                   y.typography.caption,
                                   { color: l.textMuted, marginTop: y.spacing.sm },
                                 ],
-                                children: P("smartBasedOn", { n: String(F.based_on_games) }),
+                                children:
+                                  "default" === F.source
+                                    ? P("smartDefaultsFallback")
+                                    : P("smartBasedOn", { n: String(F.based_on_games) }),
                               }),
                             ],
                           })
@@ -47326,13 +47845,14 @@ __d(
           [$, z] = (0, l.useState)("football"),
           [D, K] = (0, l.useState)([]),
           [H, P] = (0, l.useState)(!0),
+          [er, setEr] = (0, l.useState)(null),
           W = (0, l.useCallback)(async () => {
             if (t) {
-              P(!0);
+              (P(!0), setEr(null));
               try {
                 K(await (0, w.fetchSmartSchedule)(t.id, { sport: $ }));
-              } catch {
-                K([]);
+              } catch (e) {
+                (K([]), setEr(e));
               }
               P(!1);
             }
@@ -47418,8 +47938,19 @@ __d(
                 }),
                 H
                   ? (0, I.jsx)(o.default, { color: i.accentText, style: { marginTop: k.spacing.xl } })
-                  : 0 === D.length
-                    ? (0, I.jsx)(x.EmptyState, { icon: "calendar-outline", title: v("noRecommendations") })
+                  : er
+                    ? (0, I.jsxs)(I.Fragment, {
+                        children: [
+                          (0, I.jsx)(x.EmptyState, {
+                            icon: "alert-circle-outline",
+                            title: v("loadFailedTitle"),
+                            body: (0, G9.classifyError)(er).message,
+                          }),
+                          (0, I.jsx)(G9.RetryButton, { onPress: W, label: v("retry") }),
+                        ],
+                      })
+                    : 0 === D.length
+                      ? (0, I.jsx)(x.EmptyState, { icon: "calendar-outline", title: v("noRecommendations") })
                     : D.map((t, l) => {
                         const o =
                           t.predicted_fill >= 75 ? i.success : t.predicted_fill >= 55 ? i.warning : i.danger;
@@ -47586,7 +48117,8 @@ __d(
       _ = _r(d[18]),
       S = _r(d[19]),
       C = _r(d[20]),
-      I = _r(d[21]);
+      I = _r(d[21]),
+      G9 = _r(d[22]);
     const B = ["football", "padel", "tennis"],
       R = [
         { key: "time", labelKey: "factorTime", icon: "time-outline" },
@@ -47633,7 +48165,7 @@ __d(
   2472,
   [
     33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 1627, 630, 615, 616, 671, 1311, 675,
-    1171, 13,
+    1171, 13, 9001,
   ],
 );
 __d(function(_g,r,i,_a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{id:t}=(0,y.useLocalSearchParams)(),{user:o}=(0,w.useAuth)(),{colors:n}=(0,C.useTheme)(),f=(0,y.useRouter)(),z=(0,T.useT)(),A='ar'===(0,T.getLocale)()?x.ar:void 0,[H,V]=(0,a.useState)(null),[N,$]=(0,a.useState)(null),[E,O]=(0,a.useState)(!0),[U,F]=(0,a.useState)('played'),Y=(0,a.useCallback)(async()=>{t&&(V(await(0,k.fetchPassport)(t,o?.id)),$(await(0,k.fetchPlayerAwards)(t)),O(!1))},[t,o?.id]);(0,y.useFocusEffect)((0,a.useCallback)(()=>{Y()},[Y]));const q=async(t,a)=>{o&&H&&(await(0,k.updatePassportPrivacy)(o.id,{[t]:a}),Y())},G=(0,a.useMemo)(()=>H?H.history.filter(t=>'no_show'!==t.status):[],[H]),J=(0,a.useMemo)(()=>H?H.history.filter(t=>'no_show'===t.status):[],[H]),K=H?H.achievements.length+H.badges.length:0;if(E||!H)return(0,_.jsx)(u.SafeAreaView,{style:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:n.bg},children:(0,_.jsx)(l.default,{color:n.accentText})});const Q=H.display_name.split(' ').map(t=>t[0]).slice(0,2).join('').toUpperCase(),X=`@${H.display_name.toLowerCase().replace(/[^a-z0-9]/g,'')}`;return(0,_.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:n.bg},children:[(0,_.jsxs)(p.default,{style:L.topbar,children:[(0,_.jsx)(g.default,{onPress:()=>f.back(),accessibilityRole:"button",accessibilityLabel:z('back'),style:[L.iconBtn,{backgroundColor:n.surface,borderColor:n.border}],children:(0,_.jsx)(h.Ionicons,{name:(0,M.chevronBack)(),size:22,color:n.text})}),(0,_.jsx)(c.default,{style:[v.typography.smallStrong,{color:n.textMuted,marginHorizontal:v.spacing.md}],children:z('sportsPassport')})]}),(0,_.jsxs)(s.default,{contentContainerStyle:{padding:v.spacing.lg,paddingBottom:v.spacing.xxxl},children:[(0,_.jsxs)(p.default,{style:{alignItems:'center'},children:[(0,_.jsx)(p.default,{style:[L.avatar,{backgroundColor:n.accent}],children:(0,_.jsx)(c.default,{style:[v.typography.h1,{color:n.accentInk}],children:Q})}),(0,_.jsx)(c.default,{style:[v.typography.h2,{color:n.text,marginTop:v.spacing.md}],numberOfLines:1,children:H.display_name}),(0,_.jsx)(c.default,{style:[v.typography.small,{color:n.textMuted,marginTop:2}],children:X}),(0,_.jsxs)(p.default,{style:{flexDirection:'row',gap:v.spacing.lg,marginTop:v.spacing.sm},children:[(0,_.jsxs)(g.default,{onPress:()=>f.push(`/follows/${H.user_id}?kind=following`),accessibilityRole:"button",style:{flexDirection:'row',alignItems:'baseline'},children:[(0,_.jsxs)(c.default,{style:[v.typography.bodyStrong,{color:n.text}],children:[(0,S.formatNumber)(H.following)," "]}),(0,_.jsx)(c.default,{style:[v.typography.small,{color:n.textMuted}],children:z('followingLabel')})]}),(0,_.jsxs)(g.default,{onPress:()=>f.push(`/follows/${H.user_id}?kind=followers`),accessibilityRole:"button",style:{flexDirection:'row',alignItems:'baseline'},children:[(0,_.jsxs)(c.default,{style:[v.typography.bodyStrong,{color:n.text}],children:[(0,S.formatNumber)(H.followers)," "]}),(0,_.jsx)(c.default,{style:[v.typography.small,{color:n.textMuted}],children:z('followersLabel')})]})]}),H.sports_played.length>0&&(0,_.jsx)(p.default,{style:{flexDirection:'row',gap:v.spacing.xs,marginTop:v.spacing.sm,flexWrap:'wrap',justifyContent:'center'},children:H.sports_played.map(t=>(0,_.jsxs)(p.default,{style:[L.sportChip,{backgroundColor:(0,S.sportColor)(t)}],children:[(0,_.jsx)(h.Ionicons,{name:S.sportIcon[t],size:11,color:"#fff"}),(0,_.jsx)(c.default,{style:[v.typography.caption,{color:'#fff',marginStart:3}],children:z(t)})]},t))})]}),(0,_.jsxs)(p.default,{style:[L.statsCard,{backgroundColor:n.surfaceAlt}],children:[(0,_.jsx)(I,{label:z('passportMatchesPlayed'),value:(0,S.formatNumber)(H.matches_played),colors:n}),(0,_.jsx)(p.default,{style:[L.statDivider,{backgroundColor:n.border}]}),(0,_.jsx)(I,{label:z('awardsLabel'),value:(0,S.formatNumber)(K),colors:n}),(0,_.jsx)(p.default,{style:[L.statDivider,{backgroundColor:n.border}]}),(0,_.jsx)(I,{label:z('streaksLabel'),value:`\ud83d\udd25 ${(0,S.formatNumber)(H.longest_streak)}`,colors:n})]}),(0,_.jsxs)(p.default,{style:{flexDirection:'row',gap:v.spacing.sm,marginTop:v.spacing.md},children:[(0,_.jsx)(B,{label:z('reputationLabel'),cls:H.reputation,t:z,colors:n}),(0,_.jsx)(B,{label:z('attendanceClassLabel'),cls:H.attendance,t:z,colors:n})]}),(0,_.jsxs)(p.default,{style:[L.tabs,{borderBottomColor:n.border}],children:[(0,_.jsx)(R,{label:z('histPlayed'),n:G.length,active:'played'===U,onPress:()=>F('played'),colors:n}),(0,_.jsx)(R,{label:z('awardsLabel'),n:K+(N?.total??0),active:'awards'===U,onPress:()=>F('awards'),colors:n}),(0,_.jsx)(R,{label:z('histNoShow'),n:J.length,active:'noshow'===U,onPress:()=>F('noshow'),colors:n})]}),'awards'===U?0!==K||0!==H.streaks.length||N&&0!==N.total?(0,_.jsxs)(p.default,{style:{marginTop:v.spacing.md},children:[!!N&&N.by_award.length>0&&(0,_.jsxs)(p.default,{style:{marginBottom:v.spacing.md},children:[(0,_.jsx)(c.default,{style:[v.typography.smallStrong,{color:n.textMuted,marginBottom:v.spacing.sm}],children:z('matchAwards')}),N.by_award.map(t=>(0,_.jsxs)(p.default,{style:[L.matchAwardRow,{borderBottomColor:n.border}],children:[(0,_.jsx)(c.default,{style:{fontSize:20},children:t.emoji}),(0,_.jsx)(c.default,{style:[v.typography.body,{color:n.text,flex:1,marginHorizontal:v.spacing.md}],numberOfLines:1,children:t.custom_label??z(t.label_key)}),(0,_.jsx)(j.Badge,{label:`\xd7${(0,S.formatNumber)(t.count)}`,tone:"accent"})]},t.key))]}),[...H.achievements,...H.badges].length>0&&(0,_.jsx)(p.default,{style:L.grid,children:[...H.achievements,...H.badges].map(t=>(0,_.jsxs)(p.default,{style:[L.award,{backgroundColor:n.surface,borderColor:n.border}],children:[(0,_.jsx)(c.default,{style:{fontSize:26},children:t.emoji}),(0,_.jsx)(c.default,{style:[v.typography.caption,{color:n.text,textAlign:'center',marginTop:2}],numberOfLines:2,children:z(t.key)})]},t.id))}),H.streaks.length>0&&(0,_.jsx)(p.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:v.spacing.sm,marginTop:v.spacing.md},children:H.streaks.map(t=>(0,_.jsx)(p.default,{style:[L.streak,{backgroundColor:n.accentMuted,borderColor:n.accent}],children:(0,_.jsxs)(c.default,{style:[v.typography.smallStrong,{color:n.accentText}],children:["\ud83d\udd25 ",z('streakLabel',{n:t})]})},t))})]}):(0,_.jsx)(P,{text:z('noAwardsYet'),colors:n}):(0,_.jsx)(D,{items:'played'===U?G:J,colors:n,t:z,locale:A}),H.privacy&&(0,_.jsxs)(p.default,{style:{marginTop:v.spacing.xl},children:[(0,_.jsx)(c.default,{style:[v.typography.h3,{color:n.text,marginBottom:v.spacing.sm}],children:z('privacyControls')}),(0,_.jsxs)(b.Card,{padding:"md",children:[(0,_.jsx)(c.default,{style:[v.typography.small,{color:n.textMuted,marginBottom:v.spacing.sm}],children:z('privacyHint')}),(0,_.jsx)(W,{label:z('showMatchHistory'),value:H.privacy.match_history,onChange:t=>q('match_history',t),colors:n}),(0,_.jsx)(W,{label:z('showAchievements'),value:H.privacy.achievements,onChange:t=>q('achievements',t),colors:n}),(0,_.jsx)(W,{label:z('showHostedMatches'),value:H.privacy.hosted,onChange:t=>q('hosted',t),colors:n}),(0,_.jsx)(W,{label:z('showSportsPlayed'),value:H.privacy.sports,onChange:t=>q('sports',t),colors:n})]})]})]})]})};var a=r(d[1]),l=t(r(d[2])),s=t(r(d[3])),o=t(r(d[4])),n=t(r(d[5])),c=t(r(d[6])),p=t(r(d[7])),g=t(r(d[8])),u=r(d[9]),h=r(d[10]),y=r(d[11]),f=r(d[12]),x=r(d[13]),b=r(d[14]),j=r(d[15]),w=r(d[16]),C=r(d[17]),v=r(d[18]),k=r(d[19]),S=r(d[20]),T=r(d[21]),M=r(d[22]),_=r(d[23]);const D=({items:t,colors:a,t:l,locale:s})=>{if(0===t.length)return(0,_.jsx)(P,{text:l('noHistory'),colors:a});const o=[];for(const a of t){const t=(0,f.format)(new Date(a.date),'EEEE, d MMMM yyyy',{locale:s}).toUpperCase(),l=o[o.length-1];l&&l.label===t?l.rows.push(a):o.push({label:t,rows:[a]})}const n=t=>'no_show'===t||'cancelled'===t?'danger':'hosted'===t?'accent':'upcoming'===t?'neutral':'success';return(0,_.jsx)(p.default,{style:{marginTop:v.spacing.sm},children:o.map(t=>(0,_.jsxs)(p.default,{style:{marginTop:v.spacing.md},children:[(0,_.jsx)(c.default,{style:[v.typography.caption,{color:a.textMuted,marginBottom:v.spacing.sm,letterSpacing:.5}],children:t.label}),t.rows.map(t=>{return(0,_.jsxs)(b.Card,{padding:"md",style:{marginBottom:v.spacing.sm},children:[(0,_.jsxs)(p.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,_.jsx)(c.default,{style:[v.typography.h3,{color:a.text,width:56}],children:(0,f.format)(new Date(t.date),'HH:mm')}),(0,_.jsxs)(p.default,{style:{flex:1,marginHorizontal:v.spacing.sm},children:[(0,_.jsx)(c.default,{style:[v.typography.bodyStrong,{color:a.text}],numberOfLines:1,children:t.venue_name}),(0,_.jsxs)(p.default,{style:{flexDirection:'row',alignItems:'center',marginTop:2},children:[(0,_.jsx)(p.default,{style:[L.orgDot,{backgroundColor:(0,S.sportColor)(t.sport)}],children:(0,_.jsx)(h.Ionicons,{name:S.sportIcon[t.sport],size:9,color:"#fff"})}),(0,_.jsx)(c.default,{style:[v.typography.caption,{color:a.textMuted,marginStart:5}],numberOfLines:1,children:t.organizer_name})]})]}),(0,_.jsx)(j.Badge,{label:l((s=t.status,`hist${'no_show'===s?'NoShow':s.charAt(0).toUpperCase()+s.slice(1)}`)),tone:n(t.status)})]}),(0,_.jsx)(p.default,{style:[L.tagsRow,{borderTopColor:a.border}],children:(0,_.jsx)(p.default,{style:[L.tag,{backgroundColor:a.surfaceAlt}],children:(0,_.jsx)(c.default,{style:[v.typography.caption,{color:a.text}],children:l(t.sport)})})})]},t.id);var s})]},t.label))})},I=({label:t,value:a,colors:l})=>(0,_.jsxs)(p.default,{style:{flex:1,alignItems:'center'},children:[(0,_.jsx)(c.default,{style:[v.typography.caption,{color:l.textMuted}],children:t}),(0,_.jsx)(c.default,{style:[v.typography.h2,{color:l.text,marginTop:2}],children:a})]}),R=({label:t,n:a,active:l,onPress:s,colors:o})=>(0,_.jsxs)(g.default,{onPress:s,accessibilityRole:"button",accessibilityState:{selected:l},style:[L.tabBtn,l&&{borderBottomColor:o.accent}],children:[(0,_.jsx)(c.default,{style:[v.typography.smallStrong,{color:l?o.text:o.textMuted}],children:t}),(0,_.jsx)(p.default,{style:[L.tabCount,{backgroundColor:l?o.accentMuted:o.surfaceAlt}],children:(0,_.jsx)(c.default,{style:[v.typography.caption,{color:l?o.accentText:o.textMuted}],children:(0,S.formatNumber)(a)})})]}),B=({label:t,cls:a,t:l,colors:s})=>{const o='success'===a.tone?s.success:'danger'===a.tone?s.danger:'warning'===a.tone?s.warning:s.text;return(0,_.jsxs)(p.default,{style:[L.classPill,{backgroundColor:s.surface,borderColor:s.border}],children:[(0,_.jsx)(c.default,{style:[v.typography.caption,{color:s.textMuted}],children:t}),(0,_.jsxs)(c.default,{style:[v.typography.smallStrong,{color:o,marginTop:1}],children:[a.emoji?`${a.emoji} `:'',l(a.key)]})]})},P=({text:t,colors:a})=>(0,_.jsx)(c.default,{style:[v.typography.small,{color:a.textMuted,textAlign:'center',marginTop:v.spacing.xl}],children:t}),W=({label:t,value:a,onChange:l,colors:s})=>(0,_.jsxs)(p.default,{style:L.privacyRow,children:[(0,_.jsx)(c.default,{style:[v.typography.body,{color:s.text,flex:1}],children:t}),(0,_.jsx)(n.default,{value:a,onValueChange:l,trackColor:{false:s.surfaceAlt,true:s.accent},thumbColor:"#fff"})]}),L=o.default.create({topbar:{flexDirection:'row',alignItems:'center',paddingHorizontal:v.spacing.lg,paddingVertical:v.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:o.default.hairlineWidth},avatar:{width:96,height:96,borderRadius:48,alignItems:'center',justifyContent:'center'},sportChip:{flexDirection:'row',alignItems:'center',paddingHorizontal:v.spacing.sm,paddingVertical:3,borderRadius:v.radius.pill},statsCard:{flexDirection:'row',alignItems:'center',borderRadius:v.radius.lg,paddingVertical:v.spacing.lg,marginTop:v.spacing.lg},statDivider:{width:o.default.hairlineWidth,alignSelf:'stretch',marginVertical:v.spacing.sm},classPill:{flex:1,borderRadius:v.radius.md,borderWidth:o.default.hairlineWidth,paddingHorizontal:v.spacing.md,paddingVertical:v.spacing.sm},tabs:{flexDirection:'row',marginTop:v.spacing.lg,borderBottomWidth:o.default.hairlineWidth},tabBtn:{flexDirection:'row',alignItems:'center',gap:6,paddingVertical:v.spacing.sm,marginEnd:v.spacing.lg,borderBottomWidth:2,borderBottomColor:'transparent'},tabCount:{minWidth:20,height:18,borderRadius:9,paddingHorizontal:6,alignItems:'center',justifyContent:'center'},grid:{flexDirection:'row',flexWrap:'wrap',gap:v.spacing.sm},award:{width:'22%',aspectRatio:.85,borderRadius:v.radius.md,borderWidth:o.default.hairlineWidth,alignItems:'center',justifyContent:'center',padding:4},streak:{paddingHorizontal:v.spacing.md,paddingVertical:v.spacing.sm,borderRadius:v.radius.pill,borderWidth:1},orgDot:{width:16,height:16,borderRadius:8,alignItems:'center',justifyContent:'center'},tagsRow:{flexDirection:'row',gap:v.spacing.xs,marginTop:v.spacing.sm,paddingTop:v.spacing.sm,borderTopWidth:o.default.hairlineWidth},tag:{paddingHorizontal:v.spacing.sm,paddingVertical:3,borderRadius:v.radius.pill},privacyRow:{flexDirection:'row',alignItems:'center',paddingVertical:v.spacing.xs},matchAwardRow:{flexDirection:'row',alignItems:'center',paddingVertical:v.spacing.sm,borderBottomWidth:o.default.hairlineWidth}})},2473,[33,15,461,281,158,477,146,273,369,381,1086,20,1312,1848,1623,1624,630,615,616,671,1311,675,1171,13]);
@@ -47864,7 +48396,7 @@ __d(
     //   GateScreen props    -> { kind: "denied" | "error", title?, body?, onRetry?, onBack? }
     var t = _r(d[0]);
     (Object.defineProperty(e, "__esModule", { value: !0 }),
-      (e.useRoleGate = e.classifyError = e.GateScreen = e.AUTH_CODES = void 0));
+      (e.useRoleGate = e.classifyError = e.GateScreen = e.RetryButton = e.AUTH_CODES = void 0));
     var n = _r(d[1]),
       s = _r(d[2]),
       o = _r(d[3]),
@@ -47913,6 +48445,14 @@ __d(
       const t = e && "object" == typeof e ? (e.code ?? e.message ?? String(e)) : String(e ?? ""),
         r = "string" == typeof t ? t.split(":")[0] : "";
       return { code: r, message: (0, o.storeErrorText)("string" == typeof t ? t : ""), isAuth: C.has(r) };
+    };
+    // Small inline retry control for panels that are not full screens.
+    e.RetryButton = ({ onPress: t, label: n }) => {
+      const s = (0, u.useT)();
+      return (0, k.jsx)(v.default, {
+        style: { alignItems: "center", marginTop: h.spacing.md },
+        children: (0, k.jsx)(b.Button, { title: n ?? s("retry"), variant: "secondary", size: "sm", onPress: t }),
+      });
     };
     e.GateScreen = ({ kind: t = "denied", title: n, body: s, onRetry: o, onBack: I, roles: S }) => {
       const { colors: _ } = (0, c.useTheme)(),
@@ -47973,7 +48513,7 @@ __d(
     //   GateScreen props    -> { kind: "denied" | "error", title?, body?, onRetry?, onBack? }
     var t = _r(d[0]);
     (Object.defineProperty(e, "__esModule", { value: !0 }),
-      (e.useRoleGate = e.classifyError = e.GateScreen = e.AUTH_CODES = void 0));
+      (e.useRoleGate = e.classifyError = e.GateScreen = e.RetryButton = e.AUTH_CODES = void 0));
     var n = _r(d[1]),
       s = _r(d[2]),
       o = _r(d[3]),
@@ -48022,6 +48562,14 @@ __d(
       const t = e && "object" == typeof e ? (e.code ?? e.message ?? String(e)) : String(e ?? ""),
         r = "string" == typeof t ? t.split(":")[0] : "";
       return { code: r, message: (0, o.storeErrorText)("string" == typeof t ? t : ""), isAuth: C.has(r) };
+    };
+    // Small inline retry control for panels that are not full screens.
+    e.RetryButton = ({ onPress: t, label: n }) => {
+      const s = (0, u.useT)();
+      return (0, k.jsx)(v.default, {
+        style: { alignItems: "center", marginTop: h.spacing.md },
+        children: (0, k.jsx)(b.Button, { title: n ?? s("retry"), variant: "secondary", size: "sm", onPress: t }),
+      });
     };
     e.GateScreen = ({ kind: t = "denied", title: n, body: s, onRetry: o, onBack: I, roles: S }) => {
       const { colors: _ } = (0, c.useTheme)(),
@@ -48073,6 +48621,34 @@ __d(
   },
   9001,
   [33, 15, 630, 674, 615, 675, 381, 20, 616, 1086, 1627, 369, 626, 158, 273, 1171, 13],
+);
+__d(
+  function (g, r, i, a, m, e, d) {
+    // organizer/new was a second, unmaintained match-creation wizard (F-ORG1-1). The route is kept as a
+    // redirect so old links and bookmarks land on the canonical create flow instead of a dead end.
+    (Object.defineProperty(e, "__esModule", { value: !0 }),
+      (e.default = function () {
+        return (0, t.jsx)(n.Redirect, { href: "/organizer/create" });
+      }));
+    var n = r(d[0]),
+      t = r(d[1]);
+  },
+  9002,
+  [20, 13],
+);
+__d(
+  function (g, r, i, a, m, e, d) {
+    // organizer/new was a second, unmaintained match-creation wizard (F-ORG1-1). The route is kept as a
+    // redirect so old links and bookmarks land on the canonical create flow instead of a dead end.
+    (Object.defineProperty(e, "__esModule", { value: !0 }),
+      (e.default = function () {
+        return (0, t.jsx)(n.Redirect, { href: "/organizer/create" });
+      }));
+    var n = r(d[0]),
+      t = r(d[1]);
+  },
+  9002,
+  [20, 13],
 );
 __r(0);</script>
 </body>

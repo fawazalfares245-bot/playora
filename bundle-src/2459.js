@@ -21,14 +21,59 @@ __d(
           [de, ce] = (0, t.useState)("civil_id"),
           [ue, pe] = (0, t.useState)(""),
           [ge, he] = (0, t.useState)(!1),
+          [docImg, setDocImg] = (0, t.useState)(null),
+          [ed, setEd] = (0, t.useState)(!1),
+          [ldErr, setLdErr] = (0, t.useState)(null),
           [me, xe] = (0, t.useState)(""),
           [ye, be] = (0, t.useState)(""),
           [fe, je] = (0, t.useState)(""),
           [Ce, ve] = (0, t.useState)(""),
           [Se, Te] = (0, t.useState)(""),
           we = (0, t.useCallback)(async () => {
-            e && (E(await (0, S.fetchMyOrganizerApplication)(e.id)), V(!1));
-          }, [e]);
+            if (!e) return;
+            setLdErr(null);
+            try {
+              E(await (0, S.fetchMyOrganizerApplication)(e.id));
+            } catch (e) {
+              setLdErr(e);
+            } finally {
+              V(!1);
+            }
+          }, [e]),
+          // Pre-fills the form from the stored application so it can be updated and resubmitted.
+          prefill = (t) => {
+            (X(t.full_legal_name ?? ""),
+              Z(t.mobile ?? ""),
+              ee(t.email ?? e?.email ?? ""),
+              ae(t.display_name ?? ""),
+              se(t.bio ?? ""),
+              ne(new Set(t.sports ?? [])),
+              ie(t.expected_monthly_matches ?? 4),
+              K(t.organizer_type ?? "individual"),
+              ce(t.id_doc_type ?? "civil_id"),
+              xe(t.business?.company_name ?? ""),
+              ve(t.business?.website ?? ""),
+              Te(t.business?.socials ?? ""),
+              setDocImg(null),
+              he(!1),
+              setEd(!0));
+          },
+          pickDoc = () => {
+            if ("undefined" == typeof document) return;
+            const e = document.createElement("input");
+            ((e.type = "file"), (e.accept = "image/*"), (e.style.display = "none"));
+            e.onchange = () => {
+              const t = e.files && e.files[0];
+              if ((document.body.removeChild(e), !t)) return;
+              if (t.size > 716800) return void s.default.alert(O("error"), O("idDocTooLarge"));
+              const a = new FileReader();
+              ((a.onload = () => {
+                (setDocImg(String(a.result)), he(!0));
+              }),
+                a.readAsDataURL(t));
+            };
+            (document.body.appendChild(e), e.click());
+          };
         (0, x.useFocusEffect)(
           (0, t.useCallback)(() => {
             we();
@@ -39,9 +84,19 @@ __d(
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: N.bg },
             children: (0, R.jsx)(o.default, { color: N.accentText }),
           });
+        if (ldErr)
+          return (0, R.jsx)(G9.GateScreen, {
+            kind: "error",
+            title: O("applicationLoadFailed"),
+            body: (0, G9.classifyError)(ldErr).message,
+            onRetry: () => {
+              (V(!0), we());
+            },
+            onBack: () => H.back(),
+          });
         const Ie = Date.now(),
           Re = "rejected" === F?.status && (!F.reapply_after || new Date(F.reapply_after).getTime() <= Ie),
-          ze = !F || Re;
+          ze = !F || ed;
         return (0, R.jsxs)(p.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: N.bg },
@@ -72,7 +127,8 @@ __d(
                       colors: N,
                       t: O,
                       onDashboard: () => H.replace("/organizer"),
-                      onReapply: () => E(null),
+                      onReapply: () => prefill(F),
+                      onContact: () => H.push("/contact"),
                     })
                   : (0, R.jsxs)(R.Fragment, {
                       children: [
@@ -239,8 +295,9 @@ __d(
                           children: O("idDocNumberHint"),
                         }),
                         (0, R.jsxs)(l.default, {
-                          onPress: () => he((e) => !e),
+                          onPress: pickDoc,
                           accessibilityRole: "button",
+                          accessibilityLabel: O(ge ? "idDocReplace" : "idDocPickImage"),
                           style: [
                             P.upload,
                             { borderColor: ge ? N.success : N.border, backgroundColor: N.surface },
@@ -256,7 +313,7 @@ __d(
                                 v.typography.bodyStrong,
                                 { color: N.text, marginHorizontal: v.spacing.sm },
                               ],
-                              children: O(ge ? "documentAttached" : "uploadDocument"),
+                              children: O(ge ? "idDocAttached" : "idDocPickImage"),
                             }),
                           ],
                         }),
@@ -338,6 +395,7 @@ __d(
                           id_doc_type: de,
                           id_doc_number: ue,
                           id_doc_uploaded: ge,
+                          id_doc_image: docImg,
                           business:
                             "business" === J
                               ? {
@@ -391,10 +449,11 @@ __d(
       w = r(_d[20]),
       I = r(_d[21]),
       _ = r(_d[22]),
-      R = r(_d[23]);
+      R = r(_d[23]),
+      G9 = r(_d[24]);
     const z = ["football", "padel", "tennis"],
       k = ["civil_id", "government_id", "passport"];
-    const B = ({ app: e, colors: t, t: o, onDashboard: s, onReapply: l }) => {
+    const B = ({ app: e, colors: t, t: o, onDashboard: s, onReapply: l, onContact: cs }) => {
         const n = {
             approved: {
               icon: "ribbon",
@@ -419,6 +478,12 @@ __d(
               tone: t.danger,
               title: o("statusSuspendedTitle"),
               body: o("statusSuspendedBody"),
+            },
+            info_requested: {
+              icon: "chatbubble-ellipses",
+              tone: t.warning,
+              title: o("statusInfoRequestedTitle"),
+              body: o("statusInfoRequestedBody"),
             },
             submitted: {
               icon: "hourglass",
@@ -457,7 +522,7 @@ __d(
                 ],
                 children: o("reviewTimeline"),
               }),
-            "rejected" === e.status &&
+            ("rejected" === e.status || "suspended" === e.status) &&
               e.rejection_reason &&
               (0, R.jsxs)(y.Card, {
                 style: { marginTop: v.spacing.lg, alignSelf: "stretch" },
@@ -465,7 +530,7 @@ __d(
                 children: [
                   (0, R.jsx)(c.default, {
                     style: [v.typography.smallStrong, { color: t.textMuted }],
-                    children: o("rejectionReasonLabel"),
+                    children: o("suspended" === e.status ? "suspensionReasonLabel" : "rejectionReasonLabel"),
                   }),
                   (0, R.jsx)(c.default, {
                     style: [v.typography.body, { color: t.text, marginTop: 2 }],
@@ -473,8 +538,8 @@ __d(
                   }),
                 ],
               }),
-            ("under_review" === e.status || "submitted" === e.status) &&
-              e.admin_notes &&
+            "info_requested" === e.status &&
+              e.applicant_message &&
               (0, R.jsxs)(y.Card, {
                 style: { marginTop: v.spacing.lg, alignSelf: "stretch" },
                 padding: "md",
@@ -485,13 +550,17 @@ __d(
                   }),
                   (0, R.jsx)(c.default, {
                     style: [v.typography.body, { color: t.text, marginTop: 2 }],
-                    children: e.admin_notes,
+                    children: e.applicant_message,
                   }),
                 ],
               }),
             (0, R.jsx)(u.default, { style: { height: v.spacing.xl } }),
             "approved" === e.status &&
               (0, R.jsx)(b.Button, { title: o("goToDashboard"), fullWidth: !0, size: "lg", onPress: s }),
+            "info_requested" === e.status &&
+              (0, R.jsx)(b.Button, { title: o("updateApplication"), fullWidth: !0, size: "lg", onPress: l }),
+            "suspended" === e.status &&
+              (0, R.jsx)(b.Button, { title: o("contactSupport"), fullWidth: !0, size: "lg", variant: "secondary", onPress: cs }),
             "rejected" === e.status &&
               (d > 0
                 ? (0, R.jsx)(c.default, {
@@ -643,6 +712,6 @@ __d(
   2459,
   [
     33, 15, 461, 445, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 626, 625, 630, 615, 616, 671, 1311, 675,
-    1171, 674, 13,
+    1171, 674, 13, 9001,
   ],
 );

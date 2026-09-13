@@ -3374,17 +3374,49 @@ __d(
         (Qt.matchDrafts = Qt.matchDrafts.filter((t) => t.organizer_id !== e)),
         await Za(dt, Qt.matchDrafts));
     };
+    // ORG1 (F-ORG1-2/17/18): one validator for every match/series creation path. Rejects instead of clamping.
+    const MATCH_ENUMS = {
+      sport: ["football", "padel", "tennis"],
+      skill_level: ["all", "beginner", "intermediate", "advanced"],
+      visibility: ["public", "private"],
+      approval_mode: ["auto", "manual"],
+    };
+    const validateMatchInput = (t, o9 = {}) => {
+      if (!MATCH_ENUMS.sport.includes(t.sport)) throw new Error("E_INVALID_MATCH_OPTION");
+      if (t.skill_level && !MATCH_ENUMS.skill_level.includes(t.skill_level)) throw new Error("E_INVALID_MATCH_OPTION");
+      if (t.visibility && !MATCH_ENUMS.visibility.includes(t.visibility)) throw new Error("E_INVALID_MATCH_OPTION");
+      if (t.approval_mode && !MATCH_ENUMS.approval_mode.includes(t.approval_mode)) throw new Error("E_INVALID_MATCH_OPTION");
+      if (t.format && !/^[a-z0-9_]{2,40}$/.test(String(t.format))) throw new Error("E_INVALID_MATCH_OPTION");
+      if (!Number.isInteger(t.max_players) || t.max_players < 2 || t.max_players > 40)
+        throw new Error("E_PLAYERS_REQUIRED_MUST_BE_BETWEEN_2");
+      const p9 = Number(t.price_kwd ?? 0);
+      if (!Number.isFinite(p9) || p9 < 0 || p9 > 100) throw new Error("E_PRICE_OUT_OF_RANGE");
+      if (void 0 !== t.waitlist_capacity && null !== t.waitlist_capacity) {
+        const w9 = Number(t.waitlist_capacity);
+        if (!Number.isInteger(w9) || w9 < 0 || w9 > 20) throw new Error("E_WAITLIST_OUT_OF_RANGE");
+      }
+      if (o9.starts_at !== void 0) {
+        const i = new Date(o9.starts_at).getTime(),
+          n = new Date(o9.ends_at).getTime();
+        if (Number.isNaN(i) || Number.isNaN(n)) throw new Error("E_PICK_A_DATE_AND_TIME");
+        if (i < Date.now() - 6e4) throw new Error("E_MATCH_CANNOT_START_IN_PAST");
+        if (n <= i) throw new Error("E_END_TIME_MUST_BE_AFTER_THE");
+        if ((n - i) / 6e4 > 360 || (n - i) / 6e4 < 30) throw new Error("E_DURATION_OUT_OF_RANGE");
+      }
+      if (o9.venue && Array.isArray(o9.venue.sports) && o9.venue.sports.length && !o9.venue.sports.includes(t.sport))
+        throw new Error("E_VENUE_DOES_NOT_SUPPORT_SPORT");
+      return { price_kwd: Math.round(100 * p9) / 100 };
+    };
+    r.validateMatchInput = validateMatchInput;
+    const e9 = (e) => String(e ?? "").slice(0, 40);
     const Wi = async (e, t) => {
       (await ei(), await on(e));
       const a = (0, v.sanitizeText)(t.title, 100);
       if (!a) throw new Error("E_ADD_A_MATCH_TITLE");
       const i = new Date(t.starts_at).getTime(),
         n = new Date(t.ends_at).getTime();
-      if (Number.isNaN(i) || Number.isNaN(n)) throw new Error("E_PICK_A_DATE_AND_TIME");
-      if (i < Date.now() - 6e4) throw new Error("E_MATCH_CANNOT_START_IN_PAST");
-      if (n <= i) throw new Error("E_END_TIME_MUST_BE_AFTER_THE");
-      if (t.max_players < 2 || t.max_players > 40) throw new Error("E_PLAYERS_REQUIRED_MUST_BE_BETWEEN_2");
-      const r = Math.max(0, Math.min(100, Number(t.price_kwd ?? 0))),
+      const v9 = validateMatchInput(t, { starts_at: t.starts_at, ends_at: t.ends_at });
+      const r = v9.price_kwd,
         o = t.notes ? (0, v.sanitizeText)(t.notes, 500) : null,
         s = Math.max(0, Math.min(20, t.waitlist_capacity ?? Ma(t.max_players)));
       if (
@@ -3427,11 +3459,17 @@ __d(
             lat: a,
             lng: i,
             custom: !0,
+            created_by: e,
             created_at: new Date().toISOString(),
           };
-        (Qt.venues.push(r), await Za(ae, Qt.venues), (d = r.id));
+        (Qt.venues.push(r),
+          await Za(ae, Qt.venues),
+          await (0, w.logAudit)("venue.created", (0, w.actorRef)(e), { venue: r.id.slice(-6), name: e9(r.name) }),
+          (d = r.id));
       } else {
-        if (!t.venue_id || !fi().some((e) => e.id === t.venue_id)) throw new Error("E_CHOOSE_A_VENUE");
+        const v9 = fi().find((e) => e.id === t.venue_id);
+        if (!t.venue_id || !v9) throw new Error("E_CHOOSE_A_VENUE");
+        validateMatchInput(t, { venue: v9 });
         d = t.venue_id;
       }
       if (
@@ -3551,11 +3589,27 @@ __d(
         based_on_games: r.length,
       };
     };
-    r.mockGetSmartDefaults = Ki;
     const $i = {
       football: { players: 10, price: 2.5 },
       padel: { players: 4, price: 2.5 },
       tennis: { players: 4, price: 2.5 },
+    };
+    // ORG1 (F-ORG1-8): the quick flow always knows the values it will publish with.
+    r.mockGetSmartDefaults = async (e, t, a) => {
+      const i = await Ki(e, t, a);
+      if (i) return Object.assign({ source: "history", duration_minutes: i.duration_minutes ?? 90, visibility: "public", approval_mode: "auto" }, i);
+      const n = $i[t] ?? $i.football;
+      return {
+        source: "default",
+        price_kwd: n.price,
+        max_players: n.players,
+        skill_level: "all",
+        waitlist_on: !0,
+        duration_minutes: 90,
+        visibility: "public",
+        approval_mode: "auto",
+        based_on_games: 0,
+      };
     };
     r.mockQuickCreateMatch = async (e, t) => {
       await ei();
@@ -4632,7 +4686,35 @@ __d(
           created_at: new Date().toISOString(),
         });
       };
-    r.mockGetMyOrganizerApplication = async (e) => (await ei(), await tn(), nn(e) ?? null);
+    // ORG1 (F-ORG1-15): the applicant only receives what the apply screen needs.
+    const applicantDto = (e) =>
+      e
+        ? {
+            id: e.id,
+            status: e.status,
+            submitted_at: e.submitted_at,
+            reviewed_at: e.reviewed_at,
+            rejection_reason: "rejected" === e.status || "suspended" === e.status ? (e.rejection_reason ?? null) : null,
+            reapply_after: e.reapply_after ?? null,
+            applicant_message: "info_requested" === e.status ? (e.admin_notes ?? null) : null,
+            full_legal_name: e.full_legal_name,
+            mobile: e.mobile,
+            email: e.email,
+            display_name: e.display_name,
+            bio: e.bio,
+            sports: e.sports,
+            expected_monthly_matches: e.expected_monthly_matches,
+            organizer_type: e.organizer_type,
+            id_doc_type: e.id_doc_type,
+            id_doc_last4: e.id_doc_last4,
+            id_doc_uploaded: !!e.id_doc_uploaded,
+            business: e.business
+              ? { company_name: e.business.company_name, website: e.business.website, socials: e.business.socials }
+              : null,
+            resubmissions: (e.history ?? []).length,
+          }
+        : null;
+    r.mockGetMyOrganizerApplication = async (e) => (await ei(), await tn(), applicantDto(nn(e)));
     r.mockSubmitOrganizerApplication = async (e, t) => {
       (await ei(), await hn());
       const a = (0, v.sanitizeName)(t.full_legal_name);
@@ -4647,6 +4729,9 @@ __d(
       if (!t.sports.length) throw new Error("E_SELECT_AT_LEAST_ONE_SPORT_YOU");
       const s = (t.id_doc_number || "").replace(/\s+/g, "");
       if (s.length < 6) throw new Error("E_ENTER_A_VALID_IDENTITY_DOCUMENT_NUMBER");
+      // ORG1 (F-ORG1-14): an image of the identity document is mandatory and stored as a media reference.
+      const img9 = "string" == typeof t.id_doc_image ? t.id_doc_image : "";
+      if (!/^data:image\/(?:png|jpe?g|webp);base64,/.test(img9)) throw new Error("E_UPLOAD_YOUR_IDENTITY_DOCUMENT");
       const d = nn(e);
       if ("approved" === d?.status) throw new Error("E_YOU_ARE_ALREADY_AN_APPROVED_ORGANIZER");
       if ("under_review" === d?.status) throw new Error("E_YOUR_APPLICATION_IS_ALREADY_UNDER_REVIEW");
@@ -4660,9 +4745,10 @@ __d(
         u = new Set();
       (Qt.applications.some((t) => t.user_id !== e && t.phone_hash === l) && u.add("duplicate_phone"),
         Qt.applications.some((t) => t.user_id !== e && t.id_doc_ref === _) && u.add("duplicate_document"));
-      Qt.applications.filter(
-        (t) => t.user_id === e && Date.now() - new Date(t.submitted_at).getTime() < 864e5,
-      ).length >= 3 && u.add("velocity");
+      // ORG1 (F-ORG1-13): velocity counts every submission in the record's history, not one row per user.
+      [...(d?.history ?? []), ...(d ? [d] : [])].filter((t) => Date.now() - new Date(t.submitted_at).getTime() < 864e5)
+        .length >= 2 && u.add("velocity");
+      const docRef9 = await Ya(img9);
       let m = null;
       "business" === t.organizer_type &&
         t.business &&
@@ -4693,7 +4779,8 @@ __d(
           id_doc_type: t.id_doc_type,
           id_doc_ref: _,
           id_doc_last4: s.slice(-4),
-          id_doc_uploaded: !!t.id_doc_uploaded,
+          id_doc_uploaded: !0,
+          id_doc_media_ref: docRef9,
           business: m,
           phone_hash: l,
           risk_flags: Array.from(u),
@@ -4704,6 +4791,10 @@ __d(
           submitted_at: p,
           reviewed_at: null,
           created_at: d?.created_at ?? p,
+          // Previous versions of the application are kept (without the document image) for reviewers.
+          history: d
+            ? [...(d.history ?? []), Object.assign({}, d, { history: void 0, id_doc_media_ref: void 0 })].slice(-10)
+            : [],
         },
         g = Qt.applications.findIndex((t) => t.user_id === e);
       (g >= 0 ? (Qt.applications[g] = f) : Qt.applications.push(f),
@@ -4725,7 +4816,8 @@ __d(
           read: !1,
           created_at: p,
         });
-      return f;
+      // ORG1 (F-ORG1-15): the applicant gets the same slim DTO as the read endpoint.
+      return applicantDto(f);
     };
     const pn = (e) => {
       const t = Qt.profiles.find((t) => t.id === e.user_id),
@@ -5865,7 +5957,21 @@ __d(
       const a = (0, v.sanitizeText)(t.title, 100);
       if (!a) throw new Error("E_ADD_A_MATCH_TITLE");
       if (t.end_minutes <= t.start_minutes) throw new Error("E_END_TIME_MUST_BE_AFTER_THE");
-      if (t.max_players < 2 || t.max_players > 40) throw new Error("E_PLAYERS_MUST_BE_BETWEEN_2_AND");
+      if (t.end_minutes - t.start_minutes < 30 || t.end_minutes - t.start_minutes > 360) throw new Error("E_DURATION_OUT_OF_RANGE");
+      validateMatchInput(t);
+      {
+        const s9 = new Date(t.start_date).getTime();
+        if (Number.isNaN(s9)) throw new Error("E_PICK_A_DATE_AND_TIME");
+        if (s9 < Date.now() - 864e5) throw new Error("E_MATCH_CANNOT_START_IN_PAST");
+        if (t.end_date && new Date(t.end_date).getTime() < s9) throw new Error("E_SERIES_END_BEFORE_START");
+        if (Qt.templates.filter((t) => t.organizer_id === e && Date.now() - new Date(t.created_at).getTime() < 36e5).length >= 3)
+          throw new Error("E_YOU_HAVE_CREATED_TOO_MANY_SERIES");
+        if (!t.custom_venue) {
+          const v9 = fi().find((e) => e.id === t.venue_id);
+          if (!v9) throw new Error("E_CHOOSE_A_VENUE");
+          validateMatchInput(t, { venue: v9 });
+        }
+      }
       if ("weekly" === t.frequency && (!t.weekdays || 0 === t.weekdays.length))
         throw new Error("E_PICK_AT_LEAST_ONE_WEEKDAY");
       if ("monthly" === t.frequency && (!t.monthly_week || null == t.monthly_weekday))
@@ -7418,7 +7524,10 @@ __d(
     r.mockGetBooking = async (e, t) => {
       (await ei(), await Cr());
       const a = gr(e);
-      return a ? Pr(a) : null;
+      if (!a) return null;
+      // ORG1 (F-ORG1-16): only the organizer who made the court booking (or an admin) can read it.
+      if (t && a.organizer_id !== t && !ro(t)) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return Pr(a);
     };
     r.mockCreatePaymentPlan = async (e, t, a, i) => {
       await ei();
@@ -10996,7 +11105,7 @@ __d(
       const a = JSON.stringify(t);
       if (Ls && Ls.key === a && Date.now() - Ls.at < 15e3)
         return (
-          await (0, w.logAudit)("bi.accessed", (0, w.actorRef)(e), { cached: !0 }),
+          await adm2LogOncePerDay("bi.accessed", e),
           Object.assign({}, Ls.data, { cached: !0 })
         );
       const i = Date.now(),
@@ -11310,7 +11419,7 @@ __d(
         };
       return (
         (Ls = { key: a, at: Date.now(), data: de }),
-        await (0, w.logAudit)("bi.accessed", (0, w.actorRef)(e), { cached: !1 }),
+        await adm2LogOncePerDay("bi.accessed", e),
         de
       );
     };
@@ -12025,21 +12134,29 @@ __d(
       };
     };
     r.mockGetConciergeRules = async (e) => (await ei(), await sn(e), Qs());
-    r.mockSetConciergeRules = async (e, t) => {
+    // Bounds shared with the admin screen so the UI can never offer a value the store rejects.
+    r.CONCIERGE_BOUNDS = {
+      autoInviteCount: [0, 20, 1],
+      minFillToPublish: [0, 100, 5],
+      replacementsCount: [1, 12, 1],
+      skillTolerance: [0, 5, 0.5],
+      notifyLeadHours: [1, 72, 1],
+      horizonDays: [3, 30, 1],
+      quietStart: [0, 23, 1],
+      quietEnd: [0, 23, 1],
+    };
+    r.mockSetConciergeRules = async (e, t, i) => {
       (await ei(), await sn(e));
-      const a = Object.assign({}, Qs(), t, { updated_at: new Date().toISOString() });
+      const n = adm2Reason(i),
+        o = r.CONCIERGE_BOUNDS,
+        s = {};
+      for (const [e, [t, a, i]] of Object.entries(o))
+        s[e] = (n) => Math.max(t, Math.min(a, Math.round(n / i) * i));
+      const { next: a, diff: d } = adm2Apply(Qs(), t, s);
       return (
-        (a.autoInviteCount = Math.max(0, Math.min(20, Math.round(a.autoInviteCount)))),
-        (a.minFillToPublish = Math.max(0, Math.min(100, Math.round(a.minFillToPublish)))),
-        (a.replacementsCount = Math.max(1, Math.min(12, Math.round(a.replacementsCount)))),
-        (a.skillTolerance = Math.max(0, Math.min(5, a.skillTolerance))),
-        (a.notifyLeadHours = Math.max(1, Math.min(168, Math.round(a.notifyLeadHours)))),
-        (a.horizonDays = Math.max(3, Math.min(30, Math.round(a.horizonDays)))),
-        (a.quietStart = Math.max(0, Math.min(23, Math.round(a.quietStart)))),
-        (a.quietEnd = Math.max(0, Math.min(23, Math.round(a.quietEnd)))),
         (Qt.conciergeRules = a),
         await Za(St, Qt.conciergeRules),
-        await (0, w.logAdminAudit)("concierge.rules_changed", e, null, {}),
+        await (0, w.logAdminAudit)("concierge.rules_changed", e, null, { reason: n, changes: d }),
         a
       );
     };
@@ -12643,6 +12760,33 @@ __d(
       };
     };
     r.mockGetCoCVersion = () => D.CURRENT_COC_VERSION;
+    // ADM2 (F-ADM2-1/4): platform-wide settings are validated against their defaults, require a reason,
+    // and are audited with a per-key before/after diff.
+    const adm2Apply = (e, t, a, i) => {
+      const n = Object.assign({}, e),
+        r = [];
+      for (const [o, s] of Object.entries(t ?? {})) {
+        if ("updated_at" === o) continue;
+        if (!(o in e)) throw new Error("E_INVALID_VALUE");
+        const d = Number(s);
+        if (!Number.isFinite(d)) throw new Error("E_INVALID_VALUE");
+        const l = a[o] ?? a["*"] ?? ((e) => e),
+          c = l(d);
+        c !== e[o] && (r.push({ key: o, from: e[o], to: c }), (n[o] = c));
+      }
+      return ((n.updated_at = new Date().toISOString()), { next: n, diff: r });
+    };
+    // ADM2 (F-ADM2-2): access to a read-only dashboard is recorded once per admin per day.
+    const adm2LoggedToday = new Set();
+    const adm2LogOncePerDay = async (e, t) => {
+      const a = `${e}:${t}:${new Date().toISOString().slice(0, 10)}`;
+      adm2LoggedToday.has(a) || (adm2LoggedToday.add(a), await (0, w.logAudit)(e, (0, w.actorRef)(t), {}));
+    };
+    const adm2Reason = (e) => {
+      const t = (0, v.sanitizeText)(e ?? "", 200);
+      if (t.length < 3) throw new Error("E_A_REASON_IS_REQUIRED");
+      return t;
+    };
     const fd = () => Qt.demandWeights ?? O.DEFAULT_DEMAND_WEIGHTS,
       gd = (e) => Math.min(1, Math.max(0, e)),
       hd = async (e, t) => {
@@ -12729,19 +12873,17 @@ __d(
         }));
     };
     r.mockGetDemandWeights = async (e) => (await ei(), await sn(e), fd());
-    r.mockSetDemandWeights = async (e, t) => {
+    r.mockSetDemandWeights = async (e, t, i) => {
       (await ei(), await sn(e));
-      const a = Object.assign({}, fd(), t, { updated_at: new Date().toISOString() });
-      for (const e of Object.keys(a))
-        "updated_at" !== e &&
-          (a[e] =
-            "timeToFillHours" === e
-              ? Math.max(1, Math.min(72, Math.round(a[e])))
-              : Math.max(0, Math.min(1, Math.round(100 * a[e]) / 100)));
+      const n = adm2Reason(i),
+        { next: a, diff: r } = adm2Apply(fd(), t, {
+          timeToFillHours: (e) => Math.max(1, Math.min(72, Math.round(e))),
+          "*": (e) => Math.max(0, Math.min(1, Math.round(100 * e) / 100)),
+        });
       return (
         (Qt.demandWeights = a),
         await Za(ye, Qt.demandWeights),
-        await (0, w.logAdminAudit)("demand.weights_changed", e, null, {}),
+        await (0, w.logAdminAudit)("demand.weights_changed", e, null, { reason: n, changes: r }),
         a
       );
     };
@@ -12933,15 +13075,14 @@ __d(
       await (0, w.logAudit)(r, (0, w.actorRef)(e), { sport: t, field: i ?? "", success: n });
     };
     r.mockGetOptimizerWeights = async (e) => (await ei(), await sn(e), yd());
-    r.mockSetOptimizerWeights = async (e, t) => {
+    r.mockSetOptimizerWeights = async (e, t, i) => {
       (await ei(), await sn(e));
-      const a = Object.assign({}, yd(), t, { updated_at: new Date().toISOString() });
-      for (const e of Object.keys(a))
-        "updated_at" !== e && (a[e] = Math.max(0, Math.min(1, Math.round(100 * a[e]) / 100)));
+      const n = adm2Reason(i),
+        { next: a, diff: r } = adm2Apply(yd(), t, { "*": (e) => Math.max(0, Math.min(1, Math.round(100 * e) / 100)) });
       return (
         (Qt.optimizerWeights = a),
         await Za(ve, Qt.optimizerWeights),
-        await (0, w.logAdminAudit)("optimizer.weights_changed", e, null, {}),
+        await (0, w.logAdminAudit)("optimizer.weights_changed", e, null, { reason: n, changes: r }),
         a
       );
     };
@@ -15306,8 +15447,28 @@ __d(
           match: a.match_id.slice(-6),
         }));
     };
+    // ADM2 (F-ADM2-9): reviewed fraud signals are remembered so the list shows what is still open.
+    const FRAUD_KEY = "playora.mock.award.fraudreviews.v1";
+    const adm2Fraud = async () => {
+      try {
+        const e = await l.default.getItem(FRAUD_KEY);
+        return e ? JSON.parse(e) : {};
+      } catch {
+        return {};
+      }
+    };
+    r.mockReviewFraudSignal = async (e, t, a) => {
+      (await ei(), await sn(e));
+      const i = adm2Reason(a),
+        n = await adm2Fraud();
+      ((n[String(t)] = { reviewed_by: e, reviewed_at: new Date().toISOString(), reason: i }),
+        await l.default.setItem(FRAUD_KEY, JSON.stringify(n)),
+        await (0, w.logAdminAudit)("award.fraud_reviewed", e, null, { signal: String(t).slice(-12), reason: i }));
+      return n[String(t)];
+    };
     r.mockGetAwardFraudSignals = async (e) => {
       (await ei(), await sn(e));
+      const adm2Reviewed = await adm2Fraud();
       const t = [],
         a = new Map();
       for (const e of Qt.awardVotes) {
@@ -15317,13 +15478,12 @@ __d(
       for (const [i, n] of a) {
         const a = (0, S.detectCollusion)(n.map((e) => ({ voter_id: e.voter_id, nominee_id: e.nominee_id })));
         if (0 === a.length) continue;
-        await (0, w.logAudit)("award.fraud_flagged", (0, w.actorRef)(e), {
-          match: i.slice(-6),
-          signals: a.length,
-        });
+        // ADM2 (F-ADM2-2): a read no longer writes to the audit log.
         const r = hi(i);
-        for (const e of a)
+        for (const e of a) {
+          const n = `${i}:${e.voter_id}:${e.nominee_id}`;
           t.push({
+            id: n,
             match_id: i,
             venue: r ? Ai(r.venue_id) : "",
             voter_id: e.voter_id,
@@ -15331,7 +15491,9 @@ __d(
             nominee_id: e.nominee_id,
             nominee_name: Td(e.nominee_id),
             categories: e.categories,
+            review: adm2Reviewed[n] ?? null,
           });
+        }
       }
       return t;
     };
@@ -15542,22 +15704,48 @@ __d(
         );
       };
     r.mockGetMatchFeed = Gl;
+    // ADM2 (F-ADM2-2/3): funnel counters live in their own store with a fixed event vocabulary and a
+    // per-user daily cap, so they never evict audit records and cannot be poisoned with free text.
+    const FUNNEL_EVENTS = new Set([
+      "app_open", "signup_start", "signup_done", "browse", "game_view", "join_start", "join_paid",
+      "join_done", "organizer_apply", "match_created", "booking_start", "booking_done", "invite_sent",
+    ]);
+    const FUNNEL_KEY = "playora.mock.funnel.v1";
+    const adm2Funnel = async () => {
+      try {
+        const e = await l.default.getItem(FUNNEL_KEY);
+        const t = e ? JSON.parse(e) : null;
+        return t && "object" == typeof t ? { events: t.events ?? {}, quota: t.quota ?? {} } : { events: {}, quota: {} };
+      } catch {
+        return { events: {}, quota: {} };
+      }
+    };
     r.mockLogFunnel = async (e, t) => {
-      (await ei(),
-        await (0, w.logAudit)("funnel.event", (0, w.actorRef)(e), { e: (0, v.sanitizeText)(t, 60) }));
+      await ei();
+      const a = String(t ?? "");
+      if (!FUNNEL_EVENTS.has(a)) return;
+      const i = await adm2Funnel(),
+        n = new Date().toISOString().slice(0, 10),
+        r = `${e ?? "anon"}:${n}`;
+      if ((i.quota[r] ?? 0) >= 200) return;
+      ((i.quota[r] = (i.quota[r] ?? 0) + 1),
+        (i.events[a] = i.events[a] ?? { total: 0, days: {} }),
+        (i.events[a].total += 1),
+        (i.events[a].days[n] = (i.events[a].days[n] ?? 0) + 1));
+      for (const e of Object.keys(i.quota)) e.endsWith(n) || delete i.quota[e];
+      try {
+        await l.default.setItem(FUNNEL_KEY, JSON.stringify(i));
+      } catch (e) {
+        (0, w.noteWriteFailure)(FUNNEL_KEY, e);
+      }
     };
     r.mockGetFunnelStats = async (e) => {
       (await ei(), await sn(e));
-      const t = (await (0, w.readAudit)()).filter((e) => "funnel.event" === e.type),
-        a = Date.now() - 6048e5,
-        i = new Map();
-      for (const e of t) {
-        const t = e.meta?.e ?? "unknown",
-          n = i.get(t) ?? { total: 0, last7d: 0 };
-        ((n.total += 1), new Date(e.at).getTime() > a && (n.last7d += 1), i.set(t, n));
-      }
-      return [...i.entries()]
-        .map(([e, t]) => Object.assign({ event: e }, t))
+      const t = await adm2Funnel(),
+        a = [];
+      for (let e = 0; e < 7; e++) a.push(new Date(Date.now() - 864e5 * e).toISOString().slice(0, 10));
+      return Object.entries(t.events)
+        .map(([e, t]) => ({ event: e, total: t.total, last7d: a.reduce((e, a) => e + (t.days[a] ?? 0), 0) }))
         .sort((e, t) => t.total - e.total);
     };
     r.mockLogFeedSignal = async (e, t, a) => {
@@ -15581,11 +15769,55 @@ __d(
           (a?.preferred_sports.includes(i.sport) && r.push("favorite_sport"),
             n >= 0.5 && r.push("skill_fit"),
             Ll(i.id, Qd(e)).length > 0 && r.push("friends"));
-          const o = (0, E.nudgeWeights)(Ml(), t, r);
-          ((Qt.feedWeights = o), await Za(et, o));
+          // ADM2 (F-ADM2-20): a single user can only nudge the global weights a bounded number of
+          // times per day, and never while an administrator has frozen them.
+          const s9 = Qt.feedWeightsFrozen ?? !1,
+            d9 = new Date().toISOString().slice(0, 10),
+            l9 = (Qt.feedNudgeQuota ??= {}),
+            c9 = `${e}:${d9}`;
+          if (!s9 && (l9[c9] ?? 0) < 20) {
+            l9[c9] = (l9[c9] ?? 0) + 1;
+            for (const e of Object.keys(l9)) e.endsWith(d9) || delete l9[e];
+            const o = (0, E.nudgeWeights)(Ml(), t, r);
+            ((Qt.feedWeights = o), await Za(et, o));
+          }
         }
       }
       await Za(Xe, Qt.feedSignals);
+    };
+    // ADM2 (F-ADM2-20): administrators can freeze or reset the self-tuning feed weights.
+    r.mockSetFeedWeights = async (e, t, a) => {
+      (await ei(), await sn(e));
+      const i = adm2Reason(a),
+        n = Ml(),
+        { next: o, diff: s } = adm2Apply(n, t, { "*": (e) => Math.max(0, Math.min(1, Math.round(100 * e) / 100)) });
+      return (
+        (Qt.feedWeights = o),
+        await Za(et, o),
+        await (0, w.logAdminAudit)("feed.weights_changed", e, null, { reason: i, changes: s }),
+        o
+      );
+    };
+    r.mockResetFeedWeights = async (e, t) => {
+      (await ei(), await sn(e));
+      const a = adm2Reason(t),
+        i = "boolean" == typeof t ? t : void 0;
+      return (
+        (Qt.feedWeights = Object.assign({}, E.DEFAULT_FEED_WEIGHTS)),
+        (Qt.feedNudgeQuota = {}),
+        await Za(et, Qt.feedWeights),
+        await (0, w.logAdminAudit)("feed.weights_reset", e, null, { reason: a }),
+        Qt.feedWeights
+      );
+    };
+    r.mockSetFeedFrozen = async (e, t, a) => {
+      (await ei(), await sn(e));
+      const i = adm2Reason(a);
+      return (
+        (Qt.feedWeightsFrozen = !!t),
+        await (0, w.logAdminAudit)("feed.weights_frozen", e, null, { frozen: !!t, reason: i }),
+        !!t
+      );
     };
     r.mockGetFeedAnalytics = async (e) => {
       (await ei(), await Ms(e));
@@ -15603,6 +15835,7 @@ __d(
         c = new Set(t.map((e) => e.user_id)).size,
         _ = Ml();
       return {
+        frozen: !!Qt.feedWeightsFrozen,
         impressions: i,
         clicks: n,
         joins: r,

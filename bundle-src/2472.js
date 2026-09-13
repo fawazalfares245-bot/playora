@@ -10,13 +10,14 @@ __d(
           [$, z] = (0, l.useState)("football"),
           [D, K] = (0, l.useState)([]),
           [H, P] = (0, l.useState)(!0),
+          [er, setEr] = (0, l.useState)(null),
           W = (0, l.useCallback)(async () => {
             if (t) {
-              P(!0);
+              (P(!0), setEr(null));
               try {
                 K(await (0, w.fetchSmartSchedule)(t.id, { sport: $ }));
-              } catch {
-                K([]);
+              } catch (e) {
+                (K([]), setEr(e));
               }
               P(!1);
             }
@@ -102,8 +103,19 @@ __d(
                 }),
                 H
                   ? (0, I.jsx)(o.default, { color: i.accentText, style: { marginTop: k.spacing.xl } })
-                  : 0 === D.length
-                    ? (0, I.jsx)(x.EmptyState, { icon: "calendar-outline", title: v("noRecommendations") })
+                  : er
+                    ? (0, I.jsxs)(I.Fragment, {
+                        children: [
+                          (0, I.jsx)(x.EmptyState, {
+                            icon: "alert-circle-outline",
+                            title: v("loadFailedTitle"),
+                            body: (0, G9.classifyError)(er).message,
+                          }),
+                          (0, I.jsx)(G9.RetryButton, { onPress: W, label: v("retry") }),
+                        ],
+                      })
+                    : 0 === D.length
+                      ? (0, I.jsx)(x.EmptyState, { icon: "calendar-outline", title: v("noRecommendations") })
                     : D.map((t, l) => {
                         const o =
                           t.predicted_fill >= 75 ? i.success : t.predicted_fill >= 55 ? i.warning : i.danger;
@@ -270,7 +282,8 @@ __d(
       _ = _r(d[18]),
       S = _r(d[19]),
       C = _r(d[20]),
-      I = _r(d[21]);
+      I = _r(d[21]),
+      G9 = _r(d[22]);
     const B = ["football", "padel", "tennis"],
       R = [
         { key: "time", labelKey: "factorTime", icon: "time-outline" },
@@ -317,6 +330,6 @@ __d(
   2472,
   [
     33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 1627, 630, 615, 616, 671, 1311, 675,
-    1171, 13,
+    1171, 13, 9001,
   ],
 );

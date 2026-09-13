@@ -608,12 +608,12 @@ __d(
     e.fetchDemandPrediction = (o, c) => t.store.mockGetDemandPrediction(o, c);
     e.recordDemandOutcome = (o, c, s, n) => t.store.mockRecordDemandOutcome(o, c, s, n);
     e.fetchDemandWeights = (o) => t.store.mockGetDemandWeights(o);
-    e.setDemandWeights = (o, c) => t.store.mockSetDemandWeights(o, c);
+    e.setDemandWeights = (o, c, s) => t.store.mockSetDemandWeights(o, c, s);
     e.fetchDemandModelStats = (o) => t.store.mockGetDemandModelStats(o);
     e.fetchMatchOptimization = (o, c) => t.store.mockGetMatchOptimization(o, c);
     e.recordOptimizerDecision = (o, c, s, n, l) => t.store.mockRecordOptimizerDecision(o, c, s, n, l);
     e.fetchOptimizerWeights = (o) => t.store.mockGetOptimizerWeights(o);
-    e.setOptimizerWeights = (o, c) => t.store.mockSetOptimizerWeights(o, c);
+    e.setOptimizerWeights = (o, c, s) => t.store.mockSetOptimizerWeights(o, c, s);
     e.fetchOptimizerDashboard = (o) => t.store.mockGetOptimizerDashboard(o);
     e.createClub = (o, c) => t.store.mockCreateClub(o, c);
     e.listMyClubs = (o) => t.store.mockListMyClubs(o);
@@ -736,7 +736,11 @@ __d(
     e.fetchConciergeReplacements = (o, c, s) => t.store.mockGetConciergeReplacements(o, c, s);
     e.fetchConciergeNotificationPlan = (o, c) => t.store.mockGetConciergeNotificationPlan(o, c);
     e.fetchConciergeRules = (o) => t.store.mockGetConciergeRules(o);
-    e.setConciergeRules = (o, c) => t.store.mockSetConciergeRules(o, c);
+    e.setConciergeRules = (o, c, s) => t.store.mockSetConciergeRules(o, c, s);
+    e.reviewFraudSignal = (o, c, s) => t.store.mockReviewFraudSignal(o, c, s);
+    e.setFeedWeights = (o, c, s) => t.store.mockSetFeedWeights(o, c, s);
+    e.setFeedFrozen = (o, c, s) => t.store.mockSetFeedFrozen(o, c, s);
+    e.resetFeedWeights = (o, c) => t.store.mockResetFeedWeights(o, c);
     e.fetchConciergeStats = (o) => t.store.mockGetConciergeStats(o);
     e.acceptReplacement = (o, c) => t.store.mockAcceptReplacement(o, c);
     e.declineReplacement = (o, c) => t.store.mockDeclineReplacement(o, c);

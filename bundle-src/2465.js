@@ -15,24 +15,34 @@ __d(
           [V, J] = (0, r.useState)(null),
           [q, U] = (0, r.useState)([]),
           [G, K] = (0, r.useState)("upcoming"),
-          [Q, X] = (0, r.useState)(null);
+          [Q, X] = (0, r.useState)(null),
+          [er, setEr] = (0, r.useState)(null);
         (0, r.useEffect)(() => {
           t &&
-            (0, C.fetchMyOrganizerApplication)(t.id).then((t) => {
-              "approved" === t?.status ? X(!0) : (X(!1), _.replace("/organizer/apply"));
-            });
+            (0, C.fetchMyOrganizerApplication)(t.id)
+              .then((t) => {
+                "approved" === t?.status ? X(!0) : (X(!1), _.replace("/organizer/apply"));
+              })
+              .catch((e) => setEr(e));
         }, [t, _]);
         const Y = (0, r.useCallback)(async () => {
           if (!t) return;
-          const [r, a, s, l, o, n] = await Promise.all([
-            (0, C.fetchOrganizerMatches)(t.id),
-            (0, C.fetchOrganizerStats)(t.id),
-            (0, C.fetchOrganizerReputation)(t.id),
-            (0, C.fetchOrganizerRatings)(t.id),
-            (0, C.fetchOrganizerReferralStats)(t.id),
-            (0, C.fetchOrganizerSeries)(t.id),
-          ]);
-          (P(r), F(a), H(s), A(l), J(o), U(n), $(!1));
+          setEr(null);
+          try {
+            const [r, a, s, l, o, n] = await Promise.all([
+              (0, C.fetchOrganizerMatches)(t.id),
+              (0, C.fetchOrganizerStats)(t.id),
+              (0, C.fetchOrganizerReputation)(t.id),
+              (0, C.fetchOrganizerRatings)(t.id),
+              (0, C.fetchOrganizerReferralStats)(t.id),
+              (0, C.fetchOrganizerSeries)(t.id),
+            ]);
+            (P(r), F(a), H(s), A(l), J(o), U(n));
+          } catch (e) {
+            setEr(e);
+          } finally {
+            $(!1);
+          }
         }, [t]);
         (0, m.useFocusEffect)(
           (0, r.useCallback)(() => {
@@ -41,6 +51,15 @@ __d(
         );
         const Z = D.filter((t) => t.effective_status === G),
           ee = (t) => `${(0, w.formatNumber)(Math.round(100 * t))}%`;
+        if (er)
+          return (0, R.jsx)(G9.GateScreen, {
+            kind: "error",
+            body: (0, G9.classifyError)(er).message,
+            onRetry: () => {
+              ($(!0), Y());
+            },
+            onBack: () => _.back(),
+          });
         if (!0 !== Q)
           return (0, R.jsx)(c.SafeAreaView, {
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: k.bg },
@@ -488,7 +507,8 @@ __d(
       w = _r(d[19]),
       v = _r(d[20]),
       z = _r(d[21]),
-      R = _r(d[22]);
+      R = _r(d[22]),
+      G9 = _r(d[23]);
     const I = { new: "neutral", rising: "warning", trusted: "success", elite: "accent" };
     const S = ({ label: t, value: r, colors: a }) =>
         (0, R.jsxs)(i.default, {
@@ -531,7 +551,7 @@ __d(
                     (0, R.jsxs)(n.default, {
                       style: [j.typography.small, { color: r.textMuted }],
                       numberOfLines: 1,
-                      children: [t.venue.name, " \xb7 ", (0, w.formatGameTime)(t.starts_at)],
+                      children: [t.venue?.name ?? "\u2014", " \xb7 ", (0, w.formatGameTime)(t.starts_at)],
                     }),
                   ],
                 }),
@@ -660,6 +680,6 @@ __d(
   2465,
   [
     33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 626, 1627, 630, 615, 616, 671, 1311, 675,
-    1171, 13,
+    1171, 13, 9001,
   ],
 );

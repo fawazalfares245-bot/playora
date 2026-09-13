@@ -384,6 +384,9 @@ __d(
                                   [P("smartSquad"), P("playersN", { n: String(F.max_players) })],
                                   [P("smartSkill"), P("all" === F.skill_level ? "allLevels" : F.skill_level)],
                                   [P("smartWaitlist"), F.waitlist_on ? P("switchOn") : P("switchOff")],
+                                  [P("smartDuration"), P("minutesN", { n: String(F.duration_minutes ?? 90) })],
+                                  [P("smartVisibility"), P("public" === (F.visibility ?? "public") ? "visibilityPublic" : "visibilityPrivate")],
+                                  [P("smartApproval"), P("auto" === (F.approval_mode ?? "auto") ? "approvalAuto" : "approvalManual")],
                                 ].map(([e, t]) =>
                                   (0, k.jsxs)(
                                     o.default,
@@ -416,7 +419,10 @@ __d(
                                   y.typography.caption,
                                   { color: l.textMuted, marginTop: y.spacing.sm },
                                 ],
-                                children: P("smartBasedOn", { n: String(F.based_on_games) }),
+                                children:
+                                  "default" === F.source
+                                    ? P("smartDefaultsFallback")
+                                    : P("smartBasedOn", { n: String(F.based_on_games) }),
                               }),
                             ],
                           })

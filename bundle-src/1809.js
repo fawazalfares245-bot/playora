@@ -105,10 +105,6 @@ __d(
               options: { presentation: "card", headerShown: !1 },
             }),
             (0, k.jsx)(t.Stack.Screen, {
-              name: "organizer/new",
-              options: { presentation: "card", headerShown: !1 },
-            }),
-            (0, k.jsx)(t.Stack.Screen, {
               name: "organizer/quick",
               options: { presentation: "card", headerShown: !1 },
             }),

@@ -289,6 +289,14 @@ __d(
         E_TIME_LOCKED_BY_COURT_BOOKING: "seTimeLockedByCourtBooking",
         E_ATTENDANCE_LOCKED: "seAttendanceLocked",
         E_PLEASE_WAIT_BEFORE_INVITING_AGAIN: "sePleaseWaitBeforeInvitingAgain",
+        // ORG1
+        E_UPLOAD_YOUR_IDENTITY_DOCUMENT: "seUploadYourIdentityDocument",
+        E_INVALID_MATCH_OPTION: "seInvalidMatchOption",
+        E_PRICE_OUT_OF_RANGE: "sePriceOutOfRange",
+        E_WAITLIST_OUT_OF_RANGE: "seWaitlistOutOfRange",
+        E_VENUE_DOES_NOT_SUPPORT_SPORT: "seVenueDoesNotSupportSport",
+        E_SERIES_END_BEFORE_START: "seSeriesEndBeforeStart",
+        E_YOU_HAVE_CREATED_TOO_MANY_SERIES: "seYouHaveCreatedTooManySeries",
       },
       E = {
         E_TOO_MANY_ATTEMPTS_MINUTES: "seTooManyAttemptsMinutes",
