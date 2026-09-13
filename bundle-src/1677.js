@@ -32,6 +32,7 @@ __d(
           [pe, me] = (0, t.useState)("list"),
           [ge, fe] = (0, t.useState)(!1),
           [he, ye] = (0, t.useState)(!1),
+          [qq, qqSet] = (0, t.useState)(""),
           xe = (0, t.useRef)(null),
           be = (0, t.useRef)(!1),
           je = (0, t.useCallback)(async () => {
@@ -94,6 +95,17 @@ __d(
         const De = (t) => {
             (e && (0, k.logFeedSignal)(e.id, "click", t), F.push(`/game/${t}`));
           },
+          // Free-text search over venue name, area and organiser name.
+          q9 = qq.trim().toLowerCase(),
+          m9 = (gq) => {
+            if (!q9) return !0;
+            const vn9 = gq && "object" == typeof gq.venue ? gq.venue : null;
+            return [gq?.title, vn9?.name, gq?.venue_name, gq?.area, vn9?.area, gq?.organizer_name].some((s9) =>
+              String(s9 ?? "")
+                .toLowerCase()
+                .includes(q9),
+            );
+          },
           ze = (0, t.useMemo)(() => {
             const e = new Date();
             return Array.from(
@@ -102,7 +114,7 @@ __d(
             );
           }, []),
           ve = (G?.suggested ?? []).filter(
-            (e) => !((X && e.sport !== X) || (ee && L(new Date(e.starts_at)) !== ee)),
+            (e) => !((X && e.sport !== X) || (ee && L(new Date(e.starts_at)) !== ee) || !m9(e)),
           ),
           Me = (0, t.useMemo)(() => {
             const e = new Map();
@@ -126,8 +138,8 @@ __d(
                   });
           },
           We = (0, t.useMemo)(
-            () => ce.filter((e) => !((X && e.sport !== X) || (ee && L(new Date(e.starts_at)) !== ee))),
-            [ce, X, ee],
+            () => ce.filter((e) => !((X && e.sport !== X) || (ee && L(new Date(e.starts_at)) !== ee) || !m9(e))),
+            [ce, X, ee, q9],
           ),
           Pe = (0, t.useMemo)(() => {
             const e = new Map();
@@ -136,10 +148,11 @@ __d(
           }, [We]),
           Le = (0, t.useMemo)(() => {
             const e = new Set();
-            for (const t of ce) (X && t.sport !== X) || e.add(L(new Date(t.starts_at)));
-            for (const t of G?.suggested ?? []) (X && t.sport !== X) || e.add(L(new Date(t.starts_at)));
+            for (const t of ce) (X && t.sport !== X) || !m9(t) || e.add(L(new Date(t.starts_at)));
+            for (const t of G?.suggested ?? [])
+              (X && t.sport !== X) || !m9(t) || e.add(L(new Date(t.starts_at)));
             return e;
-          }, [ce, G, X]);
+          }, [ce, G, X, q9]);
         return (0, T.jsxs)(u.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: A.bg },
@@ -204,6 +217,7 @@ __d(
                           }),
                         }),
                       "booked" === G.next_up?.kind &&
+                        m9(G.next_up) &&
                         (0, T.jsx)(H, {
                           row: G.next_up,
                           colors: A,
@@ -456,6 +470,7 @@ __d(
                               ],
                             }),
                       "suggested" === G.next_up?.kind &&
+                        m9(G.next_up) &&
                         (0, T.jsxs)(a.default, {
                           onPress: () => De(G.next_up.game_id),
                           accessibilityRole: "button",
@@ -699,6 +714,43 @@ __d(
                           }),
                         ],
                       }),
+                      // Search games by venue name, area or organiser name.
+                      (0, T.jsxs)(d.default, {
+                        style: [V.searchWrap, { backgroundColor: A.surface, borderColor: A.border }],
+                        children: [
+                          (0, T.jsx)(p.Ionicons, { name: "search-outline", size: 18, color: A.textMuted }),
+                          (0, T.jsx)(Q9.default, {
+                            value: qq,
+                            onChangeText: qqSet,
+                            placeholder: E("homeSearchPlaceholder"),
+                            placeholderTextColor: A.textMuted,
+                            accessibilityLabel: E("homeSearchLabel"),
+                            autoCapitalize: "none",
+                            autoCorrect: !1,
+                            returnKeyType: "search",
+                            maxLength: 60,
+                            style: [V.searchInput, { color: A.text }],
+                          }),
+                          qq.length > 0 &&
+                            (0, T.jsx)(a.default, {
+                              onPress: () => qqSet(""),
+                              accessibilityRole: "button",
+                              accessibilityLabel: E("homeSearchClear"),
+                              style: [V.searchClear, { backgroundColor: A.surfaceAlt }],
+                              children: (0, T.jsx)(p.Ionicons, {
+                                name: "close",
+                                size: 14,
+                                color: A.textMuted,
+                              }),
+                            }),
+                        ],
+                      }),
+                      q9.length > 0 &&
+                        (0, T.jsx)(i.default, {
+                          style: [S.typography.caption, { color: A.textMuted, marginTop: -6, marginBottom: S.spacing.md }],
+                          accessibilityLiveRegion: "polite",
+                          children: E("homeSearchResults", { n: String(ve.length), q: qq.trim() }),
+                        }),
                       G.activity.length > 0 &&
                         (0, T.jsx)(d.default, {
                           style: { marginBottom: S.spacing.xs },
@@ -789,7 +841,13 @@ __d(
                             }),
                           })
                         : 0 === ve.length
-                          ? ee
+                          ? q9
+                            ? (0, T.jsx)(h.EmptyState, {
+                                icon: "search-outline",
+                                title: E("homeSearchNoneTitle", { q: qq.trim() }),
+                                body: E("homeSearchNoneBody"),
+                              })
+                            : ee
                             ? (0, T.jsxs)(d.default, {
                                 style: [V.emptyDay, { backgroundColor: A.surface, borderColor: A.border }],
                                 children: [
@@ -999,7 +1057,8 @@ __d(
       z = _r(_d[30]),
       v = _r(_d[31]),
       M = _r(_d[32]),
-      T = _r(_d[33]);
+      T = _r(_d[33]),
+      Q9 = e(_r(_d[34]));
     const W = ["football", "padel", "tennis"],
       P = 14,
       L = (e) => e.toISOString().slice(0, 10);
@@ -1279,6 +1338,24 @@ __d(
         reasonDot: { width: 5, height: 5, borderRadius: 3 },
         fillTrack: { flex: 1, height: 6, borderRadius: 3, overflow: "hidden" },
         fillBar: { height: 6, borderRadius: 3 },
+        searchWrap: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: S.spacing.sm,
+          borderRadius: S.radius.pill,
+          borderWidth: l.default.hairlineWidth,
+          paddingHorizontal: S.spacing.md,
+          height: 44,
+          marginBottom: S.spacing.md,
+        },
+        searchInput: { flex: 1, paddingVertical: 0, fontSize: 14, fontWeight: "600" },
+        searchClear: {
+          width: 26,
+          height: 26,
+          borderRadius: 13,
+          alignItems: "center",
+          justifyContent: "center",
+        },
         hostCta: {
           flexDirection: "row",
           alignItems: "center",
@@ -1507,6 +1584,6 @@ __d(
   1677,
   [
     33, 15, 618, 461, 137, 369, 280, 281, 158, 146, 273, 1632, 381, 1086, 20, 626, 1631, 1627, 1662, 1678,
-    1679, 1680, 1667, 630, 615, 616, 671, 1311, 1626, 675, 1171, 1676, 674, 13,
+    1679, 1680, 1667, 630, 615, 616, 671, 1311, 1626, 675, 1171, 1676, 674, 13, 394,
   ],
 );

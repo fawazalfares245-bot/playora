@@ -20516,6 +20516,12 @@ __d(
     i.translations = {
       en: {
         // --- XC keys (fix batch) ---
+        homeSearchPlaceholder: "Search venue, area or organiser\u2026",
+        homeSearchLabel: "Search games by venue, area or organiser",
+        homeSearchClear: "Clear search",
+        homeSearchResults: "%{n} match \u201c%{q}\u201d",
+        homeSearchNoneTitle: "Nothing matches \u201c%{q}\u201d",
+        homeSearchNoneBody: "Try a venue, an area or an organiser\u2019s name.",
         dayGamesCount: "%{n} games",
         band_morning: "Morning",
         band_afternoon: "Afternoon",
@@ -23955,6 +23961,12 @@ __d(
       },
       ar: {
         // --- XC keys (fix batch) ---
+        homeSearchPlaceholder: "\u0627\u0628\u062d\u062b \u0628\u0627\u0633\u0645 \u0627\u0644\u0645\u0644\u0639\u0628 \u0623\u0648 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0623\u0648 \u0627\u0644\u0645\u0646\u0638\u0651\u0645\u2026",
+        homeSearchLabel: "\u0627\u0644\u0628\u062d\u062b \u0639\u0646 \u0627\u0644\u0645\u0628\u0627\u0631\u064a\u0627\u062a \u0628\u0627\u0633\u0645 \u0627\u0644\u0645\u0644\u0639\u0628 \u0623\u0648 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0623\u0648 \u0627\u0644\u0645\u0646\u0638\u0651\u0645",
+        homeSearchClear: "\u0645\u0633\u062d \u0627\u0644\u0628\u062d\u062b",
+        homeSearchResults: "%{n} \u0646\u062a\u064a\u062c\u0629 \u0644\u0640 \u00ab%{q}\u00bb",
+        homeSearchNoneTitle: "\u0644\u0627 \u062a\u0648\u062c\u062f \u0646\u062a\u0627\u0626\u062c \u0644\u0640 \u00ab%{q}\u00bb",
+        homeSearchNoneBody: "\u062c\u0631\u0651\u0628 \u0627\u0633\u0645 \u0645\u0644\u0639\u0628 \u0623\u0648 \u0645\u0646\u0637\u0642\u0629 \u0623\u0648 \u0645\u0646\u0638\u0651\u0645.",
         dayGamesCount: "%{n} \u0645\u0628\u0627\u0631\u064a\u0627\u062a",
         band_morning: "\u0635\u0628\u0627\u062d\u064b\u0627",
         band_afternoon: "\u0628\u0639\u062f \u0627\u0644\u0638\u0647\u0631",
@@ -31408,6 +31420,7 @@ __d(
           [pe, me] = (0, t.useState)("list"),
           [ge, fe] = (0, t.useState)(!1),
           [he, ye] = (0, t.useState)(!1),
+          [qq, qqSet] = (0, t.useState)(""),
           xe = (0, t.useRef)(null),
           be = (0, t.useRef)(!1),
           je = (0, t.useCallback)(async () => {
@@ -31470,6 +31483,17 @@ __d(
         const De = (t) => {
             (e && (0, k.logFeedSignal)(e.id, "click", t), F.push(`/game/${t}`));
           },
+          // Free-text search over venue name, area and organiser name.
+          q9 = qq.trim().toLowerCase(),
+          m9 = (gq) => {
+            if (!q9) return !0;
+            const vn9 = gq && "object" == typeof gq.venue ? gq.venue : null;
+            return [gq?.title, vn9?.name, gq?.venue_name, gq?.area, vn9?.area, gq?.organizer_name].some((s9) =>
+              String(s9 ?? "")
+                .toLowerCase()
+                .includes(q9),
+            );
+          },
           ze = (0, t.useMemo)(() => {
             const e = new Date();
             return Array.from(
@@ -31478,7 +31502,7 @@ __d(
             );
           }, []),
           ve = (G?.suggested ?? []).filter(
-            (e) => !((X && e.sport !== X) || (ee && L(new Date(e.starts_at)) !== ee)),
+            (e) => !((X && e.sport !== X) || (ee && L(new Date(e.starts_at)) !== ee) || !m9(e)),
           ),
           Me = (0, t.useMemo)(() => {
             const e = new Map();
@@ -31502,8 +31526,8 @@ __d(
                   });
           },
           We = (0, t.useMemo)(
-            () => ce.filter((e) => !((X && e.sport !== X) || (ee && L(new Date(e.starts_at)) !== ee))),
-            [ce, X, ee],
+            () => ce.filter((e) => !((X && e.sport !== X) || (ee && L(new Date(e.starts_at)) !== ee) || !m9(e))),
+            [ce, X, ee, q9],
           ),
           Pe = (0, t.useMemo)(() => {
             const e = new Map();
@@ -31512,10 +31536,11 @@ __d(
           }, [We]),
           Le = (0, t.useMemo)(() => {
             const e = new Set();
-            for (const t of ce) (X && t.sport !== X) || e.add(L(new Date(t.starts_at)));
-            for (const t of G?.suggested ?? []) (X && t.sport !== X) || e.add(L(new Date(t.starts_at)));
+            for (const t of ce) (X && t.sport !== X) || !m9(t) || e.add(L(new Date(t.starts_at)));
+            for (const t of G?.suggested ?? [])
+              (X && t.sport !== X) || !m9(t) || e.add(L(new Date(t.starts_at)));
             return e;
-          }, [ce, G, X]);
+          }, [ce, G, X, q9]);
         return (0, T.jsxs)(u.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: A.bg },
@@ -31580,6 +31605,7 @@ __d(
                           }),
                         }),
                       "booked" === G.next_up?.kind &&
+                        m9(G.next_up) &&
                         (0, T.jsx)(H, {
                           row: G.next_up,
                           colors: A,
@@ -31832,6 +31858,7 @@ __d(
                               ],
                             }),
                       "suggested" === G.next_up?.kind &&
+                        m9(G.next_up) &&
                         (0, T.jsxs)(a.default, {
                           onPress: () => De(G.next_up.game_id),
                           accessibilityRole: "button",
@@ -32075,6 +32102,43 @@ __d(
                           }),
                         ],
                       }),
+                      // Search games by venue name, area or organiser name.
+                      (0, T.jsxs)(d.default, {
+                        style: [V.searchWrap, { backgroundColor: A.surface, borderColor: A.border }],
+                        children: [
+                          (0, T.jsx)(p.Ionicons, { name: "search-outline", size: 18, color: A.textMuted }),
+                          (0, T.jsx)(Q9.default, {
+                            value: qq,
+                            onChangeText: qqSet,
+                            placeholder: E("homeSearchPlaceholder"),
+                            placeholderTextColor: A.textMuted,
+                            accessibilityLabel: E("homeSearchLabel"),
+                            autoCapitalize: "none",
+                            autoCorrect: !1,
+                            returnKeyType: "search",
+                            maxLength: 60,
+                            style: [V.searchInput, { color: A.text }],
+                          }),
+                          qq.length > 0 &&
+                            (0, T.jsx)(a.default, {
+                              onPress: () => qqSet(""),
+                              accessibilityRole: "button",
+                              accessibilityLabel: E("homeSearchClear"),
+                              style: [V.searchClear, { backgroundColor: A.surfaceAlt }],
+                              children: (0, T.jsx)(p.Ionicons, {
+                                name: "close",
+                                size: 14,
+                                color: A.textMuted,
+                              }),
+                            }),
+                        ],
+                      }),
+                      q9.length > 0 &&
+                        (0, T.jsx)(i.default, {
+                          style: [S.typography.caption, { color: A.textMuted, marginTop: -6, marginBottom: S.spacing.md }],
+                          accessibilityLiveRegion: "polite",
+                          children: E("homeSearchResults", { n: String(ve.length), q: qq.trim() }),
+                        }),
                       G.activity.length > 0 &&
                         (0, T.jsx)(d.default, {
                           style: { marginBottom: S.spacing.xs },
@@ -32165,7 +32229,13 @@ __d(
                             }),
                           })
                         : 0 === ve.length
-                          ? ee
+                          ? q9
+                            ? (0, T.jsx)(h.EmptyState, {
+                                icon: "search-outline",
+                                title: E("homeSearchNoneTitle", { q: qq.trim() }),
+                                body: E("homeSearchNoneBody"),
+                              })
+                            : ee
                             ? (0, T.jsxs)(d.default, {
                                 style: [V.emptyDay, { backgroundColor: A.surface, borderColor: A.border }],
                                 children: [
@@ -32375,7 +32445,8 @@ __d(
       z = _r(_d[30]),
       v = _r(_d[31]),
       M = _r(_d[32]),
-      T = _r(_d[33]);
+      T = _r(_d[33]),
+      Q9 = e(_r(_d[34]));
     const W = ["football", "padel", "tennis"],
       P = 14,
       L = (e) => e.toISOString().slice(0, 10);
@@ -32655,6 +32726,24 @@ __d(
         reasonDot: { width: 5, height: 5, borderRadius: 3 },
         fillTrack: { flex: 1, height: 6, borderRadius: 3, overflow: "hidden" },
         fillBar: { height: 6, borderRadius: 3 },
+        searchWrap: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: S.spacing.sm,
+          borderRadius: S.radius.pill,
+          borderWidth: l.default.hairlineWidth,
+          paddingHorizontal: S.spacing.md,
+          height: 44,
+          marginBottom: S.spacing.md,
+        },
+        searchInput: { flex: 1, paddingVertical: 0, fontSize: 14, fontWeight: "600" },
+        searchClear: {
+          width: 26,
+          height: 26,
+          borderRadius: 13,
+          alignItems: "center",
+          justifyContent: "center",
+        },
         hostCta: {
           flexDirection: "row",
           alignItems: "center",
@@ -32883,7 +32972,7 @@ __d(
   1677,
   [
     33, 15, 618, 461, 137, 369, 280, 281, 158, 146, 273, 1632, 381, 1086, 20, 626, 1631, 1627, 1662, 1678,
-    1679, 1680, 1667, 630, 615, 616, 671, 1311, 1626, 675, 1171, 1676, 674, 13,
+    1679, 1680, 1667, 630, 615, 616, 671, 1311, 1626, 675, 1171, 1676, 674, 13, 394,
   ],
 );
 __d(function(g,r,_i,a,_m,_e,_d){var e=r(_d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.MonthDropdown=void 0;var t=r(_d[1]),o=e(r(_d[2])),l=e(r(_d[3])),n=e(r(_d[4])),s=e(r(_d[5])),i=e(r(_d[6])),d=e(r(_d[7])),c=e(r(_d[8])),u=r(_d[9]),h=r(_d[10]),f=r(_d[11]),p=r(_d[12]),b=r(_d[13]),y=r(_d[14]);const m=e=>e.toISOString().slice(0,10),x=e=>{const t=new Date,o=new Date(t.getFullYear(),t.getMonth()+e,1,12),l=o.toLocaleDateString(void 0,{month:'long',year:'numeric'}),n=o.getDay(),s=new Date(o.getFullYear(),o.getMonth()+1,0).getDate(),i=Array.from({length:n},()=>null);for(let e=1;e<=s;e++)i.push(new Date(o.getFullYear(),o.getMonth(),e,12));for(;i.length%7!=0;)i.push(null);return{title:l,cells:i}};_e.MonthDropdown=({visible:e,onClose:j,datesWithGames:D,selected:k,onPick:M})=>{const{colors:v}=(0,h.useTheme)(),R=(0,b.useT)(),{width:S}=(0,c.default)(),C=Math.min(S-2*f.spacing.lg,420),[I,P]=(0,t.useState)(0),T=(0,t.useMemo)(()=>[x(0),x(1)],[e]),F=m(new Date),L=(0,t.useMemo)(()=>{const e=new Date(2026,1,1,12);return Array.from({length:7},(t,o)=>new Date(e.getFullYear(),e.getMonth(),e.getDate()+o,12).toLocaleDateString(void 0,{weekday:'narrow'}))},[]);return(0,y.jsx)(o.default,{visible:e,transparent:!0,animationType:"fade",onRequestClose:j,children:(0,y.jsxs)(d.default,{style:w.backdrop,children:[(0,y.jsx)(l.default,{style:s.default.absoluteFill,onPress:j,accessibilityRole:"button",accessibilityLabel:R('close')}),(0,y.jsxs)(l.default,{style:[w.panel,{width:C,backgroundColor:v.surface,borderColor:v.border}],onPress:()=>{},children:[(0,y.jsx)(n.default,{horizontal:!0,pagingEnabled:!0,showsHorizontalScrollIndicator:!1,onMomentumScrollEnd:e=>P(Math.round(e.nativeEvent.contentOffset.x/C)),style:{width:C},children:T.map((e,t)=>(0,y.jsxs)(d.default,{style:{width:C,padding:f.spacing.md},children:[(0,y.jsx)(i.default,{style:[f.typography.bodyStrong,{color:v.text,textAlign:'center',marginBottom:f.spacing.sm}],children:e.title}),(0,y.jsx)(d.default,{style:w.week,children:L.map((e,t)=>(0,y.jsx)(i.default,{style:[w.weekday,{color:v.textMuted}],children:e},t))}),(0,y.jsx)(d.default,{style:w.grid,children:e.cells.map((e,t)=>{if(!e)return(0,y.jsx)(d.default,{style:w.cell},t);const o=m(e),n=D.has(o),s=k===o,c=o<F;return(0,y.jsxs)(l.default,{disabled:c,onPress:()=>M(o),accessibilityRole:"button",accessibilityState:{selected:s,disabled:c},style:[w.cell,s&&{backgroundColor:v.accent,borderRadius:f.radius.md}],children:[(0,y.jsx)(i.default,{style:[f.typography.small,{color:s?v.accentInk:c?v.border:o===F?v.accentText:v.text,fontWeight:s||o===F?'800':'500',fontVariant:['tabular-nums']}],children:(0,p.formatNumber)(e.getDate())}),(0,y.jsx)(d.default,{style:[w.dot,{backgroundColor:n?v.accent:'transparent'}]})]},t)})})]},t))}),(0,y.jsx)(d.default,{style:w.dots,children:[0,1].map(e=>(0,y.jsx)(d.default,{style:[w.pagerDot,{backgroundColor:I===e?v.accent:v.border}]},e))}),(0,y.jsx)(l.default,{onPress:j,accessibilityRole:"button",accessibilityLabel:R('closeLabel'),hitSlop:8,style:w.closeRow,children:(0,y.jsx)(u.Ionicons,{name:"chevron-up",size:16,color:v.textMuted})})]})]})})};const w=s.default.create({backdrop:{flex:1,backgroundColor:'rgba(0,0,0,0.55)',alignItems:'center',paddingTop:'28%'},panel:{borderRadius:f.radius.lg,borderWidth:1,overflow:'hidden'},week:{flexDirection:'row',marginBottom:2},weekday:{flex:1,textAlign:'center',fontSize:10,fontWeight:'700'},grid:{flexDirection:'row',flexWrap:'wrap'},cell:{width:"14.285714285714286%",aspectRatio:1.15,alignItems:'center',justifyContent:'center'},dot:{width:4,height:4,borderRadius:2,marginTop:2},dots:{flexDirection:'row',justifyContent:'center',gap:5,paddingBottom:f.spacing.xs},pagerDot:{width:6,height:6,borderRadius:3},closeRow:{alignItems:'center',paddingBottom:f.spacing.sm}})},1678,[33,15,467,369,281,158,146,273,493,1086,615,616,1311,675,13]);

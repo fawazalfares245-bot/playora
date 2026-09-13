@@ -4,6 +4,12 @@ __d(
     i.translations = {
       en: {
         // --- XC keys (fix batch) ---
+        homeSearchPlaceholder: "Search venue, area or organiser\u2026",
+        homeSearchLabel: "Search games by venue, area or organiser",
+        homeSearchClear: "Clear search",
+        homeSearchResults: "%{n} match \u201c%{q}\u201d",
+        homeSearchNoneTitle: "Nothing matches \u201c%{q}\u201d",
+        homeSearchNoneBody: "Try a venue, an area or an organiser\u2019s name.",
         dayGamesCount: "%{n} games",
         band_morning: "Morning",
         band_afternoon: "Afternoon",
@@ -3443,6 +3449,12 @@ __d(
       },
       ar: {
         // --- XC keys (fix batch) ---
+        homeSearchPlaceholder: "\u0627\u0628\u062d\u062b \u0628\u0627\u0633\u0645 \u0627\u0644\u0645\u0644\u0639\u0628 \u0623\u0648 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0623\u0648 \u0627\u0644\u0645\u0646\u0638\u0651\u0645\u2026",
+        homeSearchLabel: "\u0627\u0644\u0628\u062d\u062b \u0639\u0646 \u0627\u0644\u0645\u0628\u0627\u0631\u064a\u0627\u062a \u0628\u0627\u0633\u0645 \u0627\u0644\u0645\u0644\u0639\u0628 \u0623\u0648 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0623\u0648 \u0627\u0644\u0645\u0646\u0638\u0651\u0645",
+        homeSearchClear: "\u0645\u0633\u062d \u0627\u0644\u0628\u062d\u062b",
+        homeSearchResults: "%{n} \u0646\u062a\u064a\u062c\u0629 \u0644\u0640 \u00ab%{q}\u00bb",
+        homeSearchNoneTitle: "\u0644\u0627 \u062a\u0648\u062c\u062f \u0646\u062a\u0627\u0626\u062c \u0644\u0640 \u00ab%{q}\u00bb",
+        homeSearchNoneBody: "\u062c\u0631\u0651\u0628 \u0627\u0633\u0645 \u0645\u0644\u0639\u0628 \u0623\u0648 \u0645\u0646\u0637\u0642\u0629 \u0623\u0648 \u0645\u0646\u0638\u0651\u0645.",
         dayGamesCount: "%{n} \u0645\u0628\u0627\u0631\u064a\u0627\u062a",
         band_morning: "\u0635\u0628\u0627\u062d\u064b\u0627",
         band_afternoon: "\u0628\u0639\u062f \u0627\u0644\u0638\u0647\u0631",
