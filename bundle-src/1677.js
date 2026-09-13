@@ -496,58 +496,56 @@ __d(
                               horizontal: !0,
                               showsHorizontalScrollIndicator: !1,
                               contentContainerStyle: { gap: S.spacing.sm, paddingBottom: S.spacing.md },
-                              children: ie
-                                .slice(0, 8)
-                                .map((e, t) =>
-                                  (0, T.jsxs)(
-                                    a.default,
-                                    {
-                                      onPress: () => F.push(`/player/${e.user_id}`),
-                                      accessibilityRole: "button",
-                                      accessibilityLabel: e.name,
-                                      style: [
-                                        V.leaderChip,
-                                        {
-                                          backgroundColor: A.surface,
-                                          borderColor: 0 === t ? A.accent : A.border,
-                                        },
-                                      ],
-                                      children: [
-                                        (0, T.jsx)(i.default, {
-                                          style: [
-                                            S.typography.smallStrong,
-                                            { color: 0 === t ? A.accentText : A.textMuted, width: 16 },
-                                          ],
-                                          children: (0, _.formatNumber)(t + 1),
-                                        }),
-                                        (0, T.jsx)(b.PlayerAvatar, { name: e.name, seed: t + 2, size: 28 }),
-                                        (0, T.jsxs)(d.default, {
-                                          style: { marginStart: S.spacing.xs, minWidth: 0 },
-                                          children: [
-                                            (0, T.jsx)(i.default, {
-                                              style: [
-                                                S.typography.caption,
-                                                { color: A.text, fontWeight: "700" },
-                                              ],
-                                              numberOfLines: 1,
-                                              children: e.name,
-                                            }),
-                                            (0, T.jsxs)(i.default, {
-                                              style: [V.leaderMeta, { color: A.textMuted }],
-                                              children: [
-                                                "\ud83c\udfc6 ",
-                                                (0, _.formatNumber)(e.total),
-                                                " \xb7 MVP ",
-                                                (0, _.formatNumber)(e.mvp),
-                                              ],
-                                            }),
-                                          ],
-                                        }),
-                                      ],
-                                    },
-                                    e.user_id,
-                                  ),
+                              children: ie.slice(0, 8).map((e, t) =>
+                                (0, T.jsxs)(
+                                  a.default,
+                                  {
+                                    onPress: () => F.push(`/player/${e.user_id}`),
+                                    accessibilityRole: "button",
+                                    accessibilityLabel: e.name,
+                                    style: [
+                                      V.leaderChip,
+                                      {
+                                        backgroundColor: A.surface,
+                                        borderColor: 0 === t ? A.accent : A.border,
+                                      },
+                                    ],
+                                    children: [
+                                      (0, T.jsx)(i.default, {
+                                        style: [
+                                          S.typography.smallStrong,
+                                          { color: 0 === t ? A.accentText : A.textMuted, width: 16 },
+                                        ],
+                                        children: (0, _.formatNumber)(t + 1),
+                                      }),
+                                      (0, T.jsx)(b.PlayerAvatar, { name: e.name, seed: t + 2, size: 28 }),
+                                      (0, T.jsxs)(d.default, {
+                                        style: { marginStart: S.spacing.xs, minWidth: 0 },
+                                        children: [
+                                          (0, T.jsx)(i.default, {
+                                            style: [
+                                              S.typography.caption,
+                                              { color: A.text, fontWeight: "700" },
+                                            ],
+                                            numberOfLines: 1,
+                                            children: e.name,
+                                          }),
+                                          (0, T.jsxs)(i.default, {
+                                            style: [V.leaderMeta, { color: A.textMuted }],
+                                            children: [
+                                              "\ud83c\udfc6 ",
+                                              (0, _.formatNumber)(e.total),
+                                              " \xb7 MVP ",
+                                              (0, _.formatNumber)(e.mvp),
+                                            ],
+                                          }),
+                                        ],
+                                      }),
+                                    ],
+                                  },
+                                  e.user_id,
                                 ),
+                              ),
                             }),
                           ],
                         }),
@@ -836,33 +834,124 @@ __d(
                                 title: E("noGamesMatchTitle"),
                                 body: E("noGamesMatchBody"),
                               })
-                          : Me.map(([e, t]) =>
-                              (0, T.jsxs)(
+                          : Me.map(([e, t]) => {
+                              // Games are grouped by day (prominent divider) and, inside a day, by time band.
+                              const r = [...t].sort((e, t) => String(e.starts_at).localeCompare(String(t.starts_at))),
+                                o = new Date(`${e}T12:00:00`),
+                                n = new Date(),
+                                s = e === L(n),
+                                c = e === L(new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1, 12)),
+                                l = o.toLocaleDateString(void 0, { weekday: "long", day: "numeric", month: "long" }),
+                                u = (e) => {
+                                  const t = new Date(e.starts_at).getHours();
+                                  return t < 12 ? "morning" : t < 17 ? "afternoon" : t < 21 ? "evening" : "night";
+                                },
+                                f = [];
+                              for (const e of r) {
+                                const t = u(e),
+                                  o = f[f.length - 1];
+                                o && o[0] === t ? o[1].push(e) : f.push([t, [e]]);
+                              }
+                              let h = 0;
+                              return (0, T.jsxs)(
                                 d.default,
                                 {
                                   children: [
-                                    (0, T.jsx)(i.default, {
-                                      style: [V.dayHeader, { color: A.textMuted }],
-                                      children: Te(e).toUpperCase(),
+                                    (0, T.jsxs)(d.default, {
+                                      style: V.dayDivider,
+                                      accessibilityRole: "header",
+                                      children: [
+                                        (0, T.jsx)(d.default, {
+                                          style: [V.dayDividerIcon, { backgroundColor: s ? A.accent : A.surface, borderColor: A.border }],
+                                          children: (0, T.jsx)(p.Ionicons, {
+                                            name: "calendar-outline",
+                                            size: 16,
+                                            color: s ? "#0f0f0f" : A.text,
+                                          }),
+                                        }),
+                                        (0, T.jsxs)(d.default, {
+                                          style: { flex: 1 },
+                                          children: [
+                                            (0, T.jsx)(i.default, {
+                                              style: [V.dayDividerTitle, { color: A.text }],
+                                              children: s ? E("todayLabel") : c ? E("tomorrowLabel") : l,
+                                            }),
+                                            (s || c) &&
+                                              (0, T.jsx)(i.default, {
+                                                style: [V.dayDividerSub, { color: A.textMuted }],
+                                                children: l,
+                                              }),
+                                          ],
+                                        }),
+                                        (0, T.jsx)(d.default, {
+                                          style: [V.dayCount, { backgroundColor: A.surface, borderColor: A.border }],
+                                          children: (0, T.jsx)(i.default, {
+                                            style: [V.dayCountText, { color: A.textMuted }],
+                                            children: E("dayGamesCount", { n: String(r.length) }),
+                                          }),
+                                        }),
+                                      ],
                                     }),
-                                    t.map((e, t) =>
-                                      t >= 3
-                                        ? (0, T.jsx)(
-                                            $,
-                                            { row: e, colors: A, t: E, onPress: () => De(e.game_id) },
-                                            e.game_id,
-                                          )
-                                        : (0, T.jsx)(
-                                            U,
-                                            { row: e, colors: A, t: E, onPress: () => De(e.game_id) },
-                                            e.game_id,
-                                          ),
+                                    (0, T.jsx)(d.default, { style: [V.dayRule, { backgroundColor: A.border }] }),
+                                    f.map(([e, t]) =>
+                                      (0, T.jsxs)(
+                                        d.default,
+                                        {
+                                          children: [
+                                            (0, T.jsxs)(d.default, {
+                                              style: V.bandHeader,
+                                              children: [
+                                                (0, T.jsx)(p.Ionicons, {
+                                                  name:
+                                                    "morning" === e
+                                                      ? "sunny-outline"
+                                                      : "afternoon" === e
+                                                        ? "partly-sunny-outline"
+                                                        : "evening" === e
+                                                          ? "cloudy-night-outline"
+                                                          : "moon-outline",
+                                                  size: 13,
+                                                  color: A.textMuted,
+                                                }),
+                                                (0, T.jsx)(i.default, {
+                                                  style: [V.bandHeaderText, { color: A.textMuted }],
+                                                  children: E(`band_${e}`).toUpperCase(),
+                                                }),
+                                                (0, T.jsx)(i.default, {
+                                                  style: [V.bandHeaderRange, { color: A.textMuted }],
+                                                  children: (() => {
+                                                    const e = (e) => new Date(e.starts_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+                                                      r = e(t[0]),
+                                                      o = e(t[t.length - 1]);
+                                                    return r === o ? r : `${r} \u2013 ${o}`;
+                                                  })(),
+                                                }),
+                                              ],
+                                            }),
+                                            t.map((e) => {
+                                              const t = h++;
+                                              return t >= 3
+                                                ? (0, T.jsx)(
+                                                    $,
+                                                    { row: e, colors: A, t: E, onPress: () => De(e.game_id) },
+                                                    e.game_id,
+                                                  )
+                                                : (0, T.jsx)(
+                                                    U,
+                                                    { row: e, colors: A, t: E, onPress: () => De(e.game_id) },
+                                                    e.game_id,
+                                                  );
+                                            }),
+                                          ],
+                                        },
+                                        e,
+                                      ),
                                     ),
                                   ],
                                 },
                                 e,
-                              ),
-                            ),
+                              );
+                            }),
                     ],
                   }),
             (0, T.jsx)(x.MonthDropdown, {
@@ -1227,6 +1316,36 @@ __d(
           marginTop: S.spacing.md,
           marginBottom: S.spacing.sm,
         },
+        dayDivider: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: S.spacing.sm,
+          marginTop: S.spacing.lg,
+          marginBottom: S.spacing.xs,
+        },
+        dayDividerIcon: {
+          width: 30,
+          height: 30,
+          borderRadius: 15,
+          alignItems: "center",
+          justifyContent: "center",
+          borderWidth: l.default.hairlineWidth,
+        },
+        dayDividerTitle: { fontSize: 17, fontWeight: "800", letterSpacing: 0.2 },
+        dayDividerSub: { fontSize: 12, fontWeight: "600", marginTop: 1 },
+        dayCount: { borderRadius: 999, borderWidth: l.default.hairlineWidth, paddingHorizontal: 10, paddingVertical: 4 },
+        dayCountText: { fontSize: 11, fontWeight: "700" },
+        dayRule: { height: 2, borderRadius: 1, marginBottom: S.spacing.sm },
+        bandHeader: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 6,
+          marginTop: S.spacing.xs,
+          marginBottom: S.spacing.xs,
+          paddingStart: 2,
+        },
+        bandHeaderText: { fontSize: 10.5, fontWeight: "800", letterSpacing: 1.1 },
+        bandHeaderRange: { fontSize: 10.5, fontWeight: "600", marginStart: 2 },
         tickerDot: { width: 6, height: 6, borderRadius: 3, marginEnd: S.spacing.sm },
         compactCard: {
           flexDirection: "row",

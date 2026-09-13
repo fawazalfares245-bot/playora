@@ -4,6 +4,11 @@ __d(
     i.translations = {
       en: {
         // --- XC keys (fix batch) ---
+        dayGamesCount: "%{n} games",
+        band_morning: "Morning",
+        band_afternoon: "Afternoon",
+        band_evening: "Evening",
+        band_night: "Night",
         seCouldNotSaveChanges: "Your change could not be saved on this device. Please try again.",
         seStorageFull: "This device\u2019s storage is full, so the change could not be saved. Free up space and try again.",
         seYouCannotReviewYourOwn: "You cannot review your own record.",
@@ -3364,6 +3369,11 @@ __d(
       },
       ar: {
         // --- XC keys (fix batch) ---
+        dayGamesCount: "%{n} \u0645\u0628\u0627\u0631\u064a\u0627\u062a",
+        band_morning: "\u0635\u0628\u0627\u062d\u064b\u0627",
+        band_afternoon: "\u0628\u0639\u062f \u0627\u0644\u0638\u0647\u0631",
+        band_evening: "\u0645\u0633\u0627\u0621\u064b",
+        band_night: "\u0644\u064a\u0644\u064b\u0627",
         seCouldNotSaveChanges: "\u062a\u0639\u0630\u0631 \u062d\u0641\u0638 \u0627\u0644\u062a\u063a\u064a\u064a\u0631 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632. \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.",
         seStorageFull: "\u0645\u0633\u0627\u062d\u0629 \u0627\u0644\u062a\u062e\u0632\u064a\u0646 \u0645\u0645\u062a\u0644\u0626\u0629\u060c \u0644\u0630\u0627 \u062a\u0639\u0630\u0631 \u062d\u0641\u0638 \u0627\u0644\u062a\u063a\u064a\u064a\u0631. \u0623\u0641\u0631\u063a \u0628\u0639\u0636 \u0627\u0644\u0645\u0633\u0627\u062d\u0629 \u0648\u062d\u0627\u0648\u0644 \u0645\u062c\u062f\u062f\u064b\u0627.",
         seYouCannotReviewYourOwn: "\u0644\u0627 \u064a\u0645\u0643\u0646\u0643 \u0645\u0631\u0627\u062c\u0639\u0629 \u0633\u062c\u0644\u0643 \u0627\u0644\u062e\u0627\u0635.",

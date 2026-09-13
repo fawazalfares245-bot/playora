@@ -78,7 +78,10 @@ __d(
           backgroundColor: M.bg,
         },
         children: [
-          "mock" === (0, b.backendMode)() &&
+          // Only warn about being offline when a server is configured but unreachable; a purely
+          // client-side build has nothing to be offline from.
+          !!globalThis.__PLAYORA_CONFIG__?.backendUrl &&
+            "mock" === (0, b.backendMode)() &&
             (0, C.jsx)(l.default, {
               style: [R.guestBar, { backgroundColor: M.surfaceAlt }],
               accessibilityLiveRegion: "polite",
