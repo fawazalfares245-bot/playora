@@ -837,21 +837,29 @@ __d(
                       }),
                   ],
                 }),
-              (0, L.jsxs)(u.default, {
-                style: E.footerRow,
+              // Seven links interleaved with dot separators, in two rows that could not wrap: on a
+              // phone the row simply ran off both edges and the first and last links were cut in
+              // half. They wrap now, and the dots are gone -- a dot stranded at the start of a
+              // wrapped line reads as a bullet, so spacing does the separating instead.
+              (0, L.jsx)(u.default, {
+                style: E.footerLinks,
                 children: [
-                  (0, L.jsx)(U, { label: X("privacy"), onPress: () => J.push("/privacy"), colors: q }),
-                  (0, L.jsx)(c.default, {
-                    style: [k.typography.caption, { color: q.textMuted }],
-                    children: "\xb7",
-                  }),
-                  (0, L.jsx)(U, { label: X("cocTitle"), onPress: () => J.push("/conduct"), colors: q }),
-                  (0, L.jsx)(c.default, {
-                    style: [k.typography.caption, { color: q.textMuted }],
-                    children: "\xb7",
-                  }),
-                  (0, L.jsx)(U, { label: X("signOut"), onPress: G, colors: q, accent: !0 }),
-                ],
+                  { k: "privacy", to: "/privacy" },
+                  { k: "cocTitle", to: "/conduct" },
+                  { k: "howItWorksTitle", to: "/how-it-works" },
+                  { k: "a11yTitle", to: "/settings/access" },
+                  { k: "walletTitle", to: "/wallet" },
+                  { k: "regionTitle", to: "/settings/region" },
+                  { k: "contactSupport", to: "/contact" },
+                ].map(({ k: fk9, to: ft9 }) =>
+                  (0, L.jsx)(U, { label: X(fk9), onPress: () => J.push(ft9), colors: q }, fk9),
+                ),
+              }),
+              // Sign out is the one destructive action down here. On its own line it cannot be
+              // mistaken for the link beside it.
+              (0, L.jsx)(u.default, {
+                style: E.footerSignOut,
+                children: (0, L.jsx)(U, { label: X("signOut"), onPress: G, colors: q, accent: !0 }),
               }),
               // Which build is this phone actually running? Without this the only answer was devtools.
               (0, L.jsx)(c.default, {
@@ -859,47 +867,9 @@ __d(
                 selectable: !0,
                 style: [
                   k.typography.caption,
-                  { color: q.textMuted, opacity: 0.55, textAlign: "center", marginTop: k.spacing.sm },
+                  { color: q.textMuted, opacity: 0.55, textAlign: "center", marginTop: k.spacing.md },
                 ],
                 children: `${X("appName")} \u00b7 ${globalThis.__PLAYORA_CONFIG__?.buildId ?? "dev"}`,
-              }),
-              (0, L.jsxs)(u.default, {
-                style: [E.footerRow, { marginTop: k.spacing.sm }],
-                children: [
-                  (0, L.jsx)(U, {
-                    label: X("howItWorksTitle"),
-                    onPress: () => J.push("/how-it-works"),
-                    colors: q,
-                  }),
-                  (0, L.jsx)(c.default, {
-                    style: [k.typography.caption, { color: q.textMuted }],
-                    children: "\xb7",
-                  }),
-                  (0, L.jsx)(U, {
-                    label: X("a11yTitle"),
-                    onPress: () => J.push("/settings/access"),
-                    colors: q,
-                  }),
-                  (0, L.jsx)(c.default, {
-                    style: [k.typography.caption, { color: q.textMuted }],
-                    children: "\xb7",
-                  }),
-                  (0, L.jsx)(U, { label: X("walletTitle"), onPress: () => J.push("/wallet"), colors: q }),
-                  (0, L.jsx)(c.default, {
-                    style: [k.typography.caption, { color: q.textMuted }],
-                    children: "\xb7",
-                  }),
-                  (0, L.jsx)(U, {
-                    label: X("regionTitle"),
-                    onPress: () => J.push("/settings/region"),
-                    colors: q,
-                  }),
-                  (0, L.jsx)(c.default, {
-                    style: [k.typography.caption, { color: q.textMuted }],
-                    children: "\xb7",
-                  }),
-                  (0, L.jsx)(U, { label: X("contactSupport"), onPress: () => J.push("/contact"), colors: q }),
-                ],
               }),
             ],
           }),
@@ -1149,13 +1119,19 @@ __d(
           marginBottom: k.spacing.xs,
         }),
         switchRow: { flexDirection: "row", alignItems: "center" },
-        footerRow: {
+        // flexWrap is the whole fix: React Native Web defaults a row to nowrap, so seven links laid
+        // out across a 390px screen overflowed instead of folding onto a second line.
+        footerLinks: {
           flexDirection: "row",
+          flexWrap: "wrap",
           alignItems: "center",
           justifyContent: "center",
-          gap: k.spacing.md,
+          columnGap: k.spacing.lg,
+          rowGap: k.spacing.sm,
           marginTop: k.spacing.xl,
+          paddingHorizontal: k.spacing.md,
         },
+        footerSignOut: { alignItems: "center", marginTop: k.spacing.lg },
       });
   },
   1805,
