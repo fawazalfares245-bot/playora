@@ -43,7 +43,8 @@ export function seedScript(role) {
     organizer_type: 'individual', id_doc_type: 'civil_id', id_doc_ref: 'ref', id_doc_last4: '0001', id_doc_uploaded: true, business: null,
     phone_hash: 'ph', risk_flags: [], reviewed_by: IDS.admin, rejection_reason: null, admin_notes: null, reapply_after: null,
     submitted_at: new Date(Date.now() - 30 * 864e5).toISOString(), reviewed_at: new Date(Date.now() - 29 * 864e5).toISOString(), created_at: new Date(Date.now() - 30 * 864e5).toISOString() };
-  const session = role === 'guest' ? null : { user: { id: IDS[role], email: profiles.find((p) => p.id === IDS[role]).email }, token: 'smoke-token' };
+  // A real session carries expires_at; loadSession rejects one without it, so the seed must too.
+  const session = role === 'guest' ? null : { user: { id: IDS[role], email: profiles.find((p) => p.id === IDS[role]).email }, token: 'smoke-token', expires_at: Date.now() + 2592e6 };
   return `(() => {
     try {
       localStorage.setItem('playora.mock.profiles.v1', ${JSON.stringify(JSON.stringify(profiles))});

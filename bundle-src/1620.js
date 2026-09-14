@@ -92,7 +92,8 @@ __d(
                 }),
                 (0, C.jsx)(i.default, {
                   style: [x.typography.smallStrong, { color: M.warning ? "#131A03" : M.textMuted, flex: 1 }],
-                  numberOfLines: 1,
+                  // One line clipped this mid-word on a phone; the banner has to be readable to do its job.
+                  numberOfLines: 2,
                   children: L("demoModeBanner"),
                 }),
               ],

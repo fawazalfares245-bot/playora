@@ -1348,7 +1348,8 @@ __d(
           height: 44,
           marginBottom: S.spacing.md,
         },
-        searchInput: { flex: 1, paddingVertical: 0, fontSize: 14, fontWeight: "600" },
+        // height:"100%" so the tap target is the whole 44px pill, not the 16px text box.
+        searchInput: { flex: 1, height: "100%", paddingVertical: 0, fontSize: 14, fontWeight: "600" },
         searchClear: {
           width: 26,
           height: 26,

@@ -15,12 +15,14 @@ edited through the module tooling described below.
   9004 = kid UI kit, 9005 = `/kids` specimen screen).
 - `tools/bundle.py` – `split <id...>` extracts modules from index.html into bundle-src; `build` rebuilds.
 - `tools/flows-admin.mjs`, `tools/flows-organizer.mjs`, `tools/flows-org1.mjs`, `tools/flows-search.mjs`,
-  `tools/flows-xcut.mjs`, `tools/flows-kids.mjs`, `tools/rules.mjs` – the regression suites. Run all seven
-  after any bundle change.
+  `tools/flows-xcut.mjs`, `tools/flows-kids.mjs`, `tools/flows-consumer.mjs`, `tools/rules.mjs` – the
+  regression suites. Run all eight after any bundle change.
 - `tools/smoke.mjs` – headless Playwright harness: `node tools/smoke.mjs /admin/organizers --role admin`
   boots the app with a seeded session and prints visible text and console/page errors. Import `openApp`
   from it to script flows.
-- `docs/audit/` – audit report (PDF), raw findings, fix status files and the route → module map.
+- `docs/audit/` – two audit reports (PDF), raw findings, fix status files and the route → module map.
+  `Playora_Admin_Organizer_Audit.pdf` covers the staff surface; `Playora_Consumer_Audit.pdf` covers the
+  68 player-facing routes.
 - `package.json`, `serve.json`, `railway.json`, `nixpacks.toml` – static hosting via `serve -s` with SPA rewrites.
 - `rpc.ts`, `auth/jwt.ts`, `.env.example` – server-side stubs for a future API; not used by the bundle.
 

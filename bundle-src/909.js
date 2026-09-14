@@ -43,7 +43,7 @@ __d(
         analystOrAdminBody: "This area is restricted to administrators and analysts.",
         loadFailedTitle: "Couldn\u2019t load this screen",
         goBack: "Go back",
-        demoModeBanner: "Demo mode \u00b7 seeded data on this device, no real bookings or payments",
+        demoModeBanner: "Demo mode \u00b7 seeded data, no real bookings",
         sessionExpired: "Your session has expired. Please sign in again.",
         // --- ADM1 keys (fix batch) ---
         seAdminsCannotRegisterVenues: "Administrators review venues and cannot register one.",
@@ -3506,7 +3506,7 @@ __d(
         analystOrAdminBody: "\u0647\u0630\u0647 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0645\u062e\u0635\u0635\u0629 \u0644\u0644\u0645\u0634\u0631\u0641\u064a\u0646 \u0648\u0627\u0644\u0645\u062d\u0644\u0644\u064a\u0646.",
         loadFailedTitle: "\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0647\u0630\u0647 \u0627\u0644\u0634\u0627\u0634\u0629",
         goBack: "\u0631\u062c\u0648\u0639",
-        demoModeBanner: "\u0648\u0636\u0639 \u0627\u0644\u0639\u0631\u0636 \u00b7 \u0628\u064a\u0627\u0646\u0627\u062a \u062a\u062c\u0631\u064a\u0628\u064a\u0629 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632\u060c \u0644\u0627 \u062d\u062c\u0648\u0632\u0627\u062a \u0623\u0648 \u0645\u062f\u0641\u0648\u0639\u0627\u062a \u062d\u0642\u064a\u0642\u064a\u0629",
+        demoModeBanner: "\u0648\u0636\u0639 \u0627\u0644\u0639\u0631\u0636 \u00b7 \u0628\u064a\u0627\u0646\u0627\u062a \u062a\u062c\u0631\u064a\u0628\u064a\u0629\u060c \u0644\u0627 \u062d\u062c\u0648\u0632\u0627\u062a \u062d\u0642\u064a\u0642\u064a\u0629",
         sessionExpired: "\u0627\u0646\u062a\u0647\u062a \u062c\u0644\u0633\u062a\u0643. \u064a\u0631\u062c\u0649 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0645\u062c\u062f\u062f\u064b\u0627.",
         // --- ADM1 keys (fix batch) ---
         seAdminsCannotRegisterVenues: "المشرفون يراجعون الملاعب ولا يمكنهم تسجيل ملعب.",

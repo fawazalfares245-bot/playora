@@ -875,25 +875,33 @@ __d(
       ya = async (e, t, a, i = "male", n, r) => {
         await ei();
         const o = (0, v.canonicalPhone)(e),
-          s = _a.get(o);
+          // CSEC/CQUAL (consumer audit): this read was not awaited, so `s` was a Promise. Every field
+          // below read as undefined, which made the expiry and attempt checks no-ops and made the code
+          // comparison always unequal — so every phone sign-in and sign-up threw OTP_WRONG. The attempt
+          // counter must also be persisted, or the cap can never trip.
+          s = await _a.get(o);
         if (!s || Date.now() > s.expires) throw new Error("OTP_EXPIRED");
         if (!s.verified) {
-          if (((s.attempts += 1), s.attempts > 5)) throw (_a.delete(o), new Error("OTP_ATTEMPTS"));
-          if (t.trim() !== s.code) throw new Error("OTP_WRONG");
+          s.attempts = Number(s.attempts ?? 0) + 1;
+          if (s.attempts > 5) throw (await _a.delete(o), new Error("OTP_ATTEMPTS"));
+          if (t.trim() !== s.code) throw (await _a.set(o, s), new Error("OTP_WRONG"));
         }
         await (0, w.logAudit)("auth.otp_verified", null);
         const d = `${o}@otp.playora.app`,
           l = Qt.users.find((e) => e.email === d);
         if (l) {
-          _a.delete(o);
-          const e = { user: { id: l.id, email: d }, token: `otp-${ea()}` };
-          return (await (0, _.secureSet)(Vt, JSON.stringify(e)), Object.assign({}, e, { existing: !0 }));
+          // CSEC (consumer audit): this branch hand-rolled the session, dropping the 30-day expiry and
+          // deriving the bearer token from Math.random. Phone is the primary sign-in route, so that was
+          // every returning user. Go through li(), which stamps expires_at, and use the CSPRNG.
+          await _a.delete(o);
+          const se9 = { user: { id: l.id, email: d }, token: `otp-${await (0, c.randomToken)()}` };
+          return (await li(se9), Object.assign({}, se9, { existing: !0 }));
         }
         const c = "string" == typeof n ? n.trim() : "";
         if (!fa(c)) throw new Error("BIRTH_DATE_REQUIRED");
         if (ga(c) < wa) throw new Error("AGE_REQUIREMENT");
         if (!r) throw new Error("TERMS_REQUIRED");
-        _a.delete(o);
+        await _a.delete(o);
         const u = `Otp!${ea().slice(0, 12)}Aa1`,
           m = await ci(d, u, a, i),
           p = Qt.profiles.findIndex((e) => e.id === m.user.id);
@@ -2261,7 +2269,13 @@ __d(
         try {
           const t = JSON.parse(e);
           if (!t || "object" != typeof t || !t.user?.id) return null;
-          if ("number" == typeof t.expires_at && t.expires_at < Date.now()) {
+          // CSEC (consumer audit): the expiry used to be optional, so any session written without one
+          // was honoured forever. A session with no expiry stamp is not a valid session.
+          if ("number" != typeof t.expires_at) {
+            await (0, _.secureDelete)(Vt);
+            return null;
+          }
+          if (t.expires_at < Date.now()) {
             (await (0, _.secureDelete)(Vt), await (0, w.logAudit)("auth.session_expired", (0, w.actorRef)(t.user.id)));
             return null;
           }

@@ -132,6 +132,30 @@ const out = await page.evaluate(async (ids) => {
   const noMatch = await api.fetchAdminAuditLog(ids.admin, { query: 'zzzz-no-such-actor' }).catch(() => null);
   res.auditQueryFilter = (noMatch?.rows?.length ?? -1) === 0;
 
+  // --- phone auth round-trip works end to end (consumer audit, Critical) ---------------------
+  // Nothing exercised this path before: the harness injects a ready-made session, so a bug that made
+  // every phone sign-in and sign-up fail shipped unnoticed.
+  const phone = '+96550001234';
+  const store = __r(631);
+  const req = await store.mockRequestOtp(phone).catch((e) => ({ error: e.message }));
+  res.otpRequested = !req?.error;
+  res.otpDemoCode = req?.demo_code || '';
+  res.otpWrongCode = await code(() => store.mockVerifyOtp(phone, '000000', 'Probe User', 'male', '1998-04-12', true));
+  // the wizard checks the code first, then confirms with the profile details
+  await store.mockCheckOtp(phone, res.otpDemoCode).catch(() => {});
+  const ok = await store
+    .mockVerifyOtp(phone, res.otpDemoCode, 'Probe User', 'male', '1998-04-12', true)
+    .catch((e) => ({ error: e.message }));
+  res.otpAccepted = !ok?.error;
+  res.otpError = ok?.error || '';
+  const live = await store.loadSession().catch(() => null);
+  res.otpSessionHasExpiry = typeof live?.expires_at === 'number';
+  // a used code must not work twice
+  res.otpReplay = await code(() => store.mockVerifyOtp(phone, res.otpDemoCode, 'Probe User', 'male', '1998-04-12', true));
+  // a session with no expiry stamp must not be honoured
+  localStorage.setItem('secure.playora_session', JSON.stringify({ user: { id: ids.user, email: 'x@y.z' }, token: 't' }));
+  res.sessionNoExpiryRejected = (await store.loadSession().catch(() => null)) === null;
+
   // --- self review ---
   const apps = JSON.parse(localStorage.getItem('playora.mock.applications.v1') || '[]');
   res.appsSeen = apps.length;
@@ -184,6 +208,12 @@ ok('each row carries actor, target, device and meta', out.auditRowShape === true
 ok('rows name the acting admin by id', out.auditNamesActor === true, String(out.auditNamesActor));
 ok('filtering by action type narrows the log', out.auditTypeFilter === true, String(out.auditTypeFilter));
 ok('a free-text query that matches nothing returns nothing', out.auditQueryFilter === true, String(out.auditQueryFilter));
+ok('an OTP can be requested', out.otpRequested === true, String(out.otpRequested));
+ok('a wrong OTP is rejected', out.otpWrongCode === 'OTP_WRONG', String(out.otpWrongCode));
+ok('a correct OTP creates the account', out.otpAccepted === true, out.otpError || 'ok');
+ok('the OTP session carries an expiry', out.otpSessionHasExpiry === true, String(out.otpSessionHasExpiry));
+ok('a used OTP cannot be replayed', /OTP_EXPIRED|OTP_WRONG/.test(out.otpReplay), String(out.otpReplay));
+ok('a session with no expiry is rejected', out.sessionNoExpiryRejected === true, String(out.sessionNoExpiryRejected));
 ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
 await browser.close();
 console.log(results.join('\n'));
