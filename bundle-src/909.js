@@ -4,6 +4,18 @@ __d(
     i.translations = {
       en: {
         // --- XC keys (fix batch) ---
+        pitchRole_NET: "Net",
+        pitchRole_BASE: "Baseline",
+        formCustom: "Custom",
+        formPadelSingles: "Singles",
+        formPadelBothBack: "Both at the back",
+        formPadelOneUp: "One up, one back",
+        formPadelBothNet: "Both at the net",
+        formTennisSingles: "Singles",
+        formTennisStandard: "One up, one back",
+        formTennisBothBack: "Both at the baseline",
+        formTennisBothNet: "Both at the net",
+        formTennisAustralian: "Australian",
         adminAuditTitle: "Admin activity log",
         adminAuditSubtitle: "%{shown} of %{total} privileged actions on this device",
         adminAuditSearchPlaceholder: "Search actor, target or detail\u2026",
@@ -3467,6 +3479,18 @@ __d(
       },
       ar: {
         // --- XC keys (fix batch) ---
+        pitchRole_NET: "\u0627\u0644\u0634\u0628\u0643\u0629",
+        pitchRole_BASE: "\u062e\u0637 \u0627\u0644\u0642\u0627\u0639\u062f\u0629",
+        formCustom: "\u0645\u062e\u0635\u0635",
+        formPadelSingles: "\u0641\u0631\u062f\u064a",
+        formPadelBothBack: "\u0627\u0644\u0627\u062b\u0646\u0627\u0646 \u0641\u064a \u0627\u0644\u062e\u0644\u0641",
+        formPadelOneUp: "\u0648\u0627\u062d\u062f \u0623\u0645\u0627\u0645 \u0648\u0648\u0627\u062d\u062f \u062e\u0644\u0641",
+        formPadelBothNet: "\u0627\u0644\u0627\u062b\u0646\u0627\u0646 \u0639\u0644\u0649 \u0627\u0644\u0634\u0628\u0643\u0629",
+        formTennisSingles: "\u0641\u0631\u062f\u064a",
+        formTennisStandard: "\u0648\u0627\u062d\u062f \u0623\u0645\u0627\u0645 \u0648\u0648\u0627\u062d\u062f \u062e\u0644\u0641",
+        formTennisBothBack: "\u0627\u0644\u0627\u062b\u0646\u0627\u0646 \u0639\u0644\u0649 \u062e\u0637 \u0627\u0644\u0642\u0627\u0639\u062f\u0629",
+        formTennisBothNet: "\u0627\u0644\u0627\u062b\u0646\u0627\u0646 \u0639\u0644\u0649 \u0627\u0644\u0634\u0628\u0643\u0629",
+        formTennisAustralian: "\u0627\u0644\u0623\u0633\u062a\u0631\u0627\u0644\u064a\u0629",
         adminAuditTitle: "\u0633\u062c\u0644 \u0646\u0634\u0627\u0637 \u0627\u0644\u0645\u0634\u0631\u0641\u064a\u0646",
         adminAuditSubtitle: "%{shown} \u0645\u0646 %{total} \u0625\u062c\u0631\u0627\u0621\u064b \u0645\u0645\u064a\u0651\u0632\u064b\u0627 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632",
         adminAuditSearchPlaceholder: "\u0627\u0628\u062d\u062b \u0641\u064a \u0627\u0644\u0645\u0646\u0641\u0651\u0630 \u0623\u0648 \u0627\u0644\u0647\u062f\u0641 \u0623\u0648 \u0627\u0644\u062a\u0641\u0627\u0635\u064a\u0644\u2026",
