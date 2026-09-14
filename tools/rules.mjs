@@ -152,6 +152,21 @@ const out = await page.evaluate(async (ids) => {
   res.otpSessionHasExpiry = typeof live?.expires_at === 'number';
   // a used code must not work twice
   res.otpReplay = await code(() => store.mockVerifyOtp(phone, res.otpDemoCode, 'Probe User', 'male', '1998-04-12', true));
+  // The RETURNING-user path is a different branch from account creation and must be exercised too:
+  // a shadowed variable there threw "Cannot access 'c' before initialization" for every existing
+  // account while new sign-ups worked fine, so testing only the create path missed it entirely.
+  const again = await store.mockRequestOtp(phone).catch((e) => ({ error: e.message }));
+  res.otpReturningRequested = !again?.error;
+  const chk2 = await store.mockCheckOtp(phone, again.demo_code).catch((e) => ({ error: e.message }));
+  res.otpReturningExisting = chk2?.existing === true;
+  const back = await store
+    .mockVerifyOtp(phone, again.demo_code, 'Live Probe', 'male', '1997-03-02', true)
+    .catch((e) => ({ error: e.message }));
+  res.otpReturningSignedIn = back?.existing === true && !!back?.user?.id;
+  res.otpReturningError = back?.error || '';
+  const liveAgain = await store.loadSession().catch(() => null);
+  res.otpReturningHasExpiry = typeof liveAgain?.expires_at === 'number';
+
   // a session with no expiry stamp must not be honoured
   localStorage.setItem('secure.playora_session', JSON.stringify({ user: { id: ids.user, email: 'x@y.z' }, token: 't' }));
   res.sessionNoExpiryRejected = (await store.loadSession().catch(() => null)) === null;
@@ -213,6 +228,10 @@ ok('a wrong OTP is rejected', out.otpWrongCode === 'OTP_WRONG', String(out.otpWr
 ok('a correct OTP creates the account', out.otpAccepted === true, out.otpError || 'ok');
 ok('the OTP session carries an expiry', out.otpSessionHasExpiry === true, String(out.otpSessionHasExpiry));
 ok('a used OTP cannot be replayed', /OTP_EXPIRED|OTP_WRONG/.test(out.otpReplay), String(out.otpReplay));
+ok('a returning user can request a code', out.otpReturningRequested === true, String(out.otpReturningRequested));
+ok('the backend recognises the existing account', out.otpReturningExisting === true, String(out.otpReturningExisting));
+ok('a returning user signs in', out.otpReturningSignedIn === true, out.otpReturningError || 'ok');
+ok('the returning session carries an expiry', out.otpReturningHasExpiry === true, String(out.otpReturningHasExpiry));
 ok('a session with no expiry is rejected', out.sessionNoExpiryRejected === true, String(out.sessionNoExpiryRejected));
 ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
 await browser.close();

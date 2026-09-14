@@ -897,9 +897,11 @@ __d(
           const se9 = { user: { id: l.id, email: d }, token: `otp-${await (0, c.randomToken)()}` };
           return (await li(se9), Object.assign({}, se9, { existing: !0 }));
         }
-        const c = "string" == typeof n ? n.trim() : "";
-        if (!fa(c)) throw new Error("BIRTH_DATE_REQUIRED");
-        if (ga(c) < wa) throw new Error("AGE_REQUIREMENT");
+        // NOTE: do not name this `c`. The module-level crypto import is `c`, and a local `c` here
+        // shadows it for the WHOLE function, putting any earlier c.* use in its temporal dead zone.
+        const bd9 = "string" == typeof n ? n.trim() : "";
+        if (!fa(bd9)) throw new Error("BIRTH_DATE_REQUIRED");
+        if (ga(bd9) < wa) throw new Error("AGE_REQUIREMENT");
         if (!r) throw new Error("TERMS_REQUIRED");
         await _a.delete(o);
         const u = `Otp!${ea().slice(0, 12)}Aa1`,
@@ -908,8 +910,8 @@ __d(
         return (
           p >= 0 &&
             ((Qt.profiles[p] = Object.assign({}, Qt.profiles[p], {
-              birth_date: c,
-              birth_year: Number(c.slice(0, 4)),
+              birth_date: bd9,
+              birth_year: Number(bd9.slice(0, 4)),
               terms_accepted_at: new Date().toISOString(),
               terms_version: ha,
             })),
