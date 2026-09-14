@@ -32377,56 +32377,6 @@ __d(
                           accessibilityLiveRegion: "polite",
                           children: E("homeSearchResults", { n: String(ve.length), q: qq.trim() }),
                         }),
-                      G.activity.length > 0 &&
-                        (0, T.jsx)(d.default, {
-                          style: { marginBottom: S.spacing.xs },
-                          children: G.activity.slice(0, 5).map((e) => {
-                            const t =
-                              "posted" === e.kind
-                                ? E("activityPosted", {
-                                    name: e.actor_name ?? E("activityAPlayer"),
-                                    venue: e.venue_name,
-                                  })
-                                : e.actor_name
-                                  ? E("joined" === e.kind ? "activityJoined" : "activityLeft", {
-                                      name: e.actor_name,
-                                      venue: e.venue_name,
-                                    })
-                                  : E("joined" === e.kind ? "activityJoinedAnon" : "activityLeftAnon", {
-                                      venue: e.venue_name,
-                                    });
-                            return (0, T.jsxs)(
-                              a.default,
-                              {
-                                onPress: () => De(e.game_id),
-                                accessibilityRole: "button",
-                                accessibilityLabel: t,
-                                style: { flexDirection: "row", alignItems: "center", paddingVertical: 3 },
-                                children: [
-                                  (0, T.jsx)(d.default, {
-                                    style: [
-                                      V.tickerDot,
-                                      { backgroundColor: "left" === e.kind ? A.border : A.accent },
-                                    ],
-                                  }),
-                                  (0, T.jsx)(i.default, {
-                                    style: [S.typography.caption, { color: A.textMuted, flex: 1 }],
-                                    numberOfLines: 1,
-                                    children: t,
-                                  }),
-                                  (0, T.jsx)(i.default, {
-                                    style: [
-                                      S.typography.caption,
-                                      { color: A.textMuted, opacity: 0.7, marginStart: S.spacing.sm },
-                                    ],
-                                    children: (0, R.formatRelative)(e.at),
-                                  }),
-                                ],
-                              },
-                              e.id,
-                            );
-                          }),
-                        }),
                       (0, T.jsx)(d.default, {
                         style: V.modeRow,
                         children: (0, T.jsx)(d.default, {
@@ -33050,7 +33000,6 @@ __d(
         },
         bandHeaderText: { fontSize: 10.5, fontWeight: "800", letterSpacing: 1.1 },
         bandHeaderRange: { fontSize: 10.5, fontWeight: "600", marginStart: 2 },
-        tickerDot: { width: 6, height: 6, borderRadius: 3, marginEnd: S.spacing.sm },
         compactCard: {
           flexDirection: "row",
           alignItems: "center",
