@@ -7,7 +7,7 @@
 Modules are Metro `__d(function(...){...},<id>,[deps]);` blocks located by id, so the build is idempotent and
 does not depend on the original minified text.
 """
-import re, sys, os, subprocess, pathlib
+import re, sys, os, subprocess, pathlib, hashlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 HTML = ROOT / "index.html"
@@ -80,9 +80,14 @@ def build():
                 bundle = bundle[:k] + body + bundle[k:]
                 added += 1
     out = t[:a] + bundle + t[b:]
+    # Stamp a build id derived from the bundle itself. Same bytes -> same id, so the write stays
+    # idempotent; different bytes -> a new id, which is how anyone can tell which build a browser is
+    # actually running (it is logged to the console and shown on the profile screen).
+    bid = hashlib.sha1(bundle.encode("utf-8")).hexdigest()[:10]
+    out = re.sub(r'buildId: "[^"]*"', f'buildId: "{bid}"', out, count=1)
     if out != t:
         HTML.write_text(out, encoding="utf-8")
-    print("build: replaced", n, "module(s), added/updated", added, "new module(s);", len(out), "bytes")
+    print("build: replaced", n, "module(s), added/updated", added, "new module(s);", len(out), "bytes; build", bid)
 
 if __name__ == "__main__":
     cmd = sys.argv[1]

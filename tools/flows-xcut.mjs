@@ -73,5 +73,20 @@ for (const demo of [true, false]) {
   await browser.close();
 }
 
+// A build stamp, so "which version is this phone running" is answerable without devtools.
+{
+  const { browser, page, errors } = await openApp({ role: 'user', route: '/profile' });
+  await page.waitForTimeout(2500);
+  const r = await page.evaluate(() => ({
+    cfg: globalThis.__PLAYORA_CONFIG__?.buildId ?? null,
+    shown: (document.body.innerText.match(/[0-9a-f]{10}/) || [])[0] ?? null,
+  }));
+  ok('the bundle carries a build id', /^[0-9a-f]{10}$/.test(r.cfg || ''), String(r.cfg));
+  ok('it is not the unstamped placeholder', r.cfg !== 'dev', String(r.cfg));
+  ok('the profile screen shows it', r.shown === r.cfg, `${r.shown} vs ${r.cfg}`);
+  ok('no page errors on profile', !errors.some((e) => e.startsWith('pageerror')));
+  await browser.close();
+}
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

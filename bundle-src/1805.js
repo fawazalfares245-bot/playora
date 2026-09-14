@@ -853,6 +853,16 @@ __d(
                   (0, L.jsx)(U, { label: X("signOut"), onPress: G, colors: q, accent: !0 }),
                 ],
               }),
+              // Which build is this phone actually running? Without this the only answer was devtools.
+              (0, L.jsx)(c.default, {
+                accessibilityLabel: `build ${globalThis.__PLAYORA_CONFIG__?.buildId ?? "dev"}`,
+                selectable: !0,
+                style: [
+                  k.typography.caption,
+                  { color: q.textMuted, opacity: 0.55, textAlign: "center", marginTop: k.spacing.sm },
+                ],
+                children: `${X("appName")} \u00b7 ${globalThis.__PLAYORA_CONFIG__?.buildId ?? "dev"}`,
+              }),
               (0, L.jsxs)(u.default, {
                 style: [E.footerRow, { marginTop: k.spacing.sm }],
                 children: [
