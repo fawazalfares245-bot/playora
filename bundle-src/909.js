@@ -258,7 +258,7 @@ __d(
         reviewSpotRow: "Spot",
         reviewSpotOpen: "Open",
         reviewGameFee: "Game fee",
-        reviewPlayoraFee: "Playora fee",
+        reviewPlayoraFee: "Rush X fee",
         reviewYouPay: "You pay",
         refundPolicyNote: "Free cancellation up to %{hours} hours before kick-off. No refund after that.",
         cancelSeatTitle: "Cancel your booking",
@@ -316,8 +316,8 @@ __d(
         kickoffIn: "Starts in %{time}",
         resultDeadlineCalm: "Score due by %{when}",
         resultDeadlineWarn: "Less than 2 days to submit the score",
-        resultDeadlineFinal: "\u26a0 Final day \u2014 submit the score or this goes to Playora support",
-        resultDeadlinePassed: "The deadline passed \u2014 with Playora support",
+        resultDeadlineFinal: "\u26a0 Final day \u2014 submit the score or this goes to Rush X support",
+        resultDeadlinePassed: "The deadline passed \u2014 with Rush X support",
         unplayedChip: "Unplayed",
         unplayedBody: "Neither captain submitted a score, so this closed with no change to the ladder.",
         shotClockWarn: "Less than 24 hours to respond",
@@ -499,7 +499,7 @@ __d(
         areaPickerPlaceholder: "Pick an area",
         areaPickerSearch: "Search areas",
         areaPickerTitle: "Choose your area",
-        venueApplySub: "Own a pitch or a club? List it on Playora",
+        venueApplySub: "Own a pitch or a club? List it on Rush X",
         kmAway: "%{n} km away",
         daySat: "Sat",
         dayFri: "Fri",
@@ -522,7 +522,7 @@ __d(
         cbstatus_held: "Held",
         myCourtsTitle: "Courts you reserved",
         payCashPending: "Pay %{amount} in cash when you arrive. The venue confirms it.",
-        payWallet: "Playora wallet",
+        payWallet: "Rush X wallet",
         walletRequestDeclined: "Request declined",
         seNotFound: "We couldn\u2019t find that.",
         seForbidden: "You don\u2019t have access to that.",
@@ -802,7 +802,7 @@ __d(
         notifFollowAcceptedBody: "You are now following them.",
         seRequestDeclined: "This request was declined \u2014 the conversation is closed.",
         seThisResultIsFinal: "This result is final.",
-        seThisResultIsWithPlayoraSupport: "This result is with Playora support.",
+        seThisResultIsWithPlayoraSupport: "This result is with Rush X support.",
         seThisRewardIsOutOfStock: "This reward is out of stock.",
         seThisVenueIsAlreadyRegistered: "This venue is already registered.",
         seThisVenueIsNotCurrentlyAccepting: "This venue is not currently accepting bookings.",
@@ -867,20 +867,20 @@ __d(
         errNotFound: "We could not find that.",
         errReadOnlyEndpoint: "That address only answers reads.",
         errPayloadTooLarge: "That is too large to send.",
-        errServiceUnavailable: "Playora is having trouble right now. Please try again.",
+        errServiceUnavailable: "Rush X is having trouble right now. Please try again.",
         errAuthFailed: "We could not sign you in. Please try again.",
         errSessionRequired: "Please sign in to continue.",
         errSessionInvalid: "Your session has expired. Please sign in again.",
         errSessionNoAccount: "This account is no longer available. Please sign in again.",
         errTermsRequired: "Please accept the Code of Conduct and Privacy Policy.",
-        errTooYoung: "You need to be older to use Playora.",
+        errTooYoung: "You need to be older to use Rush X.",
         errBirthYear: "Please enter your year of birth.",
         termsPrivacy: "Privacy Policy",
         termsCoc: "Code of Conduct",
         termsAcceptPre: "By continuing you agree to the ",
         termsAcceptMid: " and the ",
         termsAcceptEnd: ".",
-        minAgeNote: "Playora is for players %{n} and older.",
+        minAgeNote: "Rush X is for players %{n} and older.",
         birthYearPlaceholder: "e.g. 2001",
         birthYearLabel: "Year of birth",
         adminFindPlayer: "Find any player by name or id",
@@ -909,11 +909,11 @@ __d(
         errOtpTooMany: "Too many codes requested. Try again in a few minutes.",
         errPhoneNotDialable: "That does not look like a Kuwaiti mobile number.",
         useThisNumber: "Create your account with this number",
-        noAccountForPhone: "No Playora account uses this number yet.",
+        noAccountForPhone: "No Rush X account uses this number yet.",
         createAccountCta: "Create your account",
         welcomeFirstSub: "Pick up a match near you, see the price, and just show up.",
         welcomeFirst: "Find your game",
-        appName: "Playora",
+        appName: "Rush X",
         openLabel: "Open",
         dismissLabel: "Dismiss",
         copyLinkA11y: "Copy a private link",
@@ -1487,7 +1487,7 @@ __d(
         shareMatch: "Share on WhatsApp",
         shareNeedPlayer: "Share \u2014 Need Players!",
         inviteMsg:
-          "\ud83c\udfc6 Join my %{sport} match\n\n%{emoji} %{title}\n\ud83d\udccd %{area}\n\ud83d\udcc5 %{when}\n\ud83d\udc65 %{spots} spot(s) remaining\n\n\ud83d\udd25 Join here:\n%{link}\n\nInvitation code: %{code}\nDownload Playora and join instantly.",
+          "\ud83c\udfc6 Join my %{sport} match\n\n%{emoji} %{title}\n\ud83d\udccd %{area}\n\ud83d\udcc5 %{when}\n\ud83d\udc65 %{spots} spot(s) remaining\n\n\ud83d\udd25 Join here:\n%{link}\n\nInvitation code: %{code}\nDownload Rush X and join instantly.",
         inviteMsgNpn:
           "\ud83d\udea8 Need players NOW!\n\n%{emoji} %{title}\n\ud83d\udccd %{area}\n\ud83d\udd52 %{when}\n\ud83d\udc65 Only %{spots} spot(s) left \u2014 join fast!\n\nJoin instantly:\n%{link}\n\nCode: %{code}",
         joinWithCode: "Join with code",
@@ -1592,7 +1592,7 @@ __d(
         notifBookingRejectedTitle: "Court declined",
         notifBookingRejectedBody: "%{venue} could not accept your reservation.",
         notifRefundTitle: "Refunded to your wallet",
-        notifRefundBody: "%{amount} for %{venue} is now credit in your Playora wallet. Use it on your next booking or ask support to pay it out.",
+        notifRefundBody: "%{amount} for %{venue} is now credit in your Rush X wallet. Use it on your next booking or ask support to pay it out.",
         notifVenueApplicationTitle: "New venue application",
         notifVenueApplicationBody: "%{venue} applied to join as a venue.",
         notifVenueApprovedTitle: "Venue approved",
@@ -1724,7 +1724,7 @@ __d(
         removeStaff: "Remove",
         venueRevenueTitle: "Revenue",
         grossRevenue: "Players paid",
-        platformCommission: "Playora fee",
+        platformCommission: "Rush X fee",
         netPayout: "You receive",
         settledLabel: "Paid",
         pendingPayout: "Pending",
@@ -1838,7 +1838,7 @@ __d(
         resultTheySaid: "They said %{score}",
         resultYouSaid: "You said %{score}",
         resultResubmit: "Resubmit score",
-        resultEscalated: "With Playora support",
+        resultEscalated: "With Rush X support",
         resultEscalatedBody: "The scores didn\u2019t match twice \u2014 our team will settle it.",
         ceremonyDraw: "Draw \u2014 the stake stays put.",
         ceremonyKicker: "Full time",
@@ -2318,7 +2318,7 @@ __d(
         notifCocUpdateBody: "Please review and accept the updated Community Code of Conduct.",
         cocTitle: "Code of Conduct",
         cocIntro:
-          "Playora is a safe, respectful sports community. By playing you agree to uphold these standards.",
+          "Rush X is a safe, respectful sports community. By playing you agree to uphold these standards.",
         cocDosTitle: "Players will",
         cocDontsTitle: "Players will not",
         cocAccept: "I accept the Code of Conduct",
@@ -2505,7 +2505,7 @@ __d(
         satMed: "Average",
         satLow: "Low",
         clubsTitle: "Clubs",
-        clubsSub: "Run your club inside Playora",
+        clubsSub: "Run your club inside Rush X",
         myClubs: "My clubs",
         createClub: "Create club",
         createClubCta: "Create your first club",
@@ -3085,7 +3085,7 @@ __d(
         venueClubTools: "Venue & club tools",
         profileSettings: "Settings",
         clubAdminTitle: "Club admin",
-        clubAdminSub: "Run your club inside Playora",
+        clubAdminSub: "Run your club inside Rush X",
         hostMatch: "Host a match",
         badgeOwner: "Owner",
         badgeStaff: "Staff",
@@ -3194,7 +3194,7 @@ __d(
         restsThisWeek: "%{name} rests this week",
         tableLabel: "Table",
         fullTable: "Full table",
-        leagueHeader: "Playora League \xb7 Season %{s}",
+        leagueHeader: "Rush X League \xb7 Season %{s}",
         div2Soon: "Division 2 \xb7 soon",
         leagueMeta: "%{n} clans \xb7 %{slot} \xb7 every clan plays every clan once",
         colClan: "Clan",
@@ -3257,11 +3257,11 @@ __d(
         myBookingsTileSub: "Tickets & cancellations",
         monthView: "Month view",
         forkTitle: "Who is this account for?",
-        forkBody: "Playora runs two parallel worlds \u2014 pick yours.",
+        forkBody: "Rush X runs two parallel worlds \u2014 pick yours.",
         forkWomenEn: "Women",
         forkMenEn: "Men",
         forkLockPlain:
-          "This sets your Playora space and can\u2019t be changed in the app \u2014 each world is its own private, separate space.",
+          "This sets your Rush X space and can\u2019t be changed in the app \u2014 each world is its own private, separate space.",
         otpA11yLabel: "6-digit code",
         otpA11yHint: "Enter the code we sent to your number.",
         lookAroundFirst: "Look around first",
@@ -3345,7 +3345,7 @@ __d(
         resultFinalNote: "Confirming is final \u2014 points move immediately.",
         resultEscalatedNext:
           "Our team decides from both entries, usually within 2 days. Your points are safe until then.",
-        howItWorksTitle: "How Playora works",
+        howItWorksTitle: "How Rush X works",
         howItWorksSub: "Every competitive term, one plain sentence.",
         howItWorksFooter: "You\u2019ll also find these by tapping any term inside the app.",
         a11yTitle: "Accessibility",
@@ -3409,7 +3409,7 @@ __d(
         forkLockNote:
           "This choice is set once and shapes your whole app. Afterwards only support can change it.",
         notAvailableTitle: "Not available",
-        notAvailableBody: "This link isn\u2019t available in your Playora.",
+        notAvailableBody: "This link isn\u2019t available in your Rush X.",
         notAvailableCta: "Back to Home",
         emptyDayTitleW: "No \u0633\u064a\u062f\u0627\u062a games this day",
         privacyTitle: "Privacy",
@@ -3432,7 +3432,7 @@ __d(
         mediaConsentSub: "Allow appearing in others\u2019 clips and photos",
         womensSupport: "\u0633\u064a\u062f\u0627\u062a support",
         womensSupportSub: "WhatsApp line \xb7 staffed female",
-        womensSupportMsg: "Hi, I need help with my Playora account.",
+        womensSupportMsg: "Hi, I need help with my Rush X account.",
         emptyDayTitle: "Nothing on this day",
         emptyDayBody: "Be the first to get a game going.",
         emptyDayCta: "Book a court",
@@ -3751,7 +3751,7 @@ __d(
         reviewSpotRow: "\u0627\u0644\u0645\u0631\u0643\u0632",
         reviewSpotOpen: "\u0623\u064a \u0645\u0631\u0643\u0632",
         reviewGameFee: "\u0631\u0633\u0648\u0645 \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629",
-        reviewPlayoraFee: "\u0631\u0633\u0648\u0645 \u0628\u0644\u0627\u064a\u0648\u0631\u0627",
+        reviewPlayoraFee: "\u0631\u0633\u0648\u0645 Rush X",
         reviewYouPay: "\u0627\u0644\u0645\u0628\u0644\u063a \u0627\u0644\u0645\u0633\u062a\u062d\u0642",
         refundPolicyNote:
           "\u0625\u0644\u063a\u0627\u0621 \u0645\u062c\u0627\u0646\u064a \u062d\u062a\u0649 \u0633\u0627\u0639\u062a\u064a\u0646 \u0642\u0628\u0644 \u0627\u0644\u0628\u062f\u0627\u064a\u0629. \u0644\u0627 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u0628\u0639\u062f \u0630\u0644\u0643.",
@@ -3832,9 +3832,9 @@ __d(
         resultDeadlineWarn:
           "\u0623\u0642\u0644 \u0645\u0646 \u064a\u0648\u0645\u064a\u0646 \u0644\u0625\u062f\u062e\u0627\u0644 \u0627\u0644\u0646\u062a\u064a\u062c\u0629",
         resultDeadlineFinal:
-          "\u26a0 \u0627\u0644\u064a\u0648\u0645 \u0627\u0644\u0623\u062e\u064a\u0631 \u2014 \u0623\u062f\u062e\u0644 \u0627\u0644\u0646\u062a\u064a\u062c\u0629 \u0648\u0625\u0644\u0627 \u062a\u064f\u062d\u0627\u0644 \u0625\u0644\u0649 \u062f\u0639\u0645 \u0628\u0644\u0627\u064a\u0648\u0631\u0627",
+          "\u26a0 \u0627\u0644\u064a\u0648\u0645 \u0627\u0644\u0623\u062e\u064a\u0631 \u2014 \u0623\u062f\u062e\u0644 \u0627\u0644\u0646\u062a\u064a\u062c\u0629 \u0648\u0625\u0644\u0627 \u062a\u064f\u062d\u0627\u0644 \u0625\u0644\u0649 \u062f\u0639\u0645 Rush X",
         resultDeadlinePassed:
-          "\u0627\u0646\u062a\u0647\u062a \u0627\u0644\u0645\u0647\u0644\u0629 \u2014 \u0644\u062f\u0649 \u062f\u0639\u0645 \u0628\u0644\u0627\u064a\u0648\u0631\u0627",
+          "\u0627\u0646\u062a\u0647\u062a \u0627\u0644\u0645\u0647\u0644\u0629 \u2014 \u0644\u062f\u0649 \u062f\u0639\u0645 Rush X",
         unplayedChip: "\u0644\u0645 \u062a\u064f\u0644\u0639\u0628",
         unplayedBody:
           "\u0644\u0645 \u064a\u064f\u062f\u062e\u0644 \u0623\u064a \u0643\u0627\u0628\u062a\u0646 \u0646\u062a\u064a\u062c\u0629\u060c \u0641\u0623\u064f\u063a\u0644\u0642\u062a \u062f\u0648\u0646 \u0623\u064a \u062a\u063a\u064a\u064a\u0631 \u0641\u064a \u0627\u0644\u0633\u0644\u0651\u0645.",
@@ -4092,7 +4092,7 @@ __d(
         areaPickerSearch: "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0646\u0637\u0642\u0629",
         areaPickerTitle: "\u0627\u062e\u062a\u0631 \u0645\u0646\u0637\u0642\u062a\u0643",
         venueApplySub:
-          "\u062a\u0645\u0644\u0643 \u0645\u0644\u0639\u0628\u064b\u0627 \u0623\u0648 \u0646\u0627\u062f\u064a\u064b\u0627\u061f \u0623\u0636\u0641\u0647 \u0625\u0644\u0649 \u0628\u0644\u0627\u064a\u0648\u0631\u0627",
+          "\u062a\u0645\u0644\u0643 \u0645\u0644\u0639\u0628\u064b\u0627 \u0623\u0648 \u0646\u0627\u062f\u064a\u064b\u0627\u061f \u0623\u0636\u0641\u0647 \u0625\u0644\u0649 Rush X",
         kmAway: "\u0639\u0644\u0649 \u0628\u064f\u0639\u062f %{n} \u0643\u0645",
         daySat: "\u0627\u0644\u0633\u0628\u062a",
         dayFri: "\u0627\u0644\u062c\u0645\u0639\u0629",
@@ -4122,7 +4122,7 @@ __d(
           "\u0627\u0644\u0645\u0644\u0627\u0639\u0628 \u0627\u0644\u062a\u064a \u062d\u062c\u0632\u062a\u0647\u0627",
         payCashPending:
           "\u0627\u062f\u0641\u0639 %{amount} \u0646\u0642\u062f\u064b\u0627 \u0639\u0646\u062f \u0648\u0635\u0648\u0644\u0643. \u062a\u0624\u0643\u062f \u0627\u0644\u0645\u0646\u0634\u0623\u0629 \u0627\u0644\u062f\u0641\u0639.",
-        payWallet: "\u0645\u062d\u0641\u0638\u0629 \u0628\u0644\u0627\u064a\u0648\u0631\u0627",
+        payWallet: "\u0645\u062d\u0641\u0638\u0629 Rush X",
         walletRequestDeclined: "\u062a\u0645 \u0631\u0641\u0636 \u0627\u0644\u0637\u0644\u0628",
         seNotFound:
           "\u0644\u0645 \u0646\u062a\u0645\u0643\u0646 \u0645\u0646 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0630\u0644\u0643.",
@@ -4621,7 +4621,7 @@ __d(
         seThisResultIsFinal:
           "\u0647\u0630\u0647 \u0627\u0644\u0646\u062a\u064a\u062c\u0629 \u0646\u0647\u0627\u0626\u064a\u0629.",
         seThisResultIsWithPlayoraSupport:
-          "\u0647\u0630\u0647 \u0627\u0644\u0646\u062a\u064a\u062c\u0629 \u0642\u064a\u062f \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629 \u0644\u062f\u0649 \u062f\u0639\u0645 \u0628\u0644\u0627\u064a\u0648\u0631\u0627.",
+          "\u0647\u0630\u0647 \u0627\u0644\u0646\u062a\u064a\u062c\u0629 \u0642\u064a\u062f \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629 \u0644\u062f\u0649 \u062f\u0639\u0645 Rush X.",
         seThisRewardIsOutOfStock:
           "\u0646\u0641\u062f\u062a \u0647\u0630\u0647 \u0627\u0644\u0645\u0643\u0627\u0641\u0623\u0629.",
         seThisVenueIsAlreadyRegistered:
@@ -4738,7 +4738,7 @@ __d(
         errPayloadTooLarge:
           "\u0627\u0644\u062d\u062c\u0645 \u0643\u0628\u064a\u0631 \u062c\u062f\u064b\u0627 \u0644\u0644\u0625\u0631\u0633\u0627\u0644.",
         errServiceUnavailable:
-          "\u0628\u0644\u0627\u064a\u0648\u0631\u0627 \u062a\u0648\u0627\u062c\u0647 \u0645\u0634\u0643\u0644\u0629 \u062d\u0627\u0644\u064a\u064b\u0627. \u0627\u0644\u0631\u062c\u0627\u0621 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.",
+          "Rush X \u062a\u0648\u0627\u062c\u0647 \u0645\u0634\u0643\u0644\u0629 \u062d\u0627\u0644\u064a\u064b\u0627. \u0627\u0644\u0631\u062c\u0627\u0621 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.",
         errAuthFailed:
           "\u0644\u0645 \u0646\u062a\u0645\u0643\u0646 \u0645\u0646 \u062a\u0633\u062c\u064a\u0644 \u062f\u062e\u0648\u0644\u0643. \u0627\u0644\u0631\u062c\u0627\u0621 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.",
         errSessionRequired:
@@ -4750,7 +4750,7 @@ __d(
         errTermsRequired:
           "\u0627\u0644\u0631\u062c\u0627\u0621 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0639\u0644\u0649 \u0645\u062f\u0648\u0646\u0629 \u0627\u0644\u0633\u0644\u0648\u0643 \u0648\u0633\u064a\u0627\u0633\u0629 \u0627\u0644\u062e\u0635\u0648\u0635\u064a\u0629.",
         errTooYoung:
-          "\u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 \u0623\u0643\u0628\u0631 \u0633\u0646\u064b\u0627 \u0644\u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0628\u0644\u0627\u064a\u0648\u0631\u0627.",
+          "\u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 \u0623\u0643\u0628\u0631 \u0633\u0646\u064b\u0627 \u0644\u0627\u0633\u062a\u062e\u062f\u0627\u0645 Rush X.",
         errBirthYear:
           "\u0627\u0644\u0631\u062c\u0627\u0621 \u0625\u062f\u062e\u0627\u0644 \u0633\u0646\u0629 \u0645\u064a\u0644\u0627\u062f\u0643.",
         termsPrivacy: "\u0633\u064a\u0627\u0633\u0629 \u0627\u0644\u062e\u0635\u0648\u0635\u064a\u0629",
@@ -4760,7 +4760,7 @@ __d(
         termsAcceptMid: " \u0648",
         termsAcceptEnd: ".",
         minAgeNote:
-          "\u0628\u0644\u0627\u064a\u0648\u0631\u0627 \u0644\u0644\u0627\u0639\u0628\u064a\u0646 \u0645\u0646 \u0639\u0645\u0631 %{n} \u0633\u0646\u0629 \u0641\u0645\u0627 \u0641\u0648\u0642.",
+          "Rush X \u0644\u0644\u0627\u0639\u0628\u064a\u0646 \u0645\u0646 \u0639\u0645\u0631 %{n} \u0633\u0646\u0629 \u0641\u0645\u0627 \u0641\u0648\u0642.",
         birthYearPlaceholder: "\u0645\u062b\u0627\u0644: 2001",
         birthYearLabel: "\u0633\u0646\u0629 \u0627\u0644\u0645\u064a\u0644\u0627\u062f",
         adminFindPlayer:
@@ -4803,12 +4803,12 @@ __d(
         useThisNumber:
           "\u0623\u0646\u0634\u0626 \u062d\u0633\u0627\u0628\u0643 \u0628\u0647\u0630\u0627 \u0627\u0644\u0631\u0642\u0645",
         noAccountForPhone:
-          "\u0644\u0627 \u064a\u0648\u062c\u062f \u062d\u0633\u0627\u0628 \u0628\u0644\u0627\u064a\u0648\u0631\u0627 \u0628\u0647\u0630\u0627 \u0627\u0644\u0631\u0642\u0645 \u0628\u0639\u062f.",
+          "\u0644\u0627 \u064a\u0648\u062c\u062f \u062d\u0633\u0627\u0628 Rush X \u0628\u0647\u0630\u0627 \u0627\u0644\u0631\u0642\u0645 \u0628\u0639\u062f.",
         createAccountCta: "\u0623\u0646\u0634\u0626 \u062d\u0633\u0627\u0628\u0643",
         welcomeFirstSub:
           "\u0627\u0646\u0636\u0645 \u0625\u0644\u0649 \u0645\u0628\u0627\u0631\u0627\u0629 \u0642\u0631\u064a\u0628\u0629 \u0645\u0646\u0643\u060c \u0627\u0639\u0631\u0641 \u0627\u0644\u0633\u0639\u0631\u060c \u0648\u0627\u062d\u0636\u0631 \u0641\u0642\u0637.",
         welcomeFirst: "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0628\u0627\u0631\u0627\u062a\u0643",
-        appName: "\u0628\u0644\u0627\u064a\u0648\u0631\u0627",
+        appName: "Rush X",
         openLabel: "\u0641\u062a\u062d",
         dismissLabel: "\u0625\u062e\u0641\u0627\u0621",
         copyLinkA11y: "\u0646\u0633\u062e \u0631\u0627\u0628\u0637 \u062e\u0627\u0635",
@@ -5560,7 +5560,7 @@ __d(
         shareNeedPlayer:
           "\u0645\u0634\u0627\u0631\u0643\u0629 \u2014 \u0646\u062d\u062a\u0627\u062c \u0644\u0627\u0639\u0628\u064a\u0646!",
         inviteMsg:
-          "\ud83c\udfc6 \u0627\u0646\u0636\u0645 \u0625\u0644\u0649 \u0645\u0628\u0627\u0631\u0627\u062a\u064a %{sport}\n\n%{emoji} %{title}\n\ud83d\udccd %{area}\n\ud83d\udcc5 %{when}\n\ud83d\udc65 %{spots} \u0645\u0643\u0627\u0646 \u0645\u062a\u0628\u0642\u064d\n\n\ud83d\udd25 \u0627\u0646\u0636\u0645 \u0647\u0646\u0627:\n%{link}\n\n\u0631\u0645\u0632 \u0627\u0644\u062f\u0639\u0648\u0629: %{code}\n\u062d\u0645\u0651\u0644 \u0628\u0644\u0627\u064a\u0648\u0631\u0627 \u0648\u0627\u0646\u0636\u0645 \u0641\u0648\u0631\u0627\u064b.",
+          "\ud83c\udfc6 \u0627\u0646\u0636\u0645 \u0625\u0644\u0649 \u0645\u0628\u0627\u0631\u0627\u062a\u064a %{sport}\n\n%{emoji} %{title}\n\ud83d\udccd %{area}\n\ud83d\udcc5 %{when}\n\ud83d\udc65 %{spots} \u0645\u0643\u0627\u0646 \u0645\u062a\u0628\u0642\u064d\n\n\ud83d\udd25 \u0627\u0646\u0636\u0645 \u0647\u0646\u0627:\n%{link}\n\n\u0631\u0645\u0632 \u0627\u0644\u062f\u0639\u0648\u0629: %{code}\n\u062d\u0645\u0651\u0644 Rush X \u0648\u0627\u0646\u0636\u0645 \u0641\u0648\u0631\u0627\u064b.",
         inviteMsgNpn:
           "\ud83d\udea8 \u0646\u062d\u062a\u0627\u062c \u0644\u0627\u0639\u0628\u064a\u0646 \u0627\u0644\u0622\u0646!\n\n%{emoji} %{title}\n\ud83d\udccd %{area}\n\ud83d\udd52 %{when}\n\ud83d\udc65 \u0628\u0642\u064a %{spots} \u0645\u0643\u0627\u0646 \u0641\u0642\u0637 \u2014 \u0627\u0646\u0636\u0645 \u0628\u0633\u0631\u0639\u0629!\n\n\u0627\u0646\u0636\u0645 \u0641\u0648\u0631\u0627\u064b:\n%{link}\n\n\u0627\u0644\u0631\u0645\u0632: %{code}",
         joinWithCode: "\u0627\u0646\u0636\u0645 \u0628\u0631\u0645\u0632",
@@ -5695,7 +5695,7 @@ __d(
         notifRefundTitle:
           "\u062a\u0645\u062a \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u0628\u0644\u063a \u0625\u0644\u0649 \u0645\u062d\u0641\u0638\u062a\u0643",
         notifRefundBody:
-          "\u0623\u0635\u0628\u062d %{amount} \u0645\u0642\u0627\u0628\u0644 %{venue} \u0631\u0635\u064a\u062f\u064b\u0627 \u0641\u064a \u0645\u062d\u0641\u0638\u0629 \u0628\u0644\u0627\u064a\u0648\u0631\u0627. \u0627\u0633\u062a\u062e\u062f\u0645\u0647 \u0641\u064a \u062d\u062c\u0632\u0643 \u0627\u0644\u0642\u0627\u062f\u0645 \u0623\u0648 \u0627\u0637\u0644\u0628 \u0635\u0631\u0641\u0647 \u0645\u0646 \u0627\u0644\u062f\u0639\u0645.",
+          "\u0623\u0635\u0628\u062d %{amount} \u0645\u0642\u0627\u0628\u0644 %{venue} \u0631\u0635\u064a\u062f\u064b\u0627 \u0641\u064a \u0645\u062d\u0641\u0638\u0629 Rush X. \u0627\u0633\u062a\u062e\u062f\u0645\u0647 \u0641\u064a \u062d\u062c\u0632\u0643 \u0627\u0644\u0642\u0627\u062f\u0645 \u0623\u0648 \u0627\u0637\u0644\u0628 \u0635\u0631\u0641\u0647 \u0645\u0646 \u0627\u0644\u062f\u0639\u0645.",
         notifVenueApplicationTitle:
           "\u0637\u0644\u0628 \u0627\u0646\u0636\u0645\u0627\u0645 \u0645\u0644\u0639\u0628 \u062c\u062f\u064a\u062f",
         notifVenueApplicationBody:
@@ -5858,7 +5858,7 @@ __d(
         venueRevenueTitle: "\u0627\u0644\u0625\u064a\u0631\u0627\u062f\u0627\u062a",
         grossRevenue:
           "\u0645\u0627 \u062f\u0641\u0639\u0647 \u0627\u0644\u0644\u0627\u0639\u0628\u0648\u0646",
-        platformCommission: "\u0631\u0633\u0648\u0645 \u0628\u0644\u0627\u064a\u0648\u0631\u0627",
+        platformCommission: "\u0631\u0633\u0648\u0645 Rush X",
         netPayout: "\u0645\u0627 \u062a\u0633\u062a\u0644\u0645\u0647",
         settledLabel: "\u0645\u062f\u0641\u0648\u0639",
         pendingPayout: "\u0645\u0639\u0644\u0651\u0642",
@@ -6003,7 +6003,7 @@ __d(
         resultYouSaid: "\u0623\u0646\u062a \u0623\u062f\u062e\u0644\u062a %{score}",
         resultResubmit:
           "\u0625\u0639\u0627\u062f\u0629 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0646\u062a\u064a\u062c\u0629",
-        resultEscalated: "\u0644\u062f\u0649 \u062f\u0639\u0645 \u0628\u0644\u0627\u064a\u0648\u0631\u0627",
+        resultEscalated: "\u0644\u062f\u0649 \u062f\u0639\u0645 Rush X",
         resultEscalatedBody:
           "\u0627\u0644\u0646\u062a\u064a\u062c\u062a\u0627\u0646 \u0644\u0645 \u062a\u062a\u0637\u0627\u0628\u0642\u0627 \u0645\u0631\u062a\u064a\u0646 \u2014 \u0641\u0631\u064a\u0642\u0646\u0627 \u0633\u064a\u062d\u0633\u0645\u0647\u0627.",
         ceremonyDraw:
@@ -6622,7 +6622,7 @@ __d(
           "\u064a\u0631\u062c\u0649 \u0645\u0631\u0627\u062c\u0639\u0629 \u0648\u0642\u0628\u0648\u0644 \u0645\u062f\u0648\u0646\u0629 \u0633\u0644\u0648\u0643 \u0627\u0644\u0645\u062c\u062a\u0645\u0639 \u0627\u0644\u0645\u062d\u062f\u0651\u062b\u0629.",
         cocTitle: "\u0645\u062f\u0648\u0646\u0629 \u0627\u0644\u0633\u0644\u0648\u0643",
         cocIntro:
-          "\u0628\u0644\u0627\u064a\u0648\u0631\u0627 \u0645\u062c\u062a\u0645\u0639 \u0631\u064a\u0627\u0636\u064a \u0622\u0645\u0646 \u0648\u0645\u062d\u062a\u0631\u0645. \u0628\u0645\u0634\u0627\u0631\u0643\u062a\u0643 \u0641\u0625\u0646\u0643 \u062a\u0648\u0627\u0641\u0642 \u0639\u0644\u0649 \u0627\u0644\u0627\u0644\u062a\u0632\u0627\u0645 \u0628\u0647\u0630\u0647 \u0627\u0644\u0645\u0639\u0627\u064a\u064a\u0631.",
+          "Rush X \u0645\u062c\u062a\u0645\u0639 \u0631\u064a\u0627\u0636\u064a \u0622\u0645\u0646 \u0648\u0645\u062d\u062a\u0631\u0645. \u0628\u0645\u0634\u0627\u0631\u0643\u062a\u0643 \u0641\u0625\u0646\u0643 \u062a\u0648\u0627\u0641\u0642 \u0639\u0644\u0649 \u0627\u0644\u0627\u0644\u062a\u0632\u0627\u0645 \u0628\u0647\u0630\u0647 \u0627\u0644\u0645\u0639\u0627\u064a\u064a\u0631.",
         cocDosTitle: "\u0639\u0644\u0649 \u0627\u0644\u0644\u0627\u0639\u0628\u064a\u0646",
         cocDontsTitle:
           "\u064a\u064f\u0645\u0646\u0639 \u0639\u0644\u0649 \u0627\u0644\u0644\u0627\u0639\u0628\u064a\u0646",
@@ -6871,7 +6871,7 @@ __d(
         satLow: "\u0645\u0646\u062e\u0641\u0636",
         clubsTitle: "\u0627\u0644\u0646\u0648\u0627\u062f\u064a",
         clubsSub:
-          "\u0623\u062f\u0631 \u0646\u0627\u062f\u064a\u0643 \u062f\u0627\u062e\u0644 \u0628\u0644\u0627\u064a\u0648\u0631\u0627",
+          "\u0623\u062f\u0631 \u0646\u0627\u062f\u064a\u0643 \u062f\u0627\u062e\u0644 Rush X",
         myClubs: "\u0623\u0646\u062f\u064a\u062a\u064a",
         createClub: "\u0625\u0646\u0634\u0627\u0621 \u0646\u0627\u062f\u064d",
         createClubCta:
@@ -7605,7 +7605,7 @@ __d(
         profileSettings: "\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a",
         clubAdminTitle: "\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0646\u0627\u062f\u064a",
         clubAdminSub:
-          "\u0623\u062f\u0631 \u0646\u0627\u062f\u064a\u0643 \u062f\u0627\u062e\u0644 \u0628\u0644\u0627\u064a\u0648\u0631\u0627",
+          "\u0623\u062f\u0631 \u0646\u0627\u062f\u064a\u0643 \u062f\u0627\u062e\u0644 Rush X",
         hostMatch: "\u0627\u0633\u062a\u0636\u0641 \u0645\u0628\u0627\u0631\u0627\u0629",
         badgeOwner: "\u0645\u0627\u0644\u0643",
         badgeStaff: "\u0645\u0648\u0638\u0641",
@@ -7740,7 +7740,7 @@ __d(
         tableLabel: "\u0627\u0644\u062a\u0631\u062a\u064a\u0628",
         fullTable: "\u0627\u0644\u062c\u062f\u0648\u0644 \u0627\u0644\u0643\u0627\u0645\u0644",
         leagueHeader:
-          "\u062f\u0648\u0631\u064a \u0628\u0644\u0627\u064a\u0648\u0631\u0627 \xb7 \u0627\u0644\u0645\u0648\u0633\u0645 %{s}",
+          "\u062f\u0648\u0631\u064a Rush X \xb7 \u0627\u0644\u0645\u0648\u0633\u0645 %{s}",
         div2Soon:
           "\u0627\u0644\u062f\u0631\u062c\u0629 \u0627\u0644\u062b\u0627\u0646\u064a\u0629 \xb7 \u0642\u0631\u064a\u0628\u064b\u0627",
         leagueMeta:
@@ -7818,11 +7818,11 @@ __d(
         monthView: "\u0639\u0631\u0636 \u0627\u0644\u0634\u0647\u0631",
         forkTitle: "\u0644\u0645\u0646 \u0647\u0630\u0627 \u0627\u0644\u062d\u0633\u0627\u0628\u061f",
         forkBody:
-          "\u0628\u0644\u0627\u064a\u0648\u0631\u0627 \u0639\u0627\u0644\u0645\u0627\u0646 \u0645\u062a\u0648\u0627\u0632\u064a\u0627\u0646 \u2014 \u0627\u062e\u062a\u0631 \u0639\u0627\u0644\u0645\u0643.",
+          "Rush X \u0639\u0627\u0644\u0645\u0627\u0646 \u0645\u062a\u0648\u0627\u0632\u064a\u0627\u0646 \u2014 \u0627\u062e\u062a\u0631 \u0639\u0627\u0644\u0645\u0643.",
         forkWomenEn: "Women",
         forkMenEn: "Men",
         forkLockPlain:
-          "\u0647\u0630\u0627 \u064a\u062d\u062f\u062f \u0645\u0633\u0627\u062d\u062a\u0643 \u0641\u064a \u0628\u0644\u0627\u064a\u0648\u0631\u0627 \u0648\u0644\u0627 \u064a\u0645\u0643\u0646 \u062a\u063a\u064a\u064a\u0631\u0647 \u062f\u0627\u062e\u0644 \u0627\u0644\u062a\u0637\u0628\u064a\u0642 \u2014 \u0644\u0623\u0646 \u0643\u0644 \u0639\u0627\u0644\u0645 \u0645\u0633\u0627\u062d\u0629 \u062e\u0627\u0635\u0629 \u0648\u0645\u0646\u0641\u0635\u0644\u0629.",
+          "\u0647\u0630\u0627 \u064a\u062d\u062f\u062f \u0645\u0633\u0627\u062d\u062a\u0643 \u0641\u064a Rush X \u0648\u0644\u0627 \u064a\u0645\u0643\u0646 \u062a\u063a\u064a\u064a\u0631\u0647 \u062f\u0627\u062e\u0644 \u0627\u0644\u062a\u0637\u0628\u064a\u0642 \u2014 \u0644\u0623\u0646 \u0643\u0644 \u0639\u0627\u0644\u0645 \u0645\u0633\u0627\u062d\u0629 \u062e\u0627\u0635\u0629 \u0648\u0645\u0646\u0641\u0635\u0644\u0629.",
         otpA11yLabel: "\u0631\u0645\u0632 \u0645\u0646 6 \u0623\u0631\u0642\u0627\u0645",
         otpA11yHint:
           "\u0623\u062f\u062e\u0644 \u0627\u0644\u0631\u0645\u0632 \u0627\u0644\u0645\u0631\u0633\u0644 \u0625\u0644\u0649 \u0631\u0642\u0645\u0643.",
@@ -7942,7 +7942,7 @@ __d(
         resultEscalatedNext:
           "\u0641\u0631\u064a\u0642\u0646\u0627 \u064a\u0642\u0631\u0631 \u0628\u0646\u0627\u0621\u064b \u0639\u0644\u0649 \u0627\u0644\u0625\u062f\u062e\u0627\u0644\u064a\u0646\u060c \u0639\u0627\u062f\u0629\u064b \u062e\u0644\u0627\u0644 \u064a\u0648\u0645\u064a\u0646. \u0646\u0642\u0627\u0637\u0643 \u0628\u0623\u0645\u0627\u0646 \u062d\u062a\u0649 \u0630\u0644\u0643 \u0627\u0644\u062d\u064a\u0646.",
         howItWorksTitle:
-          "\u0643\u064a\u0641 \u062a\u0639\u0645\u0644 \u0628\u0644\u0627\u064a\u0648\u0631\u0627",
+          "\u0643\u064a\u0641 \u062a\u0639\u0645\u0644 Rush X",
         howItWorksSub:
           "\u0643\u0644 \u0645\u0635\u0637\u0644\u062d \u062a\u0646\u0627\u0641\u0633\u064a \u0641\u064a \u062c\u0645\u0644\u0629 \u0648\u0627\u062d\u062f\u0629 \u0648\u0627\u0636\u062d\u0629.",
         howItWorksFooter:
@@ -8031,7 +8031,7 @@ __d(
           "\u0647\u0630\u0627 \u0627\u0644\u0627\u062e\u062a\u064a\u0627\u0631 \u064a\u062d\u062f\u062f \u0645\u0631\u0629 \u0648\u0627\u062d\u062f\u0629 \u0648\u064a\u0634\u0643\u0644 \u062a\u0637\u0628\u064a\u0642\u0643 \u0643\u0627\u0645\u0644\u064b\u0627. \u062a\u0635\u062d\u064a\u062d\u0647 \u0644\u0627\u062d\u0642\u064b\u0627 \u0639\u0628\u0631 \u0627\u0644\u062f\u0639\u0645 \u0641\u0642\u0637.",
         notAvailableTitle: "\u063a\u064a\u0631 \u0645\u062a\u0627\u062d",
         notAvailableBody:
-          "\u0647\u0630\u0627 \u0627\u0644\u0631\u0627\u0628\u0637 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d \u0641\u064a \u0628\u0644\u0627\u064a\u0648\u0631\u0627 \u0627\u0644\u062e\u0627\u0635 \u0628\u0643.",
+          "\u0647\u0630\u0627 \u0627\u0644\u0631\u0627\u0628\u0637 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d \u0641\u064a Rush X \u0627\u0644\u062e\u0627\u0635 \u0628\u0643.",
         notAvailableCta:
           "\u0627\u0644\u0639\u0648\u062f\u0629 \u0644\u0644\u0631\u0626\u064a\u0633\u064a\u0629",
         emptyDayTitleW:
