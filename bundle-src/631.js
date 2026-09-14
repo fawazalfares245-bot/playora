@@ -764,7 +764,7 @@ __d(
       la = () => (Fa() ? sa : (0, c.randomSixDigit)()),
       ca = async (e, t) => {
         if (!(0, m.smsConfigured)() && !Fa()) throw new Error("SMS_NOT_CONFIGURED");
-        await (0, m.smsProvider)().send(e, `Playora: your code is ${t}`);
+        await (0, m.smsProvider)().send(e, `Rush X: your code is ${t}`);
       },
       // OTP codes and throttle counters are persisted so a page reload cannot reset them.
       Ne2 = "playora.otp.state.v1",
@@ -2585,7 +2585,7 @@ __d(
               body: `Confirmation closed for ${t} \u2014 see who\u2019s in.`,
             };
           default:
-            return { title: "Playora", body: "Something new is waiting for you." };
+            return { title: "Rush X", body: "Something new is waiting for you." };
         }
       },
       Ei = (e) => {
@@ -4363,7 +4363,7 @@ __d(
     let Xi = null;
     const en = async () => {
         if (!Fa()) return;
-        let e = ri(Aa, "Playora Community", "football");
+        let e = ri(Aa, "Rush X Community", "football");
         for (const t of Da) e = ri(t.id, t.name, "football") || e;
         e && (await Za(Y, Qt.profiles));
       },
@@ -10050,7 +10050,7 @@ __d(
           id: ea(),
           team_id: e,
           author_id: "system",
-          author_name: "Playora",
+          author_name: "Rush X",
           kind: "system",
           body: t,
           image_url: null,
@@ -10269,7 +10269,7 @@ __d(
               (e = !0),
               await Zo(
                 a,
-                `${to(a.from_team_id)?.name} vs ${to(a.to_team_id)?.name} \u2014 result escalated to Playora support`,
+                `${to(a.from_team_id)?.name} vs ${to(a.to_team_id)?.name} \u2014 result escalated to Rush X support`,
               ),
               await (0, w.logAudit)("battle.result_escalated", null, {
                 battle: a.id.slice(-6),
@@ -10315,7 +10315,7 @@ __d(
               (i = !0),
               await Zo(
                 n,
-                `${to(n.from_team_id)?.name} vs ${to(n.to_team_id)?.name} \u2014 the result deadline passed with one score in, sent to Playora support`,
+                `${to(n.from_team_id)?.name} vs ${to(n.to_team_id)?.name} \u2014 the result deadline passed with one score in, sent to Rush X support`,
               ),
               await (0, w.logAudit)("battle.result_escalated", null, {
                 battle: n.id.slice(-6),
@@ -10592,7 +10592,7 @@ __d(
             r.cycle >= 3
               ? ((r.status = "escalated"),
                 await Za(Pt, Qt.battleResults),
-                await Zo(n, "Scores don\u2019t match again \u2014 the result is with Playora support"),
+                await Zo(n, "Scores don\u2019t match again \u2014 the result is with Rush X support"),
                 await (0, w.logAudit)("battle.result_escalated", (0, w.actorRef)(e), {
                   battle: t.slice(-6),
                   reason: "second_mismatch",
@@ -10653,7 +10653,7 @@ __d(
           user_id: e.payer_id,
           type: "payment_confirmation",
           game_id: t?.id ?? "g0000000-0000-4000-8000-000000000000",
-          venue_name: t ? Ai(t.venue_id) : "Playora",
+          venue_name: t ? Ai(t.venue_id) : "Rush X",
           amount_kwd: e.amount_kwd,
           read: !1,
           created_at: new Date().toISOString(),
@@ -11688,7 +11688,7 @@ __d(
                 null,
               ),
               e(
-                "Playora water bottle",
+                "Rush X water bottle",
                 "Branded stainless-steel bottle, collect at any partner venue.",
                 "reward",
                 350,

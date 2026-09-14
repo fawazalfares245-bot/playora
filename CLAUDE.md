@@ -1,4 +1,4 @@
-# Playora (rush-x.xyz)
+# Rush X (rush-x.xyz)
 
 Single-page Expo Router / React Native Web app shipped as one self-contained HTML file and deployed on
 Railway as a static site. The original Expo project source is not in this repository; the compiled bundle is
@@ -71,3 +71,9 @@ shapes with no keeper, their own court markings, surface colour and aspect ratio
 - Run the smoke harness for every screen you touch; it must report no console or page errors.
 - `index.html` is large; use targeted `grep`/`python` rather than reading the whole file.
 - Do not commit real secrets. Runtime configuration lives in the config block in `index.html`.
+- The product is **Rush X**. The name is user-facing text only: `appName` and ~60 strings in 909 (both
+  locales), the `<title>`, and the Expo manifest `name`/`shortName` in 543. Everything still spelled
+  `playora` is an internal identifier and must NOT be renamed — the 104 `playora.mock.*.v1` storage
+  keys, `playora_session`, `playora.audit.*`, the `@otp.playora.app` address that identifies every
+  phone-created account, the `playora.app/t/` invite links already sent out, `__PLAYORA_CONFIG__`,
+  and the Expo `slug`/`scheme`. Renaming those logs every user out or orphans their account.

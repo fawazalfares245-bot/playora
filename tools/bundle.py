@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Split / rebuild helper for the single-file Playora bundle.
+"""Split / rebuild helper for the single-file Rush X bundle.
 
   python3 tools/bundle.py split <id...> -> writes bundle-src/<id>.js (prettified copy of the module as currently in index.html)
   python3 tools/bundle.py build         -> replaces every module that has a bundle-src/<id>.js, appends bundle-src/new/*.js

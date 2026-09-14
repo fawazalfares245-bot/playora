@@ -2,7 +2,7 @@
   "name": "playora",
   "private": true,
   "version": "1.0.0",
-  "description": "Playora (rush-x.xyz) single-file web build plus bundle patch tooling",
+  "description": "Rush X (rush-x.xyz) single-file web build plus bundle patch tooling",
   "scripts": {
     "start": "serve -s . -l ${PORT:-3000} -c serve.json",
     "bundle:split": "python3 tools/bundle.py split",

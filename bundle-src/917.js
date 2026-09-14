@@ -711,9 +711,9 @@ __d(
                             },
                           ],
                           children: [
-                            "\u0647\u0630\u0627 \u064a\u062d\u062f\u062f \u0645\u0633\u0627\u062d\u062a\u0643 \u0641\u064a \u0628\u0644\u0627\u064a\u0648\u0631\u0627 \u0648\u0644\u0627 \u064a\u0645\u0643\u0646 \u062a\u063a\u064a\u064a\u0631\u0647 \u062f\u0627\u062e\u0644 \u0627\u0644\u062a\u0637\u0628\u064a\u0642 \u2014 \u0644\u0623\u0646 \u0643\u0644 \u0639\u0627\u0644\u0645 \u0645\u0633\u0627\u062d\u0629 \u062e\u0627\u0635\u0629 \u0648\u0645\u0646\u0641\u0635\u0644\u0629.",
+                            "\u0647\u0630\u0627 \u064a\u062d\u062f\u062f \u0645\u0633\u0627\u062d\u062a\u0643 \u0641\u064a Rush X \u0648\u0644\u0627 \u064a\u0645\u0643\u0646 \u062a\u063a\u064a\u064a\u0631\u0647 \u062f\u0627\u062e\u0644 \u0627\u0644\u062a\u0637\u0628\u064a\u0642 \u2014 \u0644\u0623\u0646 \u0643\u0644 \u0639\u0627\u0644\u0645 \u0645\u0633\u0627\u062d\u0629 \u062e\u0627\u0635\u0629 \u0648\u0645\u0646\u0641\u0635\u0644\u0629.",
                             "\n",
-                            "\u2066This sets your Playora space and can\u2019t be changed in the app \u2014 each world is its own private, separate space.\u2069",
+                            "\u2066This sets your Rush X space and can\u2019t be changed in the app \u2014 each world is its own private, separate space.\u2069",
                           ],
                         }),
                         (0, O.jsx)(h.FormError, {
