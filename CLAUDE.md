@@ -71,6 +71,9 @@ shapes with no keeper, their own court markings, surface colour and aspect ratio
 - Run the smoke harness for every screen you touch; it must report no console or page errors.
 - `index.html` is large; use targeted `grep`/`python` rather than reading the whole file.
 - Do not commit real secrets. Runtime configuration lives in the config block in `index.html`.
+- `tools/bundle.py build` stamps `buildId` in that config block with a hash of the bundle. It is
+  logged to the console on boot and shown at the bottom of the profile screen. When someone reports
+  stale UI, compare that id against the one in `index.html` on `main` before assuming a code bug.
 - The product is **Rush X**. The name is user-facing text only: `appName` and ~60 strings in 909 (both
   locales), the `<title>`, and the Expo manifest `name`/`shortName` in 543. Everything still spelled
   `playora` is an internal identifier and must NOT be renamed — the 104 `playora.mock.*.v1` storage
