@@ -66,12 +66,11 @@ await run('quick create shows the values it will publish with', async () => {
   await page.waitForTimeout(500);
   await page.getByText('Salmiya Sports Hub', { exact: true }).first().click();
   await page.waitForTimeout(600);
-  // choose a kickoff: a day chip, then hour / minutes / PM
+  // choose a kickoff: a day chip, then one 24-hour pill. The picker is Gregorian and 24-hour, so
+  // there is no minute row and no AM/PM toggle to click any more.
   await page.getByRole('button', { name: /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/ }).nth(1).click();
   await page.waitForTimeout(300);
-  await page.getByRole('button', { name: '8', exact: true }).first().click();
-  await page.getByRole('button', { name: ':00', exact: true }).first().click();
-  await page.getByRole('button', { name: 'PM', exact: true }).first().click();
+  await page.getByRole('button', { name: '20:00', exact: true }).first().click();
   await page.waitForTimeout(1500);
   const body = await page.evaluate(() => document.body.innerText);
   const low = body.toLowerCase();

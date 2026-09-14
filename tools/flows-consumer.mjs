@@ -124,5 +124,45 @@ await run('lineup draws the right court per sport', async () => {
   await browser.close();
 });
 
+// The quick-match kick-off picker is Gregorian and 24-hour: no Hijri labels, no AM/PM, no minute
+// pills, and the hour a user taps is the hour the match is stored at.
+await run('kick-off picker is Gregorian and 24-hour', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer/quick' });
+  await page.setViewportSize({ width: 420, height: 1400 });
+  await page.waitForTimeout(2500);
+
+  const body = await page.evaluate(() => document.body.innerText);
+  ok('no AM/PM toggle', !/\bAM\b|\bPM\b/.test(body));
+  ok('no minute interval pills', !/:15|:30|:45/.test(body));
+  ok('no Hijri month labels', !/Rabi|Jumada|Safar|Muharram|Rajab|Sha'ban|Ramadan|Shawwal|Dhu/.test(body));
+  const hours = ['00:00', '07:00', '13:00', '22:00', '23:00'].filter((h) => body.includes(h));
+  ok('the full 24-hour range is offered', hours.length === 5, hours.join(' '));
+  ok('hours are zero-padded HH:00', /\b00:00\b/.test(body) && !/\b0:00\b/.test(body));
+  ok('date chips show a Gregorian month', /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/.test(body));
+
+  // the hour tapped must be the hour stored
+  await page.getByText('Football', { exact: true }).first().click();
+  await page.waitForTimeout(1500);
+  await page.getByText('Salmiya Sports Hub', { exact: true }).first().click();
+  await page.waitForTimeout(1200);
+  await page.locator('text=/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/').nth(1).click();
+  await page.waitForTimeout(400);
+  await page.getByText('22:00', { exact: true }).first().click();
+  await page.waitForTimeout(700);
+  await page.getByText('Post match', { exact: true }).first().click();
+  await page.waitForTimeout(3000);
+  const stored = await page.evaluate(() => {
+    const g = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]');
+    const last = g.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+    if (!last) return null;
+    const d = new Date(last.starts_at);
+    return { hour: d.getHours(), minute: d.getMinutes() };
+  });
+  ok('tapping 22:00 stores a 22:00 kick-off', stored && stored.hour === 22, JSON.stringify(stored));
+  ok('minutes land on the hour', stored && stored.minute === 0, JSON.stringify(stored));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

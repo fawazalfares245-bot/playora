@@ -11,9 +11,9 @@ __d(
           [R, W] = (0, t.useState)([]),
           [v, A] = (0, t.useState)(null),
           [_, q] = (0, t.useState)(null),
+          // Kick-off is picked on a 24-hour clock, so the hour IS the hour: no 12-hour wrap, no AM/PM
+          // flag, and minutes are always on the hour.
           [H, O] = (0, t.useState)(null),
-          [V, B] = (0, t.useState)(0),
-          [N, E] = (0, t.useState)(!0),
           [F, K] = (0, t.useState)(null),
           [L, $] = (0, t.useState)(!1),
           [G, J] = (0, t.useState)(!1),
@@ -36,10 +36,9 @@ __d(
         }, [z, v, Z]);
         const ee = (0, t.useMemo)(() => {
             if (!_ || null == H) return null;
-            const e = (H % 12) + (N ? 12 : 0),
-              t = new Date(_);
-            return (t.setHours(e, V, 0, 0), t);
-          }, [_, H, V, N]),
+            const t = new Date(_);
+            return (t.setHours(H, 0, 0, 0), t);
+          }, [_, H]),
           te = (z ? 1 : 0) + (v ? 1 : 0) + (ee ? 1 : 0),
           re = 3 === te,
           ae = !!ee && ee.getTime() < Date.now();
@@ -282,8 +281,7 @@ __d(
                       children: Array.from({ length: 14 }, (e, t) => {
                         const s = new Date();
                         (s.setDate(s.getDate() + t), s.setHours(0, 0, 0, 0));
-                        const o = _?.toDateString() === s.toDateString(),
-                          i = (0, x.toHijri)(s);
+                        const o = _?.toDateString() === s.toDateString();
                         return (0, k.jsxs)(
                           a.default,
                           {
@@ -306,12 +304,17 @@ __d(
                                 style: [y.typography.bodyStrong, { color: o ? l.accentInk : l.text }],
                                 children: (0, f.formatNumber)(s.getDate()),
                               }),
-                              (0, k.jsxs)(n.default, {
+                              (0, k.jsx)(n.default, {
                                 style: [
                                   y.typography.caption,
                                   { color: o ? l.accentInk : l.textMuted, opacity: 0.8 },
                                 ],
-                                children: [(0, f.formatNumber)(i.day), " ", P((0, x.hijriMonthKey)(i.month))],
+                                // App locale, not the device's: a user can pick Arabic on an
+                                // English phone, and the month must follow the app.
+                                children: s.toLocaleDateString(
+                                  "ar" === (0, S.getLocale)() ? "ar" : "en",
+                                  { month: "short" },
+                                ),
                               }),
                             ],
                           },
@@ -320,33 +323,24 @@ __d(
                       }),
                     }),
                     (0, k.jsx)(o.default, {
+                      // One grid, 00:00 to 23:00, flowing into the room the AM/PM row used to take.
                       style: {
                         flexDirection: "row",
                         flexWrap: "wrap",
                         gap: y.spacing.sm,
                         marginTop: y.spacing.sm,
                       },
-                      children: [6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5].map((e) =>
+                      children: Array.from({ length: 24 }, (e, t) => t).map((e) =>
                         (0, k.jsx)(
                           se,
-                          { on: H === e, label: (0, f.formatNumber)(e), onPress: () => O(e) },
+                          {
+                            on: H === e,
+                            label: (0, f.formatNumber)(`${String(e).padStart(2, "0")}:00`),
+                            onPress: () => O(e),
+                          },
                           e,
                         ),
                       ),
-                    }),
-                    (0, k.jsxs)(o.default, {
-                      style: { flexDirection: "row", gap: y.spacing.sm, marginTop: y.spacing.sm },
-                      children: [
-                        [0, 15, 30, 45].map((e) =>
-                          (0, k.jsx)(
-                            se,
-                            { on: V === e, label: `:${String(e).padStart(2, "0")}`, onPress: () => B(e) },
-                            e,
-                          ),
-                        ),
-                        (0, k.jsx)(se, { on: !N, label: P("am"), onPress: () => E(!1) }),
-                        (0, k.jsx)(se, { on: N, label: P("pm"), onPress: () => E(!0) }),
-                      ],
                     }),
                     ae &&
                       (0, k.jsx)(n.default, {
