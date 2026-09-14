@@ -4,6 +4,7 @@ __d(
     i.translations = {
       en: {
         // --- XC keys (fix batch) ---
+        updateAvailable: "New version available \u00b7 tap to update",
         quickPickTime: "Kick-off time",
         quickPickTimePlaceholder: "Choose a time",
         pitchRole_NET: "Net",
@@ -3481,6 +3482,7 @@ __d(
       },
       ar: {
         // --- XC keys (fix batch) ---
+        updateAvailable: "\u064a\u062a\u0648\u0641\u0631 \u0625\u0635\u062f\u0627\u0631 \u062c\u062f\u064a\u062f \u00b7 \u0627\u0636\u063a\u0637 \u0644\u0644\u062a\u062d\u062f\u064a\u062b",
         quickPickTime: "\u0648\u0642\u062a \u0627\u0644\u0628\u062f\u0627\u064a\u0629",
         quickPickTimePlaceholder: "\u0627\u062e\u062a\u0631 \u0627\u0644\u0648\u0642\u062a",
         pitchRole_NET: "\u0627\u0644\u0634\u0628\u0643\u0629",

@@ -85,6 +85,36 @@ await run('quick create shows the values it will publish with', async () => {
   await browser.close();
 });
 
+// The full-setup screen uses the shared TimePicker, not the quick screen's own control. That split
+// is how a 12-hour AM/PM chip grid survived here long after /organizer/quick moved to a dropdown, so
+// the component gets its own check: collapsed by default, whole hours, no AM/PM, no minute row.
+await run('full setup start/end times are 24-hour dropdowns', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer/create' });
+  await page.waitForTimeout(800);
+  const closed = await page.evaluate(() => document.body.innerText);
+  ok('no AM/PM toggle', !/\bAM\b|\bPM\b/.test(closed), closed.match(/.{0,20}\b[AP]M\b.{0,20}/)?.[0] ?? '');
+  ok('no minute interval pills', !/:15|:30|:45/.test(closed));
+  ok('the hour list is collapsed by default', !['00:00', '07:00', '23:00'].some((h) => closed.includes(h)));
+
+  const field = page.getByRole('button', { name: new RegExp('^' + t('fieldStartTime') + '$', 'i') }).first();
+  await field.click();
+  await page.waitForTimeout(600);
+  const opened = await page.evaluate(() => document.body.innerText);
+  const hours = ['00:00', '07:00', '13:00', '22:00', '23:00'].filter((h) => opened.includes(h));
+  ok('the open dropdown offers the full 24-hour range', hours.length === 5, hours.join(' '));
+  ok('hours are zero-padded HH:00', /\b00:00\b/.test(opened) && !/\b0:00\b/.test(opened));
+
+  await page.getByText('20:00', { exact: true }).first().click();
+  await page.waitForTimeout(700);
+  const picked = await page.evaluate(() => document.body.innerText);
+  ok('choosing an hour closes the dropdown', !picked.includes('07:00'));
+  ok('the field shows the chosen hour', picked.includes('20:00'));
+  // the auto-filled end time has to land on an hour the dropdown can actually offer
+  ok('end time auto-fills to a whole hour', picked.includes('22:00'), picked.slice(0, 200).replace(/\n/g, '|'));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
+  await browser.close();
+});
+
 await run('retired organizer/new redirects to create', async () => {
   const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer/new' });
   ok('redirected', page.url().endsWith('/organizer/create'), page.url());

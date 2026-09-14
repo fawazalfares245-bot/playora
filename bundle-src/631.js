@@ -10060,7 +10060,10 @@ __d(
           await Za(Mt, Qt.teamChat));
       },
       Yo = (e) =>
-        `${new Date(e).toLocaleDateString(void 0, { weekday: "short", day: "numeric", month: "short" })} \xb7 ${new Date(e).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`,
+        // The store cannot reach the formatter in 1311 without pulling the i18n layer into the mock
+        // backend, so the 24-hour clock is spelled out here. It matches the app default; a user who
+        // switches the region setting back to 12-hour still sees this one string in 24-hour form.
+        `${new Date(e).toLocaleDateString(void 0, { weekday: "short", day: "numeric", month: "short" })} \xb7 ${new Date(e).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: !1 })}`,
       Wo = (e, t, a) => {
         const i = to(e.from_team_id),
           n = to(e.to_team_id),

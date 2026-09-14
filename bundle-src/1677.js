@@ -928,7 +928,7 @@ __d(
                                                 (0, T.jsx)(i.default, {
                                                   style: [V.bandHeaderRange, { color: A.textMuted }],
                                                   children: (() => {
-                                                    const e = (e) => new Date(e.starts_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+                                                    const e = (e) => (0, _.formatClock)(e.starts_at),
                                                       r = e(t[0]),
                                                       o = e(t[t.length - 1]);
                                                     return r === o ? r : `${r} \u2013 ${o}`;
@@ -1142,7 +1142,7 @@ __d(
         });
       },
       $ = ({ row: e, colors: t, t: r, onPress: o }) => {
-        const n = new Date(e.starts_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        const n = (0, _.formatClock)(e.starts_at);
         return (0, T.jsxs)(a.default, {
           onPress: o,
           accessibilityRole: "button",
@@ -1195,7 +1195,7 @@ __d(
           s = n
             .toLocaleDateString(void 0, { weekday: "short", day: "numeric", month: "short" })
             .toUpperCase(),
-          l = n.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+          l = (0, _.formatClock)(n);
         return (0, T.jsxs)(a.default, {
           onPress: o,
           accessibilityRole: "button",

@@ -64,7 +64,11 @@ export async function openApp({ role = 'admin', route = '/', seed = true, initSc
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console.error: ' + m.text()); });
   page.on('dialog', (d) => { errors.push(`dialog(${d.type()}): ${d.message().replace(/\n/g, ' | ')}`); d.accept(); });
   await page.route(ORIGIN + '/**', (r) => {
-    if (r.request().resourceType() === 'document') return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+    // `serve -s` rewrites every unknown path to index.html, so the shell comes back for a plain
+    // fetch of '/' as well as for a navigation. The app relies on that to compare build ids.
+    const path = new URL(r.request().url()).pathname;
+    if (r.request().resourceType() === 'document' || path === '/' || path === '/index.html')
+      return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
     return r.fulfill({ status: 404, body: '' });
   });
   if (seed) await page.addInitScript(seedScript(role));
