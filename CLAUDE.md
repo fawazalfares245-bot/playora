@@ -1,7 +1,7 @@
 # Rush X (rush-x.xyz)
 
 Single-page Expo Router / React Native Web app shipped as one self-contained HTML file and deployed on
-Railway as a static site. The original Expo project source is not in this repository; the compiled bundle is
+Vercel as a static site. The original Expo project source is not in this repository; the compiled bundle is
 edited through the module tooling described below.
 
 ## Layout
@@ -23,7 +23,11 @@ edited through the module tooling described below.
 - `docs/audit/` – two audit reports (PDF), raw findings, fix status files and the route → module map.
   `Playora_Admin_Organizer_Audit.pdf` covers the staff surface; `Playora_Consumer_Audit.pdf` covers the
   68 player-facing routes.
-- `package.json`, `serve.json`, `railway.json`, `nixpacks.toml` – static hosting via `serve -s` with SPA rewrites.
+- `vercel.json` – the deployment. Vercel serves the repo root statically: every path rewrites to
+  `index.html` (client-side routing) and everything is sent `Cache-Control: no-store`, so a phone
+  cannot sit on an old shell. There is no build step; `index.html` is committed ready to serve.
+- `package.json` – tooling only (prettier for `tools/bundle.py`, the smoke harness). Nothing here runs
+  in production.
 - `rpc.ts`, `auth/jwt.ts`, `.env.example` – server-side stubs for a future API; not used by the bundle.
 
 ## Key module ids
