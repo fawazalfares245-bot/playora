@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "ee502b1f1c"
+  buildId: "4daaa307d0"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -49437,7 +49437,11 @@ __d(
     // the app is a 24-hour clock now, and a quarter-hour grid plus an AM/PM toggle was three rows of
     // chips for something a single collapsed list does in one.
     // `s` (StyleSheet) is shadowed by the `value` prop inside the component, so keep what is needed here.
-    const hair9 = s.default.hairlineWidth,
+    // Row height and visible height are tied together: the menu shows whole rows, so the list always
+    // looks cut mid-scroll rather than ending neatly, which is what tells a thumb it can keep going.
+    const ROW9 = 48,
+      VISIBLE9 = 5.5,
+      hair9 = s.default.hairlineWidth,
       HOURS9 = Array.from({ length: 24 }, (t, o) => o),
       hhmm9 = (t) =>
         (0, b.formatNumber)(
@@ -49446,9 +49450,22 @@ __d(
     e.TimePicker = ({ label: t, value: s, onChange: C, placeholder: R }) => {
       const { colors: W } = (0, h.useTheme)(),
         [S, z] = (0, o.useState)(!1),
+        sc9 = (0, o.useRef)(null),
         // A value that did not come from this picker (a seeded game at 21:30, say) still has to read
         // correctly, so the field renders the real value and only the matching hour is ticked.
         H = null == s ? null : Math.floor(s / 60) % 24;
+      // Opening the list on 00:00 when the match is at 21:00 means scrolling past twenty rows to see
+      // where you already are. Jump to the chosen hour (or to the evening, when nothing is chosen yet)
+      // and leave a row above it so it reads as a list you are inside of rather than the top of one.
+      (0, o.useEffect)(() => {
+        if (!S) return;
+        const t = setTimeout(() => {
+          try {
+            sc9.current?.scrollTo({ y: Math.max(0, (null == H ? 18 : H) - 1) * ROW9, animated: !1 });
+          } catch {}
+        }, 0);
+        return () => clearTimeout(t);
+      }, [S, H]);
       return (0, x.jsxs)(c.default, {
         style: { marginBottom: m.spacing.md },
         children: [
@@ -49479,8 +49496,10 @@ __d(
           }),
           S &&
             (0, x.jsx)(sv9.default, {
+              ref: sc9,
               style: [P.menu, { backgroundColor: W.surface, borderColor: W.border }],
               nestedScrollEnabled: !0,
+              showsVerticalScrollIndicator: !0,
               keyboardShouldPersistTaps: "handled",
               children: HOURS9.map((t, o) => {
                 const b = t === H;
@@ -49529,14 +49548,14 @@ __d(
           borderRadius: m.radius.md,
           borderWidth: s.default.hairlineWidth,
           overflow: "hidden",
-          maxHeight: 260,
+          maxHeight: ROW9 * VISIBLE9,
         },
         option: {
           flexDirection: "row",
           alignItems: "center",
           paddingHorizontal: m.spacing.lg,
-          paddingVertical: m.spacing.md,
-          minHeight: 48,
+          justifyContent: "space-between",
+          height: ROW9,
         },
       });
   },
@@ -53891,15 +53910,14 @@ __d(
                       // A 24-pill grid cost five rows. The same 24 choices collapse to one field here
                       // and scroll inside the menu, so the card stays the height of the date strip.
                       style: { marginTop: y.spacing.sm },
-                      children: (0, k.jsx)(Se.Select, {
+                      // Both host-a-game screens use the one shared picker now. Keeping a second,
+                      // near-identical time control here is how the full-setup screen sat on a 12-hour
+                      // chip grid for weeks after this one moved on.
+                      children: (0, k.jsx)(tp9.TimePicker, {
                         label: P("quickPickTime"),
                         placeholder: P("quickPickTimePlaceholder"),
-                        value: H,
-                        onChange: O,
-                        options: HOURS.map((e) => ({
-                          value: e,
-                          label: (0, f.formatNumber)(`${String(e).padStart(2, "0")}:00`),
-                        })),
+                        value: null == H ? null : 60 * H,
+                        onChange: (e) => O(Math.floor(e / 60)),
                       }),
                     }),
                     ae &&
@@ -54057,6 +54075,7 @@ __d(
       f = r(_d[15]),
       x = r(_d[16]),
       Se = r(_d[21]),
+      tp9 = r(_d[22]),
       b = r(_d[17]),
       j = r(_d[18]),
       S = r(_d[19]),
@@ -54064,7 +54083,6 @@ __d(
     const T = ["football", "padel", "tennis"],
       C = (e) => ("football" === e ? "#E85D1A" : "padel" === e ? "#2D6BE4" : "#1FA974"),
       w = ["daySun", "dayMon", "dayTue", "dayWed", "dayThu", "dayFri", "daySat"];
-    const HOURS = Array.from({ length: 24 }, (e, t) => t);
     const D = l.default.create({
       header: {
         flexDirection: "row",
@@ -54119,7 +54137,7 @@ __d(
     });
   },
   2470,
-  [33, 15, 369, 281, 158, 146, 273, 381, 1086, 20, 626, 630, 615, 616, 671, 1311, 2469, 674, 1171, 675, 13, 1310],
+  [33, 15, 369, 281, 158, 146, 273, 381, 1086, 20, 626, 630, 615, 616, 671, 1311, 2469, 674, 1171, 675, 13, 1310, 2463],
 );
 __d(
   function (_g, r, _i, _a, _m, _e, _d) {

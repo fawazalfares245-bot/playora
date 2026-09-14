@@ -326,15 +326,14 @@ __d(
                       // A 24-pill grid cost five rows. The same 24 choices collapse to one field here
                       // and scroll inside the menu, so the card stays the height of the date strip.
                       style: { marginTop: y.spacing.sm },
-                      children: (0, k.jsx)(Se.Select, {
+                      // Both host-a-game screens use the one shared picker now. Keeping a second,
+                      // near-identical time control here is how the full-setup screen sat on a 12-hour
+                      // chip grid for weeks after this one moved on.
+                      children: (0, k.jsx)(tp9.TimePicker, {
                         label: P("quickPickTime"),
                         placeholder: P("quickPickTimePlaceholder"),
-                        value: H,
-                        onChange: O,
-                        options: HOURS.map((e) => ({
-                          value: e,
-                          label: (0, f.formatNumber)(`${String(e).padStart(2, "0")}:00`),
-                        })),
+                        value: null == H ? null : 60 * H,
+                        onChange: (e) => O(Math.floor(e / 60)),
                       }),
                     }),
                     ae &&
@@ -492,6 +491,7 @@ __d(
       f = r(_d[15]),
       x = r(_d[16]),
       Se = r(_d[21]),
+      tp9 = r(_d[22]),
       b = r(_d[17]),
       j = r(_d[18]),
       S = r(_d[19]),
@@ -499,7 +499,6 @@ __d(
     const T = ["football", "padel", "tennis"],
       C = (e) => ("football" === e ? "#E85D1A" : "padel" === e ? "#2D6BE4" : "#1FA974"),
       w = ["daySun", "dayMon", "dayTue", "dayWed", "dayThu", "dayFri", "daySat"];
-    const HOURS = Array.from({ length: 24 }, (e, t) => t);
     const D = l.default.create({
       header: {
         flexDirection: "row",
@@ -554,5 +553,5 @@ __d(
     });
   },
   2470,
-  [33, 15, 369, 281, 158, 146, 273, 381, 1086, 20, 626, 630, 615, 616, 671, 1311, 2469, 674, 1171, 675, 13, 1310],
+  [33, 15, 369, 281, 158, 146, 273, 381, 1086, 20, 626, 630, 615, 616, 671, 1311, 2469, 674, 1171, 675, 13, 1310, 2463],
 );
