@@ -5084,8 +5084,8 @@ __d(
       )
         try {
           const a = await oc(c.id, e);
-          ((a.a = rc(t.formation_key)),
-            (a.b = rc(t.formation_key)),
+          ((a.a = rc(t.formation_key, c.sport)),
+            (a.b = rc(t.formation_key, c.sport)),
             !1 !== t.organizer_plays && a.a.slots.length > 0 && (a.a.slots[0].player_id = e),
             (a.updated_at = new Date().toISOString()),
             await Za(rt, Qt.lineups));
@@ -18152,10 +18152,10 @@ __d(
           return Math.max(2, Math.min(11, Math.floor(e.max_players / 2)));
       }
     }
-    function rc(e) {
+    function rc(e, sp9) {
       return {
         formation_key: e,
-        slots: (0, T.formationSlots)(e).map((e) => ({
+        slots: (0, T.formationSlots)(e, sp9).map((e) => ({
           slot_id: e.id,
           role: e.role,
           x: e.x,
@@ -18172,11 +18172,11 @@ __d(
       const i = hi(e);
       if (!i) throw new Error("E_MATCH_NOT_FOUND");
       const n = nc(i),
-        r = (0, T.suggestFormationKey)(n);
+        r = (0, T.suggestFormationKey)(n, 0.5, i.sport);
       a = {
         game_id: e,
-        a: rc(r),
-        b: rc(r),
+        a: rc(r, i.sport),
+        b: rc(r, i.sport),
         locked: !1,
         editor_user_ids: [],
         version: 1,
@@ -18281,21 +18281,26 @@ __d(
               avatar_seed: e.avatar_seed,
               avatar_url: e.avatar_url ?? null,
             })),
-          formations: (0, T.formationsForSize)(c).map((e) => ({ key: e.key, label: e.label })),
-          suggested_key: (0, T.suggestFormationKey)(c),
+          sport: a.sport,
+          formations: (0, T.formationsForSport)(c, a.sport).map((e) => ({
+            key: e.key,
+            label: e.label,
+            labelKey: e.labelKey ?? null,
+          })),
+          suggested_key: (0, T.suggestFormationKey)(c, 0.5, a.sport),
           editor_user_ids: d ? i.editor_user_ids : [],
           history: d ? i.history : [],
         };
       };
     r.mockGetLineup = uc;
     r.mockSetLineupFormation = async (e, t, a, i) => {
-      const { lineup: n } = await dc(e, t);
+      const { game: g9, lineup: n } = await dc(e, t);
       if (n.locked) throw new Error("E_THE_LINEUP_IS_LOCKED");
       return Xt(t, async () => {
         const r = ("A" === a ? n.a : n.b).slots
             .map((e) => ({ player_id: e.player_id, jersey: e.jersey, captain: e.captain }))
             .filter((e) => e.player_id),
-          o = rc(i);
+          o = rc(i, g9.sport);
         return (
           r.slice(0, o.slots.length).forEach((e, t) => {
             ((o.slots[t].player_id = e.player_id),
@@ -19100,7 +19105,250 @@ __d(function(g,r,i,a,m,e,_d){Object.defineProperty(e,"__esModule",{value:!0}),e.
 __d(function(g,r,i,_a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.unlockedAwardAchievements=e.tallyVotes=e.seasonOf=e.detectCollusion=e.awardLabelKey=e.awardEmoji=e.DEFAULT_VOTING_WINDOW_MS=e.COLLUSION_AWARD_THRESHOLD=e.AWARD_CATALOG=e.AWARD_ACHIEVEMENTS=void 0;const a=e.AWARD_CATALOG=[{key:'mvp',emoji:'\ud83c\udfc6',labelKey:'awMvp',descKey:'awMvpDesc'},{key:'best_goal',emoji:'\u26bd',labelKey:'awBestGoal',descKey:'awBestGoalDesc'},{key:'best_assist',emoji:'\ud83c\udfaf',labelKey:'awBestAssist',descKey:'awBestAssistDesc'},{key:'best_defender',emoji:'\ud83d\udee1\ufe0f',labelKey:'awBestDefender',descKey:'awBestDefenderDesc'},{key:'best_goalkeeper',emoji:'\ud83e\udde4',labelKey:'awBestGk',descKey:'awBestGkDesc'},{key:'best_playmaker',emoji:'\ud83e\ude84',labelKey:'awBestPlaymaker',descKey:'awBestPlaymakerDesc'},{key:'best_sportsmanship',emoji:'\ud83e\udd1d',labelKey:'awSportsmanship',descKey:'awSportsmanshipDesc'},{key:'most_improved',emoji:'\ud83d\udcc8',labelKey:'awMostImproved',descKey:'awMostImprovedDesc'},{key:'team_player',emoji:'\ud83e\udec2',labelKey:'awTeamPlayer',descKey:'awTeamPlayerDesc'},{key:'fan_favorite',emoji:'\ud83d\udc9a',labelKey:'awFanFavorite',descKey:'awFanFavoriteDesc'}];e.DEFAULT_VOTING_WINDOW_MS=1728e5;e.seasonOf=a=>String(new Date(a).getFullYear());e.tallyVotes=a=>{const t=new Map;for(const s of a){const a=t.get(s.award_key)??new Map;a.set(s.nominee_id,(a.get(s.nominee_id)??0)+1),t.set(s.award_key,a)}const s=[];for(const[a,o]of t){const t=[...o.entries()].sort((a,t)=>t[1]-a[1]||a[0].localeCompare(t[0]));if(0===t.length||0===t[0][1])continue;const n=t[0][1],l=t.filter(([,a])=>a===n).map(([a])=>a);s.push({award_key:a,winner_ids:l,votes:n,tied:l.length>1})}return s};const t=e.COLLUSION_AWARD_THRESHOLD=5;e.detectCollusion=a=>{const s=new Map;for(const t of a){const a=`${t.voter_id}|${t.nominee_id}`;s.set(a,(s.get(a)??0)+1)}const o=[];for(const[a,n]of s)if(n>=t){const[t,s]=a.split('|');o.push({voter_id:t,nominee_id:s,categories:n,reason:'collusion'})}return o};const s=e.AWARD_ACHIEVEMENTS=[{id:'first_award',emoji:'\ud83c\udfc5',key:'awAchFirst',test:a=>a.total>=1},{id:'award_pro',emoji:'\ud83c\udf96\ufe0f',key:'awAchPro',test:a=>a.total>=5},{id:'award_legend',emoji:'\ud83d\udc51',key:'awAchLegend',test:a=>a.total>=15},{id:'first_mvp',emoji:'\u2b50',key:'awAchMvp1',test:a=>a.mvp>=1},{id:'mvp_master',emoji:'\ud83c\udf1f',key:'awAchMvp5',test:a=>a.mvp>=5}];e.unlockedAwardAchievements=(a,t)=>s.filter(s=>s.test({total:a,mvp:t}));e.awardLabelKey=t=>a.find(a=>a.key===t)?.labelKey??t;e.awardEmoji=t=>a.find(a=>a.key===t)?.emoji??'\ud83c\udfc5'},651,[]);
 __d(function(g,r,i,_a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.topReasons=e.scoreMatch=e.reasonKey=e.nudgeWeights=e.SECTION_ORDER=e.FEED_FACTORS=e.DEFAULT_FEED_WEIGHTS=void 0;const o=e.DEFAULT_FEED_WEIGHTS={favorite_sport:.15,skill_fit:.15,distance:.12,friends:.12,organizer_rep:.08,match_quality:.08,fill:.07,starting_soon:.06,venue_favorite:.05,played_together:.04,availability:.03,weather:.02,teams:.02,behavior:.01,good_price:.06,just_posted:.05},a=e.FEED_FACTORS=Object.keys(o);e.scoreMatch=(o,n)=>{let s=0,t=0;for(const l of a)s+=(n[l]??0)*(o[l]??0),t+=n[l]??0;return t>0?s/t:0};e.topReasons=(o,n,s=3)=>a.map(a=>({k:a,c:(n[a]??0)*(o[a]??0)})).filter(a=>a.c>.04&&o[a.k]>=.5).sort((o,a)=>a.c-o.c).slice(0,s).map(o=>o.k);e.reasonKey=o=>({favorite_sport:'reasonFavoriteSport',skill_fit:'reasonSkillFit',distance:'reasonNearby',friends:'reasonFriends',organizer_rep:'reasonTopOrganizer',match_quality:'reasonHighQuality',fill:'reasonFillingUp',starting_soon:'reasonStartingSoon',venue_favorite:'reasonFavoriteVenue',played_together:'reasonPlayedTogether',availability:'reasonSpotsOpen',weather:'reasonGoodWeather',teams:'reasonYourTeam',behavior:'reasonYourStyle',good_price:'reasonGoodPrice',just_posted:'reasonJustPosted'}[o]);const n={join:.04,click:.01,cancel:-.03},s=(o,a=.01,n=.4)=>Math.max(a,Math.min(n,o));e.nudgeWeights=(o,a,t)=>{const l=n[a],c=Object.assign({},o);for(const o of t)c[o]=s((c[o]??0)+l);return c};e.SECTION_ORDER=[{id:'best_for_you',labelKey:'secBestForYou',icon:'sparkles'},{id:'friends_playing',labelKey:'secFriendsPlaying',icon:'people'},{id:'need_player_now',labelKey:'secNeedPlayer',icon:'flash'},{id:'starting_soon',labelKey:'secStartingSoon',icon:'time'},{id:'your_teams',labelKey:'secYourTeams',icon:'shield'},{id:'recently_played_with',labelKey:'secRecentlyPlayed',icon:'refresh'},{id:'recommended_organizers',labelKey:'secRecommendedOrganizers',icon:'star'},{id:'nearby',labelKey:'secNearby',icon:'location'},{id:'trending',labelKey:'secTrending',icon:'trending-up'}]},652,[]);
 __d(function(g,r,i,_a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.venueCan=e.topPeakHours=e.peakHistogram=e.occupancyPct=e.normalizePromoCode=e.bookingHours=e.applyPromo=e.VENUE_ROLE_PERMS=e.VENUE_ASSIGNABLE_ROLES=void 0;const o=e.VENUE_ROLE_PERMS={owner:['courts','bookings','finance','staff','marketing','checkin','crm'],manager:['courts','bookings','finance','marketing','checkin','crm'],receptionist:['bookings','checkin','crm'],coach:['bookings','crm'],staff:['checkin'],scanner:['checkin']};e.venueCan=(n,c)=>o[n]?.includes(c)??!1;e.VENUE_ASSIGNABLE_ROLES=['manager','receptionist','coach','staff'];e.applyPromo=(o,n,c)=>'percent'===o?Math.max(0,c*(1-n/100)):Math.max(0,c-n);e.normalizePromoCode=o=>o.trim().toUpperCase().replace(/\s+/g,'');e.bookingHours=(o,n)=>Math.max(0,(new Date(n).getTime()-new Date(o).getTime())/36e5);const n=o=>{const n=new Array(24).fill(0);for(const c of o)n[new Date(c).getHours()]+=1;return n.map((o,n)=>({hour:n,count:o}))};e.peakHistogram=n;e.topPeakHours=(o,c=3)=>n(o).filter(o=>o.count>0).sort((o,n)=>n.count-o.count).slice(0,c).map(o=>o.hour);e.occupancyPct=(o,n)=>n>0?Math.round(Math.min(100,o/n*100)):0},653,[]);
-__d(function(g,_r,_i,_a,_m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.suggestFormationKey=e.slotsForShape=e.seededShuffle=e.roleLabelKey=e.pairKey=e.formationsForSize=e.formationSlots=e.balanceTeams=e.autoRows=e.assignSlots=e.FORMATION_CATALOG=void 0;const o={'4-4-2':{label:'4-4-2',rows:[4,4,2]},'4-3-3':{label:'4-3-3',rows:[4,3,3]},'3-5-2':{label:'3-5-2',rows:[3,5,2]},'5-3-2':{label:'5-3-2',rows:[5,3,2]},'4-2-3-1':{label:'4-2-3-1',rows:[4,2,3,1]},'9v9-3-3-2':{label:'3-3-2',rows:[3,3,2]},'8v8-3-3-1':{label:'3-3-1',rows:[3,3,1]},'7v7-2-3-1':{label:'2-3-1',rows:[2,3,1]},'5v5-1-2-1':{label:'1-2-1',rows:[1,2,1]}},t=o=>{const t=[{id:'gk',role:'GK',x:.5,y:.08}],s={};return o.forEach((r,l)=>{const n=(a=l,c=o.length,0===a?'DF':a===c-1?'FW':'MF');var a,c;const i=.28+l/Math.max(1,o.length-1)*.6;for(let l=0;l<r;l++){const a=(l+1)/(r+1),c=s[n]=(s[n]??0)+1;t.push({id:`${n.toLowerCase()}-${c}`,role:n,x:a,y:1===o.length?.6:i})}}),t};e.slotsForShape=t;const s=e.FORMATION_CATALOG=Object.entries(o).map(([o,t])=>({key:o,label:t.label,team_size:t.rows.reduce((o,t)=>o+t,0)+1}));e.formationSlots=s=>{const l=o[s];if(l)return t(l.rows);const n=/^custom-(\d+)$/.exec(s),a=n?Math.max(2,Math.min(11,parseInt(n[1],10))):7;return t(r(a-1))};const r=o=>{if(o<=3)return[o];const t=Math.ceil(o/3),s=Math.floor(o/4)||1;return[t,o-t-s,s]};e.autoRows=r;e.formationsForSize=o=>[...s.filter(t=>t.team_size===o),{key:`custom-${o}`,label:'Custom',team_size:o}];e.suggestFormationKey=(o,t=.5)=>{const s={11:['4-3-3','5-3-2'],9:['9v9-3-3-2','9v9-3-3-2'],8:['8v8-3-3-1','8v8-3-3-1'],7:['7v7-2-3-1','7v7-2-3-1'],5:['5v5-1-2-1','5v5-1-2-1']}[o];return s?t<.4?s[1]:s[0]:`custom-${o}`};const l=(o,t)=>o<t?`${o}|${t}`:`${t}|${o}`;e.pairKey=l;const n=(o,t,s)=>{let r=0;for(const s of o)r+=t.get(s)?.composite??0;let n=0;for(let t=0;t<o.length;t++)for(let r=t+1;r<o.length;r++)n+=s.get(l(o[t],o[r]))??0;return r+.15*n};e.balanceTeams=(o,t=new Map)=>{const s=[...o].sort((o,t)=>t.composite-o.composite||o.id.localeCompare(t.id)),r=[],l=[];s.forEach((o,t)=>(t%4==0||t%4==3?r:l).push(o.id));const a=new Map(o.map(o=>[o.id,o]));for(let o=0;o<60;o++){const o=()=>Math.abs(n(r,a,t)-n(l,a,t));let s=!1;for(let t=0;t<r.length&&!s;t++)for(let n=0;n<l.length&&!s;n++){const a=o();[r[t],l[n]]=[l[n],r[t]],o()<a-1e-9?s=!0:[r[t],l[n]]=[l[n],r[t]]}if(!s)break}return{a:r,b:l}};e.assignSlots=(o,t,s)=>{const r=Object.fromEntries(o.map(o=>[o.id,null])),l=[...t].sort((o,t)=>(s.get(t)?.composite??0)-(s.get(o)?.composite??0)||o.localeCompare(t));for(const t of['GK','DF','MF','FW'])for(const n of o.filter(o=>o.role===t)){const o=l.findIndex(o=>s.get(o)?.pref===t);o>=0&&(r[n.id]=l.splice(o,1)[0])}for(const t of o)null===r[t.id]&&l.length>0&&(r[t.id]=l.shift());return r};e.roleLabelKey=o=>`pitchRole_${o}`;e.seededShuffle=(o,t)=>{const s=[...o];let r=t>>>0;const l=()=>{r=r+1831565813>>>0;let o=Math.imul(r^r>>>15,1|r);return o=o+Math.imul(o^o>>>7,61|o)^o,((o^o>>>14)>>>0)/4294967296};for(let o=s.length-1;o>0;o--){const t=Math.floor(l()*(o+1));[s[o],s[t]]=[s[t],s[o]]}return s}},654,[]);
+__d(
+  function (g, _r, _i, _a, _m, e, d) {
+    (Object.defineProperty(e, "__esModule", { value: !0 }),
+      (e.suggestFormationKey =
+        e.sportOf =
+        e.racketShape =
+        e.formationsForSport =
+        e.RACKET_CATALOG =
+        e.slotsForShape =
+        e.seededShuffle =
+        e.roleLabelKey =
+        e.pairKey =
+        e.formationsForSize =
+        e.formationSlots =
+        e.balanceTeams =
+        e.autoRows =
+        e.assignSlots =
+        e.FORMATION_CATALOG =
+          void 0));
+    const o = {
+        "4-4-2": { label: "4-4-2", rows: [4, 4, 2] },
+        "4-3-3": { label: "4-3-3", rows: [4, 3, 3] },
+        "3-5-2": { label: "3-5-2", rows: [3, 5, 2] },
+        "5-3-2": { label: "5-3-2", rows: [5, 3, 2] },
+        "4-2-3-1": { label: "4-2-3-1", rows: [4, 2, 3, 1] },
+        "9v9-3-3-2": { label: "3-3-2", rows: [3, 3, 2] },
+        "8v8-3-3-1": { label: "3-3-1", rows: [3, 3, 1] },
+        "7v7-2-3-1": { label: "2-3-1", rows: [2, 3, 1] },
+        "5v5-1-2-1": { label: "1-2-1", rows: [1, 2, 1] },
+      },
+      t = (o) => {
+        const t = [{ id: "gk", role: "GK", x: 0.5, y: 0.08 }],
+          s = {};
+        return (
+          o.forEach((r, l) => {
+            const n = ((a = l), (c = o.length), 0 === a ? "DF" : a === c - 1 ? "FW" : "MF");
+            var a, c;
+            const i = 0.28 + (l / Math.max(1, o.length - 1)) * 0.6;
+            for (let l = 0; l < r; l++) {
+              const a = (l + 1) / (r + 1),
+                c = (s[n] = (s[n] ?? 0) + 1);
+              t.push({ id: `${n.toLowerCase()}-${c}`, role: n, x: a, y: 1 === o.length ? 0.6 : i });
+            }
+          }),
+          t
+        );
+      };
+    e.slotsForShape = t;
+
+    // Racket sports are not football with fewer players: there is no goalkeeper, the court is a
+    // different shape, and the tactics are about depth (who is at the net, who is at the back).
+    // y = 0 is your own baseline and y = 1 is the net, matching the board's coordinate system.
+    const p = {
+      "padel-singles": {
+        sport: "padel",
+        labelKey: "formPadelSingles",
+        slots: [{ id: "p1", role: "BASE", x: 0.5, y: 0.24 }],
+      },
+      "padel-both-back": {
+        sport: "padel",
+        labelKey: "formPadelBothBack",
+        slots: [
+          { id: "back-l", role: "BASE", x: 0.3, y: 0.24 },
+          { id: "back-r", role: "BASE", x: 0.7, y: 0.24 },
+        ],
+      },
+      "padel-one-up": {
+        sport: "padel",
+        labelKey: "formPadelOneUp",
+        slots: [
+          { id: "net-1", role: "NET", x: 0.34, y: 0.76 },
+          { id: "back-1", role: "BASE", x: 0.66, y: 0.24 },
+        ],
+      },
+      "padel-both-net": {
+        sport: "padel",
+        labelKey: "formPadelBothNet",
+        slots: [
+          { id: "net-l", role: "NET", x: 0.3, y: 0.76 },
+          { id: "net-r", role: "NET", x: 0.7, y: 0.76 },
+        ],
+      },
+      "tennis-singles": {
+        sport: "tennis",
+        labelKey: "formTennisSingles",
+        slots: [{ id: "p1", role: "BASE", x: 0.5, y: 0.24 }],
+      },
+      "tennis-standard": {
+        sport: "tennis",
+        labelKey: "formTennisStandard",
+        slots: [
+          { id: "net-1", role: "NET", x: 0.32, y: 0.76 },
+          { id: "back-1", role: "BASE", x: 0.68, y: 0.22 },
+        ],
+      },
+      "tennis-both-back": {
+        sport: "tennis",
+        labelKey: "formTennisBothBack",
+        slots: [
+          { id: "back-l", role: "BASE", x: 0.3, y: 0.22 },
+          { id: "back-r", role: "BASE", x: 0.7, y: 0.22 },
+        ],
+      },
+      "tennis-both-net": {
+        sport: "tennis",
+        labelKey: "formTennisBothNet",
+        slots: [
+          { id: "net-l", role: "NET", x: 0.3, y: 0.76 },
+          { id: "net-r", role: "NET", x: 0.7, y: 0.76 },
+        ],
+      },
+      "tennis-australian": {
+        sport: "tennis",
+        labelKey: "formTennisAustralian",
+        slots: [
+          { id: "net-1", role: "NET", x: 0.6, y: 0.76 },
+          { id: "back-1", role: "BASE", x: 0.7, y: 0.22 },
+        ],
+      },
+    };
+    e.RACKET_CATALOG = p;
+    const R = (o) => "padel" === o || "tennis" === o;
+    e.sportOf = (o) => p[o]?.sport ?? "football";
+    // Fallback shape for a racket side of any size: spread across the court, alternating net and back.
+    const S = (o, t) => {
+      const s = [];
+      for (let r = 0; r < o; r++) {
+        const l = o === 1 ? 0.5 : (r + 1) / (o + 1),
+          n = r % 2 == 0 && o > 1;
+        s.push({ id: `${n ? "net" : "base"}-${r + 1}`, role: n ? "NET" : "BASE", x: l, y: n ? 0.76 : 0.24 });
+      }
+      return s;
+    };
+    e.racketShape = S;
+    const s = (e.FORMATION_CATALOG = Object.entries(o).map(([o, t]) => ({
+      key: o,
+      label: t.label,
+      team_size: t.rows.reduce((o, t) => o + t, 0) + 1,
+    })));
+    e.formationSlots = (s, f) => {
+      if (p[s]) return p[s].slots.map((o) => Object.assign({}, o));
+      const l = o[s];
+      if (l) return t(l.rows);
+      const n = /^custom-(\d+)$/.exec(s),
+        a = n ? Math.max(1, Math.min(11, parseInt(n[1], 10))) : 7;
+      // A racket side has no goalkeeper, so the football fallback (which always prepends one) is wrong.
+      if (R(f)) return S(a, f);
+      return t(r(Math.max(1, a - 1)));
+    };
+    const r = (o) => {
+      if (o <= 3) return [o];
+      const t = Math.ceil(o / 3),
+        s = Math.floor(o / 4) || 1;
+      return [t, o - t - s, s];
+    };
+    e.autoRows = r;
+    const F = (o, t) => {
+      if (R(t)) {
+        const r = Object.entries(p)
+          .filter(([, s]) => s.sport === t && s.slots.length === o)
+          .map(([r, s]) => ({ key: r, label: s.labelKey, labelKey: s.labelKey, team_size: o }));
+        return [...r, { key: `custom-${o}`, label: "Custom", labelKey: "formCustom", team_size: o }];
+      }
+      return [...s.filter((t) => t.team_size === o), { key: `custom-${o}`, label: "Custom", team_size: o }];
+    };
+    e.formationsForSport = F;
+    e.formationsForSize = (o, t) => F(o, t);
+    e.suggestFormationKey = (o, t = 0.5, f) => {
+      if (R(f)) {
+        const r = Object.entries(p).filter(([, s]) => s.sport === f && s.slots.length === o);
+        if (!r.length) return `custom-${o}`;
+        // One up, one back is the default shape both sports are actually taught with.
+        const l = r.find(([s]) => s.endsWith("one-up") || s.endsWith("standard") || s.endsWith("singles"));
+        return (l ?? r[0])[0];
+      }
+      const s = {
+        11: ["4-3-3", "5-3-2"],
+        9: ["9v9-3-3-2", "9v9-3-3-2"],
+        8: ["8v8-3-3-1", "8v8-3-3-1"],
+        7: ["7v7-2-3-1", "7v7-2-3-1"],
+        5: ["5v5-1-2-1", "5v5-1-2-1"],
+      }[o];
+      return s ? (t < 0.4 ? s[1] : s[0]) : `custom-${o}`;
+    };
+    const l = (o, t) => (o < t ? `${o}|${t}` : `${t}|${o}`);
+    e.pairKey = l;
+    const n = (o, t, s) => {
+      let r = 0;
+      for (const s of o) r += t.get(s)?.composite ?? 0;
+      let n = 0;
+      for (let t = 0; t < o.length; t++)
+        for (let r = t + 1; r < o.length; r++) n += s.get(l(o[t], o[r])) ?? 0;
+      return r + 0.15 * n;
+    };
+    e.balanceTeams = (o, t = new Map()) => {
+      const s = [...o].sort((o, t) => t.composite - o.composite || o.id.localeCompare(t.id)),
+        r = [],
+        l = [];
+      s.forEach((o, t) => (t % 4 == 0 || t % 4 == 3 ? r : l).push(o.id));
+      const a = new Map(o.map((o) => [o.id, o]));
+      for (let o = 0; o < 60; o++) {
+        const o = () => Math.abs(n(r, a, t) - n(l, a, t));
+        let s = !1;
+        for (let t = 0; t < r.length && !s; t++)
+          for (let n = 0; n < l.length && !s; n++) {
+            const a = o();
+            (([r[t], l[n]] = [l[n], r[t]]), o() < a - 1e-9 ? (s = !0) : ([r[t], l[n]] = [l[n], r[t]]));
+          }
+        if (!s) break;
+      }
+      return { a: r, b: l };
+    };
+    e.assignSlots = (o, t, s) => {
+      const r = Object.fromEntries(o.map((o) => [o.id, null])),
+        l = [...t].sort(
+          (o, t) => (s.get(t)?.composite ?? 0) - (s.get(o)?.composite ?? 0) || o.localeCompare(t),
+        );
+      for (const t of ["GK", "DF", "MF", "FW"])
+        for (const n of o.filter((o) => o.role === t)) {
+          const o = l.findIndex((o) => s.get(o)?.pref === t);
+          o >= 0 && (r[n.id] = l.splice(o, 1)[0]);
+        }
+      for (const t of o) null === r[t.id] && l.length > 0 && (r[t.id] = l.shift());
+      return r;
+    };
+    e.roleLabelKey = (o) => `pitchRole_${o}`;
+    e.seededShuffle = (o, t) => {
+      const s = [...o];
+      let r = t >>> 0;
+      const l = () => {
+        r = (r + 1831565813) >>> 0;
+        let o = Math.imul(r ^ (r >>> 15), 1 | r);
+        return ((o = (o + Math.imul(o ^ (o >>> 7), 61 | o)) ^ o), ((o ^ (o >>> 14)) >>> 0) / 4294967296);
+      };
+      for (let o = s.length - 1; o > 0; o--) {
+        const t = Math.floor(l() * (o + 1));
+        [s[o], s[t]] = [s[t], s[o]];
+      }
+      return s;
+    };
+  },
+  654,
+  [],
+);
 __d(function(g,r,i,_a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.withdrawEligible=e.walletKindKey=e.velocityExceeded=e.txnDirection=e.transferPostings=e.toFils=e.postingsBalanced=e.planCombinedPayment=e.maskIdNumber=e.looksLikeCivilId=e.fromFils=e.acct=e.accountBalance=e.WALLET_LIMITS=e.WALLET_CURRENCY=e.HOUR_MS=e.DAY_MS=e.CREDIT_KINDS=void 0;e.WALLET_CURRENCY='KWD';e.toFils=t=>Math.round(1e3*t);e.fromFils=t=>t/1e3;const t=e.CREDIT_KINDS=new Set(['add_funds','refund','organizer_payout','venue_payout','reward','promo_credit','prize','admin_credit']);e.acct={available:t=>`owner:${t}:available`,credits:t=>`owner:${t}:credits`,pending:t=>`owner:${t}:pending`,external:t=>`external:${t}`,platform:t=>`platform:${t}`};e.postingsBalanced=t=>0===t.reduce((t,a)=>t+a.delta_fils,0);e.transferPostings=(t,a,n)=>[{account:t,delta_fils:-n},{account:a,delta_fils:n}];e.accountBalance=(t,a)=>t.reduce((t,n)=>t+n.filter(t=>t.account===a).reduce((t,a)=>t+a.delta_fils,0),0);e.planCombinedPayment=(t,a,n)=>{const l=Math.max(0,Math.round(t)),o=Math.min(l,Math.max(0,a)),s=Math.min(l-o,Math.max(0,n));return{credits_fils:o,wallet_fils:s,external_fils:l-o-s}};e.WALLET_LIMITS={topup_min_fils:1e3,topup_max_fils:5e5,topups_per_day:5,transfer_min_fils:100,transfer_max_fils:2e5,transfers_per_hour:10,withdraw_min_fils:5e3,requests_per_hour:10};e.velocityExceeded=(t,a,n,l=Date.now())=>t.filter(t=>l-new Date(t).getTime()<a).length>=n;e.HOUR_MS=36e5,e.DAY_MS=864e5;e.withdrawEligible=(t,a)=>'organizer'===t||'admin'===t||a;e.maskIdNumber=t=>`\u2026${t.replace(/\s/g,'').slice(-4)}`;e.looksLikeCivilId=t=>/^\d{12}$/.test(t.replace(/\s/g,''));e.walletKindKey=t=>`walletKind_${t}`;e.txnDirection=(a,n)=>0!==n?n>0?'in':'out':t.has(a)?'in':'out'},655,[]);
 __d(
   function (g, r, i, a, m, e, d) {
@@ -20641,6 +20889,18 @@ __d(
     i.translations = {
       en: {
         // --- XC keys (fix batch) ---
+        pitchRole_NET: "Net",
+        pitchRole_BASE: "Baseline",
+        formCustom: "Custom",
+        formPadelSingles: "Singles",
+        formPadelBothBack: "Both at the back",
+        formPadelOneUp: "One up, one back",
+        formPadelBothNet: "Both at the net",
+        formTennisSingles: "Singles",
+        formTennisStandard: "One up, one back",
+        formTennisBothBack: "Both at the baseline",
+        formTennisBothNet: "Both at the net",
+        formTennisAustralian: "Australian",
         adminAuditTitle: "Admin activity log",
         adminAuditSubtitle: "%{shown} of %{total} privileged actions on this device",
         adminAuditSearchPlaceholder: "Search actor, target or detail\u2026",
@@ -24104,6 +24364,18 @@ __d(
       },
       ar: {
         // --- XC keys (fix batch) ---
+        pitchRole_NET: "\u0627\u0644\u0634\u0628\u0643\u0629",
+        pitchRole_BASE: "\u062e\u0637 \u0627\u0644\u0642\u0627\u0639\u062f\u0629",
+        formCustom: "\u0645\u062e\u0635\u0635",
+        formPadelSingles: "\u0641\u0631\u062f\u064a",
+        formPadelBothBack: "\u0627\u0644\u0627\u062b\u0646\u0627\u0646 \u0641\u064a \u0627\u0644\u062e\u0644\u0641",
+        formPadelOneUp: "\u0648\u0627\u062d\u062f \u0623\u0645\u0627\u0645 \u0648\u0648\u0627\u062d\u062f \u062e\u0644\u0641",
+        formPadelBothNet: "\u0627\u0644\u0627\u062b\u0646\u0627\u0646 \u0639\u0644\u0649 \u0627\u0644\u0634\u0628\u0643\u0629",
+        formTennisSingles: "\u0641\u0631\u062f\u064a",
+        formTennisStandard: "\u0648\u0627\u062d\u062f \u0623\u0645\u0627\u0645 \u0648\u0648\u0627\u062d\u062f \u062e\u0644\u0641",
+        formTennisBothBack: "\u0627\u0644\u0627\u062b\u0646\u0627\u0646 \u0639\u0644\u0649 \u062e\u0637 \u0627\u0644\u0642\u0627\u0639\u062f\u0629",
+        formTennisBothNet: "\u0627\u0644\u0627\u062b\u0646\u0627\u0646 \u0639\u0644\u0649 \u0627\u0644\u0634\u0628\u0643\u0629",
+        formTennisAustralian: "\u0627\u0644\u0623\u0633\u062a\u0631\u0627\u0644\u064a\u0629",
         adminAuditTitle: "\u0633\u062c\u0644 \u0646\u0634\u0627\u0637 \u0627\u0644\u0645\u0634\u0631\u0641\u064a\u0646",
         adminAuditSubtitle: "%{shown} \u0645\u0646 %{total} \u0625\u062c\u0631\u0627\u0621\u064b \u0645\u0645\u064a\u0651\u0632\u064b\u0627 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632",
         adminAuditSearchPlaceholder: "\u0627\u0628\u062d\u062b \u0641\u064a \u0627\u0644\u0645\u0646\u0641\u0651\u0630 \u0623\u0648 \u0627\u0644\u0647\u062f\u0641 \u0623\u0648 \u0627\u0644\u062a\u0641\u0627\u0635\u064a\u0644\u2026",
@@ -40689,7 +40961,328 @@ __d(function(g,_r,i,a,m,e,d){var t=_r(d[0]);Object.defineProperty(e,"__esModule"
 __d(function(g,r,_i,_a,_m,_e,_d){var e=r(_d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{id:e}=(0,u.useLocalSearchParams)(),{user:A}=(0,b.useAuth)(),{colors:q}=(0,j.useTheme)(),L=(0,u.useRouter)(),F=(0,B.useT)(),O=(0,w.useReducedMotion)(),[H,V]=(0,t.useState)(null),[U,K]=(0,t.useState)([]),[Q,X]=(0,t.useState)(!0),[Z,ee]=(0,t.useState)(!1),[te,ie]=(0,t.useState)(null),[ae,se]=(0,t.useState)([]),[le,re]=(0,t.useState)(!1),[ne,oe]=(0,t.useState)(!1),[de,ce]=(0,t.useState)(null),[ue,ge]=(0,t.useState)(null),[me,pe]=(0,t.useState)(null),[fe,he]=(0,t.useState)(null),[xe,ye]=(0,t.useState)(null),[be,je]=(0,t.useState)(null),[we,Te]=(0,t.useState)(null),[ve,Se]=(0,t.useState)(!1),[ke,Ce]=(0,t.useState)(null),Pe=(0,t.useCallback)(async()=>{if(!e||!A)return;let t;Se(!1);try{t=await(0,T.fetchGameScreen)(A.id,e)}catch(e){return(0,T.isAudienceError)(e)?(Se(!0),void X(!1)):(Ce((0,N.storeErrorText)(e?.message??'')||F('error')),void X(!1))}V(t.game),K(t.players),(0,T.fetchMatchInvite)(e).then(e=>he(e?.link??null)).catch(()=>he(null)),ie(t.fit),se(t.eval_targets),Te(t.lineup),pe(t.seat_payment),ye(t.squad_status),X(!1)},[e,A?.id]),Be=async()=>{if(A&&e&&de){ee(!0);try{const t=await(0,T.joinAtPosition)(A.id,e,de.side,de.slotId);ce(null),t.seated?a.default.alert(F('bookedConfirmed'),`${H.venue.name} \xb7 ${(0,P.formatGameTime)(H.starts_at)}`):'pending'===t.join_status?a.default.alert(F('requestPending'),F('joinPosPendingBody')):'waitlisted'===t.join_status?a.default.alert(F('onWaitlist'),F('joinPosWaitlistBody')):a.default.alert(F('bookedConfirmed'),F('joinPosTakenBody')),await Pe()}catch(e){ce(null),a.default.alert(F('error'),(0,N.storeErrorText)(e?.message??'')||F('error'))}finally{ee(!1)}}},Ie=async(t,i)=>{if(A&&e)try{await(0,T.submitSkillEvaluation)(A.id,{game_id:e,ratee_id:t,verdict:i}),se(e=>e.map(e=>e.user_id===t?Object.assign({},e,{my_verdict:i}):e))}catch(e){a.default.alert(F('error'),(0,N.storeErrorText)(e?.message??'')||F('error'))}},ze=(0,t.useCallback)(async(e,t)=>{K(i=>i.map(i=>i.id===e?Object.assign({},i,{team:t}):i));const i=U.find(t=>t.id===e);i?.is_self?await(0,T.upsertSelfPlayer)(Object.assign({},i,{team:t})):await(0,T.setPlayerTeam)(A.id,e,t)},[U,A]);if((0,t.useEffect)(()=>{Pe()},[Pe]),(0,W.useLiveRefresh)(Pe),ve)return(0,E.jsx)(D.NotAvailable,{});if(!Q&&ke&&!H)return(0,E.jsxs)(m.SafeAreaView,{style:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:q.bg,padding:_.spacing.xl},children:[(0,E.jsx)(y.EmptyState,{icon:"cloud-offline-outline",title:F('error'),body:ke}),(0,E.jsxs)(c.default,{style:{flexDirection:'row',gap:_.spacing.sm,marginTop:_.spacing.md},children:[(0,E.jsx)(x.Button,{title:F('retry'),onPress:()=>Pe()}),(0,E.jsx)(x.Button,{title:F('back'),variant:"secondary",onPress:()=>L.back()})]})]});if(Q)return(0,E.jsx)(m.SafeAreaView,{style:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:q.bg},children:(0,E.jsx)(i.default,{color:q.accentText})});if(!H)return(0,E.jsx)(m.SafeAreaView,{style:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:q.bg},children:(0,E.jsx)(d.default,{style:[_.typography.body,{color:q.text}],children:F('error')})});const We=Math.max(0,H.max_players-H.bookings_count),De=H.user_status??null,Me=!!A&&H.organizer_id===A.id,Re=!!A&&A.id.startsWith('guest:'),$e='cancelled'===H.status,Ae=!$e&&new Date(H.ends_at).getTime()<Date.now(),qe=new Date(H.starts_at).getTime()<Date.now(),Le='manual'===H.approval_mode,Ne=Number(H.price_kwd)>0,Ee=(H.waitlist_count??0)>=H.waitlist_capacity,Ge=async()=>{if(A){ee(!0);try{const e=await(0,T.joinMatch)(H.id,A.id),t='confirmed'===e.status?F('bookedConfirmed'):'pending'===e.status?F('requestPending'):F('onWaitlist');a.default.alert(t,`${H.venue.name} \xb7 ${(0,P.formatGameTime)(H.starts_at)}`),await Pe()}catch(e){a.default.alert(F('error'),(0,N.storeErrorText)(e?.message??'')||F('error'))}finally{ee(!1)}}},Fe=e=>{const t=k.PAYMENT_METHODS.find(t=>t.method===e);return t?F(t.labelKey):e??''},Oe=()=>oe(!0);return(0,E.jsxs)(m.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:q.bg},children:[(0,E.jsxs)(n.default,{contentContainerStyle:{padding:_.spacing.lg,paddingBottom:140},children:[(0,E.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},children:[(0,E.jsx)(l.default,{onPress:()=>L.back(),accessibilityRole:"button",accessibilityLabel:F('back'),style:[Y.back,{backgroundColor:q.surface,borderColor:q.border}],children:(0,E.jsx)(p.Ionicons,{name:(0,I.chevronBack)(),size:22,color:q.text})}),(0,E.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',gap:_.spacing.sm},children:[(0,E.jsx)($.ShareMatchButton,{game:H,compact:!0}),(0,E.jsx)(l.default,{onPress:()=>L.push(`/chat/${H.id}`),accessibilityRole:"button",accessibilityLabel:F('chat'),style:[Y.chatBtn,{backgroundColor:q.surface,borderColor:q.border}],children:(0,E.jsx)(p.Ionicons,{name:"chatbubbles-outline",size:20,color:q.text})})]})]}),(0,E.jsx)(J,{seatFee:me,game:H,isOrganizer:Me,showQr:Me||'confirmed'===De,going:Math.max(U.length,H.bookings_count),colors:q,t:F,onVenue:()=>L.push(`/venue/${H.venue.id}`),inviteLink:fe}),U.length>0&&(0,E.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',marginTop:_.spacing.lg},children:[(0,E.jsx)(d.default,{style:[_.typography.h2,{color:q.text,flex:1}],children:F('whoGoing')}),(0,E.jsx)(d.default,{style:[_.typography.small,{color:q.textMuted}],children:F('whoGoingCount',{a:(0,P.formatNumber)(U.length),b:(0,P.formatNumber)(H.max_players)})})]}),U.length>0&&(()=>{const e=[...U].sort((e,t)=>Number(!!t.is_self)-Number(!!e.is_self)).slice(0,4);return(0,E.jsxs)(c.default,{style:Y.goingRow,children:[(0,E.jsx)(c.default,{style:{flexDirection:'row'},children:e.map((e,t)=>(0,E.jsxs)(c.default,{style:{marginStart:0===t?0:-10},children:[(0,E.jsx)(R.PlayerAvatar,{name:e.display_name,seed:e.avatar_seed,uri:e.avatar_url,size:40,style:{borderWidth:2,borderColor:q.bg}}),e.is_self&&(0,E.jsx)(l.default,{onPress:Oe,accessibilityRole:"button",accessibilityLabel:F('leaveGame'),hitSlop:8,style:[Y.leaveX,{backgroundColor:q.danger,borderColor:q.bg}],children:(0,E.jsx)(p.Ionicons,{name:"close",size:12,color:"#fff"})})]},e.id))}),(0,E.jsx)(d.default,{style:[_.typography.small,{color:q.textMuted,flex:1,marginStart:_.spacing.sm}],numberOfLines:1,children:e.map(e=>e.is_self?F('you'):e.display_name.split(' ')[0]).join(', ')})]})})(),(0,E.jsxs)(c.default,{style:{flexDirection:'row',gap:_.spacing.sm,marginTop:_.spacing.sm,flexWrap:'wrap'},children:[(0,E.jsx)(h.Badge,{label:'all'===H.skill_level?F('openToAll'):F(H.skill_level),tone:"accent"}),'confirmed'===De&&(0,E.jsx)(h.Badge,{label:F('bookedConfirmed'),tone:"success"}),'reserved'===De&&(0,E.jsx)(h.Badge,{label:F('spotReservedTitle'),tone:"warning"}),'pending'===De&&(0,E.jsx)(h.Badge,{label:F('requestPending'),tone:"warning"}),'waitlisted'===De&&(0,E.jsx)(h.Badge,{label:F('onWaitlist'),tone:"neutral"}),$e&&(0,E.jsx)(h.Badge,{label:F('tabCancelled'),tone:"danger"}),!De&&!$e&&0===We&&(0,E.jsx)(h.Badge,{label:F('full'),tone:"danger"}),'private'===H.visibility&&(0,E.jsx)(h.Badge,{label:F('visibilityPrivate'),tone:"neutral"}),H.series_frequency&&(0,E.jsx)(h.Badge,{label:`\ud83d\udd01 ${F(`freq${H.series_frequency.charAt(0).toUpperCase()+H.series_frequency.slice(1)}`)}`,tone:"accent"}),(null!=H.skill_min||null!=H.skill_max)&&(0,E.jsx)(h.Badge,{label:F('skillRangeBadge',{min:H.skill_min??'\xb7',max:H.skill_max??'\xb7'}),tone:"neutral"})]}),H.series_id&&!Me&&!$e&&!Re&&'confirmed'!==De&&(0,E.jsxs)(f.Card,{style:{marginTop:_.spacing.md,borderColor:q.accent},children:[(0,E.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,E.jsx)(p.Ionicons,{name:"repeat",size:20,color:q.accentText}),(0,E.jsx)(d.default,{style:[_.typography.bodyStrong,{color:q.text,flex:1,marginHorizontal:_.spacing.sm}],children:F('recurringMatch')})]}),(0,E.jsx)(d.default,{style:[_.typography.small,{color:q.textMuted,marginVertical:_.spacing.sm}],children:F('joinSeriesHint')}),(0,E.jsx)(x.Button,{title:F('joinSeriesAction'),loading:Z,onPress:async()=>{if(A&&H.series_id){ee(!0);try{const e=await(0,T.joinSeries)(H.series_id,A.id);a.default.alert(F('joinedSeriesTitle'),F('joinedSeriesBody',{joined:e.joined,waitlisted:e.waitlisted})),await Pe()}catch(e){a.default.alert(F('error'),(0,N.storeErrorText)(e?.message??'')||F('error'))}finally{ee(!1)}}},leftIcon:(0,E.jsx)(p.Ionicons,{name:"repeat",size:16,color:q.accentInk})})]}),te&&'none'!==te.severity&&!Me&&!De&&!$e&&(0,E.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',backgroundColor:q.surfaceAlt,borderColor:'significant'===te.severity?q.danger:q.warning,borderWidth:1,borderRadius:12,padding:_.spacing.md,marginTop:_.spacing.md},children:[(0,E.jsx)(p.Ionicons,{name:"warning-outline",size:18,color:'significant'===te.severity?q.danger:q.warning}),(0,E.jsxs)(d.default,{style:[_.typography.small,{color:q.text,flex:1,marginHorizontal:_.spacing.sm}],children:['below'===te.direction?F('skillWarnAbove'):F('skillWarnBelow'),' ',F('yourSkillCategory',{level:F(te.level_key)})]})]}),Le&&!De&&!Me&&!$e&&(0,E.jsx)(d.default,{style:[_.typography.small,{color:q.textMuted,marginTop:_.spacing.sm}],children:F('manualApprovalNote')}),H.notes&&(0,E.jsxs)(f.Card,{style:{marginTop:_.spacing.md},children:[(0,E.jsx)(d.default,{style:[_.typography.smallStrong,{color:q.textMuted,marginBottom:_.spacing.xs}],children:F('notes')}),(0,E.jsx)(d.default,{style:[_.typography.body,{color:q.text}],children:H.notes})]}),U.length>0&&(0,E.jsxs)(c.default,{style:{marginTop:_.spacing.xl},children:[(0,E.jsx)(d.default,{style:[_.typography.h2,{color:q.text,marginBottom:_.spacing.md}],children:F('teams')}),(0,E.jsx)(M.TeamAllocation,{players:U,onMove:ze,onOpenProfile:e=>L.push(`/player/${e}`)})]}),we&&(0,E.jsxs)(c.default,{style:{marginTop:_.spacing.xl},children:[(0,E.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',marginBottom:_.spacing.md},children:[(0,E.jsx)(d.default,{style:[_.typography.h2,{color:q.text,flex:1}],children:F('lineupTitle')}),we.locked&&(0,E.jsx)(p.Ionicons,{name:"lock-closed",size:16,color:q.textMuted,style:{marginEnd:_.spacing.sm}}),we.can_edit&&(0,E.jsxs)(l.default,{onPress:()=>L.push(`/lineup/${H.id}`),accessibilityRole:"button",accessibilityLabel:F('lineupTitle'),hitSlop:8,style:{flexDirection:'row',alignItems:'center'},children:[(0,E.jsx)(d.default,{style:[_.typography.smallStrong,{color:q.accentText}],children:F('manage')}),(0,E.jsx)(p.Ionicons,{name:(0,I.chevronForward)(),size:16,color:q.accentText})]})]}),(0,E.jsx)(C.FormationBoard,{a:we.a.slots,b:we.b.slots,selected:null,onSlotPress:async(t,i)=>{if(!(A&&e&&we&&H))return;const s=('A'===t?we.a:we.b).slots.find(e=>e.slot_id===i);if(s?.player_id)return void(s.user_id&&L.push(`/player/${s.user_id}`));if(we.can_edit)return void L.push(`/lineup/${e}`);if(A.id.startsWith('guest:'))return void L.replace({pathname:'/(auth)/sign-up',params:{preferred:A.id.split(':')[1],next:`/game/${H.id}`}});const l=H.user_status??null;if('confirmed'!==l&&'reserved'!==l)'pending'!==l?'waitlisted'!==l?H.registration_closed_at||'scheduled'!==H.status||new Date(H.starts_at).getTime()<Date.now()||(Math.max(0,H.max_players-H.bookings_count)<=0?a.default.alert(F('full'),F('joinPosWaitlistBody')):ce({side:t,slotId:i,role:s?.role??''})):a.default.alert(F('onWaitlist'),F('joinPosWaitlistBody')):a.default.alert(F('requestPending'),F('joinPosPendingBody'));else try{Te(await(0,T.claimLineupSlot)(A.id,e,t,i))}catch(e){a.default.alert(F('error'),(0,N.storeErrorText)(e?.message??'')||F('error'))}},selfUserId:A?.id??null,onLeaveSelf:Me||'confirmed'!==De&&'reserved'!==De?void 0:Oe}),!we.locked&&!we.can_edit&&(0,E.jsx)(d.default,{style:[_.typography.caption,{color:q.textMuted,marginTop:_.spacing.sm}],children:F('confirmed'===De||'reserved'===De?'lineupClaimHint':H.registration_closed_at?'registrationClosedBadge':'lineupJoinHint')})]}),!Ae&&!$e&&'open'===H.squad_window_status&&'confirmed'===De&&(0,E.jsxs)(f.Card,{onPress:()=>L.push(`/squad/${H.id}`),padding:"md",style:{marginTop:_.spacing.md,borderColor:'confirmed'===xe?q.success:q.accent,borderWidth:1},children:[(0,E.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,E.jsx)(p.Ionicons,{name:'confirmed'===xe?'checkmark-circle':'hand-right-outline',size:20,color:'confirmed'===xe?q.success:q.accentText}),(0,E.jsxs)(c.default,{style:{flex:1,marginHorizontal:_.spacing.md},children:[(0,E.jsx)(d.default,{style:[_.typography.bodyStrong,{color:q.text}],children:F('confirmed'===xe?'squadYouAreConfirmed':'squadAreYouIn')}),(0,E.jsx)(d.default,{style:[_.typography.small,{color:q.textMuted}],children:F('squadTitle')})]}),(0,E.jsx)(p.Ionicons,{name:(0,I.chevronForward)(),size:18,color:q.textMuted})]}),'pending'===xe&&(0,E.jsx)(c.default,{style:{marginTop:_.spacing.sm},children:(0,E.jsx)(x.Button,{title:F('squadImIn'),fullWidth:!0,loading:Z,onPress:async()=>{if(A){ee(!0);try{await(0,T.confirmSquadSpot)(A.id,H.id),await Pe()}catch(e){a.default.alert(F('error'),(0,N.storeErrorText)(e?.message??'')||F('error'))}finally{ee(!1)}}}})})]}),Ae&&H.score_submitted_at&&(0,E.jsxs)(f.Card,{padding:"md",style:{marginTop:_.spacing.md},children:[(0,E.jsx)(d.default,{style:[_.typography.caption,{color:q.textMuted,letterSpacing:1.2,textTransform:'uppercase'}],children:F('finalScoreTitle')}),(0,E.jsxs)(d.default,{style:[_.typography.h1,{color:q.text,textAlign:'center',marginTop:_.spacing.xs}],children:[(0,P.formatNumber)(H.score_home??0),"\u2013",(0,P.formatNumber)(H.score_away??0)]})]}),Ae&&(0,E.jsx)(z.MvpVotingPanel,{gameId:H.id}),Ae&&(0,E.jsx)(f.Card,{onPress:()=>L.push(`/awards/${H.id}`),padding:"md",style:{marginTop:_.spacing.md},children:(0,E.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,E.jsx)(d.default,{style:{fontSize:22},children:"\ud83c\udfc6"}),(0,E.jsxs)(c.default,{style:{flex:1,marginHorizontal:_.spacing.md},children:[(0,E.jsx)(d.default,{style:[_.typography.bodyStrong,{color:q.text}],children:F('matchAwards')}),(0,E.jsx)(d.default,{style:[_.typography.small,{color:q.textMuted}],children:F('otherAwardsSub')})]}),(0,E.jsx)(p.Ionicons,{name:(0,I.chevronForward)(),size:18,color:q.textMuted})]})}),ae.length>0&&(0,E.jsxs)(c.default,{style:{marginTop:_.spacing.xl},children:[(0,E.jsx)(d.default,{style:[_.typography.h2,{color:q.text}],children:F('skillEvalTitle')}),(0,E.jsx)(d.default,{style:[_.typography.small,{color:q.textMuted,marginTop:2,marginBottom:_.spacing.md}],children:F('skillEvalHint')}),(0,E.jsx)(f.Card,{padding:"md",children:ae.map((e,t)=>(0,E.jsxs)(c.default,{style:{paddingVertical:_.spacing.sm,borderTopWidth:0===t?0:o.default.hairlineWidth,borderTopColor:q.border},children:[(0,E.jsx)(d.default,{style:[_.typography.bodyStrong,{color:q.text,marginBottom:_.spacing.xs}],children:e.display_name}),(0,E.jsx)(c.default,{style:{flexDirection:'row',gap:_.spacing.sm},children:['below','expected','above'].map(t=>{const i=e.my_verdict===t,a='expected'===t?q.success:'above'===t?q.accent:q.warning;return(0,E.jsx)(l.default,{onPress:()=>Ie(e.user_id,t),accessibilityRole:"button",accessibilityState:{selected:i},style:{flex:1,height:34,borderRadius:8,borderWidth:1,alignItems:'center',justifyContent:'center',backgroundColor:i?a:'transparent',borderColor:a},children:(0,E.jsx)(d.default,{style:[_.typography.caption,{color:i?'#fff':a,fontWeight:'700'}],children:F(`verdict_${t}`)})},t)})})]},e.user_id))})]})]}),(0,E.jsx)(c.default,{style:[Y.bottom,{backgroundColor:q.bg,borderTopColor:q.border}],children:$e?(0,E.jsx)(x.Button,{title:F('tabCancelled'),fullWidth:!0,size:"lg",disabled:!0}):Re?(0,E.jsx)(x.Button,{title:Ne?`${F('signUpToPlay')} \xb7 ${(0,P.formatPrice)(Number(H.price_kwd))}`:F('signUpToPlay'),fullWidth:!0,size:"lg",onPress:()=>L.replace({pathname:'/(auth)/sign-up',params:{preferred:A?.id.split(':')[1]??'',next:`/game/${H.id}`}})}):Me?(0,E.jsx)(x.Button,{title:F('manageThisMatch'),fullWidth:!0,size:"lg",onPress:()=>L.push(`/organizer/match/${H.id}`),leftIcon:(0,E.jsx)(p.Ionicons,{name:"settings-outline",size:18,color:q.accentInk})}):'confirmed'===De?'pending'===me?.status?(0,E.jsxs)(c.default,{style:{gap:_.spacing.xs},children:[(0,E.jsxs)(c.default,{style:{flexDirection:'row',gap:_.spacing.sm},children:[(0,E.jsx)(x.Button,{title:F('leaveGame'),variant:"secondary",size:"lg",loading:Z,onPress:Oe,style:{flex:1}}),(0,E.jsx)(x.Button,{title:F('payToKeepSpot',{amount:(0,P.formatPrice)(me.amount_kwd)}),size:"lg",onPress:()=>je({}),style:{flex:2}})]}),!!me.reserved_until&&(0,E.jsx)(d.default,{style:[_.typography.caption,{color:q.warning,textAlign:'center'}],children:F('heldUntil',{time:(0,P.formatClock)(me.reserved_until)})})]}):(0,E.jsx)(x.Button,{title:F('leaveGame'),variant:"secondary",fullWidth:!0,size:"lg",loading:Z,onPress:Oe}):'reserved'===De?(0,E.jsxs)(c.default,{style:{flexDirection:'row',gap:_.spacing.sm},children:[(0,E.jsx)(x.Button,{title:F('leaveGame'),variant:"secondary",size:"lg",loading:Z,onPress:Oe,style:{flex:1}}),(0,E.jsx)(x.Button,{title:Ne&&'paid'!==me?.status?F('payToKeepSpot',{amount:(0,P.formatPrice)(Number(H.price_kwd))}):F('confirmSpot'),size:"lg",loading:Z,onPress:()=>Ne&&'paid'!==me?.status?je({}):Ge(),style:{flex:2}})]}):'pending'===De?(0,E.jsxs)(c.default,{style:{flexDirection:'row',gap:_.spacing.sm},children:[(0,E.jsx)(x.Button,{title:F('requestPending'),size:"lg",disabled:!0,style:{flex:2}}),(0,E.jsx)(x.Button,{title:F('withdrawRequest'),variant:"secondary",size:"lg",loading:Z,onPress:Oe,style:{flex:1}})]}):'waitlisted'===De?(0,E.jsx)(x.Button,{title:F('leaveWaitlist'),variant:"secondary",fullWidth:!0,size:"lg",loading:Z,onPress:Oe}):qe?(0,E.jsx)(x.Button,{title:F('full'),fullWidth:!0,size:"lg",disabled:!0}):H.registration_closed_at?(0,E.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:_.spacing.sm,paddingVertical:_.spacing.md},children:[(0,E.jsx)(p.Ionicons,{name:"lock-closed",size:16,color:q.textMuted}),(0,E.jsxs)(d.default,{style:[_.typography.small,{color:q.textMuted,textAlign:'center'}],children:[F('registrationClosedBadge')," \xb7 ",H.organizer_name?F('registrationClosedBy',{name:H.organizer_name}):F('registrationClosedGeneric')]})]}):Le?(0,E.jsx)(x.Button,{title:F('requestToJoin'),fullWidth:!0,size:"lg",loading:Z,onPress:Ge}):We>0?(0,E.jsx)(x.Button,{title:`${F('joinGame')} \xb7 ${(0,P.formatPrice)(Number(H.price_kwd))}`,fullWidth:!0,size:"lg",loading:Z,onPress:()=>{re(!0),A&&(0,T.fetchJoinSuggestions)(A.id,H.id).then(ge).catch(()=>ge(null))}}):Ee?(0,E.jsx)(x.Button,{title:F('full'),fullWidth:!0,size:"lg",disabled:!0}):(0,E.jsx)(x.Button,{title:F('joinWaitlistAction'),fullWidth:!0,size:"lg",loading:Z,onPress:Ge})}),(0,E.jsx)(s.default,{visible:le,transparent:!0,animationType:(0,w.sheetAnimation)(O),onRequestClose:()=>re(!1),children:(0,E.jsx)(l.default,{style:Y.scrim,onPress:()=>re(!1),children:(0,E.jsxs)(l.default,{style:[Y.sheet,{backgroundColor:q.surface}],onPress:()=>{},children:[(0,E.jsx)(d.default,{style:[_.typography.h3,{color:q.text,marginBottom:_.spacing.md}],children:F('joinSheetTitle')}),ue?.has_saved_payment&&(0,E.jsx)(G,{icon:"flash",title:F('oneTapJoin'),sub:F('oneTapJoinSub'),recommended:!0,colors:q,t:F,onPress:async()=>{if(A){ee(!0);try{const e=await(0,T.oneTapJoin)(A.id,H.id);re(!1),e.receipt?a.default.alert(F('seatPaidTitle'),F('paidLine',{amount:(0,P.formatPrice)(e.receipt.amount_kwd),method:Fe(e.receipt.method)})):a.default.alert('confirmed'===e.status?F('bookedConfirmed'):F('onWaitlist'),`${H.venue.name} \xb7 ${(0,P.formatGameTime)(H.starts_at)}`),await Pe()}catch(e){a.default.alert(F('error'),(0,N.storeErrorText)(e?.message??'')||F('error'))}finally{ee(!1)}}}}),(0,E.jsx)(G,{icon:"person",title:F('joinMyself'),sub:F('joinMyselfSub'),recommended:!ue?.has_saved_payment&&'solo'===ue?.fastest_option,colors:q,t:F,onPress:()=>{re(!1),Ne&&!Le?je({}):Ge()}}),!1!==H.allow_group_booking&&(0,E.jsx)(G,{icon:"people",title:F('joinWithFriends'),sub:F('joinWithFriendsSub'),recommended:'friends'===ue?.fastest_option,colors:q,t:F,onPress:()=>{re(!1),L.push(`/group/${H.id}`)}}),(0,E.jsx)(G,{icon:"shield",title:F('joinWithTeam'),sub:F('joinWithTeamSoon'),disabled:!0,colors:q,t:F,onPress:()=>{}})]})})}),(0,E.jsx)(s.default,{visible:!!de,transparent:!0,animationType:"fade",onRequestClose:()=>ce(null),children:(0,E.jsx)(l.default,{style:Y.confirmScrim,onPress:()=>ce(null),children:(0,E.jsxs)(l.default,{style:[Y.confirmCard,{backgroundColor:q.surface,borderColor:q.border}],onPress:()=>{},children:[(0,E.jsx)(c.default,{style:[Y.confirmIcon,{backgroundColor:q.surfaceAlt}],children:(0,E.jsx)(p.Ionicons,{name:"football",size:24,color:q.accentText})}),(0,E.jsx)(d.default,{style:[_.typography.h3,{color:q.text,textAlign:'center',marginTop:_.spacing.md}],children:F('joinPosTitle',{role:de?F(`pitchRole_${de.role}`):''})}),(0,E.jsx)(d.default,{style:[_.typography.small,{color:q.textMuted,textAlign:'center',marginTop:_.spacing.xs}],children:F('joinPosBody')}),(0,E.jsxs)(d.default,{style:[_.typography.smallStrong,{color:q.text,textAlign:'center',marginTop:_.spacing.sm}],children:[H.venue.name," \xb7 ",(0,P.formatGameTime)(H.starts_at)]}),(0,E.jsxs)(c.default,{style:{marginTop:_.spacing.lg,gap:_.spacing.sm},children:[(0,E.jsx)(x.Button,{title:Le?F('requestToJoin'):Ne?F('payAmountBtn',{amount:(0,P.formatPrice)(Number(H.price_kwd))}):`${F('joinGame')} \xb7 ${(0,P.formatPrice)(Number(H.price_kwd))}`,fullWidth:!0,loading:Z,onPress:()=>{if(Ne&&!Le&&de){const e={side:de.side,slotId:de.slotId};ce(null),je({thenClaim:e})}else Be()}}),(0,E.jsx)(x.Button,{title:F('cancel'),variant:"ghost",fullWidth:!0,onPress:()=>ce(null)})]})]})})}),A&&(0,E.jsx)(v.CheckoutSheet,{visible:!!be,gameId:H.id,priceKwd:Number(H.price_kwd),userId:A.id,summary:{title:H.title,venue:H.venue.name,when:(0,P.formatGameTime)(H.starts_at),spot:F(be?.thenClaim?'positionLabel':'reviewSpotOpen')},onClose:()=>je(null),onDone:async e=>{const t=be?.thenClaim;if(je(null),'confirmed'===e.status){if(t&&A&&H)try{await(0,T.claimLineupSlot)(A.id,H.id,t.side,t.slotId)}catch{}a.default.alert(F('seatPaidTitle'),e.receipt?F('paidLine',{amount:(0,P.formatPrice)(e.receipt.amount_kwd),method:Fe(e.receipt.method)}):`${H.venue.name} \xb7 ${(0,P.formatGameTime)(H.starts_at)}`)}else'waitlisted'===e.status?a.default.alert(F('onWaitlist'),F('payWhenSpotOpens')):'pending'===e.status&&a.default.alert(F('requestPending'),F('payWhenApproved'));await Pe()}}),A&&(0,E.jsx)(S.LeaveMatchSheet,{visible:ne,gameId:H.id,userId:A.id,startsAt:H.starts_at,paidKwd:'paid'===me?.status?me.amount_kwd:0,onClose:()=>oe(!1),onLeft:Pe})]})};var t=r(_d[1]),i=e(r(_d[2])),a=e(r(_d[3])),s=e(r(_d[4])),l=e(r(_d[5])),n=e(r(_d[6])),o=e(r(_d[7])),d=e(r(_d[8])),c=e(r(_d[9])),u=r(_d[10]),m=r(_d[11]),p=r(_d[12]),f=r(_d[13]),h=r(_d[14]),x=r(_d[15]),y=r(_d[16]),b=r(_d[17]),j=r(_d[18]),w=r(_d[19]),_=r(_d[20]),T=r(_d[21]),v=r(_d[22]),S=r(_d[23]),k=r(_d[24]),C=r(_d[25]),P=r(_d[26]),B=r(_d[27]),I=r(_d[28]),z=r(_d[29]),W=r(_d[30]),D=r(_d[31]),M=r(_d[32]),R=r(_d[33]),$=r(_d[34]),A=e(r(_d[35])),q=r(_d[36]),L=r(_d[37]),N=r(_d[38]),E=r(_d[39]);const G=({icon:e,title:t,sub:i,recommended:a,disabled:s,colors:n,t:u,onPress:m})=>(0,E.jsxs)(l.default,{onPress:s?void 0:m,accessibilityRole:"button",disabled:s,style:{flexDirection:'row',alignItems:'center',padding:_.spacing.md,borderRadius:14,borderWidth:o.default.hairlineWidth,borderColor:a?n.accent:n.border,backgroundColor:a?n.accentMuted:n.bg,marginBottom:_.spacing.sm,opacity:s?.5:1},children:[(0,E.jsx)(c.default,{style:{width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center',backgroundColor:n.surface},children:(0,E.jsx)(p.Ionicons,{name:e,size:20,color:a?n.accent:n.text})}),(0,E.jsxs)(c.default,{style:{flex:1,marginHorizontal:_.spacing.md},children:[(0,E.jsx)(d.default,{style:[_.typography.bodyStrong,{color:n.text}],children:t}),(0,E.jsx)(d.default,{style:[_.typography.caption,{color:n.textMuted}],children:i})]}),a&&(0,E.jsx)(h.Badge,{label:u('aiRecommended'),tone:"accent"}),!s&&(0,E.jsx)(p.Ionicons,{name:(0,I.chevronForward)(),size:18,color:n.textMuted,style:{marginStart:_.spacing.sm}})]}),F='#F2EDE2',O='#17130B',H='rgba(23,19,11,0.55)',V=({bg:e})=>(0,E.jsxs)(c.default,{style:K.perfRow,children:[(0,E.jsx)(c.default,{style:[K.notch,{backgroundColor:e,left:-_.spacing.lg-10}]}),(0,E.jsx)(c.default,{style:K.perfLine}),(0,E.jsx)(c.default,{style:[K.notch,{backgroundColor:e,right:-_.spacing.lg-10}]})]}),U=({label:e,value:t,sub:i,flex:a=1})=>(0,E.jsxs)(c.default,{style:{flex:a},children:[(0,E.jsx)(d.default,{style:K.label,children:e.toUpperCase()}),(0,E.jsx)(d.default,{style:K.value,children:t}),!!i&&(0,E.jsx)(d.default,{style:K.sub,children:i})]}),J=({game:e,isOrganizer:t,going:i,colors:a,t:s,onVenue:n,showQr:o,seatFee:u,inviteLink:m})=>{const f=(0,q.paperAccent)((0,q.useAudience)()),h=Math.max(0,e.max_players-i),x=new Date(e.starts_at),y=x.toLocaleDateString(void 0,{weekday:'short',day:'numeric',month:'long'}),b=x.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}),j=Math.max(0,Math.round((new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime()-new Date((new Date).getFullYear(),(new Date).getMonth(),(new Date).getDate()).getTime())/864e5)),w=0===j?s('today'):1===j?s('tomorrow'):s('ticketInDays',{n:(0,P.formatNumber)(j)}),T=`PLY\xb7${e.id.replace(/[^a-z0-9]/gi,'').slice(-4).toUpperCase()}\xb7KWT`;return(0,E.jsxs)(c.default,{style:[K.card,{marginTop:_.spacing.lg}],children:[(0,E.jsxs)(c.default,{style:K.head,children:[(0,E.jsx)(d.default,{style:[K.brand,{color:f}],children:s('appName').toUpperCase()}),(0,E.jsx)(c.default,{style:K.sportTag,children:(0,E.jsx)(d.default,{style:K.sportTagText,children:s(e.sport).toUpperCase()})})]}),(0,E.jsx)(d.default,{style:K.title,children:e.title||s(e.sport)}),(0,E.jsx)(d.default,{style:K.organiser,children:s(t?'youOrganize':'communityOrganizer')}),(0,E.jsx)(V,{bg:a.bg}),(0,E.jsxs)(c.default,{style:K.grid,children:[(0,E.jsx)(U,{label:s('ticketDate'),value:y,sub:w}),(0,E.jsx)(U,{label:s('ticketKickoff'),value:b,sub:`${(0,P.formatNumber)(e.duration_minutes)} ${s('minutes')}`})]}),(0,E.jsxs)(c.default,{style:{marginTop:_.spacing.md},children:[(0,E.jsx)(d.default,{style:K.label,children:s('location').toUpperCase()}),(0,E.jsx)(l.default,{onPress:n,accessibilityRole:"button",accessibilityLabel:e.venue.name,children:(0,E.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',gap:4},children:[(0,E.jsx)(p.Ionicons,{name:"location-outline",size:16,color:f}),(0,E.jsx)(d.default,{style:[K.value,{flexShrink:1}],numberOfLines:1,children:e.venue.name})]})}),(0,E.jsx)(l.default,{onPress:()=>(0,L.openDirections)(e.venue.lat,e.venue.lng),accessibilityRole:"button",accessibilityLabel:s('directions'),children:(0,E.jsxs)(d.default,{style:K.sub,children:[e.venue.area," \xb7 ",(0,E.jsx)(d.default,{style:{color:f,fontWeight:'700'},children:s('directions')})]})})]}),(0,E.jsxs)(c.default,{style:[K.grid,{marginTop:_.spacing.md}],children:[(0,E.jsx)(U,{label:s('price'),value:(0,P.formatPrice)(Number(e.price_kwd)),sub:s('ticketPerPlayer')}),(0,E.jsx)(U,{label:s('ticketSpots'),value:(0,P.formatRatio)(i,e.max_players),sub:`${(0,P.formatNumber)(h)} ${s('spotsLeft')}`})]}),'paid'===u?.status&&(0,E.jsx)(c.default,{style:[K.grid,{marginTop:_.spacing.sm}],children:(0,E.jsx)(U,{label:`\u2713 ${s('seatPaidTitle')}`,value:(0,P.formatPrice)(u.amount_kwd),sub:`${(()=>{const e=k.PAYMENT_METHODS.find(e=>e.method===u.method);return e?s(e.labelKey):u.method??''})()}${u.paid_at?` \xb7 ${(0,P.formatClock)(u.paid_at)}`:''}`})}),(0,E.jsx)(V,{bg:a.bg}),(0,E.jsxs)(c.default,{style:K.qrRow,children:[o&&m?(0,E.jsx)(c.default,{style:K.qrBox,children:(0,E.jsx)(A.default,{value:m,size:88,color:O,backgroundColor:F})}):(0,E.jsxs)(c.default,{style:K.qrLocked,children:[(0,E.jsx)(d.default,{style:{fontSize:18},children:"\ud83d\udd12"}),(0,E.jsx)(d.default,{style:[K.qrLockedText],children:s('qrAfterJoin')})]}),(0,E.jsx)(d.default,{style:K.code,children:T})]})]})},K=o.default.create({card:{backgroundColor:F,borderRadius:24,padding:_.spacing.lg,overflow:'hidden'},head:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},brand:{fontFamily:'SpaceMonoBold',fontSize:12,letterSpacing:3},sportTag:{backgroundColor:O,paddingHorizontal:_.spacing.md,paddingVertical:4,borderRadius:999},sportTagText:{color:F,fontSize:11,fontWeight:'800',letterSpacing:1},title:{color:O,fontSize:26,fontWeight:'800',marginTop:_.spacing.md},organiser:{color:H,fontSize:14,marginTop:2},perfRow:{height:20,justifyContent:'center',marginVertical:_.spacing.sm},perfLine:{borderTopWidth:1.5,borderStyle:'dashed',borderColor:'rgba(23,19,11,0.25)'},notch:{position:'absolute',top:0,width:20,height:20,borderRadius:10},grid:{flexDirection:'row',gap:_.spacing.md},label:{color:'rgba(23,19,11,0.45)',fontFamily:'SpaceMonoBold',fontSize:10,letterSpacing:2,marginBottom:3},value:{color:O,fontSize:18,fontWeight:'800'},sub:{color:H,fontSize:12,marginTop:2},qrRow:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingTop:_.spacing.xs},qrBox:{padding:6,backgroundColor:F},qrLocked:{flexDirection:'row',alignItems:'center',gap:8,paddingVertical:30,maxWidth:'60%'},qrLockedText:{color:'#6b6b5e',fontSize:12,fontWeight:'600',flexShrink:1},code:{color:H,fontFamily:'SpaceMonoBold',fontSize:12,letterSpacing:2}}),Y=o.default.create({goingRow:{flexDirection:'row',alignItems:'center',marginTop:_.spacing.sm},leaveX:{position:'absolute',top:-4,right:-4,width:18,height:18,borderRadius:9,borderWidth:2,alignItems:'center',justifyContent:'center'},scrim:{flex:1,backgroundColor:'rgba(0,0,0,0.4)',justifyContent:'flex-end'},confirmScrim:{flex:1,backgroundColor:'rgba(0,0,0,0.55)',justifyContent:'center',padding:_.spacing.xl},confirmCard:{borderRadius:20,borderWidth:o.default.hairlineWidth,padding:_.spacing.xl,alignItems:'center'},confirmIcon:{width:48,height:48,borderRadius:24,alignItems:'center',justifyContent:'center'},sheet:{borderTopLeftRadius:20,borderTopRightRadius:20,padding:_.spacing.lg,paddingBottom:_.spacing.xxxl},chatBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:o.default.hairlineWidth},back:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:o.default.hairlineWidth},heroIcon:{width:72,height:72,borderRadius:20,alignItems:'center',justifyContent:'center'},bottom:{position:'absolute',bottom:0,left:0,right:0,paddingHorizontal:_.spacing.lg,paddingTop:_.spacing.md,paddingBottom:_.spacing.xl,borderTopWidth:o.default.hairlineWidth}})},2379,[33,15,461,445,467,369,281,158,146,273,20,381,1086,1623,1624,626,1627,630,615,1621,616,671,2380,2381,668,2382,1311,675,1171,2383,1676,2385,2386,1679,2387,2389,623,1803,674,13]);
 __d(function(g,r,i,a,_m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.CheckoutSheet=void 0;var t=r(d[1]),l=e(r(d[2])),o=e(r(d[3])),s=e(r(d[4])),n=e(r(d[5])),c=e(r(d[6])),u=e(r(d[7])),p=r(d[8]),y=r(d[9]),h=r(d[10]),x=r(d[11]),f=r(d[12]),m=r(d[13]),b=r(d[14]),j=r(d[15]),w=r(d[16]),T=r(d[17]),v=r(d[18]),C=r(d[19]);const S=b.PAYMENT_METHODS.filter(e=>e.online);_e.CheckoutSheet=({visible:e,gameId:n,priceKwd:b,userId:P,summary:W,onClose:k,onDone:A})=>{const{colors:I}=(0,h.useTheme)(),_=(0,T.useT)(),D=(0,x.useReducedMotion)(),[B,E]=(0,t.useState)('wallet'),[O,V]=(0,t.useState)(null),[F,L]=(0,t.useState)(!1),[z,H]=(0,t.useState)(null);(0,t.useEffect)(()=>{if(!e)return H(null),void L(!1);E('wallet'),(0,m.fetchWallet)(P).then(e=>V(e.available_fils+e.credits_fils)).catch(()=>V(null))},[e,P]);const K='wallet'===B&&null!=O&&O<Math.round(1e3*b);return(0,C.jsx)(o.default,{visible:e,transparent:!0,animationType:(0,x.sheetAnimation)(D),onRequestClose:k,children:(0,C.jsx)(s.default,{style:M.scrim,onPress:k,accessibilityRole:"button",accessibilityLabel:_('cancel'),children:(0,C.jsxs)(s.default,{style:[M.sheet,{backgroundColor:I.surface}],onPress:()=>{},accessibilityViewIsModal:!0,children:[(0,C.jsx)(c.default,{style:[f.typography.h3,{color:I.text}],children:_(W?'reviewBookingTitle':'checkoutTitle')}),W&&(0,C.jsxs)(u.default,{style:[M.summary,{backgroundColor:I.surfaceAlt,borderColor:I.border}],children:[(0,C.jsx)(R,{label:_('reviewGameRow'),value:W.title,colors:I}),(0,C.jsx)(R,{label:_('reviewVenueRow'),value:W.venue,colors:I}),(0,C.jsx)(R,{label:_('reviewDateRow'),value:W.when,colors:I}),(0,C.jsx)(R,{label:_('reviewSpotRow'),value:W.spot,colors:I})]}),(0,C.jsxs)(u.default,{style:[M.row,{borderColor:I.border,marginTop:f.spacing.md}],children:[(0,C.jsx)(c.default,{style:[f.typography.body,{color:I.textMuted,flex:1}],children:_(W?'reviewGameFee':'perPlayer')}),(0,C.jsx)(c.default,{style:[f.typography.body,{color:I.text}],children:(0,j.formatAmount)(b)})]}),(0,C.jsxs)(u.default,{style:[M.row,{borderColor:I.border}],children:[(0,C.jsx)(c.default,{style:[f.typography.body,{color:I.textMuted,flex:1}],children:_('reviewPlayoraFee')}),(0,C.jsx)(c.default,{style:[f.typography.body,{color:I.textMuted}],children:(0,j.formatAmount)(0)})]}),(0,C.jsxs)(u.default,{style:[M.total,{borderColor:I.text}],children:[(0,C.jsx)(c.default,{style:[f.typography.bodyStrong,{color:I.text,flex:1}],children:_('reviewYouPay')}),(0,C.jsx)(c.default,{style:[f.typography.h3,{color:I.accentText}],children:(0,j.formatAmount)(b)})]}),null!=O&&(0,C.jsxs)(u.default,{style:[M.row,{borderColor:I.border}],children:[(0,C.jsx)(c.default,{style:[f.typography.body,{color:I.textMuted,flex:1}],children:_('walletBalanceLine')}),(0,C.jsx)(c.default,{style:[f.typography.bodyStrong,{color:I.text}],children:(0,j.formatAmount)(O/1e3)})]}),K&&(0,C.jsx)(c.default,{style:[f.typography.caption,{color:I.warning,marginTop:f.spacing.xs}],children:_('remainderOnKnet')}),(0,C.jsx)(u.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:f.spacing.xs,marginTop:f.spacing.md},children:S.map(e=>{const t=B===e.method;return(0,C.jsx)(s.default,{onPress:()=>E(e.method),accessibilityRole:"button",accessibilityState:{selected:t},style:[M.chip,{backgroundColor:t?I.accent:I.surfaceAlt,borderColor:t?I.accent:I.border}],children:(0,C.jsxs)(c.default,{style:[f.typography.smallStrong,{color:t?I.accentInk:I.text}],children:[e.emoji?`${e.emoji} `:'',_(e.labelKey)]})},e.method)})}),(0,C.jsx)(c.default,{style:[f.typography.caption,{color:I.textMuted,marginTop:f.spacing.md}],children:_('refundPolicyNote',{hours:v.SEAT_REFUND_CUTOFF_HOURS})}),z&&(0,C.jsxs)(u.default,{style:{flexDirection:'row',alignItems:'center',marginTop:f.spacing.md},children:[(0,C.jsx)(p.Ionicons,{name:"alert-circle",size:16,color:I.danger}),(0,C.jsx)(c.default,{style:[f.typography.small,{color:I.danger,marginStart:6,flex:1}],children:z})]}),(0,C.jsxs)(u.default,{style:{marginTop:f.spacing.lg},children:[F?(0,C.jsx)(u.default,{style:{alignItems:'center',paddingVertical:f.spacing.sm},children:(0,C.jsx)(l.default,{color:I.accentText})}):(0,C.jsx)(y.Button,{title:_('payAmountBtn',{amount:(0,j.formatPrice)(b)}),fullWidth:!0,size:"lg",onPress:async()=>{L(!0),H(null);try{const e=await(0,m.checkoutJoin)(P,n,B);A(e)}catch(e){H((0,w.storeErrorText)(String(e?.message??'')))}finally{L(!1)}}}),(0,C.jsx)(u.default,{style:{height:f.spacing.sm}}),(0,C.jsx)(y.Button,{title:_('cancel'),variant:"ghost",fullWidth:!0,onPress:k})]})]})})})};const R=({label:e,value:t,colors:l})=>(0,C.jsxs)(u.default,{style:{flexDirection:'row',alignItems:'center',gap:f.spacing.md,paddingVertical:4},children:[(0,C.jsx)(c.default,{style:[f.typography.small,{color:l.textMuted,flex:1}],children:e}),(0,C.jsx)(c.default,{style:[f.typography.small,{color:l.text,maxWidth:'62%'}],numberOfLines:1,children:t})]}),M=n.default.create({scrim:{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'flex-end'},sheet:{borderTopLeftRadius:f.radius.xl,borderTopRightRadius:f.radius.xl,padding:f.spacing.lg,paddingBottom:f.spacing.xxxl},row:{flexDirection:'row',alignItems:'center',paddingVertical:f.spacing.sm,borderBottomWidth:n.default.hairlineWidth},chip:{paddingVertical:f.spacing.sm,paddingHorizontal:f.spacing.md,borderRadius:f.radius.pill,borderWidth:n.default.hairlineWidth},summary:{borderRadius:f.radius.lg,borderWidth:n.default.hairlineWidth,padding:f.spacing.md,marginTop:f.spacing.md},total:{flexDirection:'row',alignItems:'center',paddingTop:f.spacing.sm,marginTop:2,borderTopWidth:1}})},2380,[33,15,461,467,369,158,146,273,1086,626,615,1621,616,671,668,1311,674,675,631,13]);
 __d(function(g,r,i,a,m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.LeaveMatchSheet=void 0;var t=r(d[1]),l=e(r(d[2])),s=e(r(d[3])),n=e(r(d[4])),o=e(r(d[5])),c=e(r(d[6])),u=e(r(d[7])),f=r(d[8]),p=r(d[9]),h=r(d[10]),x=r(d[11]),y=r(d[12]),j=r(d[13]),b=r(d[14]),T=r(d[15]),v=r(d[16]),R=r(d[17]),w=r(d[18]),S=r(d[19]);_e.LeaveMatchSheet=({visible:e,gameId:o,userId:M,startsAt:I,paidKwd:A,onClose:C,onLeft:B})=>{const{colors:P}=(0,x.useTheme)(),F=(0,w.useT)(),D=(0,y.useReducedMotion)(),L=(0,p.useRouter)(),[z,E]=(0,t.useState)(!1),[W,V]=(0,t.useState)(null),[N,O]=(0,t.useState)(null);(0,t.useEffect)(()=>{e||(V(null),O(null),E(!1))},[e]);const[U,G]=(0,t.useState)(null);(0,t.useEffect)(()=>{if(!e)return void G(null);let t=!0;return(0,T.fetchSeatRefundQuote)(M,o).then(e=>{t&&G(e)}).catch(()=>{}),()=>{t=!1}},[e,M,o]);const q=(U?.paid_kwd??A)>0,H=U?.eligible??!1,K=U?.refund_kwd??0,Q=U?.paid_kwd??A;return(0,S.jsx)(s.default,{visible:e,transparent:!0,animationType:(0,y.sheetAnimation)(D),onRequestClose:C,children:(0,S.jsx)(n.default,{style:k.scrim,onPress:W?void 0:C,accessibilityRole:"button",accessibilityLabel:F('closeLabel'),children:(0,S.jsx)(n.default,{style:[k.sheet,{backgroundColor:P.surface}],onPress:()=>{},accessibilityViewIsModal:!0,children:W?(0,S.jsxs)(u.default,{style:{alignItems:'center',paddingVertical:j.spacing.lg},children:[(0,S.jsx)(f.Ionicons,{name:'past_cutoff'===W.reason?'close-circle':'checkmark-circle',size:56,color:'past_cutoff'===W.reason?P.danger:P.success}),(0,S.jsx)(c.default,{style:[j.typography.h2,{color:P.text,marginTop:j.spacing.md,textAlign:'center'}],children:W.paid_kwd>0?F('leftTitle'):F('spotReleasedTitle')}),(0,S.jsx)(c.default,{style:[j.typography.small,{color:P.textMuted,marginTop:j.spacing.sm,textAlign:'center'}],children:W.refunded?F('leftRefundBody',{amount:(0,v.formatAmount)(W.refund_kwd)}):'past_cutoff'===W.reason?F('leftNoRefundBody',{hours:b.SEAT_REFUND_CUTOFF_HOURS}):F('spotReleasedBody')}),(0,S.jsx)(u.default,{style:{height:j.spacing.lg}}),(0,S.jsx)(h.Button,{title:F('backToGames'),fullWidth:!0,size:"lg",onPress:()=>{C(),L.replace('/(tabs)')}})]}):(0,S.jsxs)(S.Fragment,{children:[(0,S.jsx)(c.default,{style:[j.typography.h3,{color:P.text}],children:F('cancelSeatTitle')}),(0,S.jsx)(u.default,{style:[k.card,{backgroundColor:P.surfaceAlt,borderColor:P.border}],children:q?(0,S.jsxs)(S.Fragment,{children:[(0,S.jsxs)(u.default,{style:{flexDirection:'row',alignItems:'center',gap:j.spacing.sm},children:[(0,S.jsx)(f.Ionicons,{name:H?'checkmark-circle':'warning',size:18,color:H?P.success:P.danger}),(0,S.jsx)(c.default,{style:[j.typography.smallStrong,{color:P.text,flex:1}],children:F(H?'refundFullTitle':'refundNoneTitle')})]}),(0,S.jsxs)(u.default,{style:{marginTop:j.spacing.sm},children:[(0,S.jsx)(_,{label:F('youPaidRow'),value:(0,v.formatAmount)(Q),colors:P}),(0,S.jsx)(_,{label:F('refundRow'),value:(0,v.formatAmount)(K),colors:P,tone:H?'success':'muted'}),(0,S.jsx)(_,{label:F('youReceiveRow'),value:(0,v.formatAmount)(K),colors:P,tone:H?'success':'muted',strong:!0})]}),U&&(0,S.jsx)(c.default,{style:[j.typography.caption,{color:P.textMuted,marginTop:j.spacing.sm}],children:F(H?'refundDeadlineBefore':'refundDeadlinePassed',{when:(0,v.formatGameTime)(U.deadline)})})]}):(0,S.jsx)(c.default,{style:[j.typography.small,{color:P.textMuted}],children:F('refundFreeSpot')})}),N&&(0,S.jsxs)(u.default,{style:{flexDirection:'row',alignItems:'center',gap:6,marginTop:j.spacing.md},children:[(0,S.jsx)(f.Ionicons,{name:"alert-circle",size:16,color:P.danger}),(0,S.jsx)(c.default,{style:[j.typography.small,{color:P.danger,flex:1}],children:N})]}),(0,S.jsxs)(u.default,{style:{marginTop:j.spacing.lg},children:[z?(0,S.jsx)(u.default,{style:{alignItems:'center',paddingVertical:j.spacing.sm},children:(0,S.jsx)(l.default,{color:P.accentText})}):(0,S.jsx)(h.Button,{title:F('leaveConfirmCta'),variant:"danger",fullWidth:!0,size:"lg",onPress:async()=>{E(!0),O(null);try{const e=await(0,T.leaveMatch)(o,M);V(e),B()}catch(e){O((0,R.storeErrorText)(String(e?.message??'')))}finally{E(!1)}}}),(0,S.jsx)(u.default,{style:{height:j.spacing.sm}}),(0,S.jsx)(h.Button,{title:F('keepMySpot'),variant:"ghost",fullWidth:!0,onPress:C})]})]})})})})};const _=({label:e,value:t,colors:l,tone:s,strong:n})=>(0,S.jsxs)(u.default,{style:{flexDirection:'row',alignItems:'center',gap:j.spacing.md,paddingVertical:4},children:[(0,S.jsx)(c.default,{style:[j.typography.small,{color:l.textMuted,flex:1}],children:e}),(0,S.jsx)(c.default,{style:[n?j.typography.bodyStrong:j.typography.small,{color:'success'===s?l.success:'muted'===s?l.textMuted:l.text}],children:t})]}),k=o.default.create({scrim:{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'flex-end'},sheet:{borderTopLeftRadius:j.radius.xl,borderTopRightRadius:j.radius.xl,padding:j.spacing.lg,paddingBottom:j.spacing.xxxl},card:{borderRadius:j.radius.lg,borderWidth:o.default.hairlineWidth,padding:j.spacing.md,marginTop:j.spacing.md}})},2381,[33,15,461,467,369,158,146,273,1086,20,626,615,1621,616,670,671,1311,674,675,13]);
-__d(function(g,r,i,_a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.FormationBoard=void 0;var o=r(d[1]),l=t(r(d[2])),s=t(r(d[3])),a=t(r(d[4])),n=t(r(d[5])),c=t(r(d[6])),u=r(d[7]),h=r(d[8]),f=r(d[9]),b=r(d[10]),p=r(d[11]),y=r(d[12]);const x=(t,o)=>{const l=`pitchRole_${t}`,s=o(l);return s===l?t:s},j='rgba(255,255,255,0.55)';e.FormationBoard=({a:t,b:o,selected:l,onSlotPress:s,selfUserId:a,onLeaveSelf:n})=>(0,y.jsxs)(c.default,{style:_.pitch,children:[(0,y.jsx)(c.default,{style:_.halfwayLine}),(0,y.jsx)(c.default,{style:_.centerCircle}),(0,y.jsx)(c.default,{style:[_.box,{bottom:0}]}),(0,y.jsx)(c.default,{style:[_.box,{top:0}]}),t.map(t=>(0,y.jsx)(C,{slot:t,selected:'A'===l?.side&&l.slot_id===t.slot_id,top:100*(1-.5*t.y)-9+"%",left:100*t.x-9+"%",onPress:()=>s('A',t.slot_id),onLeaveSelf:null!=a&&t.user_id===a?n:void 0},`A-${t.slot_id}`)),o.map(t=>(0,y.jsx)(C,{slot:t,selected:'B'===l?.side&&l.slot_id===t.slot_id,top:.5*t.y*100-9+"%",left:100*(1-t.x)-9+"%",onPress:()=>s('B',t.slot_id),onLeaveSelf:null!=a&&t.user_id===a?n:void 0},`B-${t.slot_id}`))]});const C=({slot:t,selected:a,top:j,left:C,onPress:v,onLeaveSelf:R})=>{const{colors:{accent:S,accentMuted:w}}=(0,p.useTheme)(),I=(0,b.useT)(),W=(0,o.useRef)(new l.default.Value(1)).current,k=()=>l.default.spring(W,{toValue:1.15,friction:5,useNativeDriver:!0}).start(),T=()=>l.default.spring(W,{toValue:1,friction:5,useNativeDriver:!0}).start(),A=!(!t.player_id||!t.player_name),B=!!R;return(0,y.jsxs)(c.default,{style:[_.slot,{top:j,left:C}],children:[(0,y.jsx)(s.default,{onPress:v,onHoverIn:k,onHoverOut:T,onPressIn:k,onPressOut:T,accessibilityRole:"button",accessibilityLabel:A?B?I('slotTakenSelfA11y',{role:x(t.role,I)}):I('slotTakenA11y',{role:x(t.role,I),name:t.player_name??''}):I('slotEmptyA11y',{role:x(t.role,I)}),style:{alignSelf:'stretch',alignItems:'center'},children:(0,y.jsxs)(l.default.View,{style:{alignItems:'center',transform:[{scale:W}]},children:[A?(0,y.jsxs)(c.default,{children:[(0,y.jsx)(h.PlayerAvatar,{name:t.player_name,seed:t.avatar_seed,uri:t.avatar_url,size:40,style:{borderWidth:2,borderColor:a?S:'rgba(255,255,255,0.9)'}}),null!=t.jersey&&(0,y.jsx)(c.default,{style:_.jerseyBadge,children:(0,y.jsx)(n.default,{style:_.jerseyText,children:t.jersey})}),t.captain&&(0,y.jsx)(c.default,{style:_.captainBadge,children:(0,y.jsx)(n.default,{style:_.captainText,children:"C"})})]}):(0,y.jsx)(c.default,{style:[_.emptyChip,a&&[_.chipSelected,{borderColor:S,backgroundColor:w}]],children:(0,y.jsx)(u.Ionicons,{name:"add",size:20,color:"#fff"})}),(0,y.jsx)(n.default,{numberOfLines:1,style:[f.typography.caption,_.name],children:t.player_name??I(`pitchRole_${t.role}`)}),'GK'===t.role&&null!=t.player_id&&(0,y.jsx)(n.default,{style:[f.typography.caption,_.gkTag],children:I('pitchRole_GK')})]})}),A&&R&&(0,y.jsx)(s.default,{onPress:R,accessibilityRole:"button",accessibilityLabel:I('leaveGame'),hitSlop:8,style:_.leaveX,children:(0,y.jsx)(u.Ionicons,{name:"close",size:11,color:"#fff"})})]})},_=a.default.create({pitch:{width:'100%',aspectRatio:.68,backgroundColor:'#17683B',borderRadius:14,overflow:'hidden',borderWidth:2,borderColor:j},halfwayLine:{position:'absolute',top:'50%',left:0,right:0,height:1.5,backgroundColor:j},centerCircle:{position:'absolute',top:'50%',left:'50%',width:84,height:84,borderRadius:42,borderWidth:1.5,borderColor:j,transform:[{translateX:-42},{translateY:-42}]},box:{position:'absolute',left:'26%',width:'48%',height:'13%',borderWidth:1.5,borderColor:j},slot:{position:'absolute',width:'18%',alignItems:'center'},emptyChip:{width:40,height:40,borderRadius:20,backgroundColor:'rgba(255,255,255,0.18)',alignItems:'center',justifyContent:'center',borderWidth:2,borderColor:'rgba(255,255,255,0.85)',borderStyle:'dashed'},chipSelected:{borderWidth:2},jerseyBadge:{position:'absolute',bottom:-3,right:-5,minWidth:16,height:16,borderRadius:8,paddingHorizontal:3,backgroundColor:'#0F172A',borderWidth:1,borderColor:'rgba(255,255,255,0.85)',alignItems:'center',justifyContent:'center'},jerseyText:{color:'#fff',fontSize:9,fontWeight:'800'},captainBadge:{position:'absolute',top:-5,right:-5,width:15,height:15,borderRadius:8,backgroundColor:'#FACC15',alignItems:'center',justifyContent:'center'},captainText:{color:'#1F2937',fontSize:9,fontWeight:'900'},leaveX:{position:'absolute',top:-6,right:'50%',marginRight:8,width:18,height:18,borderRadius:9,backgroundColor:'#DC2626',borderWidth:1.5,borderColor:'rgba(255,255,255,0.9)',alignItems:'center',justifyContent:'center',zIndex:5},name:{color:'#fff',marginTop:2,maxWidth:64,textShadowColor:'rgba(0,0,0,0.6)',textShadowRadius:3},gkTag:{color:'#FDE68A',fontWeight:'700'}})},2382,[33,15,267,369,158,146,273,1086,1679,616,675,615,13]);
+__d(
+  function (g, r, i, _a, m, e, d) {
+    var t = r(d[0]);
+    (Object.defineProperty(e, "__esModule", { value: !0 }), (e.FormationBoard = void 0));
+    var o = r(d[1]),
+      l = t(r(d[2])),
+      s = t(r(d[3])),
+      a = t(r(d[4])),
+      n = t(r(d[5])),
+      c = t(r(d[6])),
+      u = r(d[7]),
+      h = r(d[8]),
+      f = r(d[9]),
+      b = r(d[10]),
+      p = r(d[11]),
+      y = r(d[12]);
+    const x = (t, o) => {
+        const l = `pitchRole_${t}`,
+          s = o(l);
+        return s === l ? t : s;
+      },
+      j = "rgba(255,255,255,0.55)";
+    // Each sport gets its own surface, proportions and markings. A padel or tennis lineup drawn on a
+    // football pitch reads as a bug, and the net line is what makes a racket formation legible at all.
+    const SURFACE = {
+      football: { bg: "#17683B", ratio: 0.68 },
+      // Real padel is 20x10m and tennis 23.8x11m. Drawn at true ratio they fill a phone screen, so
+      // both are compressed slightly — still unmistakably longer and narrower than a pitch.
+      padel: { bg: "#2B5FAE", ratio: 0.6 },
+      tennis: { bg: "#B4593A", ratio: 0.56 },
+    };
+    // Racket slot geometry is chosen to sit inside the court already (baseline y 0.22-0.24, net 0.76),
+    // so no clamping is needed. Football keeps its original mapping: clamping it would push the
+    // goalkeeper down into the defenders, which is worse than the sliver of the chip that overhangs.
+    const topPct = (v) => `${v}%`;
+    const Court = ({ sport: sp }) => {
+      if ("padel" === sp)
+        return (0, y.jsxs)(y.Fragment, {
+          children: [
+            // glass back walls, the thing that makes padel padel
+            (0, y.jsx)(c.default, { style: [_.wall, { top: 0 }] }),
+            (0, y.jsx)(c.default, { style: [_.wall, { bottom: 0 }] }),
+            (0, y.jsx)(c.default, { style: _.net }),
+            // service lines sit 6.95m from the net on a 20m court
+            (0, y.jsx)(c.default, { style: [_.hLine, { top: "15.3%" }] }),
+            (0, y.jsx)(c.default, { style: [_.hLine, { top: "84.7%" }] }),
+            // centre service line runs from each service line to the wall
+            (0, y.jsx)(c.default, { style: [_.vLine, { top: 0, height: "15.3%" }] }),
+            (0, y.jsx)(c.default, { style: [_.vLine, { bottom: 0, height: "15.3%" }] }),
+          ],
+        });
+      if ("tennis" === sp)
+        return (0, y.jsxs)(y.Fragment, {
+          children: [
+            (0, y.jsx)(c.default, { style: _.net }),
+            // service lines 6.4m from the net on a 23.77m court
+            (0, y.jsx)(c.default, { style: [_.hLine, { top: "23.1%" }] }),
+            (0, y.jsx)(c.default, { style: [_.hLine, { top: "76.9%" }] }),
+            // centre service line, between the two service lines only
+            (0, y.jsx)(c.default, { style: [_.vLine, { top: "23.1%", height: "53.8%" }] }),
+            // singles sidelines inside the doubles tramlines
+            (0, y.jsx)(c.default, { style: [_.tram, { left: "12.5%" }] }),
+            (0, y.jsx)(c.default, { style: [_.tram, { right: "12.5%" }] }),
+          ],
+        });
+      return (0, y.jsxs)(y.Fragment, {
+        children: [
+          (0, y.jsx)(c.default, { style: _.halfwayLine }),
+          (0, y.jsx)(c.default, { style: _.centerCircle }),
+          (0, y.jsx)(c.default, { style: [_.box, { bottom: 0 }] }),
+          (0, y.jsx)(c.default, { style: [_.box, { top: 0 }] }),
+        ],
+      });
+    };
+    e.FormationBoard = ({
+      a: t,
+      b: o,
+      selected: l,
+      onSlotPress: s,
+      selfUserId: a,
+      onLeaveSelf: n,
+      sport: sp9,
+    }) =>
+      (0, y.jsxs)(c.default, {
+        style: [
+          _.pitch,
+          {
+            backgroundColor: (SURFACE[sp9] ?? SURFACE.football).bg,
+            aspectRatio: (SURFACE[sp9] ?? SURFACE.football).ratio,
+          },
+        ],
+        children: [
+          (0, y.jsx)(Court, { sport: sp9 }),
+          t.map((t) =>
+            (0, y.jsx)(
+              C,
+              {
+                slot: t,
+                selected: "A" === l?.side && l.slot_id === t.slot_id,
+                top: topPct(100 * (1 - 0.5 * t.y) - 9),
+                left: 100 * t.x - 9 + "%",
+                onPress: () => s("A", t.slot_id),
+                onLeaveSelf: null != a && t.user_id === a ? n : void 0,
+              },
+              `A-${t.slot_id}`,
+            ),
+          ),
+          o.map((t) =>
+            (0, y.jsx)(
+              C,
+              {
+                slot: t,
+                selected: "B" === l?.side && l.slot_id === t.slot_id,
+                top: topPct(0.5 * t.y * 100 - 9),
+                left: 100 * (1 - t.x) - 9 + "%",
+                onPress: () => s("B", t.slot_id),
+                onLeaveSelf: null != a && t.user_id === a ? n : void 0,
+              },
+              `B-${t.slot_id}`,
+            ),
+          ),
+        ],
+      });
+    const C = ({ slot: t, selected: a, top: j, left: C, onPress: v, onLeaveSelf: R }) => {
+        const {
+            colors: { accent: S, accentMuted: w },
+          } = (0, p.useTheme)(),
+          I = (0, b.useT)(),
+          W = (0, o.useRef)(new l.default.Value(1)).current,
+          k = () => l.default.spring(W, { toValue: 1.15, friction: 5, useNativeDriver: !0 }).start(),
+          T = () => l.default.spring(W, { toValue: 1, friction: 5, useNativeDriver: !0 }).start(),
+          A = !(!t.player_id || !t.player_name),
+          B = !!R;
+        return (0, y.jsxs)(c.default, {
+          style: [_.slot, { top: j, left: C }],
+          children: [
+            (0, y.jsx)(s.default, {
+              onPress: v,
+              onHoverIn: k,
+              onHoverOut: T,
+              onPressIn: k,
+              onPressOut: T,
+              accessibilityRole: "button",
+              accessibilityLabel: A
+                ? B
+                  ? I("slotTakenSelfA11y", { role: x(t.role, I) })
+                  : I("slotTakenA11y", { role: x(t.role, I), name: t.player_name ?? "" })
+                : I("slotEmptyA11y", { role: x(t.role, I) }),
+              style: { alignSelf: "stretch", alignItems: "center" },
+              children: (0, y.jsxs)(l.default.View, {
+                style: { alignItems: "center", transform: [{ scale: W }] },
+                children: [
+                  A
+                    ? (0, y.jsxs)(c.default, {
+                        children: [
+                          (0, y.jsx)(h.PlayerAvatar, {
+                            name: t.player_name,
+                            seed: t.avatar_seed,
+                            uri: t.avatar_url,
+                            size: 40,
+                            style: { borderWidth: 2, borderColor: a ? S : "rgba(255,255,255,0.9)" },
+                          }),
+                          null != t.jersey &&
+                            (0, y.jsx)(c.default, {
+                              style: _.jerseyBadge,
+                              children: (0, y.jsx)(n.default, { style: _.jerseyText, children: t.jersey }),
+                            }),
+                          t.captain &&
+                            (0, y.jsx)(c.default, {
+                              style: _.captainBadge,
+                              children: (0, y.jsx)(n.default, { style: _.captainText, children: "C" }),
+                            }),
+                        ],
+                      })
+                    : (0, y.jsx)(c.default, {
+                        style: [_.emptyChip, a && [_.chipSelected, { borderColor: S, backgroundColor: w }]],
+                        children: (0, y.jsx)(u.Ionicons, { name: "add", size: 20, color: "#fff" }),
+                      }),
+                  (0, y.jsx)(n.default, {
+                    numberOfLines: 1,
+                    style: [f.typography.caption, _.name],
+                    children: t.player_name ?? I(`pitchRole_${t.role}`),
+                  }),
+                  "GK" === t.role &&
+                    null != t.player_id &&
+                    (0, y.jsx)(n.default, {
+                      style: [f.typography.caption, _.gkTag],
+                      children: I("pitchRole_GK"),
+                    }),
+                ],
+              }),
+            }),
+            A &&
+              R &&
+              (0, y.jsx)(s.default, {
+                onPress: R,
+                accessibilityRole: "button",
+                accessibilityLabel: I("leaveGame"),
+                hitSlop: 8,
+                style: _.leaveX,
+                children: (0, y.jsx)(u.Ionicons, { name: "close", size: 11, color: "#fff" }),
+              }),
+          ],
+        });
+      },
+      _ = a.default.create({
+        pitch: {
+          width: "100%",
+          borderRadius: 14,
+          overflow: "hidden",
+          borderWidth: 2,
+          borderColor: j,
+        },
+        net: {
+          position: "absolute",
+          top: "50%",
+          left: 0,
+          right: 0,
+          height: 3,
+          backgroundColor: "rgba(255,255,255,0.92)",
+        },
+        hLine: { position: "absolute", left: 0, right: 0, height: 1.5, backgroundColor: j },
+        vLine: { position: "absolute", left: "50%", width: 1.5, backgroundColor: j },
+        tram: { position: "absolute", top: 0, bottom: 0, width: 1.5, backgroundColor: j },
+        wall: {
+          position: "absolute",
+          left: 0,
+          right: 0,
+          height: "3%",
+          backgroundColor: "rgba(255,255,255,0.16)",
+          borderBottomWidth: 1.5,
+          borderTopWidth: 1.5,
+          borderColor: "rgba(255,255,255,0.75)",
+        },
+        halfwayLine: { position: "absolute", top: "50%", left: 0, right: 0, height: 1.5, backgroundColor: j },
+        centerCircle: {
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          width: 84,
+          height: 84,
+          borderRadius: 42,
+          borderWidth: 1.5,
+          borderColor: j,
+          transform: [{ translateX: -42 }, { translateY: -42 }],
+        },
+        box: {
+          position: "absolute",
+          left: "26%",
+          width: "48%",
+          height: "13%",
+          borderWidth: 1.5,
+          borderColor: j,
+        },
+        slot: { position: "absolute", width: "18%", alignItems: "center" },
+        emptyChip: {
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: "rgba(255,255,255,0.18)",
+          alignItems: "center",
+          justifyContent: "center",
+          borderWidth: 2,
+          borderColor: "rgba(255,255,255,0.85)",
+          borderStyle: "dashed",
+        },
+        chipSelected: { borderWidth: 2 },
+        jerseyBadge: {
+          position: "absolute",
+          bottom: -3,
+          right: -5,
+          minWidth: 16,
+          height: 16,
+          borderRadius: 8,
+          paddingHorizontal: 3,
+          backgroundColor: "#0F172A",
+          borderWidth: 1,
+          borderColor: "rgba(255,255,255,0.85)",
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        jerseyText: { color: "#fff", fontSize: 9, fontWeight: "800" },
+        captainBadge: {
+          position: "absolute",
+          top: -5,
+          right: -5,
+          width: 15,
+          height: 15,
+          borderRadius: 8,
+          backgroundColor: "#FACC15",
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        captainText: { color: "#1F2937", fontSize: 9, fontWeight: "900" },
+        leaveX: {
+          position: "absolute",
+          top: -6,
+          right: "50%",
+          marginRight: 8,
+          width: 18,
+          height: 18,
+          borderRadius: 9,
+          backgroundColor: "#DC2626",
+          borderWidth: 1.5,
+          borderColor: "rgba(255,255,255,0.9)",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 5,
+        },
+        name: {
+          color: "#fff",
+          marginTop: 2,
+          maxWidth: 64,
+          textShadowColor: "rgba(0,0,0,0.6)",
+          textShadowRadius: 3,
+        },
+        gkTag: { color: "#FDE68A", fontWeight: "700" },
+      });
+  },
+  2382,
+  [33, 15, 267, 369, 158, 146, 273, 1086, 1679, 616, 675, 615, 13],
+);
 __d(function(g,r,i,a,m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.MvpVotingPanel=void 0;var t=r(d[1]),s=e(r(d[2])),n=e(r(d[3])),l=e(r(d[4])),o=e(r(d[5])),c=e(r(d[6])),u=r(d[7]),p=r(d[8]),y=r(d[9]),x=r(d[10]),h=r(d[11]),f=r(d[12]),v=r(d[13]),b=r(d[14]),j=r(d[15]),T=r(d[16]),_=r(d[17]),w=r(d[18]);_e.MvpVotingPanel=({gameId:e})=>{const{user:l}=(0,h.useAuth)(),{colors:S}=(0,f.useTheme)(),M=(0,_.useT)(),[I,V]=(0,t.useState)(null),[k,O]=(0,t.useState)(!0),[P,W]=(0,t.useState)(null),[z,N]=(0,t.useState)(null),[R,E]=(0,t.useState)(!1),$=(0,t.useCallback)(async()=>{if(l)try{V(await(0,b.fetchMvpPanel)(l.id,e))}catch{V(null)}finally{O(!1)}else O(!1)},[l,e]);(0,p.useFocusEffect)((0,t.useCallback)(()=>{$()},[$]));const A=async t=>{if(!l||!I)return;N(null),W(t);const s=I;V(Object.assign({},I,{my_vote:t}));try{await(0,b.castMvpVote)(l.id,e,t),E(!1),await $()}catch(e){V(s),N((0,j.storeErrorText)(e?.message??''))}finally{W(null)}};if(k)return(0,w.jsx)(y.Card,{padding:"md",style:{marginTop:v.spacing.xl},children:(0,w.jsx)(s.default,{color:S.accentText})});if(!I||'not_completed'===I.state)return null;if(!l)return(0,w.jsxs)(y.Card,{padding:"md",style:{marginTop:v.spacing.xl},children:[(0,w.jsx)(o.default,{style:[v.typography.bodyStrong,{color:S.text}],children:M('mvpTitle')}),(0,w.jsx)(o.default,{style:[v.typography.small,{color:S.textMuted,marginTop:2}],children:M('mvpSignedOut')})]});const D='published'===I.state,H='tallying'===I.state;return(0,w.jsxs)(y.Card,{padding:"md",style:{marginTop:v.spacing.xl},children:[(0,w.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',gap:v.spacing.sm},children:[(0,w.jsx)(u.Ionicons,{name:"trophy",size:18,color:D?S.warning:S.accentText}),(0,w.jsx)(o.default,{style:[v.typography.bodyStrong,{color:S.text,flex:1}],children:D?I.tied?M('mvpCoWinnersTitle'):M('mvpWinnerTitle'):M(H?'mvpTallying':'mvpTitle')})]}),'voting'===I.state&&(0,w.jsxs)(w.Fragment,{children:[(0,w.jsx)(o.default,{style:[v.typography.small,{color:S.textMuted,marginTop:2}],children:I.can_vote?M('mvpSubtitle'):M('mvpObserver')}),I.closes_at&&(0,w.jsx)(x.CountdownTimer,{deadlineIso:I.closes_at,onExpire:$,style:{marginTop:v.spacing.xs}})]}),H&&(0,w.jsx)(o.default,{style:[v.typography.small,{color:S.textMuted,marginTop:2}],children:M('mvpTallyingSub')}),D&&(0===I.winners.length?(0,w.jsx)(o.default,{style:[v.typography.small,{color:S.textMuted,marginTop:v.spacing.xs}],children:M('mvpNoVotes')}):(0,w.jsx)(c.default,{style:{marginTop:v.spacing.sm,gap:v.spacing.sm},children:I.winners.map(e=>(0,w.jsxs)(c.default,{style:[C.winner,{borderColor:S.warning,backgroundColor:S.surfaceAlt}],children:[(0,w.jsx)(c.default,{style:[C.crest,{backgroundColor:S.warning}],children:(0,w.jsx)(u.Ionicons,{name:"trophy",size:20,color:S.accentInk})}),(0,w.jsxs)(c.default,{style:{flex:1,marginStart:v.spacing.sm},children:[(0,w.jsx)(o.default,{style:[v.typography.bodyStrong,{color:S.text}],numberOfLines:1,children:e.name}),(0,w.jsx)(o.default,{style:[v.typography.small,{color:S.textMuted}],children:M('mvpWonWith',{votes:(0,T.formatNumber)(e.votes),total:(0,T.formatNumber)(I.total_votes)})})]})]},e.user_id))})),z&&(0,w.jsx)(o.default,{style:[v.typography.small,{color:S.danger,marginTop:v.spacing.sm}],children:z}),(0,w.jsx)(c.default,{style:{marginTop:v.spacing.md,gap:v.spacing.xs},children:I.participants.map(e=>{const t=I.my_vote===e.user_id,c=e.user_id===l.id,p=I.can_vote&&!c&&(!I.my_vote||R),y=D||H||!!I.my_vote;return(0,w.jsxs)(n.default,{disabled:!p||null!==P,onPress:()=>A(e.user_id),accessibilityRole:"button",accessibilityState:{selected:t,disabled:!p},accessibilityLabel:`${e.name}${t?` \xb7 ${M('mvpYourVote')}`:''}`,style:[C.row,{borderColor:t?S.accent:S.border,borderWidth:t?2:1,backgroundColor:t?S.accentMuted:S.surface,opacity:p||t||y?1:.6,minHeight:v.touch.minTarget}],children:[t&&(0,w.jsx)(u.Ionicons,{name:"checkmark-circle",size:18,color:S.accentText,style:{marginEnd:6}}),(0,w.jsxs)(o.default,{style:[v.typography.body,{color:S.text,flex:1}],numberOfLines:1,children:[e.name,c?` \xb7 ${M('mvpYou')}`:'']}),y&&(0,w.jsx)(o.default,{style:[v.typography.smallStrong,{color:S.textMuted}],children:M('mvpVotesCount',{n:(0,T.formatNumber)(e.votes)})}),P===e.user_id&&(0,w.jsx)(s.default,{size:"small",color:S.accentText,style:{marginStart:v.spacing.xs}})]},e.user_id)})}),'voting'===I.state&&I.can_vote&&I.my_vote&&!R&&(0,w.jsx)(n.default,{onPress:()=>E(!0),accessibilityRole:"button",hitSlop:10,style:{alignItems:'center',marginTop:v.spacing.sm,minHeight:v.touch.minTarget,justifyContent:'center'},children:(0,w.jsx)(o.default,{style:[v.typography.small,{color:S.accentText}],children:M('mvpChangeVote')})}),(D||H)&&(0,w.jsx)(o.default,{style:[v.typography.caption,{color:S.textMuted,textAlign:'center',marginTop:v.spacing.sm}],children:M('mvpTotalVotes',{n:(0,T.formatNumber)(I.total_votes)})})]})};const C=l.default.create({row:{flexDirection:'row',alignItems:'center',borderRadius:v.radius.md,paddingHorizontal:v.spacing.md,paddingVertical:12},winner:{flexDirection:'row',alignItems:'center',borderWidth:2,borderRadius:v.radius.md,padding:v.spacing.md},crest:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center'}})},2383,[33,15,461,369,158,146,273,1086,20,1623,2384,630,615,616,671,674,1311,675,13]);
 __d(function(g,r,i,a,_m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.CountdownTimer=void 0;var o=r(d[1]),n=t(r(d[2])),s=r(d[3]),l=r(d[4]),u=r(d[5]),c=r(d[6]),m=r(d[7]);const f=36e5;e.CountdownTimer=({deadlineIso:t,onExpire:b,style:w,bare:h})=>{const{colors:v}=(0,s.useTheme)(),y=(0,u.useT)(),[M,T]=(0,o.useState)(()=>new Date(t).getTime()-Date.now());if((0,o.useEffect)(()=>{const o=setInterval(()=>T(new Date(t).getTime()-Date.now()),1e3);return()=>clearInterval(o)},[t]),(0,o.useEffect)(()=>{M<=0&&b?.()},[M<=0]),M<=0)return null;const p=Math.floor(M/f),x=Math.floor(M%f/6e4),D=Math.floor(M%6e4/1e3),I=M<=6e5?v.danger:M<=f?v.warning:v.textMuted,N=p>0?y('countdownHm',{h:(0,c.formatNumber)(p),m:(0,c.formatNumber)(x)}):y('countdownMs',{m:(0,c.formatNumber)(x),s:(0,c.formatNumber)(D)}),_=h?N:y('votingClosesIn',{time:N});return(0,m.jsx)(n.default,{accessibilityRole:"text",accessibilityLabel:_,style:[l.typography.small,{color:I},w],children:_})}},2384,[33,15,146,615,616,675,1311,13]);
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.NotAvailable=void 0;var o=t(r(d[1])),n=t(r(d[2])),l=t(r(d[3])),s=t(r(d[4])),c=r(d[5]),u=r(d[6]),b=r(d[7]),h=r(d[8]),y=r(d[9]),p=r(d[10]),x=r(d[11]),f=r(d[12]),j=r(d[13]);e.NotAvailable=()=>{const{colors:t}=(0,y.useTheme)(),n=(0,b.useRouter)(),C=(0,x.useT)();return(0,j.jsxs)(c.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:t.bg},children:[(0,j.jsx)(s.default,{style:v.header,children:(0,j.jsx)(o.default,{onPress:()=>n.back(),accessibilityRole:"button",accessibilityLabel:C('back'),style:[v.iconBtn,{backgroundColor:t.surface,borderColor:t.border}],children:(0,j.jsx)(u.Ionicons,{name:(0,f.chevronBack)(),size:22,color:t.text})})}),(0,j.jsxs)(s.default,{style:v.body,children:[(0,j.jsx)(s.default,{style:[v.iconWrap,{backgroundColor:t.surface,borderColor:t.border}],children:(0,j.jsx)(u.Ionicons,{name:"link-outline",size:34,color:t.textMuted})}),(0,j.jsx)(l.default,{style:[p.typography.h2,{color:t.text,textAlign:'center',marginTop:p.spacing.lg}],children:C('notAvailableTitle')}),(0,j.jsx)(l.default,{style:[p.typography.body,{color:t.textMuted,textAlign:'center',marginTop:p.spacing.xs,marginBottom:p.spacing.lg}],children:C('notAvailableBody')}),(0,j.jsx)(h.Button,{title:C('notAvailableCta'),onPress:()=>n.replace('/')})]})]})};const v=n.default.create({header:{paddingHorizontal:p.spacing.lg,paddingVertical:p.spacing.sm},iconBtn:{width:40,height:40,borderRadius:20,borderWidth:1,alignItems:'center',justifyContent:'center'},body:{flex:1,alignItems:'center',justifyContent:'center',padding:p.spacing.xl},iconWrap:{width:76,height:76,borderRadius:p.radius.lg,borderWidth:1,alignItems:'center',justifyContent:'center'}})},2385,[33,369,158,146,273,381,1086,20,626,615,616,675,1171,13]);
@@ -41526,8 +42119,811 @@ __d(
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{colors:t}=(0,y.useTheme)(),l=(0,p.useRouter)(),C=(0,k.useT)();return(0,j.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:t.bg},children:[(0,j.jsxs)(s.default,{style:I.header,children:[(0,j.jsx)(n.default,{onPress:()=>l.back(),accessibilityRole:"button",accessibilityLabel:C('back'),style:[I.iconBtn,{backgroundColor:t.surface,borderColor:t.border}],children:(0,j.jsx)(h.Ionicons,{name:(0,b.chevronBack)(),size:22,color:t.text})}),(0,j.jsxs)(s.default,{style:{flex:1,marginHorizontal:f.spacing.md},children:[(0,j.jsx)(c.default,{style:[f.typography.h2,{color:t.text}],children:C('howItWorksTitle')}),(0,j.jsx)(c.default,{style:[f.typography.small,{color:t.textMuted}],children:C('howItWorksSub')})]})]}),(0,j.jsxs)(o.default,{contentContainerStyle:{padding:f.spacing.lg,paddingBottom:f.spacing.xxxl},children:[w.map(({k:n,icon:o})=>(0,j.jsxs)(x.Card,{padding:"md",style:{marginBottom:f.spacing.sm},children:[(0,j.jsxs)(s.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,j.jsx)(s.default,{style:[I.iconWrap,{backgroundColor:t.accentMuted}],children:(0,j.jsx)(h.Ionicons,{name:o,size:18,color:t.accentText})}),(0,j.jsx)(c.default,{style:[f.typography.bodyStrong,{color:t.text,marginStart:f.spacing.md,flex:1}],children:C(`explain_${n}_t`)})]}),(0,j.jsx)(c.default,{style:[f.typography.small,{color:t.textMuted,marginTop:f.spacing.sm,lineHeight:21}],children:C(`explain_${n}_b`)})]},n)),(0,j.jsx)(c.default,{style:[f.typography.caption,{color:t.textMuted,textAlign:'center',marginTop:f.spacing.md}],children:C('howItWorksFooter')})]})]})};var n=t(r(d[1])),o=t(r(d[2])),l=t(r(d[3])),c=t(r(d[4])),s=t(r(d[5])),u=r(d[6]),h=r(d[7]),p=r(d[8]),x=r(d[9]),y=r(d[10]),f=r(d[11]),k=r(d[12]),b=r(d[13]),j=r(d[14]);const w=[{k:'gauntlet',icon:'flag'},{k:'shotclock',icon:'timer-outline'},{k:'stake',icon:'trophy-outline'},{k:'dodged',icon:'walk-outline'},{k:'derby',icon:'flame-outline'},{k:'form',icon:'trending-up-outline'},{k:'rank',icon:'podium-outline'},{k:'clanpts',icon:'stats-chart-outline'},{k:'classification',icon:'ribbon-outline'}];const I=l.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:f.spacing.lg,paddingVertical:f.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:l.default.hairlineWidth},iconWrap:{width:34,height:34,borderRadius:f.radius.md,alignItems:'center',justifyContent:'center'}})},2445,[33,369,281,158,146,273,381,1086,20,1623,615,616,675,1171,13]);
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){return(0,n.jsx)(t.Redirect,{href:"/(tabs)"})};var t=r(d[0]),n=r(d[1])},2446,[20,13]);
 __d(function(g,r,i,a,m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{user:e}=(0,j.useAuth)(),{colors:o}=(0,b.useTheme)(),z=(0,f.useRouter)(),P=(0,w.useT)(),[W,_]=(0,t.useState)(''),[M,R]=(0,t.useState)(null),[H,A]=(0,t.useState)(!1);return(0,T.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:o.bg},children:[(0,T.jsxs)(c.default,{style:k.header,children:[(0,T.jsx)(l.default,{onPress:()=>z.back(),accessibilityRole:"button",accessibilityLabel:P('back'),style:[k.iconBtn,{backgroundColor:o.surface,borderColor:o.border}],children:(0,T.jsx)(h.Ionicons,{name:(0,B.chevronBack)(),size:22,color:o.text})}),(0,T.jsx)(s.default,{style:[C.typography.h2,{color:o.text,marginHorizontal:C.spacing.md}],children:P('joinWithCode')})]}),(0,T.jsxs)(c.default,{style:{padding:C.spacing.lg},children:[(0,T.jsx)(s.default,{style:[C.typography.smallStrong,{color:o.textMuted,marginBottom:C.spacing.xs}],children:P('enterInviteCode')}),(0,T.jsx)(y.Input,{value:W,onChangeText:e=>_(e.toUpperCase()),placeholder:P('invitePlaceholder'),autoCapitalize:"characters",maxLength:12,style:{letterSpacing:3}}),(0,T.jsx)(x.Button,{title:P('findMatch'),fullWidth:!0,loading:H,onPress:async()=>{if(W.trim()){A(!0),R(null);try{const t=await(0,v.resolveInviteCode)(W,e?.id);if(!t)return void n.default.alert(P('invalidInviteCode'),'');R(t)}finally{A(!1)}}}}),M&&(0,T.jsxs)(p.Card,{style:{marginTop:C.spacing.lg},children:[(0,T.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,T.jsx)(c.default,{style:[k.sportIcon,{backgroundColor:(0,I.sportColor)(M.sport)}],children:(0,T.jsx)(h.Ionicons,{name:I.sportIcon[M.sport],size:20,color:"#fff"})}),(0,T.jsxs)(c.default,{style:{flex:1,marginHorizontal:C.spacing.sm},children:[(0,T.jsx)(s.default,{style:[C.typography.bodyStrong,{color:o.text}],children:M.title}),(0,T.jsxs)(s.default,{style:[C.typography.small,{color:o.textMuted}],children:[M.venue.name," \xb7 ",(0,I.formatGameTime)(M.starts_at)]})]})]}),(0,T.jsx)(x.Button,{title:P('joinGame'),fullWidth:!0,loading:H,style:{marginTop:C.spacing.md},onPress:async()=>{if(e&&M){A(!0);try{await(0,v.joinByCode)(W,e.id),z.replace(`/game/${M.id}`)}catch(e){n.default.alert(P('error'),(0,S.storeErrorText)(e?.message??'')||P('invalidInviteCode'))}finally{A(!1)}}}})]})]})]})};var t=r(d[1]),n=e(r(d[2])),l=e(r(d[3])),o=e(r(d[4])),s=e(r(d[5])),c=e(r(d[6])),u=r(d[7]),h=r(d[8]),f=r(d[9]),p=r(d[10]),y=r(d[11]),x=r(d[12]),j=r(d[13]),b=r(d[14]),C=r(d[15]),v=r(d[16]),I=r(d[17]),w=r(d[18]),B=r(d[19]),S=r(d[20]),T=r(d[21]);const k=o.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:C.spacing.lg,paddingVertical:C.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:o.default.hairlineWidth},sportIcon:{width:40,height:40,borderRadius:12,alignItems:'center',justifyContent:'center'}})},2447,[33,15,445,369,158,146,273,381,1086,20,1623,625,626,630,615,616,671,1311,675,1171,674,13]);
-__d(function(g,r,i,a,m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{gameId:e}=(0,x.useLocalSearchParams)(),{user:c}=(0,v.useAuth)(),{colors:W}=(0,k.useTheme)(),R=(0,x.useRouter)(),M=(0,L.useT)(),[D,E]=(0,t.useState)(null),[V,F]=(0,t.useState)('A'),[H,O]=(0,t.useState)(null),[$,J]=(0,t.useState)(!1),[q,G]=(0,t.useState)(null),[K,U]=(0,t.useState)(null),[N,Q]=(0,t.useState)(''),[X,Y]=(0,t.useState)(!1),Z=(0,t.useCallback)(async()=>{if(c&&e)try{E(await(0,B.fetchLineup)(e,c.id))}catch(e){G((0,P.storeErrorText)(e?.message??'')||M('error'))}},[c,e,M]);(0,x.useFocusEffect)((0,t.useCallback)(()=>{Z()},[Z]));const ee=async(e,t)=>{if(c){J(!0),G(null),U(null);try{const s=await e();s?E(s):await Z(),t&&U(M(t))}catch(e){G((0,P.storeErrorText)(e?.message??'')||M('error'))}finally{J(!1),O(null),Q('')}}},te=!!D?.can_edit&&!D.locked,ae='slot'===H?.type&&D?('A'===H.side?D.a:D.b).slots.find(e=>e.slot_id===H.slot_id):null,ie='slot'===H?.type?{side:H.side,slot_id:H.slot_id}:null,se=D?'A'===V?D.a:D.b:null;return(0,z.jsxs)(y.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:W.bg},children:[(0,z.jsxs)(p.default,{style:A.header,children:[(0,z.jsx)(n.default,{onPress:()=>R.back(),accessibilityRole:"button",accessibilityLabel:M('back'),style:[A.iconBtn,{backgroundColor:W.surface,borderColor:W.border}],children:(0,z.jsx)(h.Ionicons,{name:(0,I.chevronBack)(),size:22,color:W.text})}),(0,z.jsx)(u.default,{style:[S.typography.h2,{color:W.text,marginHorizontal:S.spacing.md,flex:1}],children:M('lineupTitle')}),D?.locked&&(0,z.jsxs)(p.default,{style:[A.badge,{backgroundColor:W.surfaceAlt,borderColor:W.border}],children:[(0,z.jsx)(h.Ionicons,{name:"lock-closed",size:12,color:W.textMuted}),(0,z.jsx)(u.default,{style:[S.typography.caption,{color:W.textMuted,marginStart:4}],children:M('lineupLockedBadge')})]})]}),(0,z.jsx)(o.default,{contentContainerStyle:{padding:S.spacing.lg,paddingBottom:S.spacing.xxxl},children:null===D&&q?(0,z.jsxs)(p.default,{style:{paddingVertical:S.spacing.xl},children:[(0,z.jsx)(w.EmptyState,{icon:"cloud-offline-outline",title:M('error'),body:q}),(0,z.jsx)(f.Button,{title:M('retry'),onPress:()=>Z(),style:{marginTop:S.spacing.md}})]}):null===D?(0,z.jsx)(s.default,{color:W.accentText}):(0,z.jsxs)(z.Fragment,{children:[D.is_live&&(0,z.jsxs)(p.default,{style:[A.banner,{backgroundColor:W.surfaceAlt,borderColor:W.accent}],children:[(0,z.jsx)(h.Ionicons,{name:"radio-outline",size:16,color:W.accentText}),(0,z.jsx)(u.default,{style:[S.typography.small,{color:W.text,marginStart:S.spacing.xs}],children:M('liveSubsBadge')})]}),q&&(0,z.jsxs)(p.default,{style:[A.banner,{backgroundColor:W.surfaceAlt,borderColor:W.danger}],children:[(0,z.jsx)(h.Ionicons,{name:"alert-circle",size:16,color:W.danger}),(0,z.jsx)(b.FormError,{text:q,style:{marginStart:S.spacing.xs,flex:1}})]}),K&&(0,z.jsxs)(p.default,{style:[A.banner,{backgroundColor:W.surfaceAlt,borderColor:W.success}],children:[(0,z.jsx)(h.Ionicons,{name:"checkmark-circle",size:16,color:W.success}),(0,z.jsx)(u.default,{style:[S.typography.small,{color:W.text,marginStart:S.spacing.xs}],children:K})]}),(0,z.jsx)(_.FormationBoard,{a:D.a.slots,b:D.b.slots,selected:ie,onSlotPress:(e,t)=>{if(D&&c){if(!D.can_edit){const s=('A'===e?D.a:D.b).slots.find(e=>e.slot_id===t);return void(s?.user_id&&R.push(`/player/${s.user_id}`))}if('bench'===H?.type){const s=H.player_id;return void(D.is_live?ee(()=>(0,B.recordLineupSubstitution)(c.id,D.game_id,e,t,s)):ee(()=>(0,B.assignLineupSlot)(c.id,D.game_id,e,t,s)))}if('slot'===H?.type){if(H.side===e&&H.slot_id===t)return void O(null);if(H.side===e)return void ee(()=>(0,B.swapLineupSlots)(c.id,D.game_id,e,H.slot_id,t));const s=('A'===H.side?D.a:D.b).slots.find(e=>e.slot_id===H.slot_id);return s?.player_id?void ee(()=>(0,B.assignLineupSlot)(c.id,D.game_id,e,t,s.player_id)):void O({type:'slot',side:e,slot_id:t})}O({type:'slot',side:e,slot_id:t})}},selfUserId:c?.id??null,onLeaveSelf:()=>Y(!0)}),te&&ae?.player_id&&'slot'===H?.type&&(0,z.jsxs)(j.Card,{padding:"md",style:{marginTop:S.spacing.md},children:[(0,z.jsx)(u.default,{style:[S.typography.bodyStrong,{color:W.text,marginBottom:S.spacing.sm}],children:ae.player_name}),(0,z.jsxs)(p.default,{style:A.rowWrap,children:[(0,z.jsx)(f.Button,{title:M('makeCaptain'),size:"sm",variant:"secondary",onPress:()=>ee(()=>(0,B.setLineupCaptain)(c.id,D.game_id,H.side,H.slot_id))}),(0,z.jsx)(f.Button,{title:M('removeFromSlot'),size:"sm",variant:"ghost",onPress:()=>ee(()=>(0,B.assignLineupSlot)(c.id,D.game_id,H.side,H.slot_id,null))})]}),(0,z.jsxs)(p.default,{style:{flexDirection:'row',alignItems:'flex-end',gap:S.spacing.sm,marginTop:S.spacing.sm},children:[(0,z.jsx)(p.default,{style:{flex:1},children:(0,z.jsx)(C.Input,{label:M('setJersey'),value:N,onChangeText:Q,keyboardType:"number-pad",maxLength:2,placeholder:"7"})}),(0,z.jsx)(f.Button,{title:"OK",size:"sm",onPress:()=>ee(()=>(0,B.setLineupJersey)(c.id,D.game_id,H.side,H.slot_id,N?parseInt(N,10):null)),style:{marginBottom:S.spacing.md}})]})]}),(0,z.jsx)(u.default,{style:[S.typography.h3,{color:W.text,marginTop:S.spacing.lg,marginBottom:S.spacing.sm}],children:M('benchLabel')}),0===D.bench.length?(0,z.jsx)(u.default,{style:[S.typography.small,{color:W.textMuted}],children:"\u2014"}):(0,z.jsx)(p.default,{style:A.rowWrap,children:D.bench.map(e=>(0,z.jsx)(n.default,{accessibilityRole:"button",onPress:()=>{D.can_edit?O('bench'===H?.type&&H.player_id===e.player_id?null:{type:'bench',player_id:e.player_id}):e.user_id&&R.push(`/player/${e.user_id}`)},style:[A.benchChip,{borderColor:'bench'===H?.type&&H.player_id===e.player_id?W.accent:W.border,backgroundColor:'bench'===H?.type&&H.player_id===e.player_id?W.surfaceAlt:W.surface}],children:(0,z.jsx)(u.default,{style:[S.typography.small,{color:W.text}],numberOfLines:1,children:e.name})},e.player_id))}),D.can_edit?(0,z.jsx)(u.default,{style:[S.typography.caption,{color:W.textMuted,marginTop:S.spacing.xs}],children:M('tapToPlace')}):(0,z.jsx)(u.default,{style:[S.typography.caption,{color:W.textMuted,marginTop:S.spacing.xs}],children:M('viewOnlyHint')}),D.can_edit&&(0,z.jsxs)(z.Fragment,{children:[(0,z.jsx)(p.default,{style:[A.segment,{borderColor:W.border,marginTop:S.spacing.lg}],children:['A','B'].map(e=>(0,z.jsx)(n.default,{accessibilityRole:"button",onPress:()=>F(e),style:[A.segmentBtn,V===e&&{backgroundColor:W.accent}],children:(0,z.jsx)(u.default,{style:[S.typography.smallStrong,{color:V===e?W.accentInk:W.textMuted}],children:M('A'===e?'teamA':'teamB')})},e))}),(0,z.jsx)(u.default,{style:[S.typography.smallStrong,{color:W.textMuted,marginTop:S.spacing.md,marginBottom:S.spacing.xs}],children:M('formationLabel')}),(0,z.jsx)(p.default,{style:A.rowWrap,children:D.formations.map(e=>{const t=se?.formation_key===e.key;return(0,z.jsx)(n.default,{accessibilityRole:"button",onPress:()=>ee(()=>(0,B.setLineupFormation)(c.id,D.game_id,V,e.key)),style:[A.benchChip,{borderColor:t?W.accent:W.border,backgroundColor:t?W.surfaceAlt:W.surface}],children:(0,z.jsxs)(u.default,{style:[S.typography.small,{color:t?W.accentText:W.text}],children:[e.label,e.key===D.suggested_key?` \u2605 ${M('lineupSuggested')}`:'']})},e.key)})}),(0,z.jsxs)(p.default,{style:[A.rowWrap,{marginTop:S.spacing.lg}],children:[(0,z.jsx)(f.Button,{title:`\u2728 ${M('autoBalanceAI')}`,size:"sm",onPress:()=>ee(()=>(0,B.autoBalanceLineup)(c.id,D.game_id)),loading:$}),(0,z.jsx)(f.Button,{title:M('randomizeTeams'),size:"sm",variant:"secondary",onPress:()=>ee(()=>(0,B.randomizeLineup)(c.id,D.game_id))}),(0,z.jsx)(f.Button,{title:D.locked?M('unlockLineup'):M('lockLineup'),size:"sm",variant:"secondary",onPress:()=>ee(()=>(0,B.toggleLineupLock)(c.id,D.game_id))}),(0,z.jsx)(f.Button,{title:M('shareToChat'),size:"sm",variant:"ghost",onPress:async()=>{if(!c||!D)return;const e=await(0,B.fetchProfile)(c.id);ee(()=>(0,B.shareLineupToChat)(c.id,D.game_id,e?.full_name??'Player'),'lineupShared')}}),(0,z.jsx)(f.Button,{title:M('exportImage'),size:"sm",variant:"ghost",onPress:()=>D&&(0,T.exportLineupImage)(D,M('lineupTitle'))}),(0,z.jsx)(f.Button,{title:M('saveTemplate'),size:"sm",variant:"ghost",onPress:()=>se&&ee(async()=>{await(0,B.saveLineupTemplate)(c.id,se.formation_key,se.formation_key)},'templateSaved')})]}),(0,z.jsx)(u.default,{style:[S.typography.h3,{color:W.text,marginTop:S.spacing.xl,marginBottom:S.spacing.sm}],children:M('editorsLabel')}),(0,z.jsx)(j.Card,{padding:"md",children:0===[...D.a.slots,...D.b.slots].filter(e=>e.captain&&e.user_id).length?(0,z.jsx)(u.default,{style:[S.typography.small,{color:W.textMuted}],children:"\u2014"}):[...D.a.slots,...D.b.slots].filter(e=>e.captain&&e.user_id).map(e=>{const t=D.editor_user_ids.includes(e.user_id);return(0,z.jsxs)(p.default,{style:A.editorRow,children:[(0,z.jsx)(u.default,{style:[S.typography.body,{color:W.text,flex:1}],children:e.player_name}),(0,z.jsx)(f.Button,{title:M(t?'revokeEdit':'grantEdit'),size:"sm",variant:t?'ghost':'secondary',onPress:()=>ee(()=>(0,B.grantLineupEdit)(c.id,D.game_id,e.user_id,!t))})]},e.user_id)})}),(0,z.jsx)(u.default,{style:[S.typography.h3,{color:W.text,marginTop:S.spacing.xl,marginBottom:S.spacing.sm}],children:M('lineupHistory')}),(0,z.jsx)(j.Card,{padding:"md",children:D.history.slice(0,8).map(e=>(0,z.jsxs)(p.default,{style:A.historyRow,children:[(0,z.jsxs)(u.default,{style:[S.typography.caption,{color:W.textMuted,width:34}],children:["v",e.version]}),(0,z.jsx)(u.default,{style:[S.typography.caption,{color:W.text,flex:1}],numberOfLines:1,children:e.action}),(0,z.jsx)(u.default,{style:[S.typography.caption,{color:W.textMuted}],children:new Date(e.at).toLocaleTimeString()})]},e.version))})]})]})}),(0,z.jsx)(l.default,{visible:X,transparent:!0,animationType:"fade",onRequestClose:()=>Y(!1),children:(0,z.jsx)(n.default,{style:A.confirmScrim,onPress:()=>Y(!1),children:(0,z.jsxs)(n.default,{style:[A.confirmCard,{backgroundColor:W.surface,borderColor:W.border}],onPress:()=>{},children:[(0,z.jsx)(p.default,{style:[A.confirmIcon,{backgroundColor:W.surfaceAlt}],children:(0,z.jsx)(h.Ionicons,{name:"exit-outline",size:24,color:W.danger})}),(0,z.jsx)(u.default,{style:[S.typography.h3,{color:W.text,textAlign:'center',marginTop:S.spacing.md}],children:M('leaveMatchTitle')}),(0,z.jsx)(u.default,{style:[S.typography.small,{color:W.textMuted,textAlign:'center',marginTop:S.spacing.xs}],children:M('leaveMatchBody')}),(0,z.jsxs)(p.default,{style:{marginTop:S.spacing.lg,gap:S.spacing.sm,alignSelf:'stretch'},children:[(0,z.jsx)(f.Button,{title:M('leaveGame'),variant:"danger",fullWidth:!0,loading:$,onPress:()=>{Y(!1),ee(async()=>{await(0,B.leaveMatch)(D.game_id,c.id)})}}),(0,z.jsx)(f.Button,{title:M('stay'),variant:"ghost",fullWidth:!0,onPress:()=>Y(!1)})]})]})})})]})};var t=r(d[1]),s=e(r(d[2])),l=e(r(d[3])),n=e(r(d[4])),o=e(r(d[5])),c=e(r(d[6])),u=e(r(d[7])),p=e(r(d[8])),y=r(d[9]),h=r(d[10]),x=r(d[11]),f=r(d[12]),b=r(d[13]),j=r(d[14]),_=r(d[15]),C=r(d[16]),v=r(d[17]),k=r(d[18]),S=r(d[19]),B=r(d[20]),T=r(d[21]),w=r(d[22]),L=r(d[23]),I=r(d[24]),P=r(d[25]),z=r(d[26]);const A=c.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:S.spacing.lg,paddingVertical:S.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:c.default.hairlineWidth},badge:{flexDirection:'row',alignItems:'center',paddingHorizontal:S.spacing.sm,paddingVertical:4,borderRadius:S.radius.pill,borderWidth:c.default.hairlineWidth},banner:{flexDirection:'row',alignItems:'center',borderRadius:S.radius.md,borderWidth:c.default.hairlineWidth,padding:S.spacing.sm,marginBottom:S.spacing.md},rowWrap:{flexDirection:'row',flexWrap:'wrap',gap:S.spacing.xs},benchChip:{paddingHorizontal:S.spacing.sm,paddingVertical:6,borderRadius:S.radius.pill,borderWidth:1},segment:{flexDirection:'row',borderWidth:c.default.hairlineWidth,borderRadius:S.radius.md,overflow:'hidden'},segmentBtn:{flex:1,alignItems:'center',paddingVertical:S.spacing.sm},editorRow:{flexDirection:'row',alignItems:'center',paddingVertical:S.spacing.xs},historyRow:{flexDirection:'row',alignItems:'center',gap:S.spacing.sm,paddingVertical:3},confirmScrim:{flex:1,backgroundColor:'rgba(0,0,0,0.55)',justifyContent:'center',padding:S.spacing.xl},confirmCard:{borderRadius:20,borderWidth:c.default.hairlineWidth,padding:S.spacing.xl,alignItems:'center'},confirmIcon:{width:48,height:48,borderRadius:24,alignItems:'center',justifyContent:'center'}})},2448,[33,15,461,467,369,281,158,146,273,381,1086,20,626,624,1623,2382,625,630,615,616,671,2449,1627,675,1171,674,13]);
-__d(function(g,r,i,_a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.exportLineupImage=async function(t,l){const n=document.createElement('canvas');n.width=900,n.height=1300;const s=n.getContext('2d');if(!s)return!1;s.fillStyle='#17683B',s.fillRect(0,0,900,1300),s.strokeStyle='rgba(255,255,255,0.6)',s.lineWidth=3,s.strokeRect(20,90,860,1170),s.beginPath(),s.moveTo(20,675),s.lineTo(880,675),s.stroke(),s.beginPath(),s.arc(450,675,90,0,2*Math.PI),s.stroke(),s.fillStyle='#fff',s.font='bold 40px system-ui, sans-serif',s.textAlign='center',s.fillText(l.slice(0,40),450,58);const f=(t,l,n,f)=>{s.font='bold 26px system-ui, sans-serif',s.fillStyle='#FDE68A',s.textAlign=l?'right':'left',s.fillText(`${n} \xb7 ${f}`,l?864:36,l?130:1244);for(const n of t){const t=780*(l?1-n.x:n.x)+60,f=90+1170*(l?.5*n.y:1-.5*n.y);s.beginPath(),s.arc(t,f,26,0,2*Math.PI),s.fillStyle=n.player_id?'#0F172A':'rgba(255,255,255,0.25)',s.fill(),s.strokeStyle='#fff',s.lineWidth=3,s.stroke(),s.fillStyle='#fff',s.font='bold 20px system-ui, sans-serif',s.textAlign='center';const a=n.player_name?n.player_name.split(' ').map(t=>t[0]).slice(0,2).join(''):'\xb7';s.fillText(null!=n.jersey?String(n.jersey):a,t,f+7),n.captain&&(s.fillStyle='#FACC15',s.beginPath(),s.arc(t+22,f-22,11,0,2*Math.PI),s.fill(),s.fillStyle='#1F2937',s.font='bold 14px system-ui, sans-serif',s.fillText('C',t+22,f-17)),s.fillStyle='#fff',s.font='16px system-ui, sans-serif',s.fillText((n.player_name??n.role).slice(0,14),t,f+48)}};f(t.a.slots,!1,'Team A',t.a.formation_key),f(t.b.slots,!0,'Team B',t.b.formation_key);const a=document.createElement('a');return a.href=n.toDataURL('image/png'),a.download=`lineup-${t.game_id.slice(-6)}.png`,a.click(),!0}},2449,[]);
+__d(
+  function (g, r, i, a, m, _e, d) {
+    var e = r(d[0]);
+    (Object.defineProperty(_e, "__esModule", { value: !0 }),
+      (_e.default = function () {
+        const { gameId: e } = (0, x.useLocalSearchParams)(),
+          { user: c } = (0, v.useAuth)(),
+          { colors: W } = (0, k.useTheme)(),
+          R = (0, x.useRouter)(),
+          M = (0, L.useT)(),
+          [D, E] = (0, t.useState)(null),
+          [V, F] = (0, t.useState)("A"),
+          [H, O] = (0, t.useState)(null),
+          [$, J] = (0, t.useState)(!1),
+          [q, G] = (0, t.useState)(null),
+          [K, U] = (0, t.useState)(null),
+          [N, Q] = (0, t.useState)(""),
+          [X, Y] = (0, t.useState)(!1),
+          Z = (0, t.useCallback)(async () => {
+            if (c && e)
+              try {
+                E(await (0, B.fetchLineup)(e, c.id));
+              } catch (e) {
+                G((0, P.storeErrorText)(e?.message ?? "") || M("error"));
+              }
+          }, [c, e, M]);
+        (0, x.useFocusEffect)(
+          (0, t.useCallback)(() => {
+            Z();
+          }, [Z]),
+        );
+        const ee = async (e, t) => {
+            if (c) {
+              (J(!0), G(null), U(null));
+              try {
+                const s = await e();
+                (s ? E(s) : await Z(), t && U(M(t)));
+              } catch (e) {
+                G((0, P.storeErrorText)(e?.message ?? "") || M("error"));
+              } finally {
+                (J(!1), O(null), Q(""));
+              }
+            }
+          },
+          te = !!D?.can_edit && !D.locked,
+          ae =
+            "slot" === H?.type && D
+              ? ("A" === H.side ? D.a : D.b).slots.find((e) => e.slot_id === H.slot_id)
+              : null,
+          ie = "slot" === H?.type ? { side: H.side, slot_id: H.slot_id } : null,
+          se = D ? ("A" === V ? D.a : D.b) : null;
+        return (0, z.jsxs)(y.SafeAreaView, {
+          edges: ["top"],
+          style: { flex: 1, backgroundColor: W.bg },
+          children: [
+            (0, z.jsxs)(p.default, {
+              style: A.header,
+              children: [
+                (0, z.jsx)(n.default, {
+                  onPress: () => R.back(),
+                  accessibilityRole: "button",
+                  accessibilityLabel: M("back"),
+                  style: [A.iconBtn, { backgroundColor: W.surface, borderColor: W.border }],
+                  children: (0, z.jsx)(h.Ionicons, { name: (0, I.chevronBack)(), size: 22, color: W.text }),
+                }),
+                (0, z.jsx)(u.default, {
+                  style: [S.typography.h2, { color: W.text, marginHorizontal: S.spacing.md, flex: 1 }],
+                  children: M("lineupTitle"),
+                }),
+                D?.locked &&
+                  (0, z.jsxs)(p.default, {
+                    style: [A.badge, { backgroundColor: W.surfaceAlt, borderColor: W.border }],
+                    children: [
+                      (0, z.jsx)(h.Ionicons, { name: "lock-closed", size: 12, color: W.textMuted }),
+                      (0, z.jsx)(u.default, {
+                        style: [S.typography.caption, { color: W.textMuted, marginStart: 4 }],
+                        children: M("lineupLockedBadge"),
+                      }),
+                    ],
+                  }),
+              ],
+            }),
+            (0, z.jsx)(o.default, {
+              contentContainerStyle: { padding: S.spacing.lg, paddingBottom: S.spacing.xxxl },
+              children:
+                null === D && q
+                  ? (0, z.jsxs)(p.default, {
+                      style: { paddingVertical: S.spacing.xl },
+                      children: [
+                        (0, z.jsx)(w.EmptyState, {
+                          icon: "cloud-offline-outline",
+                          title: M("error"),
+                          body: q,
+                        }),
+                        (0, z.jsx)(f.Button, {
+                          title: M("retry"),
+                          onPress: () => Z(),
+                          style: { marginTop: S.spacing.md },
+                        }),
+                      ],
+                    })
+                  : null === D
+                    ? (0, z.jsx)(s.default, { color: W.accentText })
+                    : (0, z.jsxs)(z.Fragment, {
+                        children: [
+                          D.is_live &&
+                            (0, z.jsxs)(p.default, {
+                              style: [A.banner, { backgroundColor: W.surfaceAlt, borderColor: W.accent }],
+                              children: [
+                                (0, z.jsx)(h.Ionicons, {
+                                  name: "radio-outline",
+                                  size: 16,
+                                  color: W.accentText,
+                                }),
+                                (0, z.jsx)(u.default, {
+                                  style: [S.typography.small, { color: W.text, marginStart: S.spacing.xs }],
+                                  children: M("liveSubsBadge"),
+                                }),
+                              ],
+                            }),
+                          q &&
+                            (0, z.jsxs)(p.default, {
+                              style: [A.banner, { backgroundColor: W.surfaceAlt, borderColor: W.danger }],
+                              children: [
+                                (0, z.jsx)(h.Ionicons, { name: "alert-circle", size: 16, color: W.danger }),
+                                (0, z.jsx)(b.FormError, {
+                                  text: q,
+                                  style: { marginStart: S.spacing.xs, flex: 1 },
+                                }),
+                              ],
+                            }),
+                          K &&
+                            (0, z.jsxs)(p.default, {
+                              style: [A.banner, { backgroundColor: W.surfaceAlt, borderColor: W.success }],
+                              children: [
+                                (0, z.jsx)(h.Ionicons, {
+                                  name: "checkmark-circle",
+                                  size: 16,
+                                  color: W.success,
+                                }),
+                                (0, z.jsx)(u.default, {
+                                  style: [S.typography.small, { color: W.text, marginStart: S.spacing.xs }],
+                                  children: K,
+                                }),
+                              ],
+                            }),
+                          (0, z.jsx)(_.FormationBoard, {
+                            // Draws a padel or tennis court instead of a pitch when the match is one.
+                            sport: D.sport,
+                            a: D.a.slots,
+                            b: D.b.slots,
+                            selected: ie,
+                            onSlotPress: (e, t) => {
+                              if (D && c) {
+                                if (!D.can_edit) {
+                                  const s = ("A" === e ? D.a : D.b).slots.find((e) => e.slot_id === t);
+                                  return void (s?.user_id && R.push(`/player/${s.user_id}`));
+                                }
+                                if ("bench" === H?.type) {
+                                  const s = H.player_id;
+                                  return void (D.is_live
+                                    ? ee(() => (0, B.recordLineupSubstitution)(c.id, D.game_id, e, t, s))
+                                    : ee(() => (0, B.assignLineupSlot)(c.id, D.game_id, e, t, s)));
+                                }
+                                if ("slot" === H?.type) {
+                                  if (H.side === e && H.slot_id === t) return void O(null);
+                                  if (H.side === e)
+                                    return void ee(() =>
+                                      (0, B.swapLineupSlots)(c.id, D.game_id, e, H.slot_id, t),
+                                    );
+                                  const s = ("A" === H.side ? D.a : D.b).slots.find(
+                                    (e) => e.slot_id === H.slot_id,
+                                  );
+                                  return s?.player_id
+                                    ? void ee(() =>
+                                        (0, B.assignLineupSlot)(c.id, D.game_id, e, t, s.player_id),
+                                      )
+                                    : void O({ type: "slot", side: e, slot_id: t });
+                                }
+                                O({ type: "slot", side: e, slot_id: t });
+                              }
+                            },
+                            selfUserId: c?.id ?? null,
+                            onLeaveSelf: () => Y(!0),
+                          }),
+                          te &&
+                            ae?.player_id &&
+                            "slot" === H?.type &&
+                            (0, z.jsxs)(j.Card, {
+                              padding: "md",
+                              style: { marginTop: S.spacing.md },
+                              children: [
+                                (0, z.jsx)(u.default, {
+                                  style: [
+                                    S.typography.bodyStrong,
+                                    { color: W.text, marginBottom: S.spacing.sm },
+                                  ],
+                                  children: ae.player_name,
+                                }),
+                                (0, z.jsxs)(p.default, {
+                                  style: A.rowWrap,
+                                  children: [
+                                    (0, z.jsx)(f.Button, {
+                                      title: M("makeCaptain"),
+                                      size: "sm",
+                                      variant: "secondary",
+                                      onPress: () =>
+                                        ee(() => (0, B.setLineupCaptain)(c.id, D.game_id, H.side, H.slot_id)),
+                                    }),
+                                    (0, z.jsx)(f.Button, {
+                                      title: M("removeFromSlot"),
+                                      size: "sm",
+                                      variant: "ghost",
+                                      onPress: () =>
+                                        ee(() =>
+                                          (0, B.assignLineupSlot)(c.id, D.game_id, H.side, H.slot_id, null),
+                                        ),
+                                    }),
+                                  ],
+                                }),
+                                (0, z.jsxs)(p.default, {
+                                  style: {
+                                    flexDirection: "row",
+                                    alignItems: "flex-end",
+                                    gap: S.spacing.sm,
+                                    marginTop: S.spacing.sm,
+                                  },
+                                  children: [
+                                    (0, z.jsx)(p.default, {
+                                      style: { flex: 1 },
+                                      children: (0, z.jsx)(C.Input, {
+                                        label: M("setJersey"),
+                                        value: N,
+                                        onChangeText: Q,
+                                        keyboardType: "number-pad",
+                                        maxLength: 2,
+                                        placeholder: "7",
+                                      }),
+                                    }),
+                                    (0, z.jsx)(f.Button, {
+                                      title: "OK",
+                                      size: "sm",
+                                      onPress: () =>
+                                        ee(() =>
+                                          (0, B.setLineupJersey)(
+                                            c.id,
+                                            D.game_id,
+                                            H.side,
+                                            H.slot_id,
+                                            N ? parseInt(N, 10) : null,
+                                          ),
+                                        ),
+                                      style: { marginBottom: S.spacing.md },
+                                    }),
+                                  ],
+                                }),
+                              ],
+                            }),
+                          (0, z.jsx)(u.default, {
+                            style: [
+                              S.typography.h3,
+                              { color: W.text, marginTop: S.spacing.lg, marginBottom: S.spacing.sm },
+                            ],
+                            children: M("benchLabel"),
+                          }),
+                          0 === D.bench.length
+                            ? (0, z.jsx)(u.default, {
+                                style: [S.typography.small, { color: W.textMuted }],
+                                children: "\u2014",
+                              })
+                            : (0, z.jsx)(p.default, {
+                                style: A.rowWrap,
+                                children: D.bench.map((e) =>
+                                  (0, z.jsx)(
+                                    n.default,
+                                    {
+                                      accessibilityRole: "button",
+                                      onPress: () => {
+                                        D.can_edit
+                                          ? O(
+                                              "bench" === H?.type && H.player_id === e.player_id
+                                                ? null
+                                                : { type: "bench", player_id: e.player_id },
+                                            )
+                                          : e.user_id && R.push(`/player/${e.user_id}`);
+                                      },
+                                      style: [
+                                        A.benchChip,
+                                        {
+                                          borderColor:
+                                            "bench" === H?.type && H.player_id === e.player_id
+                                              ? W.accent
+                                              : W.border,
+                                          backgroundColor:
+                                            "bench" === H?.type && H.player_id === e.player_id
+                                              ? W.surfaceAlt
+                                              : W.surface,
+                                        },
+                                      ],
+                                      children: (0, z.jsx)(u.default, {
+                                        style: [S.typography.small, { color: W.text }],
+                                        numberOfLines: 1,
+                                        children: e.name,
+                                      }),
+                                    },
+                                    e.player_id,
+                                  ),
+                                ),
+                              }),
+                          D.can_edit
+                            ? (0, z.jsx)(u.default, {
+                                style: [
+                                  S.typography.caption,
+                                  { color: W.textMuted, marginTop: S.spacing.xs },
+                                ],
+                                children: M("tapToPlace"),
+                              })
+                            : (0, z.jsx)(u.default, {
+                                style: [
+                                  S.typography.caption,
+                                  { color: W.textMuted, marginTop: S.spacing.xs },
+                                ],
+                                children: M("viewOnlyHint"),
+                              }),
+                          D.can_edit &&
+                            (0, z.jsxs)(z.Fragment, {
+                              children: [
+                                (0, z.jsx)(p.default, {
+                                  style: [A.segment, { borderColor: W.border, marginTop: S.spacing.lg }],
+                                  children: ["A", "B"].map((e) =>
+                                    (0, z.jsx)(
+                                      n.default,
+                                      {
+                                        accessibilityRole: "button",
+                                        onPress: () => F(e),
+                                        style: [A.segmentBtn, V === e && { backgroundColor: W.accent }],
+                                        children: (0, z.jsx)(u.default, {
+                                          style: [
+                                            S.typography.smallStrong,
+                                            { color: V === e ? W.accentInk : W.textMuted },
+                                          ],
+                                          children: M("A" === e ? "teamA" : "teamB"),
+                                        }),
+                                      },
+                                      e,
+                                    ),
+                                  ),
+                                }),
+                                (0, z.jsx)(u.default, {
+                                  style: [
+                                    S.typography.smallStrong,
+                                    {
+                                      color: W.textMuted,
+                                      marginTop: S.spacing.md,
+                                      marginBottom: S.spacing.xs,
+                                    },
+                                  ],
+                                  children: M("formationLabel"),
+                                }),
+                                (0, z.jsx)(p.default, {
+                                  style: A.rowWrap,
+                                  children: D.formations.map((e) => {
+                                    const t = se?.formation_key === e.key;
+                                    return (0, z.jsx)(
+                                      n.default,
+                                      {
+                                        accessibilityRole: "button",
+                                        onPress: () =>
+                                          ee(() => (0, B.setLineupFormation)(c.id, D.game_id, V, e.key)),
+                                        style: [
+                                          A.benchChip,
+                                          {
+                                            borderColor: t ? W.accent : W.border,
+                                            backgroundColor: t ? W.surfaceAlt : W.surface,
+                                          },
+                                        ],
+                                        children: (0, z.jsxs)(u.default, {
+                                          style: [S.typography.small, { color: t ? W.accentText : W.text }],
+                                          children: [
+                                            e.labelKey ? M(e.labelKey) : e.label,
+                                            e.key === D.suggested_key
+                                              ? ` \u2605 ${M("lineupSuggested")}`
+                                              : "",
+                                          ],
+                                        }),
+                                      },
+                                      e.key,
+                                    );
+                                  }),
+                                }),
+                                (0, z.jsxs)(p.default, {
+                                  style: [A.rowWrap, { marginTop: S.spacing.lg }],
+                                  children: [
+                                    (0, z.jsx)(f.Button, {
+                                      title: `\u2728 ${M("autoBalanceAI")}`,
+                                      size: "sm",
+                                      onPress: () => ee(() => (0, B.autoBalanceLineup)(c.id, D.game_id)),
+                                      loading: $,
+                                    }),
+                                    (0, z.jsx)(f.Button, {
+                                      title: M("randomizeTeams"),
+                                      size: "sm",
+                                      variant: "secondary",
+                                      onPress: () => ee(() => (0, B.randomizeLineup)(c.id, D.game_id)),
+                                    }),
+                                    (0, z.jsx)(f.Button, {
+                                      title: D.locked ? M("unlockLineup") : M("lockLineup"),
+                                      size: "sm",
+                                      variant: "secondary",
+                                      onPress: () => ee(() => (0, B.toggleLineupLock)(c.id, D.game_id)),
+                                    }),
+                                    (0, z.jsx)(f.Button, {
+                                      title: M("shareToChat"),
+                                      size: "sm",
+                                      variant: "ghost",
+                                      onPress: async () => {
+                                        if (!c || !D) return;
+                                        const e = await (0, B.fetchProfile)(c.id);
+                                        ee(
+                                          () =>
+                                            (0, B.shareLineupToChat)(
+                                              c.id,
+                                              D.game_id,
+                                              e?.full_name ?? "Player",
+                                            ),
+                                          "lineupShared",
+                                        );
+                                      },
+                                    }),
+                                    (0, z.jsx)(f.Button, {
+                                      title: M("exportImage"),
+                                      size: "sm",
+                                      variant: "ghost",
+                                      onPress: () => D && (0, T.exportLineupImage)(D, M("lineupTitle")),
+                                    }),
+                                    (0, z.jsx)(f.Button, {
+                                      title: M("saveTemplate"),
+                                      size: "sm",
+                                      variant: "ghost",
+                                      onPress: () =>
+                                        se &&
+                                        ee(async () => {
+                                          await (0, B.saveLineupTemplate)(
+                                            c.id,
+                                            se.formation_key,
+                                            se.formation_key,
+                                          );
+                                        }, "templateSaved"),
+                                    }),
+                                  ],
+                                }),
+                                (0, z.jsx)(u.default, {
+                                  style: [
+                                    S.typography.h3,
+                                    { color: W.text, marginTop: S.spacing.xl, marginBottom: S.spacing.sm },
+                                  ],
+                                  children: M("editorsLabel"),
+                                }),
+                                (0, z.jsx)(j.Card, {
+                                  padding: "md",
+                                  children:
+                                    0 ===
+                                    [...D.a.slots, ...D.b.slots].filter((e) => e.captain && e.user_id).length
+                                      ? (0, z.jsx)(u.default, {
+                                          style: [S.typography.small, { color: W.textMuted }],
+                                          children: "\u2014",
+                                        })
+                                      : [...D.a.slots, ...D.b.slots]
+                                          .filter((e) => e.captain && e.user_id)
+                                          .map((e) => {
+                                            const t = D.editor_user_ids.includes(e.user_id);
+                                            return (0, z.jsxs)(
+                                              p.default,
+                                              {
+                                                style: A.editorRow,
+                                                children: [
+                                                  (0, z.jsx)(u.default, {
+                                                    style: [S.typography.body, { color: W.text, flex: 1 }],
+                                                    children: e.player_name,
+                                                  }),
+                                                  (0, z.jsx)(f.Button, {
+                                                    title: M(t ? "revokeEdit" : "grantEdit"),
+                                                    size: "sm",
+                                                    variant: t ? "ghost" : "secondary",
+                                                    onPress: () =>
+                                                      ee(() =>
+                                                        (0, B.grantLineupEdit)(
+                                                          c.id,
+                                                          D.game_id,
+                                                          e.user_id,
+                                                          !t,
+                                                        ),
+                                                      ),
+                                                  }),
+                                                ],
+                                              },
+                                              e.user_id,
+                                            );
+                                          }),
+                                }),
+                                (0, z.jsx)(u.default, {
+                                  style: [
+                                    S.typography.h3,
+                                    { color: W.text, marginTop: S.spacing.xl, marginBottom: S.spacing.sm },
+                                  ],
+                                  children: M("lineupHistory"),
+                                }),
+                                (0, z.jsx)(j.Card, {
+                                  padding: "md",
+                                  children: D.history
+                                    .slice(0, 8)
+                                    .map((e) =>
+                                      (0, z.jsxs)(
+                                        p.default,
+                                        {
+                                          style: A.historyRow,
+                                          children: [
+                                            (0, z.jsxs)(u.default, {
+                                              style: [
+                                                S.typography.caption,
+                                                { color: W.textMuted, width: 34 },
+                                              ],
+                                              children: ["v", e.version],
+                                            }),
+                                            (0, z.jsx)(u.default, {
+                                              style: [S.typography.caption, { color: W.text, flex: 1 }],
+                                              numberOfLines: 1,
+                                              children: e.action,
+                                            }),
+                                            (0, z.jsx)(u.default, {
+                                              style: [S.typography.caption, { color: W.textMuted }],
+                                              children: new Date(e.at).toLocaleTimeString(),
+                                            }),
+                                          ],
+                                        },
+                                        e.version,
+                                      ),
+                                    ),
+                                }),
+                              ],
+                            }),
+                        ],
+                      }),
+            }),
+            (0, z.jsx)(l.default, {
+              visible: X,
+              transparent: !0,
+              animationType: "fade",
+              onRequestClose: () => Y(!1),
+              children: (0, z.jsx)(n.default, {
+                style: A.confirmScrim,
+                onPress: () => Y(!1),
+                children: (0, z.jsxs)(n.default, {
+                  style: [A.confirmCard, { backgroundColor: W.surface, borderColor: W.border }],
+                  onPress: () => {},
+                  children: [
+                    (0, z.jsx)(p.default, {
+                      style: [A.confirmIcon, { backgroundColor: W.surfaceAlt }],
+                      children: (0, z.jsx)(h.Ionicons, { name: "exit-outline", size: 24, color: W.danger }),
+                    }),
+                    (0, z.jsx)(u.default, {
+                      style: [
+                        S.typography.h3,
+                        { color: W.text, textAlign: "center", marginTop: S.spacing.md },
+                      ],
+                      children: M("leaveMatchTitle"),
+                    }),
+                    (0, z.jsx)(u.default, {
+                      style: [
+                        S.typography.small,
+                        { color: W.textMuted, textAlign: "center", marginTop: S.spacing.xs },
+                      ],
+                      children: M("leaveMatchBody"),
+                    }),
+                    (0, z.jsxs)(p.default, {
+                      style: { marginTop: S.spacing.lg, gap: S.spacing.sm, alignSelf: "stretch" },
+                      children: [
+                        (0, z.jsx)(f.Button, {
+                          title: M("leaveGame"),
+                          variant: "danger",
+                          fullWidth: !0,
+                          loading: $,
+                          onPress: () => {
+                            (Y(!1),
+                              ee(async () => {
+                                await (0, B.leaveMatch)(D.game_id, c.id);
+                              }));
+                          },
+                        }),
+                        (0, z.jsx)(f.Button, {
+                          title: M("stay"),
+                          variant: "ghost",
+                          fullWidth: !0,
+                          onPress: () => Y(!1),
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              }),
+            }),
+          ],
+        });
+      }));
+    var t = r(d[1]),
+      s = e(r(d[2])),
+      l = e(r(d[3])),
+      n = e(r(d[4])),
+      o = e(r(d[5])),
+      c = e(r(d[6])),
+      u = e(r(d[7])),
+      p = e(r(d[8])),
+      y = r(d[9]),
+      h = r(d[10]),
+      x = r(d[11]),
+      f = r(d[12]),
+      b = r(d[13]),
+      j = r(d[14]),
+      _ = r(d[15]),
+      C = r(d[16]),
+      v = r(d[17]),
+      k = r(d[18]),
+      S = r(d[19]),
+      B = r(d[20]),
+      T = r(d[21]),
+      w = r(d[22]),
+      L = r(d[23]),
+      I = r(d[24]),
+      P = r(d[25]),
+      z = r(d[26]);
+    const A = c.default.create({
+      header: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: S.spacing.lg,
+        paddingVertical: S.spacing.md,
+      },
+      iconBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: c.default.hairlineWidth,
+      },
+      badge: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: S.spacing.sm,
+        paddingVertical: 4,
+        borderRadius: S.radius.pill,
+        borderWidth: c.default.hairlineWidth,
+      },
+      banner: {
+        flexDirection: "row",
+        alignItems: "center",
+        borderRadius: S.radius.md,
+        borderWidth: c.default.hairlineWidth,
+        padding: S.spacing.sm,
+        marginBottom: S.spacing.md,
+      },
+      rowWrap: { flexDirection: "row", flexWrap: "wrap", gap: S.spacing.xs },
+      benchChip: {
+        paddingHorizontal: S.spacing.sm,
+        paddingVertical: 6,
+        borderRadius: S.radius.pill,
+        borderWidth: 1,
+      },
+      segment: {
+        flexDirection: "row",
+        borderWidth: c.default.hairlineWidth,
+        borderRadius: S.radius.md,
+        overflow: "hidden",
+      },
+      segmentBtn: { flex: 1, alignItems: "center", paddingVertical: S.spacing.sm },
+      editorRow: { flexDirection: "row", alignItems: "center", paddingVertical: S.spacing.xs },
+      historyRow: { flexDirection: "row", alignItems: "center", gap: S.spacing.sm, paddingVertical: 3 },
+      confirmScrim: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.55)",
+        justifyContent: "center",
+        padding: S.spacing.xl,
+      },
+      confirmCard: {
+        borderRadius: 20,
+        borderWidth: c.default.hairlineWidth,
+        padding: S.spacing.xl,
+        alignItems: "center",
+      },
+      confirmIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: "center",
+        justifyContent: "center",
+      },
+    });
+  },
+  2448,
+  [
+    33, 15, 461, 467, 369, 281, 158, 146, 273, 381, 1086, 20, 626, 624, 1623, 2382, 625, 630, 615, 616, 671,
+    2449, 1627, 675, 1171, 674, 13,
+  ],
+);
+__d(
+  function (g, r, i, _a, m, e, d) {
+    (Object.defineProperty(e, "__esModule", { value: !0 }),
+      (e.exportLineupImage = async function (t, l) {
+        const n = document.createElement("canvas");
+        ((n.width = 900), (n.height = 1300));
+        const s = n.getContext("2d");
+        if (!s) return !1;
+        // The shared image has to match the sport too, or a padel lineup is exported as a football pitch.
+        const sp = t.sport,
+          T9 = 90,
+          B9 = 1260,
+          H9 = B9 - T9,
+          MID = T9 + H9 / 2,
+          line = (y) => {
+            (s.beginPath(), s.moveTo(20, y), s.lineTo(880, y), s.stroke());
+          },
+          vline = (y1, y2) => {
+            (s.beginPath(), s.moveTo(450, y1), s.lineTo(450, y2), s.stroke());
+          };
+        ((s.fillStyle = "padel" === sp ? "#2B5FAE" : "tennis" === sp ? "#B4593A" : "#17683B"),
+          s.fillRect(0, 0, 900, 1300),
+          (s.strokeStyle = "rgba(255,255,255,0.65)"),
+          (s.lineWidth = 3),
+          s.strokeRect(20, T9, 860, H9));
+        if ("padel" === sp) {
+          // net, then the service lines 6.95m from it on a 20m court, then the centre service lines
+          ((s.lineWidth = 5), line(MID), (s.lineWidth = 3));
+          (line(T9 + 0.153 * H9), line(T9 + 0.847 * H9));
+          (vline(T9, T9 + 0.153 * H9), vline(T9 + 0.847 * H9, B9));
+          // glass back walls
+          ((s.fillStyle = "rgba(255,255,255,0.16)"),
+            s.fillRect(20, T9, 860, 0.04 * H9),
+            s.fillRect(20, B9 - 0.04 * H9, 860, 0.04 * H9));
+        } else if ("tennis" === sp) {
+          ((s.lineWidth = 5), line(MID), (s.lineWidth = 3));
+          (line(T9 + 0.231 * H9), line(T9 + 0.769 * H9));
+          vline(T9 + 0.231 * H9, T9 + 0.769 * H9);
+          // singles sidelines inside the doubles tramlines
+          for (const x of [20 + 0.125 * 860, 880 - 0.125 * 860]) {
+            (s.beginPath(), s.moveTo(x, T9), s.lineTo(x, B9), s.stroke());
+          }
+        } else {
+          (line(MID), s.beginPath(), s.arc(450, MID, 90, 0, 2 * Math.PI), s.stroke());
+        }
+        ((s.fillStyle = "#fff"),
+          (s.font = "bold 40px system-ui, sans-serif"),
+          (s.textAlign = "center"),
+          s.fillText(l.slice(0, 40), 450, 58));
+        const f = (t, l, n, f) => {
+          ((s.font = "bold 26px system-ui, sans-serif"),
+            (s.fillStyle = "#FDE68A"),
+            (s.textAlign = l ? "right" : "left"),
+            s.fillText(`${n} \xb7 ${f}`, l ? 864 : 36, l ? 130 : 1244));
+          for (const n of t) {
+            const t = 780 * (l ? 1 - n.x : n.x) + 60,
+              f = T9 + H9 * (l ? 0.5 * n.y : 1 - 0.5 * n.y);
+            (s.beginPath(),
+              s.arc(t, f, 26, 0, 2 * Math.PI),
+              (s.fillStyle = n.player_id ? "#0F172A" : "rgba(255,255,255,0.25)"),
+              s.fill(),
+              (s.strokeStyle = "#fff"),
+              (s.lineWidth = 3),
+              s.stroke(),
+              (s.fillStyle = "#fff"),
+              (s.font = "bold 20px system-ui, sans-serif"),
+              (s.textAlign = "center"));
+            const a = n.player_name
+              ? n.player_name
+                  .split(" ")
+                  .map((t) => t[0])
+                  .slice(0, 2)
+                  .join("")
+              : "\xb7";
+            (s.fillText(null != n.jersey ? String(n.jersey) : a, t, f + 7),
+              n.captain &&
+                ((s.fillStyle = "#FACC15"),
+                s.beginPath(),
+                s.arc(t + 22, f - 22, 11, 0, 2 * Math.PI),
+                s.fill(),
+                (s.fillStyle = "#1F2937"),
+                (s.font = "bold 14px system-ui, sans-serif"),
+                s.fillText("C", t + 22, f - 17)),
+              (s.fillStyle = "#fff"),
+              (s.font = "16px system-ui, sans-serif"),
+              s.fillText((n.player_name ?? n.role).slice(0, 14), t, f + 48));
+          }
+        };
+        (f(t.a.slots, !1, "Team A", t.a.formation_key), f(t.b.slots, !0, "Team B", t.b.formation_key));
+        const a = document.createElement("a");
+        return (
+          (a.href = n.toDataURL("image/png")),
+          (a.download = `lineup-${t.game_id.slice(-6)}.png`),
+          a.click(),
+          !0
+        );
+      }));
+  },
+  2449,
+  [],
+);
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{focus:t,sport:n}=(0,b.useLocalSearchParams)(),{colors:p}=(0,x.useTheme)(),I=(0,b.useRouter)(),S=(0,y.useT)(),[V,_]=(0,s.useState)([]),[k,P]=(0,s.useState)(!0);return(0,s.useEffect)(()=>{(0,j.fetchVenues)().then(t=>{_(n?t.filter(t=>t.sports.includes(n)):t)}).finally(()=>P(!1))},[n]),(0,C.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:p.bg},children:[k?(0,C.jsx)(c.default,{style:{flex:1,alignItems:'center',justifyContent:'center'},children:(0,C.jsx)(o.default,{color:p.accentText})}):(0,C.jsx)(h.VenueMap,{venues:V,focusVenueId:t??null}),(0,C.jsx)(l.default,{onPress:()=>I.back(),accessibilityRole:"button",accessibilityLabel:S('close'),style:[v.close,{backgroundColor:p.surface,borderColor:p.border}],children:(0,C.jsx)(f.Ionicons,{name:"close",size:22,color:p.text})})]})};var s=r(d[1]),o=t(r(d[2])),l=t(r(d[3])),n=t(r(d[4])),c=t(r(d[5])),u=r(d[6]),f=r(d[7]),b=r(d[8]),h=r(d[9]),x=r(d[10]),p=r(d[11]),j=r(d[12]),y=r(d[13]),C=r(d[14]);const v=n.default.create({close:{position:'absolute',top:p.spacing.xl+p.spacing.lg,left:p.spacing.lg,width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:n.default.hairlineWidth}})},2450,[33,15,461,369,158,273,381,1086,20,1680,615,616,671,675,13]);
 __d(function(g,r,i,a,_m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{id:e}=(0,x.useLocalSearchParams)(),{user:c}=(0,w.useAuth)(),{colors:_}=(0,k.useTheme)(),L=(0,x.useRouter)(),D=(0,T.useT)(),F=(0,I.useReducedMotion)(),[W,O]=(0,t.useState)(null),[V,E]=(0,t.useState)(null),[H,q]=(0,t.useState)(null),[U,$]=(0,t.useState)(null),[N,Q]=(0,t.useState)(null),[G,J]=(0,t.useState)(''),K=(0,t.useRef)(new Set),X=(0,t.useCallback)(async()=>{if(c&&e)try{O(await(0,S.fetchMediaUpload)(c.id,e))}catch(e){E(e.message)}},[c,e]),Y=W?.upload.status,Z='queued'===Y||'processing'===Y;(0,x.useFocusEffect)((0,t.useCallback)(()=>{if(X(),!Z)return;const e=setInterval(X,1500);return()=>clearInterval(e)},[X,Z]));const ee=e=>{q(e),setTimeout(()=>q(null),2200)},te=async e=>{K.current.has(e.id)||(K.current.add(e.id),await(0,S.recordClipView)(e.id),X())},se=async(e,t)=>{if(c){$(null);try{await(0,S.shareClip)(c.id,e.id,t),ee(D('sharedToast',{p:D(`plat_${t}`)})),X()}catch{ee(D('errForbidden'))}}},oe=async e=>{if(c)try{await(0,S.fetchClipSignedUrl)(c.id,e.id),ee(D('signedUrlReady'))}catch{ee(D('errForbidden'))}};if(!W)return(0,v.jsx)(p.SafeAreaView,{style:[A.center,{backgroundColor:_.bg}],children:V?(0,v.jsx)(m.FormError,{text:V}):(0,v.jsx)(s.default,{color:_.accentText})});const{upload:re,clips:ae}=W;return(0,v.jsxs)(p.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:_.bg},children:[(0,v.jsxs)(h.default,{style:A.header,children:[(0,v.jsx)(l.default,{onPress:()=>L.back(),accessibilityRole:"button",accessibilityLabel:D('back'),style:[A.iconBtn,{backgroundColor:_.surface,borderColor:_.border}],children:(0,v.jsx)(f.Ionicons,{name:(0,B.chevronBack)(),size:22,color:_.text})}),(0,v.jsx)(u.default,{style:[R.typography.h2,{color:_.text,flex:1,marginHorizontal:R.spacing.md}],numberOfLines:1,children:re.title}),re.watermark&&(0,v.jsx)(b.Badge,{label:D('watermarkOn'),tone:"neutral"})]}),(0,v.jsx)(n.default,{contentContainerStyle:{padding:R.spacing.lg,paddingBottom:R.spacing.xxxl},children:'ready'!==re.status?(0,v.jsxs)(y.Card,{padding:"lg",style:{alignItems:'center'},children:[(0,v.jsx)(s.default,{color:_.accentText}),(0,v.jsx)(u.default,{style:[R.typography.bodyStrong,{color:_.text,marginTop:R.spacing.sm}],children:D("status"+('processing'===re.status?'Processing':'Queued'))}),(0,v.jsx)(u.default,{style:[R.typography.caption,{color:_.textMuted,marginVertical:R.spacing.xs}],children:D('processingHint')}),(0,v.jsx)(h.default,{style:[A.track,{backgroundColor:_.surfaceAlt,width:'80%'}],children:(0,v.jsx)(h.default,{style:[A.fill,{width:`${Math.max(6,re.progress)}%`,backgroundColor:_.accent}]})})]}):(0,v.jsxs)(v.Fragment,{children:[(0,v.jsxs)(u.default,{style:[R.typography.h3,{color:_.text,marginBottom:R.spacing.sm}],children:[D('generatedClips')," \xb7 ",ae.length]}),ae.map(e=>(0,v.jsxs)(y.Card,{padding:"md",style:{marginBottom:R.spacing.md},children:[(0,v.jsxs)(l.default,{onPress:()=>te(e),style:[A.thumb,{backgroundColor:_.surfaceAlt}],children:[(0,v.jsx)(f.Ionicons,{name:M[e.kind]??'film',size:26,color:_.accentText}),(0,v.jsxs)(h.default,{style:A.thumbBadges,children:[(0,v.jsx)(b.Badge,{label:e.format,tone:"neutral"}),(0,v.jsx)(h.default,{style:{width:6}}),(0,v.jsx)(b.Badge,{label:D('secondsShort',{n:e.duration_seconds}),tone:"neutral"})]}),(0,v.jsx)(h.default,{style:A.playDot,children:(0,v.jsx)(f.Ionicons,{name:"play",size:14,color:"#fff"})})]}),(0,v.jsxs)(h.default,{style:{flexDirection:'row',alignItems:'center',marginTop:R.spacing.sm},children:[(0,v.jsx)(u.default,{style:[R.typography.bodyStrong,{color:_.text,flex:1}],numberOfLines:1,children:D(e.title)}),(0,v.jsx)(f.Ionicons,{name:"eye-outline",size:14,color:_.textMuted}),(0,v.jsx)(u.default,{style:[R.typography.caption,{color:_.textMuted,marginStart:3,marginEnd:R.spacing.sm}],children:e.views}),(0,v.jsx)(f.Ionicons,{name:"share-social-outline",size:14,color:_.textMuted}),(0,v.jsx)(u.default,{style:[R.typography.caption,{color:_.textMuted,marginStart:3}],children:e.shares})]}),(0,v.jsxs)(h.default,{style:{flexDirection:'row',gap:R.spacing.sm,marginTop:R.spacing.sm},children:[(0,v.jsx)(j.Button,{title:D('shareBtn'),size:"sm",style:{flex:1},onPress:()=>$(e),leftIcon:(0,v.jsx)(f.Ionicons,{name:"share-social",size:14,color:"#fff"})}),(0,v.jsx)(l.default,{onPress:()=>oe(e),accessibilityRole:"button",accessibilityLabel:D('copyLinkA11y'),style:[A.ghost,{borderColor:_.border}],children:(0,v.jsx)(f.Ionicons,{name:"link-outline",size:16,color:_.text})}),(0,v.jsx)(l.default,{onPress:()=>Q(e),accessibilityRole:"button",accessibilityLabel:D('reportPost'),style:[A.ghost,{borderColor:_.border}],children:(0,v.jsx)(f.Ionicons,{name:"flag-outline",size:16,color:_.textMuted})})]})]},e.id)),(0,v.jsx)(u.default,{style:[R.typography.caption,{color:_.textMuted,marginTop:R.spacing.xs}],children:D('mediaModeledNote')})]})}),H&&(0,v.jsx)(h.default,{style:[A.flash,{backgroundColor:_.text}],children:(0,v.jsx)(u.default,{style:[R.typography.smallStrong,{color:_.bg,textAlign:'center'}],children:H})}),(0,v.jsx)(o.default,{visible:!!U,transparent:!0,animationType:(0,I.sheetAnimation)(F),onRequestClose:()=>$(null),children:(0,v.jsx)(l.default,{style:A.scrim,onPress:()=>$(null),children:(0,v.jsxs)(l.default,{style:[A.sheet,{backgroundColor:_.surface}],onPress:()=>{},children:[(0,v.jsx)(u.default,{style:[R.typography.h3,{color:_.text,marginBottom:R.spacing.md}],children:D('shareSheetTitle')}),(0,v.jsx)(h.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:R.spacing.md},children:P.SHARE_PLATFORMS.map(e=>(0,v.jsxs)(l.default,{onPress:()=>U&&se(U,e),style:A.platform,children:[(0,v.jsx)(h.default,{style:[A.platformIcon,{backgroundColor:_.surfaceAlt,borderColor:_.border}],children:(0,v.jsx)(f.Ionicons,{name:z[e],size:24,color:_.text})}),(0,v.jsx)(u.default,{style:[R.typography.caption,{color:_.textMuted,marginTop:4}],children:D(`plat_${e}`)})]},e))})]})})}),(0,v.jsx)(o.default,{visible:!!N,transparent:!0,animationType:(0,I.sheetAnimation)(F),onRequestClose:()=>Q(null),children:(0,v.jsx)(l.default,{style:A.scrim,onPress:()=>Q(null),children:(0,v.jsxs)(l.default,{style:[A.sheet,{backgroundColor:_.surface}],onPress:()=>{},children:[(0,v.jsx)(u.default,{style:[R.typography.h3,{color:_.text,marginBottom:R.spacing.sm}],children:D('reportBtn')}),(0,v.jsx)(C.Input,{placeholder:D('reportReasonPlaceholder'),value:G,onChangeText:J}),(0,v.jsx)(j.Button,{title:D('reportBtn'),size:"sm",style:{marginTop:R.spacing.md},onPress:async()=>{if(!c||!N)return;const e=N;Q(null);try{await(0,S.reportClipCopyright)(c.id,e.id,G||'Copyright'),J(''),ee(D('reportSubmitted'))}catch{ee(D('errForbidden'))}}})]})})})]})};var t=r(d[1]),s=e(r(d[2])),o=e(r(d[3])),l=e(r(d[4])),n=e(r(d[5])),c=e(r(d[6])),u=e(r(d[7])),h=e(r(d[8])),p=r(d[9]),f=r(d[10]),x=r(d[11]),y=r(d[12]),m=r(d[13]),b=r(d[14]),j=r(d[15]),C=r(d[16]),w=r(d[17]),k=r(d[18]),I=r(d[19]),R=r(d[20]),S=r(d[21]),T=r(d[22]),B=r(d[23]),P=r(d[24]),v=r(d[25]);const z={instagram:'logo-instagram',tiktok:'musical-notes',snapchat:'logo-snapchat',whatsapp:'logo-whatsapp',x:'logo-twitter',facebook:'logo-facebook',youtube:'logo-youtube'},M={highlights:'sparkles',goals:'football',top_saves:'hand-left',top_points:'tennisball',assists:'git-network',key_moments:'flash',reel:'phone-portrait',horizontal:'tv',recap:'albums',player_reel:'person'};const A=c.default.create({center:{flex:1,alignItems:'center',justifyContent:'center',padding:R.spacing.lg},header:{flexDirection:'row',alignItems:'center',paddingHorizontal:R.spacing.lg,paddingVertical:R.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:c.default.hairlineWidth},thumb:{height:132,borderRadius:R.radius.md,alignItems:'center',justifyContent:'center',overflow:'hidden'},thumbBadges:{position:'absolute',top:8,left:8,flexDirection:'row'},playDot:{position:'absolute',bottom:8,right:8,width:30,height:30,borderRadius:15,backgroundColor:'rgba(0,0,0,0.55)',alignItems:'center',justifyContent:'center'},track:{height:8,borderRadius:4,overflow:'hidden',marginTop:R.spacing.sm},fill:{height:8,borderRadius:4},ghost:{width:40,height:36,borderRadius:10,borderWidth:c.default.hairlineWidth,alignItems:'center',justifyContent:'center'},flash:{position:'absolute',bottom:28,left:R.spacing.lg,right:R.spacing.lg,padding:R.spacing.md,borderRadius:R.radius.md},scrim:{flex:1,backgroundColor:'rgba(0,0,0,0.4)',justifyContent:'flex-end'},sheet:{borderTopLeftRadius:20,borderTopRightRadius:20,padding:R.spacing.lg,paddingBottom:R.spacing.xxxl},platform:{width:64,alignItems:'center'},platformIcon:{width:52,height:52,borderRadius:26,alignItems:'center',justifyContent:'center',borderWidth:c.default.hairlineWidth}})},2451,[33,15,461,467,369,281,158,146,273,381,1086,20,1623,624,1624,626,625,630,615,1621,616,671,675,1171,661,13]);
 __d(function(g,r,_i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{user:t}=(0,b.useAuth)(),{colors:n}=(0,j.useTheme)(),M=(0,f.useRouter)(),T=(0,_.useT)(),[R,D]=(0,l.useState)(null),[V,A]=(0,l.useState)(!1),I=(0,l.useCallback)(async()=>{if(t)try{D(await(0,C.fetchMediaDashboard)(t.id))}catch{A(!0)}},[t]);(0,f.useFocusEffect)((0,l.useCallback)(()=>{I()},[I]));const W=(0,S.jsxs)(u.default,{style:N.header,children:[(0,S.jsx)(o.default,{onPress:()=>M.back(),accessibilityRole:"button",accessibilityLabel:T('back'),style:[N.iconBtn,{backgroundColor:n.surface,borderColor:n.border}],children:(0,S.jsx)(p.Ionicons,{name:(0,v.chevronBack)(),size:22,color:n.text})}),(0,S.jsx)(c.default,{style:[w.typography.h2,{color:n.text,flex:1,marginHorizontal:w.spacing.md}],children:T('mediaDashTitle')})]});if(V)return(0,S.jsxs)(h.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:n.bg},children:[W,(0,S.jsx)(u.default,{style:{padding:w.spacing.lg},children:(0,S.jsx)(x.EmptyState,{icon:"lock-closed-outline",title:T('errForbidden'),body:T('mediaSub')})})]});if(!R)return(0,S.jsx)(h.SafeAreaView,{style:[N.center,{backgroundColor:n.bg}],children:(0,S.jsx)(s.default,{color:n.accentText})});const F=Math.max(1,...R.shares_by_platform.map(t=>t.count));return(0,S.jsxs)(h.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:n.bg},children:[W,(0,S.jsxs)(i.default,{contentContainerStyle:{padding:w.spacing.lg,paddingBottom:w.spacing.xxxl},children:[(0,S.jsxs)(u.default,{style:N.grid,children:[(0,S.jsx)(B,{label:T('dashUploads'),value:(0,k.formatNumber)(R.uploads),colors:n,accent:!0}),(0,S.jsx)(B,{label:T('dashClips'),value:(0,k.formatNumber)(R.clips),colors:n}),(0,S.jsx)(B,{label:T('dashViews'),value:(0,k.formatNumber)(R.total_views),colors:n}),(0,S.jsx)(B,{label:T('dashShares'),value:(0,k.formatNumber)(R.total_shares),colors:n}),(0,S.jsx)(B,{label:T('dashEngagement'),value:(0,k.formatNumber)(R.engagement),colors:n}),(0,S.jsx)(B,{label:T('statusReady'),value:(0,k.formatNumber)(R.status.ready),colors:n})]}),(0,S.jsxs)(y.Card,{style:{marginTop:w.spacing.lg},children:[(0,S.jsx)(c.default,{style:[w.typography.h3,{color:n.text,marginBottom:w.spacing.sm}],children:T('processingBreakdown')}),['queued','processing','ready','failed'].map(t=>(0,S.jsxs)(u.default,{style:N.row,children:[(0,S.jsx)(c.default,{style:[w.typography.small,{color:n.textMuted,flex:1}],children:T(`status${t[0].toUpperCase()}${t.slice(1)}`)}),(0,S.jsx)(c.default,{style:[w.typography.smallStrong,{color:n.text}],children:(0,k.formatNumber)(R.status[t])})]},t))]}),R.shares_by_platform.length>0&&(0,S.jsxs)(y.Card,{style:{marginTop:w.spacing.lg},children:[(0,S.jsx)(c.default,{style:[w.typography.h3,{color:n.text,marginBottom:w.spacing.sm}],children:T('sharesByPlatform')}),R.shares_by_platform.map(t=>(0,S.jsxs)(u.default,{style:{marginBottom:w.spacing.sm},children:[(0,S.jsxs)(u.default,{style:{flexDirection:'row',justifyContent:'space-between',marginBottom:3},children:[(0,S.jsx)(c.default,{style:[w.typography.small,{color:n.text}],children:T(`plat_${t.platform}`)}),(0,S.jsx)(c.default,{style:[w.typography.smallStrong,{color:n.text}],children:(0,k.formatNumber)(t.count)})]}),(0,S.jsx)(u.default,{style:[N.track,{backgroundColor:n.surfaceAlt}],children:(0,S.jsx)(u.default,{style:[N.barFill,{width:t.count/F*100+"%",backgroundColor:n.accent}]})})]},t.platform))]}),R.top_clips.length>0&&(0,S.jsxs)(y.Card,{style:{marginTop:w.spacing.lg},children:[(0,S.jsx)(c.default,{style:[w.typography.h3,{color:n.text,marginBottom:w.spacing.sm}],children:T('topClips')}),R.top_clips.map((t,l)=>(0,S.jsxs)(u.default,{style:N.row,children:[(0,S.jsx)(c.default,{style:[w.typography.smallStrong,{color:n.textMuted,width:22}],children:(0,k.formatNumber)(l+1)}),(0,S.jsx)(c.default,{style:[w.typography.small,{color:n.text,flex:1}],numberOfLines:1,children:T(t.title)}),(0,S.jsxs)(c.default,{style:[w.typography.caption,{color:n.textMuted}],children:[(0,k.formatNumber)(t.views)," \xb7 ",(0,k.formatNumber)(t.shares),"\u2197"]})]},t.id))]})]})]})};var l=r(d[1]),s=t(r(d[2])),o=t(r(d[3])),i=t(r(d[4])),n=t(r(d[5])),c=t(r(d[6])),u=t(r(d[7])),h=r(d[8]),p=r(d[9]),f=r(d[10]),y=r(d[11]),x=r(d[12]),b=r(d[13]),j=r(d[14]),w=r(d[15]),C=r(d[16]),k=r(d[17]),_=r(d[18]),v=r(d[19]),S=r(d[20]);const B=({label:t,value:l,colors:s,accent:o})=>(0,S.jsxs)(u.default,{style:[N.tile,{backgroundColor:o?s.accentMuted:s.surface,borderColor:o?s.accent:s.border}],children:[(0,S.jsx)(c.default,{style:[w.typography.h3,{color:o?s.accentText:s.text}],children:l}),(0,S.jsx)(c.default,{style:[w.typography.caption,{color:s.textMuted}],children:t})]}),N=n.default.create({center:{flex:1,alignItems:'center',justifyContent:'center'},header:{flexDirection:'row',alignItems:'center',paddingHorizontal:w.spacing.lg,paddingVertical:w.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:n.default.hairlineWidth},grid:{flexDirection:'row',flexWrap:'wrap',gap:w.spacing.sm},tile:{width:'31.5%',borderRadius:w.radius.md,borderWidth:n.default.hairlineWidth,padding:w.spacing.md,minHeight:66,justifyContent:'center'},row:{flexDirection:'row',alignItems:'center',paddingVertical:5,gap:w.spacing.sm},track:{height:8,borderRadius:4,overflow:'hidden'},barFill:{height:8,borderRadius:4}})},2452,[33,15,461,369,281,158,146,273,381,1086,20,1623,1627,630,615,616,671,1311,675,1171,13]);

@@ -32,6 +32,8 @@ edited through the module tooling described below.
 671 API facade, 672 store proxy (tries `POST {backendUrl}/rpc`, falls back to the mock), 673 backend transport,
 674 error-code → i18n key map, 909 translations (`en`/`ar`, keep both in sync — no duplicate keys), 643 audit log
 (`playora.audit.v1` general, `playora.audit.admin.v1` privileged), 630 AuthProvider, 1809 root layout,
+654 formation catalog (football rows + padel/tennis net-and-baseline shapes; `formationsForSport`,
+`formationSlots(key, sport)`), 2382 FormationBoard (draws the pitch or court), 2449 lineup image export,
 18 Expo Router context (route table), 9001 shared role-gate/error helpers, 9002 `/organizer/new` redirect,
 9003 `/admin/audit` privileged-action log screen, 9004 kid UI kit (snap/virtualised `KidScroll`,
 `BigButton`, `LazyImage`, `CoachHand`, WebAudio feedback), 9005 `/kids` specimen screen.
@@ -47,6 +49,19 @@ injected once as a `<style>` tag and targeted through the `dataSet` prop, which 
 - `onViewableItemsChanged` and `viewabilityConfig` must never change identity, or VirtualizedList
   throws and unmounts the tree. Both are pinned with `useRef` and read live handlers from a ref.
   Any hook feeding them (`useKidSound`) therefore returns stable function identities. Route → module map: `docs/audit/findings/route-module-map.txt`.
+
+## Lineup & formation (654, 2382, 2448, 2449)
+
+The board is sport-aware. Football keeps rows and a goalkeeper; padel and tennis get net/baseline
+shapes with no keeper, their own court markings, surface colour and aspect ratio. Three rules:
+
+- `formationSlots(key, sport)` must be given the sport, or a racket side falls back to the football
+  auto-shape and gains a goalkeeper.
+- Racket slot geometry must keep `y` within roughly 0.22-0.78. The board maps `y` to a percentage and
+  clips at the court edge, and football's mapping is deliberately left alone (clamping it pushes the
+  goalkeeper into the defenders).
+- Racket formation names are words, so they carry a `labelKey` the screen translates; football names
+  are numbers and use `label` directly.
 
 ## Working in this repo
 

@@ -3601,8 +3601,8 @@ __d(
       )
         try {
           const a = await oc(c.id, e);
-          ((a.a = rc(t.formation_key)),
-            (a.b = rc(t.formation_key)),
+          ((a.a = rc(t.formation_key, c.sport)),
+            (a.b = rc(t.formation_key, c.sport)),
             !1 !== t.organizer_plays && a.a.slots.length > 0 && (a.a.slots[0].player_id = e),
             (a.updated_at = new Date().toISOString()),
             await Za(rt, Qt.lineups));
@@ -16669,10 +16669,10 @@ __d(
           return Math.max(2, Math.min(11, Math.floor(e.max_players / 2)));
       }
     }
-    function rc(e) {
+    function rc(e, sp9) {
       return {
         formation_key: e,
-        slots: (0, T.formationSlots)(e).map((e) => ({
+        slots: (0, T.formationSlots)(e, sp9).map((e) => ({
           slot_id: e.id,
           role: e.role,
           x: e.x,
@@ -16689,11 +16689,11 @@ __d(
       const i = hi(e);
       if (!i) throw new Error("E_MATCH_NOT_FOUND");
       const n = nc(i),
-        r = (0, T.suggestFormationKey)(n);
+        r = (0, T.suggestFormationKey)(n, 0.5, i.sport);
       a = {
         game_id: e,
-        a: rc(r),
-        b: rc(r),
+        a: rc(r, i.sport),
+        b: rc(r, i.sport),
         locked: !1,
         editor_user_ids: [],
         version: 1,
@@ -16798,21 +16798,26 @@ __d(
               avatar_seed: e.avatar_seed,
               avatar_url: e.avatar_url ?? null,
             })),
-          formations: (0, T.formationsForSize)(c).map((e) => ({ key: e.key, label: e.label })),
-          suggested_key: (0, T.suggestFormationKey)(c),
+          sport: a.sport,
+          formations: (0, T.formationsForSport)(c, a.sport).map((e) => ({
+            key: e.key,
+            label: e.label,
+            labelKey: e.labelKey ?? null,
+          })),
+          suggested_key: (0, T.suggestFormationKey)(c, 0.5, a.sport),
           editor_user_ids: d ? i.editor_user_ids : [],
           history: d ? i.history : [],
         };
       };
     r.mockGetLineup = uc;
     r.mockSetLineupFormation = async (e, t, a, i) => {
-      const { lineup: n } = await dc(e, t);
+      const { game: g9, lineup: n } = await dc(e, t);
       if (n.locked) throw new Error("E_THE_LINEUP_IS_LOCKED");
       return Xt(t, async () => {
         const r = ("A" === a ? n.a : n.b).slots
             .map((e) => ({ player_id: e.player_id, jersey: e.jersey, captain: e.captain }))
             .filter((e) => e.player_id),
-          o = rc(i);
+          o = rc(i, g9.sport);
         return (
           r.slice(0, o.slots.length).forEach((e, t) => {
             ((o.slots[t].player_id = e.player_id),
