@@ -457,7 +457,8 @@ __d(
                         label: G("fieldStartTime"),
                         value: ve,
                         onChange: (e) => {
-                          (ke(e), (null == Se || Se <= e) && we(Math.min(e + 90, 1439)));
+                          // The time picker offers whole hours, so the auto-filled end time has to land on one too.
+                          (ke(e), (null == Se || Se <= e) && we(Math.min(e + 120, 1439)));
                         },
                         placeholder: "--:--",
                       }),
@@ -1276,7 +1277,9 @@ __d(
               value: (0, P.format)(new Date(t.starts_at), "EEE d MMM", { locale: Q() }),
             });
           case "time":
-            return l("recTime", { value: (0, P.format)(new Date(t.starts_at), "h:mm a", { locale: Q() }) });
+            // The rest of the app moved to a 24-hour clock; a recommendation reading "8:00 PM" next to a
+            // 20:00 picker just looks like two different apps.
+            return l("recTime", { value: (0, P.format)(new Date(t.starts_at), "HH:mm", { locale: Q() }) });
           case "duration":
             return l("recDuration", { value: (0, C.formatNumber)(t.duration_minutes) });
           case "price":

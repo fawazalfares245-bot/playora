@@ -33,6 +33,7 @@ __d(
         L = (0, j.useT)(),
         A = (0, f.useReducedMotion)(),
         [W, H] = (0, o.useState)(!1),
+        [stale9, setStale9] = (0, o.useState)(!1),
         O = "organizer" === S?.role || "admin" === S?.role,
         P = !S || Date.now() - new Date(S.created_at).getTime() < 6048e5,
         D = (o, n, r) => {
@@ -71,6 +72,29 @@ __d(
           (H(!1), T.push(t));
         },
         _ = v?.id.startsWith("guest:") ? v.id.split(":")[1] : null;
+      // The app is one big HTML file with no cache busting, so a phone can sit on an old shell
+      // indefinitely and there is no way for the person holding it to tell. Ask the server what the
+      // current build is; if it differs from the one running, offer a reload rather than hoping.
+      (0, o.useEffect)(() => {
+        if ("undefined" == typeof window || !window.fetch) return;
+        const mine = globalThis.__PLAYORA_CONFIG__?.buildId;
+        if (!mine || "dev" === mine) return;
+        let alive = !0;
+        const check = async () => {
+          try {
+            // no-store already bypasses the cache; a ?v= buster only risks a 404 on strict hosts.
+            const r = await fetch(`${location.origin}/`, { cache: "no-store" });
+            if (!r.ok) return;
+            const m = /buildId:\s*"([^"]+)"/.exec((await r.text()).slice(0, 4000));
+            alive && m && m[1] !== mine && setStale9(!0);
+          } catch {}
+        };
+        check();
+        const iv = setInterval(check, 3e5);
+        return () => {
+          ((alive = !1), clearInterval(iv));
+        };
+      }, []);
       return (0, C.jsxs)(l.default, {
         style: {
           paddingHorizontal: x.spacing.lg,
@@ -78,6 +102,25 @@ __d(
           backgroundColor: M.bg,
         },
         children: [
+          stale9 &&
+            (0, C.jsxs)(s.default, {
+              onPress: () => {
+                try {
+                  location.reload();
+                } catch {}
+              },
+              accessibilityRole: "button",
+              accessibilityLabel: L("updateAvailable"),
+              style: [R.guestBar, { backgroundColor: M.accent }],
+              children: [
+                (0, C.jsx)(c.Ionicons, { name: "arrow-down-circle", size: 14, color: M.accentInk }),
+                (0, C.jsx)(i.default, {
+                  style: [x.typography.smallStrong, { color: M.accentInk, flex: 1 }],
+                  numberOfLines: 2,
+                  children: L("updateAvailable"),
+                }),
+              ],
+            }),
           // XC (F-XC-5): when the demo flag is on, every screen says so. Seeded venues, the fixed
           // verification code and auto-approved organizers must never be mistaken for real data.
           !0 === globalThis.__PLAYORA_CONFIG__?.demo &&
