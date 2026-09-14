@@ -21242,6 +21242,8 @@ __d(
     i.translations = {
       en: {
         // --- XC keys (fix batch) ---
+        quickPickTime: "Kick-off time",
+        quickPickTimePlaceholder: "Choose a time",
         pitchRole_NET: "Net",
         pitchRole_BASE: "Baseline",
         formCustom: "Custom",
@@ -24717,6 +24719,8 @@ __d(
       },
       ar: {
         // --- XC keys (fix batch) ---
+        quickPickTime: "\u0648\u0642\u062a \u0627\u0644\u0628\u062f\u0627\u064a\u0629",
+        quickPickTimePlaceholder: "\u0627\u062e\u062a\u0631 \u0627\u0644\u0648\u0642\u062a",
         pitchRole_NET: "\u0627\u0644\u0634\u0628\u0643\u0629",
         pitchRole_BASE: "\u062e\u0637 \u0627\u0644\u0642\u0627\u0639\u062f\u0629",
         formCustom: "\u0645\u062e\u0635\u0635",
@@ -30927,7 +30931,123 @@ __d(function(g,r,i,a,m,e,d){var I,N,A,O;Object.defineProperty(e,"__esModule",{va
 __d(function(g,r,i,a,m,e,d){var E,A,N;Object.defineProperty(e,"__esModule",{value:!0}),e.IosAuthorizationStatus=e.IosAllowsPreviews=e.IosAlertStyle=void 0,(function(E){E[E.NONE=0]="NONE",E[E.BANNER=1]="BANNER",E[E.ALERT=2]="ALERT"})(E||(e.IosAlertStyle=E={})),(function(E){E[E.NEVER=0]="NEVER",E[E.ALWAYS=1]="ALWAYS",E[E.WHEN_AUTHENTICATED=2]="WHEN_AUTHENTICATED"})(A||(e.IosAllowsPreviews=A={})),(function(E){E[E.NOT_DETERMINED=0]="NOT_DETERMINED",E[E.DENIED=1]="DENIED",E[E.AUTHORIZED=2]="AUTHORIZED",E[E.PROVISIONAL=3]="PROVISIONAL",E[E.EPHEMERAL=4]="EPHEMERAL"})(N||(e.IosAuthorizationStatus=N={}))},1307,[]);
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0})},1308,[]);
 __d(function(g,r,_i,a,_m,e,_d){var t=r(_d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.isRealDate=e.daysInMonth=e.ageOn=e.DateOfBirth=void 0;var n=r(_d[1]),l=t(r(_d[2])),o=r(_d[3]),u=r(_d[4]),m=r(_d[5]),s=r(_d[6]),h=r(_d[7]);const d=['monthJan','monthFeb','monthMar','monthApr','monthMay','monthJun','monthJul','monthAug','monthSep','monthOct','monthNov','monthDec'],i=(t,n)=>new Date(t,n,0).getDate();e.daysInMonth=i;const c=t=>{const n=t?/^(\d{4})-(\d{2})-(\d{2})$/.exec(t):null;return n?{y:Number(n[1]),m:Number(n[2]),d:Number(n[3])}:{d:null,m:null,y:null}},b=(t,n,l)=>`${t}-${String(n).padStart(2,'0')}-${String(l).padStart(2,'0')}`;e.DateOfBirth=({value:t,onChange:p,maxAge:f=100})=>{const S=(0,m.useT)(),x=(new Date).getFullYear(),y=c(t),[D,N]=(0,n.useState)(y.d),[v,M]=(0,n.useState)(y.m),[j,w]=(0,n.useState)(y.y),O=(0,n.useMemo)(()=>Array.from({length:f-4},(t,n)=>x-5-n),[x,f]),A=v?i(j??2e3,v):31,$=(0,n.useMemo)(()=>Array.from({length:A},(t,n)=>n+1),[A]),C=(t,n,l)=>{const o=t&&n&&t>i(l??2e3,n)?null:t;N(o),M(n),w(l),p(o&&n&&l?b(l,n,o):null)};return(0,h.jsxs)(l.default,{style:{flexDirection:'row',gap:u.spacing.sm},children:[(0,h.jsx)(l.default,{style:{flex:1},children:(0,h.jsx)(o.Select,{placeholder:S('dobDay'),value:D?String(D):null,options:$.map(t=>({value:String(t),label:(0,s.formatNumber)(t)})),onChange:t=>C(Number(t),v,j)})}),(0,h.jsx)(l.default,{style:{flex:1.4},children:(0,h.jsx)(o.Select,{placeholder:S('dobMonth'),value:v?String(v):null,options:d.map((t,n)=>({value:String(n+1),label:S(t)})),onChange:t=>C(D,Number(t),j)})}),(0,h.jsx)(l.default,{style:{flex:1.1},children:(0,h.jsx)(o.Select,{placeholder:S('dobYear'),value:j?String(j):null,options:O.map(t=>({value:String(t),label:(0,s.formatNumber)(t)})),onChange:t=>C(D,v,Number(t))})})]})};e.ageOn=(t,n=new Date)=>{const[l,o,u]=t.split('-').map(Number);let m=n.getFullYear()-l;return(n.getMonth()+1<o||n.getMonth()+1===o&&n.getDate()<u)&&(m-=1),m};e.isRealDate=t=>{const n=/^(\d{4})-(\d{2})-(\d{2})$/.exec(t);if(!n)return!1;const[,l,o,u]=n,m=Number(l),s=Number(o),h=Number(u);return!(s<1||s>12)&&(!(h<1||h>i(m,s))&&new Date(t).getTime()<=Date.now())}},1309,[33,15,273,1310,616,675,1311,13]);
-__d(function(g,r,_i,a,m,e,d){var o=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.Select=function({label:o,placeholder:x,value:y,options:j,onChange:v,error:T}){const{colors:C}=(0,p.useTheme)(),[k,W]=(0,t.useState)(!1),H=j.find(o=>o.value===y)??null;return(0,b.jsxs)(c.default,{style:{marginBottom:h.spacing.md},children:[o&&(0,b.jsx)(s.default,{style:[h.typography.smallStrong,{color:C.textMuted,marginBottom:h.spacing.xs}],children:o}),(0,b.jsxs)(l.default,{onPress:()=>W(o=>!o),accessibilityRole:"button",accessibilityLabel:o??x,style:[f.field,{backgroundColor:C.surface,borderColor:T?C.danger:k?C.accent:C.border}],children:[(0,b.jsx)(s.default,{style:[h.typography.body,{color:H?C.text:C.textMuted,flex:1}],children:H?H.label:x}),(0,b.jsx)(u.Ionicons,{name:k?'chevron-up':'chevron-down',size:18,color:C.textMuted})]}),k&&(0,b.jsx)(n.default,{style:[f.menu,{backgroundColor:C.surface,borderColor:C.border}],nestedScrollEnabled:!0,keyboardShouldPersistTaps:"handled",children:j.map((o,t)=>{const n=o.value===y;return(0,b.jsxs)(l.default,{onPress:()=>{v(o.value),W(!1)},accessibilityRole:"button",style:({pressed:o})=>[f.option,{borderTopColor:C.border,borderTopWidth:0===t?0:i.default.hairlineWidth,backgroundColor:o?C.surfaceAlt:'transparent'}],children:[(0,b.jsx)(s.default,{style:[h.typography.body,{color:n?C.accentText:C.text,flex:1}],children:o.label}),n&&(0,b.jsx)(u.Ionicons,{name:"checkmark",size:18,color:C.accentText})]},o.value)})}),T&&(0,b.jsx)(s.default,{style:[h.typography.small,{color:C.danger,marginTop:h.spacing.xs}],children:T})]})};var t=r(d[1]),l=o(r(d[2])),n=o(r(d[3])),i=o(r(d[4])),s=o(r(d[5])),c=o(r(d[6])),u=r(d[7]),p=r(d[8]),h=r(d[9]),b=r(d[10]);const f=i.default.create({field:{minHeight:48,borderRadius:h.radius.md,borderWidth:i.default.hairlineWidth,paddingHorizontal:h.spacing.lg,paddingVertical:h.spacing.md,flexDirection:'row',alignItems:'center'},menu:{marginTop:h.spacing.xs,borderRadius:h.radius.md,borderWidth:i.default.hairlineWidth,overflow:'hidden',maxHeight:260},option:{flexDirection:'row',alignItems:'center',paddingHorizontal:h.spacing.lg,paddingVertical:h.spacing.md,minHeight:48}})},1310,[33,15,369,281,158,146,273,1086,615,616,13]);
+__d(
+  function (g, r, _i, a, m, e, d) {
+    var o = r(d[0]);
+    (Object.defineProperty(e, "__esModule", { value: !0 }),
+      (e.Select = function ({ label: o, placeholder: x, value: y, options: j, onChange: v, error: T }) {
+        const { colors: C } = (0, p.useTheme)(),
+          [k, W] = (0, t.useState)(!1),
+          H = j.find((o) => o.value === y) ?? null;
+        return (0, b.jsxs)(c.default, {
+          style: { marginBottom: h.spacing.md },
+          children: [
+            o &&
+              (0, b.jsx)(s.default, {
+                style: [h.typography.smallStrong, { color: C.textMuted, marginBottom: h.spacing.xs }],
+                children: o,
+              }),
+            (0, b.jsxs)(l.default, {
+              onPress: () => W((o) => !o),
+              accessibilityRole: "button",
+              accessibilityLabel: o ?? x,
+              style: [
+                f.field,
+                { backgroundColor: C.surface, borderColor: T ? C.danger : k ? C.accent : C.border },
+              ],
+              children: [
+                (0, b.jsx)(s.default, {
+                  style: [h.typography.body, { color: H ? C.text : C.textMuted, flex: 1 }],
+                  children: H ? H.label : x,
+                }),
+                (0, b.jsx)(u.Ionicons, {
+                  name: k ? "chevron-up" : "chevron-down",
+                  size: 18,
+                  color: C.textMuted,
+                }),
+              ],
+            }),
+            k &&
+              (0, b.jsx)(n.default, {
+                style: [f.menu, { backgroundColor: C.surface, borderColor: C.border }],
+                nestedScrollEnabled: !0,
+                keyboardShouldPersistTaps: "handled",
+                children: j.map((o, t) => {
+                  const n = o.value === y;
+                  return (0, b.jsxs)(
+                    l.default,
+                    {
+                      onPress: () => {
+                        (v(o.value), W(!1));
+                      },
+                      accessibilityRole: "button",
+                      style: ({ pressed: o }) => [
+                        f.option,
+                        {
+                          borderTopColor: C.border,
+                          borderTopWidth: 0 === t ? 0 : i.default.hairlineWidth,
+                          backgroundColor: o ? C.surfaceAlt : "transparent",
+                        },
+                      ],
+                      children: [
+                        (0, b.jsx)(s.default, {
+                          style: [h.typography.body, { color: n ? C.accentText : C.text, flex: 1 }],
+                          children: o.label,
+                        }),
+                        n && (0, b.jsx)(u.Ionicons, { name: "checkmark", size: 18, color: C.accentText }),
+                      ],
+                    },
+                    o.value,
+                  );
+                }),
+              }),
+            T &&
+              (0, b.jsx)(s.default, {
+                style: [h.typography.small, { color: C.danger, marginTop: h.spacing.xs }],
+                children: T,
+              }),
+          ],
+        });
+      }));
+    var t = r(d[1]),
+      l = o(r(d[2])),
+      n = o(r(d[3])),
+      i = o(r(d[4])),
+      s = o(r(d[5])),
+      c = o(r(d[6])),
+      u = r(d[7]),
+      p = r(d[8]),
+      h = r(d[9]),
+      b = r(d[10]);
+    const f = i.default.create({
+      field: {
+        minHeight: 48,
+        borderRadius: h.radius.md,
+        borderWidth: i.default.hairlineWidth,
+        paddingHorizontal: h.spacing.lg,
+        paddingVertical: h.spacing.md,
+        flexDirection: "row",
+        alignItems: "center",
+      },
+      menu: {
+        marginTop: h.spacing.xs,
+        borderRadius: h.radius.md,
+        borderWidth: i.default.hairlineWidth,
+        overflow: "hidden",
+        maxHeight: 260,
+      },
+      option: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: h.spacing.lg,
+        paddingVertical: h.spacing.md,
+        minHeight: 48,
+      },
+    });
+  },
+  1310,
+  [33, 15, 369, 281, 158, 146, 273, 1086, 615, 616, 13],
+);
 __d(
   function (g, r, i, _a, m, e, _d) {
     (Object.defineProperty(e, "__esModule", { value: !0 }),
@@ -50500,24 +50620,19 @@ __d(
                       }),
                     }),
                     (0, k.jsx)(o.default, {
-                      // One grid, 00:00 to 23:00, flowing into the room the AM/PM row used to take.
-                      style: {
-                        flexDirection: "row",
-                        flexWrap: "wrap",
-                        gap: y.spacing.sm,
-                        marginTop: y.spacing.sm,
-                      },
-                      children: Array.from({ length: 24 }, (e, t) => t).map((e) =>
-                        (0, k.jsx)(
-                          se,
-                          {
-                            on: H === e,
-                            label: (0, f.formatNumber)(`${String(e).padStart(2, "0")}:00`),
-                            onPress: () => O(e),
-                          },
-                          e,
-                        ),
-                      ),
+                      // A 24-pill grid cost five rows. The same 24 choices collapse to one field here
+                      // and scroll inside the menu, so the card stays the height of the date strip.
+                      style: { marginTop: y.spacing.sm },
+                      children: (0, k.jsx)(Se.Select, {
+                        label: P("quickPickTime"),
+                        placeholder: P("quickPickTimePlaceholder"),
+                        value: H,
+                        onChange: O,
+                        options: HOURS.map((e) => ({
+                          value: e,
+                          label: (0, f.formatNumber)(`${String(e).padStart(2, "0")}:00`),
+                        })),
+                      }),
                     }),
                     ae &&
                       (0, k.jsx)(n.default, {
@@ -50673,6 +50788,7 @@ __d(
       m = r(_d[14]),
       f = r(_d[15]),
       x = r(_d[16]),
+      Se = r(_d[21]),
       b = r(_d[17]),
       j = r(_d[18]),
       S = r(_d[19]),
@@ -50680,6 +50796,7 @@ __d(
     const T = ["football", "padel", "tennis"],
       C = (e) => ("football" === e ? "#E85D1A" : "padel" === e ? "#2D6BE4" : "#1FA974"),
       w = ["daySun", "dayMon", "dayTue", "dayWed", "dayThu", "dayFri", "daySat"];
+    const HOURS = Array.from({ length: 24 }, (e, t) => t);
     const D = l.default.create({
       header: {
         flexDirection: "row",
@@ -50734,7 +50851,7 @@ __d(
     });
   },
   2470,
-  [33, 15, 369, 281, 158, 146, 273, 381, 1086, 20, 626, 630, 615, 616, 671, 1311, 2469, 674, 1171, 675, 13],
+  [33, 15, 369, 281, 158, 146, 273, 381, 1086, 20, 626, 630, 615, 616, 671, 1311, 2469, 674, 1171, 675, 13, 1310],
 );
 __d(
   function (_g, r, _i, _a, _m, _e, _d) {

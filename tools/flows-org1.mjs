@@ -70,7 +70,9 @@ await run('quick create shows the values it will publish with', async () => {
   // there is no minute row and no AM/PM toggle to click any more.
   await page.getByRole('button', { name: /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/ }).nth(1).click();
   await page.waitForTimeout(300);
-  await page.getByRole('button', { name: '20:00', exact: true }).first().click();
+  await page.getByText(t('quickPickTimePlaceholder'), { exact: true }).first().click();
+  await page.waitForTimeout(500);
+  await page.getByText('20:00', { exact: true }).first().click();
   await page.waitForTimeout(1500);
   const body = await page.evaluate(() => document.body.innerText);
   const low = body.toLowerCase();
