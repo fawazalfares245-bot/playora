@@ -4,6 +4,8 @@ __d(
     i.translations = {
       en: {
         // --- XC keys (fix batch) ---
+        quickPickTime: "Kick-off time",
+        quickPickTimePlaceholder: "Choose a time",
         pitchRole_NET: "Net",
         pitchRole_BASE: "Baseline",
         formCustom: "Custom",
@@ -3479,6 +3481,8 @@ __d(
       },
       ar: {
         // --- XC keys (fix batch) ---
+        quickPickTime: "\u0648\u0642\u062a \u0627\u0644\u0628\u062f\u0627\u064a\u0629",
+        quickPickTimePlaceholder: "\u0627\u062e\u062a\u0631 \u0627\u0644\u0648\u0642\u062a",
         pitchRole_NET: "\u0627\u0644\u0634\u0628\u0643\u0629",
         pitchRole_BASE: "\u062e\u0637 \u0627\u0644\u0642\u0627\u0639\u062f\u0629",
         formCustom: "\u0645\u062e\u0635\u0635",

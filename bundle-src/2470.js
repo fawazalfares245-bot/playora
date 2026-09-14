@@ -323,24 +323,19 @@ __d(
                       }),
                     }),
                     (0, k.jsx)(o.default, {
-                      // One grid, 00:00 to 23:00, flowing into the room the AM/PM row used to take.
-                      style: {
-                        flexDirection: "row",
-                        flexWrap: "wrap",
-                        gap: y.spacing.sm,
-                        marginTop: y.spacing.sm,
-                      },
-                      children: Array.from({ length: 24 }, (e, t) => t).map((e) =>
-                        (0, k.jsx)(
-                          se,
-                          {
-                            on: H === e,
-                            label: (0, f.formatNumber)(`${String(e).padStart(2, "0")}:00`),
-                            onPress: () => O(e),
-                          },
-                          e,
-                        ),
-                      ),
+                      // A 24-pill grid cost five rows. The same 24 choices collapse to one field here
+                      // and scroll inside the menu, so the card stays the height of the date strip.
+                      style: { marginTop: y.spacing.sm },
+                      children: (0, k.jsx)(Se.Select, {
+                        label: P("quickPickTime"),
+                        placeholder: P("quickPickTimePlaceholder"),
+                        value: H,
+                        onChange: O,
+                        options: HOURS.map((e) => ({
+                          value: e,
+                          label: (0, f.formatNumber)(`${String(e).padStart(2, "0")}:00`),
+                        })),
+                      }),
                     }),
                     ae &&
                       (0, k.jsx)(n.default, {
@@ -496,6 +491,7 @@ __d(
       m = r(_d[14]),
       f = r(_d[15]),
       x = r(_d[16]),
+      Se = r(_d[21]),
       b = r(_d[17]),
       j = r(_d[18]),
       S = r(_d[19]),
@@ -503,6 +499,7 @@ __d(
     const T = ["football", "padel", "tennis"],
       C = (e) => ("football" === e ? "#E85D1A" : "padel" === e ? "#2D6BE4" : "#1FA974"),
       w = ["daySun", "dayMon", "dayTue", "dayWed", "dayThu", "dayFri", "daySat"];
+    const HOURS = Array.from({ length: 24 }, (e, t) => t);
     const D = l.default.create({
       header: {
         flexDirection: "row",
@@ -557,5 +554,5 @@ __d(
     });
   },
   2470,
-  [33, 15, 369, 281, 158, 146, 273, 381, 1086, 20, 626, 630, 615, 616, 671, 1311, 2469, 674, 1171, 675, 13],
+  [33, 15, 369, 281, 158, 146, 273, 381, 1086, 20, 626, 630, 615, 616, 671, 1311, 2469, 674, 1171, 675, 13, 1310],
 );
