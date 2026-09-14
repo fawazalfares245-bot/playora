@@ -20,7 +20,11 @@ __d(
     // the app is a 24-hour clock now, and a quarter-hour grid plus an AM/PM toggle was three rows of
     // chips for something a single collapsed list does in one.
     // `s` (StyleSheet) is shadowed by the `value` prop inside the component, so keep what is needed here.
-    const hair9 = s.default.hairlineWidth,
+    // Row height and visible height are tied together: the menu shows whole rows, so the list always
+    // looks cut mid-scroll rather than ending neatly, which is what tells a thumb it can keep going.
+    const ROW9 = 48,
+      VISIBLE9 = 5.5,
+      hair9 = s.default.hairlineWidth,
       HOURS9 = Array.from({ length: 24 }, (t, o) => o),
       hhmm9 = (t) =>
         (0, b.formatNumber)(
@@ -29,9 +33,22 @@ __d(
     e.TimePicker = ({ label: t, value: s, onChange: C, placeholder: R }) => {
       const { colors: W } = (0, h.useTheme)(),
         [S, z] = (0, o.useState)(!1),
+        sc9 = (0, o.useRef)(null),
         // A value that did not come from this picker (a seeded game at 21:30, say) still has to read
         // correctly, so the field renders the real value and only the matching hour is ticked.
         H = null == s ? null : Math.floor(s / 60) % 24;
+      // Opening the list on 00:00 when the match is at 21:00 means scrolling past twenty rows to see
+      // where you already are. Jump to the chosen hour (or to the evening, when nothing is chosen yet)
+      // and leave a row above it so it reads as a list you are inside of rather than the top of one.
+      (0, o.useEffect)(() => {
+        if (!S) return;
+        const t = setTimeout(() => {
+          try {
+            sc9.current?.scrollTo({ y: Math.max(0, (null == H ? 18 : H) - 1) * ROW9, animated: !1 });
+          } catch {}
+        }, 0);
+        return () => clearTimeout(t);
+      }, [S, H]);
       return (0, x.jsxs)(c.default, {
         style: { marginBottom: m.spacing.md },
         children: [
@@ -62,8 +79,10 @@ __d(
           }),
           S &&
             (0, x.jsx)(sv9.default, {
+              ref: sc9,
               style: [P.menu, { backgroundColor: W.surface, borderColor: W.border }],
               nestedScrollEnabled: !0,
+              showsVerticalScrollIndicator: !0,
               keyboardShouldPersistTaps: "handled",
               children: HOURS9.map((t, o) => {
                 const b = t === H;
@@ -112,14 +131,14 @@ __d(
           borderRadius: m.radius.md,
           borderWidth: s.default.hairlineWidth,
           overflow: "hidden",
-          maxHeight: 260,
+          maxHeight: ROW9 * VISIBLE9,
         },
         option: {
           flexDirection: "row",
           alignItems: "center",
           paddingHorizontal: m.spacing.lg,
-          paddingVertical: m.spacing.md,
-          minHeight: 48,
+          justifyContent: "space-between",
+          height: ROW9,
         },
       });
   },
