@@ -19526,13 +19526,298 @@ __d(function(g,r,_i,a,_m,e,_d){Object.defineProperty(e,"__esModule",{value:!0}),
 __d(function(g,r,_i,_a,m,_e,d){Object.defineProperty(_e,"__esModule",{value:!0}),_e.successBand=_e.satisfactionBand=_e.revenueEstimate=_e.recommendDuration=_e.profitEstimate=_e.priceFairness=_e.playerSatisfaction=_e.notificationOffsets=_e.normalizeImportance=_e.materiallyDiffers=_e.matchSuccess=_e.SUCCESS_KEYS=_e.SATISFACTION_KEYS=_e.DEFAULT_OPTIMIZER_WEIGHTS=void 0;const t=t=>Math.min(1,Math.max(0,t)),s=t=>Math.round(10*t)/10,a=s=>{let a=0,e=0;for(const[i,c]of s)a+=i,e+=i*t(c);return a>0?e/a:0};_e.DEFAULT_OPTIMIZER_WEIGHTS={satSkillFit:.2,satPriceFairness:.2,satVenueQuality:.15,satFill:.2,satWeather:.1,satReliability:.15,successFill:.4,successLowCancel:.2,successLowNoShow:.15,successSatisfaction:.25,updated_at:new Date(0).toISOString()},_e.SATISFACTION_KEYS=['satSkillFit','satPriceFairness','satVenueQuality','satFill','satWeather','satReliability'],_e.SUCCESS_KEYS=['successFill','successLowCancel','successLowNoShow','successSatisfaction'];_e.playerSatisfaction=(t,s)=>Math.round(100*a([[s.satSkillFit,t.skillFit],[s.satPriceFairness,t.priceFairness],[s.satVenueQuality,t.venueQuality],[s.satFill,t.fill],[s.satWeather,t.weather],[s.satReliability,t.reliability]]));_e.matchSuccess=(t,s)=>Math.round(100*a([[s.successFill,t.fill],[s.successLowCancel,1-t.cancelRisk],[s.successLowNoShow,1-t.noShowRisk],[s.successSatisfaction,t.satisfaction]]));const e=(t,s,a,e)=>t>=80?{key:s,tone:'success'}:t>=60?{key:a,tone:'warning'}:{key:e,tone:'danger'};_e.successBand=t=>e(t,'successHigh','successMed','successLow');_e.satisfactionBand=t=>e(t,'satHigh','satMed','satLow');_e.revenueEstimate=(a,e,i)=>s(Math.max(0,a)*Math.max(0,e)*t(i));_e.profitEstimate=(t,a,e)=>s(t-Math.max(0,a)-t*(Math.max(0,e)/100));_e.priceFairness=(s,a)=>a<=0?1:t(1-Math.max(0,(s-a)/a));_e.notificationOffsets=(t,s)=>{const a=Math.min(48,Math.max(6,Math.round(.6*s)));return[...new Set((t<.6?[a,12,3]:[a,3]).filter(t=>t<Math.max(2,s)))].sort((t,s)=>s-t)};_e.materiallyDiffers=(t,s,a=.08,e=0)=>{if(t===s)return!1;const i=Math.abs(t-s);if(i<=e)return!1;return i/Math.max(Math.abs(t),Math.abs(s),1)>a};_e.normalizeImportance=t=>{const s=t.reduce((t,s)=>t+Math.max(0,s.weight),0)||1;return t.map(t=>({key:t.key,pct:Math.round(Math.max(0,t.weight)/s*100)})).sort((t,s)=>s.pct-t.pct)};_e.recommendDuration=t=>90},658,[]);
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.permissionsForRole=e.orgCanOperate=e.isInviteRedeemable=e.effectiveInviteStatus=e.canTransitionVerification=e.canTransitionMembership=e.canManageRole=e.can=e.VERIFICATION_TRANSITIONS=e.VERIFICATION_GATED=e.TEAM_ROLE_COMPAT=e.ROLE_RANK=e.ROLE_PERMISSIONS=e.ORG_ROLES=e.MEMBERSHIP_TRANSITIONS=e.INVITE_TTL_MS=e.DEFAULT_QUOTA=e.ALL_PERMISSIONS=void 0;e.ORG_ROLES=['owner','admin','manager','coach','captain','member'];const n=e.ROLE_RANK={owner:60,admin:50,manager:40,coach:30,captain:20,member:10},s=(e.TEAM_ROLE_COMPAT={owner:'owner',manager:'manager',co_captain:'coach',captain:'captain',player:'member'},e.ALL_PERMISSIONS=['org:update','org:delete','org:verify_submit','billing:manage','roles:manage','teams:create','teams:update','teams:delete','members:invite','members:manage','members:remove','invites:send','invites:revoke','bookings:manage','matches:manage','events:manage','subscriptions:manage','payments:manage','payments:refund','reports:view','analytics:view','audit:view','webhooks:manage']),t=e.ROLE_PERMISSIONS={owner:s,admin:['org:update','org:verify_submit','roles:manage','teams:create','teams:update','teams:delete','members:invite','members:manage','members:remove','invites:send','invites:revoke','bookings:manage','matches:manage','events:manage','reports:view','analytics:view','audit:view','webhooks:manage'],manager:['teams:create','teams:update','members:invite','members:manage','invites:send','bookings:manage','matches:manage','events:manage','reports:view','analytics:view'],coach:['teams:update','matches:manage','events:manage','members:invite','reports:view','analytics:view'],captain:['matches:manage','events:manage','members:invite'],member:[]},o=e.VERIFICATION_GATED=['teams:create','teams:update','teams:delete','members:invite','members:manage','members:remove','invites:send','invites:revoke','bookings:manage','matches:manage','events:manage','subscriptions:manage','payments:manage','payments:refund','billing:manage','webhooks:manage','roles:manage'];e.can=(n,s)=>'owner'===n.role||t[n.role].includes(s)?!n.orgVerified&&o.includes(s)?{allowed:!1,reason:'org_unverified'}:{allowed:!0}:{allowed:!1,reason:'forbidden'};e.permissionsForRole=n=>'owner'===n?[...s]:[...t[n]];e.canManageRole=(s,o)=>('owner'===s||t[s].includes('members:manage'))&&n[s]>n[o];const v=e.VERIFICATION_TRANSITIONS={unverified:['pending_review'],pending_review:['verified','rejected'],rejected:['pending_review'],verified:[]};e.canTransitionVerification=(n,s)=>v[n].includes(s);e.orgCanOperate=n=>'verified'===n;const c=e.MEMBERSHIP_TRANSITIONS={pending:['active','revoked'],active:['revoked','left'],revoked:['active'],left:['active']};e.canTransitionMembership=(n,s)=>c[n].includes(s);e.INVITE_TTL_MS=6048e5;e.isInviteRedeemable=(n,s)=>'pending'===n.status&&s<new Date(n.expires_at).getTime();e.effectiveInviteStatus=(n,s)=>'pending'===n.status&&s>=new Date(n.expires_at).getTime()?'expired':n.status;e.DEFAULT_QUOTA={free:{maxTeams:3,maxMembers:60,invitesPerDay:50,webhooksMax:2},pro:{maxTeams:25,maxMembers:1e3,invitesPerDay:500,webhooksMax:10},enterprise:{maxTeams:1e3,maxMembers:1e5,invitesPerDay:1e4,webhooksMax:100}}},659,[]);
 __d(function(g,r,_i,a,m,e,_d){Object.defineProperty(e,"__esModule",{value:!0}),e.trialEnd=e.refundable=e.prorate=e.planChangeDelta=e.nextBillingDate=e.mrr=e.ltv=e.isInTrial=e.invoiceTotals=e.intervalDays=e.churnRate=e.canTransition=e.arr=e.applyCoupon=e.SUBSCRIPTION_TRANSITIONS=e.PAYMENT_TRANSITIONS=e.INVOICE_TRANSITIONS=void 0;const t=(t,n,i)=>Math.min(i,Math.max(n,t)),n=t=>Math.round(t),i={week:7,month:30,year:365},l={week:.23076923076923078,month:1,year:12};e.nextBillingDate=(t,n,i=1)=>{const l=new Date(t);return'week'===n?l.setUTCDate(l.getUTCDate()+7*i):'month'===n?l.setUTCMonth(l.getUTCMonth()+i):l.setUTCFullYear(l.getUTCFullYear()+i),l.toISOString()};e.trialEnd=(t,n)=>new Date(new Date(t).getTime()+864e5*n).toISOString();e.isInTrial=(t,n)=>!!t&&n<new Date(t).getTime();const d=(i,l,d,u)=>{const c=new Date(l).getTime(),o=new Date(d).getTime(),s=new Date(u).getTime();return o<=c?0:n(i*t((o-s)/(o-c),0,1))};e.prorate=d;e.planChangeDelta=(t,n,i,l,u)=>d(n,i,l,u)-d(t,i,l,u);const u=(i,l)=>{if(!l||i<=0)return Math.max(0,i);const d='percent'===l.type?n(i*t(l.value,0,100)/100):n(l.value);return Math.max(0,i-d)};e.applyCoupon=u;e.invoiceTotals=(i,l,d=0)=>{const c=i.reduce((t,i)=>t+n(i.unit*i.qty),0),o=u(c,l),s=c-o,T=n(o*t(d,0,1e5)/1e4);return{subtotal:c,discount:s,tax:T,total:o+T}};e.SUBSCRIPTION_TRANSITIONS={trialing:['active','canceled'],active:['past_due','paused','canceled'],past_due:['active','canceled'],paused:['active','canceled'],canceled:[]},e.PAYMENT_TRANSITIONS={pending:['succeeded','failed'],succeeded:['refunded','partially_refunded'],partially_refunded:['refunded'],failed:['pending'],refunded:[]},e.INVOICE_TRANSITIONS={draft:['open','void'],open:['paid','void','uncollectible'],paid:[],void:[],uncollectible:[]};e.canTransition=(t,n,i)=>(t[n]??[]).includes(i);e.refundable=(t,n,i,l)=>('succeeded'===t.status||'partially_refunded'===t.status)&&(!(i-new Date(t.paid_at).getTime()>864e5*l)&&(n>0&&n<=t.amount-t.refunded));e.mrr=t=>n(t.filter(t=>'active'===t.status||'past_due'===t.status).reduce((t,n)=>t+n.price/l[n.interval],0));e.churnRate=(n,i)=>n<=0?0:t(i/n,0,1);e.ltv=(t,i)=>i<=0?0:n(t/i);e.arr=t=>12*t;e.intervalDays=t=>i[t]},660,[]);
-__d(function(g,r,_i,_a,_m,_e,d){Object.defineProperty(_e,"__esModule",{value:!0}),_e.sharePayload=_e.selectMoments=_e.evtLabelKey=_e.engagementScore=_e.detectEvents=_e.clipKindsForSport=_e.clampClipLength=_e.buildClipSet=_e.buildClip=_e.SPORT_EVENTS=_e.SHARE_PLATFORMS=_e.MIN_CLIP=_e.MAX_CLIP=void 0;const t=t=>{let e=2166136261;for(let a=0;a<t.length;a++)e^=t.charCodeAt(a),e=Math.imul(e,16777619);return e>>>0},e=_e.SPORT_EVENTS={football:['goal','save','assist','celebration','crowd','intensity','score_change','whistle'],padel:['point','celebration','crowd','intensity','score_change','whistle'],tennis:['point','celebration','crowd','intensity','score_change','whistle']},a=t=>`mediaEvt_${t}`;_e.evtLabelKey=a;_e.detectEvents=(n,s,o,i=4)=>{const l=(c=t(n),()=>{c=c+1831565813|0;let t=Math.imul(c^c>>>15,1|c);return t=t+Math.imul(t^t>>>7,61|t)^t,((t^t>>>14)>>>0)/4294967296});var c;const h=e[o],p=Math.max(3,Math.round(s/60*i)),u=[],m=Math.max(30,s-10);for(let t=0;t<p;t++){const e=h[Math.floor(l()*h.length)],s='goal'===e||'point'===e?.7:'save'===e||'assist'===e?.55:.3,o=Math.min(1,s+.3*l()),i=Math.round(5+l()*(m-5));u.push({id:`${n}-e${t}`,type:e,at_seconds:i,intensity:Math.round(100*o)/100,label_key:a(e)})}return u.sort((t,e)=>t.at_seconds-e.at_seconds)};const n=_e.MIN_CLIP=15,s=_e.MAX_CLIP=90,o=t=>Math.max(n,Math.min(s,Math.round(t)));_e.clampClipLength=o;const i=t=>'football'===t?['highlights','goals','top_saves','assists','key_moments','reel','horizontal','recap']:['highlights','top_points','key_moments','reel','horizontal','recap'];_e.clipKindsForSport=i;const l={goals:['goal'],top_saves:['save'],top_points:['point'],assists:['assist']},c=(t,e)=>{const a=l[e];return[...a?t.filter(t=>a.includes(t.type)):t].sort((t,e)=>e.intensity-t.intensity)};_e.selectMoments=c;const h=t=>'reel'===t||'player_reel'===t?'9:16':'horizontal'===t||'recap'===t?'16:9':'9:16',p=(t,e,a,n)=>{const s=c(t,e);if(0===s.length)return null;const i=o(a),l=h(e),p='recap'===e?5:Math.max(6,Math.round(i/Math.min(s.length,4))),u='recap'===e?Math.min(s.length,Math.max(3,Math.round(i/p))):Math.min(s.length,Math.ceil(i/p)),m=s.slice(0,u),M=m[0],_=Math.max(0,Math.min(...m.map(t=>t.at_seconds))-3),y=Math.min(n,Math.max(...m.map(t=>t.at_seconds))+3),b=o(Math.min(i,u*p));return{kind:e,format:l,start_seconds:Math.round(_),end_seconds:Math.round(y),duration_seconds:b,thumbnail_ts:M.at_seconds,event_count:m.length,peak_intensity:M.intensity}};_e.buildClip=p;_e.buildClipSet=(t,e,a,n)=>{const s=[];for(const o of i(e)){const e=p(t,o,a,n);e&&s.push(e)}return s};_e.SHARE_PLATFORMS=['instagram','tiktok','snapchat','whatsapp','x','facebook','youtube'];const u=['instagram','tiktok','snapchat','youtube'];_e.sharePayload=(t,e,a,n)=>({platform:t,aspect:u.includes(t)?'9:16':'16:9',caption:`${e} \u2014 via Playora \ud83c\udfc6`,hashtags:['#Playora','#MatchHighlights','#Kuwait'],deep_link:`https://playora.app/clip/${a}?utm_source=${t}`,watermark:n});_e.engagementScore=(t,e)=>t+6*e},661,[]);
+__d(
+  function (g, r, _i, _a, _m, _e, d) {
+    (Object.defineProperty(_e, "__esModule", { value: !0 }),
+      (_e.sharePayload =
+        _e.selectMoments =
+        _e.evtLabelKey =
+        _e.engagementScore =
+        _e.detectEvents =
+        _e.clipKindsForSport =
+        _e.clampClipLength =
+        _e.buildClipSet =
+        _e.buildClip =
+        _e.SPORT_EVENTS =
+        _e.SHARE_PLATFORMS =
+        _e.MIN_CLIP =
+        _e.MAX_CLIP =
+          void 0));
+    const t = (t) => {
+        let e = 2166136261;
+        for (let a = 0; a < t.length; a++) ((e ^= t.charCodeAt(a)), (e = Math.imul(e, 16777619)));
+        return e >>> 0;
+      },
+      e = (_e.SPORT_EVENTS = {
+        football: ["goal", "save", "assist", "celebration", "crowd", "intensity", "score_change", "whistle"],
+        padel: ["point", "celebration", "crowd", "intensity", "score_change", "whistle"],
+        tennis: ["point", "celebration", "crowd", "intensity", "score_change", "whistle"],
+      }),
+      a = (t) => `mediaEvt_${t}`;
+    _e.evtLabelKey = a;
+    _e.detectEvents = (n, s, o, i = 4) => {
+      const l =
+        ((c = t(n)),
+        () => {
+          c = (c + 1831565813) | 0;
+          let t = Math.imul(c ^ (c >>> 15), 1 | c);
+          return ((t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t), ((t ^ (t >>> 14)) >>> 0) / 4294967296);
+        });
+      var c;
+      const h = e[o],
+        p = Math.max(3, Math.round((s / 60) * i)),
+        u = [],
+        m = Math.max(30, s - 10);
+      for (let t = 0; t < p; t++) {
+        const e = h[Math.floor(l() * h.length)],
+          s = "goal" === e || "point" === e ? 0.7 : "save" === e || "assist" === e ? 0.55 : 0.3,
+          o = Math.min(1, s + 0.3 * l()),
+          i = Math.round(5 + l() * (m - 5));
+        u.push({
+          id: `${n}-e${t}`,
+          type: e,
+          at_seconds: i,
+          intensity: Math.round(100 * o) / 100,
+          label_key: a(e),
+        });
+      }
+      return u.sort((t, e) => t.at_seconds - e.at_seconds);
+    };
+    const n = (_e.MIN_CLIP = 15),
+      s = (_e.MAX_CLIP = 90),
+      o = (t) => Math.max(n, Math.min(s, Math.round(t)));
+    _e.clampClipLength = o;
+    const i = (t) =>
+      "football" === t
+        ? ["highlights", "goals", "top_saves", "assists", "key_moments", "reel", "horizontal", "recap"]
+        : ["highlights", "top_points", "key_moments", "reel", "horizontal", "recap"];
+    _e.clipKindsForSport = i;
+    const l = { goals: ["goal"], top_saves: ["save"], top_points: ["point"], assists: ["assist"] },
+      c = (t, e) => {
+        const a = l[e];
+        return [...(a ? t.filter((t) => a.includes(t.type)) : t)].sort((t, e) => e.intensity - t.intensity);
+      };
+    _e.selectMoments = c;
+    const h = (t) =>
+        "reel" === t || "player_reel" === t ? "9:16" : "horizontal" === t || "recap" === t ? "16:9" : "9:16",
+      p = (t, e, a, n) => {
+        const s = c(t, e);
+        if (0 === s.length) return null;
+        const i = o(a),
+          l = h(e),
+          p = "recap" === e ? 5 : Math.max(6, Math.round(i / Math.min(s.length, 4))),
+          u =
+            "recap" === e
+              ? Math.min(s.length, Math.max(3, Math.round(i / p)))
+              : Math.min(s.length, Math.ceil(i / p)),
+          m = s.slice(0, u),
+          M = m[0],
+          _ = Math.max(0, Math.min(...m.map((t) => t.at_seconds)) - 3),
+          y = Math.min(n, Math.max(...m.map((t) => t.at_seconds)) + 3),
+          b = o(Math.min(i, u * p));
+        return {
+          kind: e,
+          format: l,
+          start_seconds: Math.round(_),
+          end_seconds: Math.round(y),
+          duration_seconds: b,
+          thumbnail_ts: M.at_seconds,
+          event_count: m.length,
+          peak_intensity: M.intensity,
+        };
+      };
+    _e.buildClip = p;
+    _e.buildClipSet = (t, e, a, n) => {
+      const s = [];
+      for (const o of i(e)) {
+        const e = p(t, o, a, n);
+        e && s.push(e);
+      }
+      return s;
+    };
+    _e.SHARE_PLATFORMS = ["instagram", "tiktok", "snapchat", "whatsapp", "x", "facebook", "youtube"];
+    const u = ["instagram", "tiktok", "snapchat", "youtube"];
+    _e.sharePayload = (t, e, a, n) => ({
+      platform: t,
+      aspect: u.includes(t) ? "9:16" : "16:9",
+      caption: `${e} \u2014 via Rush X \ud83c\udfc6`,
+      hashtags: ["#RushX", "#MatchHighlights", "#Kuwait"],
+      deep_link: `https://playora.app/clip/${a}?utm_source=${t}`,
+      watermark: n,
+    });
+    _e.engagementScore = (t, e) => t + 6 * e;
+  },
+  661,
+  [],
+);
 __d(function(g,r,_i,_a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.validateCustomSplit=e.splitAmounts=e.seatPaidByLeader=e.memberStatusTone=e.groupSeatCount=e.avgGroupSize=e.PAYMENT_MODES=e.GROUP_HOLD_MS=e.DEFAULT_MAX_GROUP_SIZE=void 0;e.GROUP_HOLD_MS=6e5,e.DEFAULT_MAX_GROUP_SIZE=6,e.PAYMENT_MODES=['group','split_equal','individual','self','custom'];e.memberStatusTone=a=>'confirmed'===a?'success':'pending_payment'===a?'warning':'declined'===a||'cancelled'===a?'danger':'accepted'===a?'accent':'neutral';const a=a=>Math.round(1e3*a)/1e3;e.splitAmounts=(t,n,u,o)=>{const s=Math.max(0,t),_=Math.max(1,n),l=a(s*_);switch(u){case'group':return Array.from({length:_},(a,t)=>({amount_kwd:0===t?l:0,payer_is_leader:!0}));case'split_equal':{const t=a(l/_),n=Array.from({length:_},()=>({amount_kwd:t,payer_is_leader:!1}));return n[0]={amount_kwd:a(l-t*(_-1)),payer_is_leader:!1},n}case'custom':{const t=o??[];return Array.from({length:_},(n,u)=>({amount_kwd:a(t[u]??0),payer_is_leader:0===u}))}default:return Array.from({length:_},(a,t)=>({amount_kwd:s,payer_is_leader:0===t}))}};e.validateCustomSplit=(t,n,u)=>{const o=a(Math.max(0,n)*Math.max(1,u)),s=a(t.reduce((a,t)=>a+Math.max(0,t),0));return Math.abs(s-o)<=.001};e.seatPaidByLeader=(a,t,n)=>!n&&!1!==t||('group'===a||n);e.groupSeatCount=(a,t)=>1+a+t;e.avgGroupSize=a=>0===a.length?0:Math.round(a.reduce((a,t)=>a+t,0)/a.length*10)/10},662,[]);
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.successRate=e.avgTimeToReplaceMin=e.REPLACEMENT_SHORTLIST=e.REPLACEMENT_MODES=e.OFFER_RATE_WINDOW_MS=e.OFFER_RATE_LIMIT=e.DEFAULT_RESERVATION_MIN=void 0;e.DEFAULT_RESERVATION_MIN=15,e.REPLACEMENT_SHORTLIST=6,e.OFFER_RATE_LIMIT=8,e.OFFER_RATE_WINDOW_MS=36e5,e.REPLACEMENT_MODES=[{mode:'auto',labelKey:'replaceAuto',icon:'flash'},{mode:'manual',labelKey:'replaceManual',icon:'hand-left-outline'},{mode:'paused',labelKey:'replacePaused',icon:'pause'}];e.successRate=(E,l)=>l>0?E/l:0;e.avgTimeToReplaceMin=E=>E.length?Math.round(E.reduce((E,l)=>E+l,0)/E.length*10)/10:null},663,[]);
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.tierFor=e.nextTierInfo=e.multiplierFor=e.earnAmount=e.canRedeem=e.TIERS=e.REWARD_CATEGORIES=e.LOYALTY_ACTIONS=e.DEFAULT_EARN_RULES=void 0;e.LOYALTY_ACTIONS=[{action:'match_played',labelKey:'loyaltyMatchPlayed',emoji:'\ud83c\udfc3'},{action:'match_hosted',labelKey:'loyaltyMatchHosted',emoji:'\ud83d\udce3'},{action:'attendance',labelKey:'loyaltyAttendance',emoji:'\u2705'},{action:'booking',labelKey:'loyaltyBooking',emoji:'\ud83c\udf9f\ufe0f'},{action:'referral',labelKey:'loyaltyReferral',emoji:'\ud83e\udd1d'},{action:'achievement',labelKey:'loyaltyAchievement',emoji:'\ud83c\udfc6'}],e.DEFAULT_EARN_RULES={match_played:10,match_hosted:25,attendance:5,booking:20,referral:50,achievement:15};const t=e.TIERS=[{tier:'bronze',min:0,multiplier:1,labelKey:'tierBronze',emoji:'\ud83e\udd49'},{tier:'silver',min:250,multiplier:1.1,labelKey:'tierSilver',emoji:'\ud83e\udd48'},{tier:'gold',min:750,multiplier:1.25,labelKey:'tierGold',emoji:'\ud83e\udd47'},{tier:'platinum',min:2e3,multiplier:1.5,labelKey:'tierPlatinum',emoji:'\ud83d\udc8e'}],l=l=>[...t].reverse().find(t=>l>=t.min)??t[0];e.tierFor=l;const o=t=>l(t).multiplier;e.multiplierFor=o;e.nextTierInfo=o=>{const n=t.findIndex(t=>t.tier===l(o).tier),y=t[n+1];if(!y)return{next:null,pointsToNext:0,progress:1};const c=t[n].min;return{next:y.tier,pointsToNext:Math.max(0,y.min-o),progress:Math.min(1,(o-c)/(y.min-c))}};e.earnAmount=(t,l)=>Math.round(t*o(l));e.REWARD_CATEGORIES=[{category:'discount',labelKey:'rewardDiscount',emoji:'\ud83c\udff7\ufe0f'},{category:'premium',labelKey:'rewardPremium',emoji:'\u2b50'},{category:'reward',labelKey:'rewardMerch',emoji:'\ud83c\udf81'},{category:'partner',labelKey:'rewardPartner',emoji:'\ud83e\udd1d'}];e.canRedeem=(t,l,o)=>t>=l&&(null==o||o>0)},664,[]);
 __d(function(g,r,i,a,m,e,_d){Object.defineProperty(e,"__esModule",{value:!0}),e.weatherFor=e.timeScore=e.suggestedPrice=e.predictFill=e.isWeekend=e.isPreWeekend=e.holidayFor=e.dayScore=e.SCHEDULE_WEIGHTS=e.KUWAIT_HOLIDAYS=e.EVENING_HOURS=void 0;const t=e.SCHEDULE_WEIGHTS={time:.24,day:.18,weather:.16,availability:.18,demand:.16,venue:.08};e.predictFill=o=>{let n=0,d=0;return Object.keys(t).forEach(y=>{n+=Math.min(1,Math.max(0,o[y]))*t[y],d+=t[y]}),n/d};const o=t=>5===t.getDay()||6===t.getDay();e.isWeekend=o;const n=t=>4===t.getDay();e.isPreWeekend=n;const d=e.KUWAIT_HOLIDAYS=[{month:1,day:1,key:'holNewYear'},{month:2,day:25,key:'holNational'},{month:2,day:26,key:'holLiberation'}],y=t=>d.find(o=>o.month===t.getMonth()+1&&o.day===t.getDate())?.key??null;e.holidayFor=y;e.dayScore=t=>y(t)?1:o(t)?.95:n(t)?.9:0===t.getDay()?.7:.6;e.weatherFor=(t,o,n)=>{const d=t.getMonth()+1,y=o>=18;return n?{score:.9,key:'wxIndoor',emoji:'\ud83c\udfdf\ufe0f'}:d>=5&&d<=9?o>=11&&o<=16?{score:.2,key:'wxHot',emoji:'\ud83e\udd75'}:y?{score:.75,key:'wxWarmEve',emoji:'\ud83c\udf06'}:{score:.5,key:'wxWarm',emoji:'\u2600\ufe0f'}:4===d||10===d?{score:y?.85:.75,key:'wxMild',emoji:'\ud83c\udf24\ufe0f'}:{score:y?.85:.95,key:'wxPleasant',emoji:'\ud83d\ude0e'}};e.timeScore=(t,o)=>{if(o&&o.some(t=>t>0)){const n=Math.max(...o);return n>0?o[t]/n:.5}return{17:.7,18:.9,19:1,20:.95,21:.8,22:.5,16:.5}[t]??.3};e.suggestedPrice=(t,o)=>{const n=.8+.5*Math.min(1,Math.max(0,o)),d=Math.max(0,t)*n;return Math.round(2*d)/2};e.EVENING_HOURS=[17,18,19,20,21]},665,[]);
 __d(function(g,r,_i,_a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.recommendSkillBand=e.optimalNotifyTime=e.fillLabel=e.DEFAULT_CONCIERGE_RULES=void 0;e.DEFAULT_CONCIERGE_RULES={autoInvite:!0,autoInviteCount:5,minFillToPublish:50,replacementsCount:4,skillTolerance:1,quietStart:22,quietEnd:8,notifyLeadHours:24,horizonDays:14,updated_at:new Date(0).toISOString()};e.fillLabel=t=>t>=75?{key:'fillHigh',tone:'success',emoji:'\ud83d\udfe2'}:t>=50?{key:'fillMed',tone:'warning',emoji:'\ud83d\udfe1'}:{key:'fillLow',tone:'danger',emoji:'\ud83d\udd34'};e.optimalNotifyTime=(t,n,i=Date.now())=>{const o=new Date(t).getTime();let a=Math.max(i,o-36e5*n.notifyLeadHours);const l=t=>n.quietStart>n.quietEnd?t>=n.quietStart||t<n.quietEnd:t>=n.quietStart&&t<n.quietEnd;for(let t=0;t<48&&l(new Date(a).getHours())&&a<o;t++)a+=18e5;return new Date(a).toISOString()};e.recommendSkillBand=(t,n,i,o)=>{if(t.length<3)return{min:null,max:null,center:(i+o)/2};const a=[...t].sort((t,n)=>t-n),l=a[Math.floor(a.length/2)];return{min:Math.max(i,Math.round(10*(l-n))/10),max:Math.min(o,Math.round(10*(l+n))/10),center:l}}},666,[]);
-__d(function(g,r,i,_a,_m,_e,d){Object.defineProperty(_e,"__esModule",{value:!0}),_e.rankingScore=_e.metricValuesOf=_e.isOwnerRole=_e.googleCalendarUrl=_e.fixedSportFor=_e.evaluateTeamAchievements=_e.computeTeamStats=_e.canManageTeam=_e.buildIcs=_e.TEAM_TYPES=_e.TEAM_ACHIEVEMENTS=_e.ROLE_RANK=_e.RANKING_WEIGHTS=_e.ACTIVITY_WINDOW_MS=_e.ACTIVITY_WINDOW_DAYS=void 0;const e=_e.TEAM_TYPES=[{type:'football',labelKey:'teamTypeFootball',emoji:'\u26bd',fixedSport:'football'},{type:'padel',labelKey:'teamTypePadel',emoji:'\ud83c\udfbe',fixedSport:'padel'},{type:'tennis',labelKey:'teamTypeTennis',emoji:'\ud83c\udfbe',fixedSport:'tennis'},{type:'corporate',labelKey:'teamTypeCorporate',emoji:'\ud83c\udfe2'},{type:'university',labelKey:'teamTypeUniversity',emoji:'\ud83c\udf93'},{type:'friends',labelKey:'teamTypeFriends',emoji:'\ud83d\udc65'}];_e.fixedSportFor=t=>e.find(e=>e.type===t)?.fixedSport??null;const t=_e.ROLE_RANK={owner:4,captain:3,co_captain:2,manager:1,player:0};_e.canManageTeam=e=>!!e&&t[e]>=t.co_captain;_e.isOwnerRole=e=>'owner'===e;const n=_e.ACTIVITY_WINDOW_DAYS=90,a=_e.ACTIVITY_WINDOW_MS=24*n*60*60*1e3;_e.computeTeamStats=(e,t,n=Date.now())=>{const l=e.filter(e=>null!=e.result),s=l.filter(e=>'win'===e.result).length,o=l.filter(e=>'loss'===e.result).length,m=l.filter(e=>'draw'===e.result).length,c=l.length,y=e.filter(e=>null!=e.attended_count&&null!=e.invited_count&&e.invited_count>0),h=y.length?y.reduce((e,t)=>e+t.attended_count/t.invited_count,0)/y.length:0,_=n-a;return{played:c,playedInWindow:l.filter(e=>new Date(e.starts_at).getTime()>=_).length,wins:s,losses:o,draws:m,winRate:c?s/c:0,attendanceRate:h,activeMembers:t,hosted:e.filter(e=>'match'===e.kind||'friendly'===e.kind).length,tournaments:e.filter(e=>'tournament'===e.kind).length}};const l=_e.TEAM_ACHIEVEMENTS=[{key:'first_victory',emoji:'\ud83e\udd47',tier:'bronze',metric:'wins',threshold:1},{key:'ten_wins',emoji:'\ud83d\udd1f',tier:'bronze',metric:'wins',threshold:10},{key:'fifty_wins',emoji:'\ud83c\udfc6',tier:'silver',metric:'wins',threshold:50},{key:'hundred_wins',emoji:'\ud83d\udc51',tier:'gold',metric:'wins',threshold:100},{key:'twentyfive_matches',emoji:'\ud83d\udcc5',tier:'bronze',metric:'played',threshold:25},{key:'hundred_matches',emoji:'\ud83d\udcaf',tier:'silver',metric:'played',threshold:100},{key:'five_gauntlets',emoji:'\u26a1',tier:'bronze',metric:'gauntlets_played',threshold:5},{key:'twentyfive_gauntlets',emoji:'\ud83c\udf96\ufe0f',tier:'silver',metric:'gauntlets_played',threshold:25},{key:'ten_gauntlet_wins',emoji:'\u2694\ufe0f',tier:'silver',metric:'gauntlets_won',threshold:10},{key:'twentyfive_gauntlet_wins',emoji:'\ud83c\udf1f',tier:'gold',metric:'gauntlets_won',threshold:25},{key:'five_members',emoji:'\ud83d\udd90\ufe0f',tier:'bronze',metric:'members',threshold:5},{key:'community_team',emoji:'\ud83e\udd1d',tier:'silver',metric:'members',threshold:10},{key:'fifteen_members',emoji:'\ud83d\udc65',tier:'silver',metric:'members',threshold:15},{key:'five_clean_sheets',emoji:'\ud83e\udde4',tier:'bronze',metric:'clean_sheets',threshold:5},{key:'three_streak',emoji:'\ud83d\udd25',tier:'bronze',metric:'streak',threshold:3},{key:'five_streak',emoji:'\ud83d\ude80',tier:'gold',metric:'streak',threshold:5},{key:'perfect_attendance',emoji:'\ud83d\udccb',tier:'silver',test:e=>e.played>=3&&e.attendanceRate>=.99},{key:'undefeated_season',emoji:'\ud83d\udee1\ufe0f',tier:'gold',test:e=>e.played>=5&&0===e.losses}];_e.metricValuesOf=(e,t,n,a)=>{const l=t.filter(e=>'win'===e.result||'loss'===e.result).sort((e,t)=>new Date(t.starts_at).getTime()-new Date(e.starts_at).getTime());let s=0;for(const e of l){if('win'!==e.result)break;s+=1}return{wins:e.wins,played:e.played,members:e.activeMembers,gauntlets_played:n,gauntlets_won:a,clean_sheets:t.filter(e=>null!=e.result&&0===e.their_score).length,streak:s}};const s=(e,t,n,a)=>null!=e.metric?a[e.metric]>=(e.threshold??1/0):e.test?.(t,n)??!1;_e.evaluateTeamAchievements=(e,t,n)=>l.filter(a=>s(a,e,t,n));const o=_e.RANKING_WEIGHTS={winRate:.4,activity:.2,reliability:.25,sportsmanship:.15};_e.rankingScore=({stats:e,sportsmanship:t=.7})=>{const n=e.playedInWindow??e.played,a=Math.min(1,n/20),l=o.winRate*e.winRate+o.activity*a+o.reliability*e.attendanceRate+o.sportsmanship*t;return Math.round(100*l)};const m=e=>new Date(e).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');_e.googleCalendarUrl=(e,t,n,a="")=>`https://calendar.google.com/calendar/render?${new URLSearchParams({action:'TEMPLATE',text:e,dates:`${m(t)}/${m(n)}`,details:a}).toString()}`;_e.buildIcs=(e,t,n,a="")=>['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Playora//Teams//EN','BEGIN:VEVENT',`UID:${m(t)}-${Math.random().toString(36).slice(2,8)}@playora.app`,`DTSTART:${m(t)}`,`DTEND:${m(n)}`,`SUMMARY:${e}`,`DESCRIPTION:${a}`,'END:VEVENT','END:VCALENDAR'].join('\n')},667,[]);
+__d(
+  function (g, r, i, _a, _m, _e, d) {
+    (Object.defineProperty(_e, "__esModule", { value: !0 }),
+      (_e.rankingScore =
+        _e.metricValuesOf =
+        _e.isOwnerRole =
+        _e.googleCalendarUrl =
+        _e.fixedSportFor =
+        _e.evaluateTeamAchievements =
+        _e.computeTeamStats =
+        _e.canManageTeam =
+        _e.buildIcs =
+        _e.TEAM_TYPES =
+        _e.TEAM_ACHIEVEMENTS =
+        _e.ROLE_RANK =
+        _e.RANKING_WEIGHTS =
+        _e.ACTIVITY_WINDOW_MS =
+        _e.ACTIVITY_WINDOW_DAYS =
+          void 0));
+    const e = (_e.TEAM_TYPES = [
+      { type: "football", labelKey: "teamTypeFootball", emoji: "\u26bd", fixedSport: "football" },
+      { type: "padel", labelKey: "teamTypePadel", emoji: "\ud83c\udfbe", fixedSport: "padel" },
+      { type: "tennis", labelKey: "teamTypeTennis", emoji: "\ud83c\udfbe", fixedSport: "tennis" },
+      { type: "corporate", labelKey: "teamTypeCorporate", emoji: "\ud83c\udfe2" },
+      { type: "university", labelKey: "teamTypeUniversity", emoji: "\ud83c\udf93" },
+      { type: "friends", labelKey: "teamTypeFriends", emoji: "\ud83d\udc65" },
+    ]);
+    _e.fixedSportFor = (t) => e.find((e) => e.type === t)?.fixedSport ?? null;
+    const t = (_e.ROLE_RANK = { owner: 4, captain: 3, co_captain: 2, manager: 1, player: 0 });
+    _e.canManageTeam = (e) => !!e && t[e] >= t.co_captain;
+    _e.isOwnerRole = (e) => "owner" === e;
+    const n = (_e.ACTIVITY_WINDOW_DAYS = 90),
+      a = (_e.ACTIVITY_WINDOW_MS = 24 * n * 60 * 60 * 1e3);
+    _e.computeTeamStats = (e, t, n = Date.now()) => {
+      const l = e.filter((e) => null != e.result),
+        s = l.filter((e) => "win" === e.result).length,
+        o = l.filter((e) => "loss" === e.result).length,
+        m = l.filter((e) => "draw" === e.result).length,
+        c = l.length,
+        y = e.filter((e) => null != e.attended_count && null != e.invited_count && e.invited_count > 0),
+        h = y.length ? y.reduce((e, t) => e + t.attended_count / t.invited_count, 0) / y.length : 0,
+        _ = n - a;
+      return {
+        played: c,
+        playedInWindow: l.filter((e) => new Date(e.starts_at).getTime() >= _).length,
+        wins: s,
+        losses: o,
+        draws: m,
+        winRate: c ? s / c : 0,
+        attendanceRate: h,
+        activeMembers: t,
+        hosted: e.filter((e) => "match" === e.kind || "friendly" === e.kind).length,
+        tournaments: e.filter((e) => "tournament" === e.kind).length,
+      };
+    };
+    const l = (_e.TEAM_ACHIEVEMENTS = [
+      { key: "first_victory", emoji: "\ud83e\udd47", tier: "bronze", metric: "wins", threshold: 1 },
+      { key: "ten_wins", emoji: "\ud83d\udd1f", tier: "bronze", metric: "wins", threshold: 10 },
+      { key: "fifty_wins", emoji: "\ud83c\udfc6", tier: "silver", metric: "wins", threshold: 50 },
+      { key: "hundred_wins", emoji: "\ud83d\udc51", tier: "gold", metric: "wins", threshold: 100 },
+      { key: "twentyfive_matches", emoji: "\ud83d\udcc5", tier: "bronze", metric: "played", threshold: 25 },
+      { key: "hundred_matches", emoji: "\ud83d\udcaf", tier: "silver", metric: "played", threshold: 100 },
+      { key: "five_gauntlets", emoji: "\u26a1", tier: "bronze", metric: "gauntlets_played", threshold: 5 },
+      {
+        key: "twentyfive_gauntlets",
+        emoji: "\ud83c\udf96\ufe0f",
+        tier: "silver",
+        metric: "gauntlets_played",
+        threshold: 25,
+      },
+      {
+        key: "ten_gauntlet_wins",
+        emoji: "\u2694\ufe0f",
+        tier: "silver",
+        metric: "gauntlets_won",
+        threshold: 10,
+      },
+      {
+        key: "twentyfive_gauntlet_wins",
+        emoji: "\ud83c\udf1f",
+        tier: "gold",
+        metric: "gauntlets_won",
+        threshold: 25,
+      },
+      { key: "five_members", emoji: "\ud83d\udd90\ufe0f", tier: "bronze", metric: "members", threshold: 5 },
+      { key: "community_team", emoji: "\ud83e\udd1d", tier: "silver", metric: "members", threshold: 10 },
+      { key: "fifteen_members", emoji: "\ud83d\udc65", tier: "silver", metric: "members", threshold: 15 },
+      {
+        key: "five_clean_sheets",
+        emoji: "\ud83e\udde4",
+        tier: "bronze",
+        metric: "clean_sheets",
+        threshold: 5,
+      },
+      { key: "three_streak", emoji: "\ud83d\udd25", tier: "bronze", metric: "streak", threshold: 3 },
+      { key: "five_streak", emoji: "\ud83d\ude80", tier: "gold", metric: "streak", threshold: 5 },
+      {
+        key: "perfect_attendance",
+        emoji: "\ud83d\udccb",
+        tier: "silver",
+        test: (e) => e.played >= 3 && e.attendanceRate >= 0.99,
+      },
+      {
+        key: "undefeated_season",
+        emoji: "\ud83d\udee1\ufe0f",
+        tier: "gold",
+        test: (e) => e.played >= 5 && 0 === e.losses,
+      },
+    ]);
+    _e.metricValuesOf = (e, t, n, a) => {
+      const l = t
+        .filter((e) => "win" === e.result || "loss" === e.result)
+        .sort((e, t) => new Date(t.starts_at).getTime() - new Date(e.starts_at).getTime());
+      let s = 0;
+      for (const e of l) {
+        if ("win" !== e.result) break;
+        s += 1;
+      }
+      return {
+        wins: e.wins,
+        played: e.played,
+        members: e.activeMembers,
+        gauntlets_played: n,
+        gauntlets_won: a,
+        clean_sheets: t.filter((e) => null != e.result && 0 === e.their_score).length,
+        streak: s,
+      };
+    };
+    const s = (e, t, n, a) =>
+      null != e.metric ? a[e.metric] >= (e.threshold ?? 1 / 0) : (e.test?.(t, n) ?? !1);
+    _e.evaluateTeamAchievements = (e, t, n) => l.filter((a) => s(a, e, t, n));
+    const o = (_e.RANKING_WEIGHTS = { winRate: 0.4, activity: 0.2, reliability: 0.25, sportsmanship: 0.15 });
+    _e.rankingScore = ({ stats: e, sportsmanship: t = 0.7 }) => {
+      const n = e.playedInWindow ?? e.played,
+        a = Math.min(1, n / 20),
+        l = o.winRate * e.winRate + o.activity * a + o.reliability * e.attendanceRate + o.sportsmanship * t;
+      return Math.round(100 * l);
+    };
+    const m = (e) =>
+      new Date(e)
+        .toISOString()
+        .replace(/[-:]/g, "")
+        .replace(/\.\d{3}/, "");
+    _e.googleCalendarUrl = (e, t, n, a = "") =>
+      `https://calendar.google.com/calendar/render?${new URLSearchParams({ action: "TEMPLATE", text: e, dates: `${m(t)}/${m(n)}`, details: a }).toString()}`;
+    _e.buildIcs = (e, t, n, a = "") =>
+      [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Rush X//Teams//EN",
+        "BEGIN:VEVENT",
+        `UID:${m(t)}-${Math.random().toString(36).slice(2, 8)}@playora.app`,
+        `DTSTART:${m(t)}`,
+        `DTEND:${m(n)}`,
+        `SUMMARY:${e}`,
+        `DESCRIPTION:${a}`,
+        "END:VEVENT",
+        "END:VCALENDAR",
+      ].join("\n");
+  },
+  667,
+  [],
+);
 __d(function(_g,r,i,_a,_m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.splitAmounts=e.settlement=e.roundKwd=e.isOnlineMethod=e.hoursBetween=e.courtPrice=e.PAYMENT_METHODS=void 0;const t=t=>Math.round(1e3*t)/1e3;e.roundKwd=t;const o=(t,o)=>Math.max(0,(new Date(o).getTime()-new Date(t).getTime())/36e5);e.hoursBetween=o;e.courtPrice=(n,a,l)=>t(Math.max(0,n)*o(a,l));e.splitAmounts=o=>{const{mode:n,total:a,payerIds:l,organizerId:m,custom:s}=o,h=t(Math.max(0,a)),c={};if(0===l.length)return c;if('organizer_pays'===n){for(const t of l)c[t]=0;return c[m]=h,c}if('custom'===n){let o=0;for(const n of l){const a=t(Math.max(0,s?.[n]??0));c[n]=a,o+=a}return c[m]=t(Math.max(0,(c[m]??0)+(h-o))),c}const y=Math.floor(h/l.length*1e3)/1e3;let M=0;for(const t of l)c[t]=y,M+=y;const p=t(h-M);return c[m]=t((c[m]??0)+p),c};e.settlement=(o,n,a)=>{const l=t(Math.max(0,o)),m='percentage'===n?l*(Math.max(0,Math.min(100,a))/100):Math.max(0,a),s=t(Math.min(l,m));return{gross:l,commission:s,net:t(l-s)}};const n=e.PAYMENT_METHODS=[{method:'knet',labelKey:'payKnet',emoji:'\ud83d\udcb3',online:!0},{method:'apple_pay',labelKey:'payApplePay',emoji:'',online:!0},{method:'google_pay',labelKey:'payGooglePay',emoji:'G',online:!0},{method:'visa',labelKey:'payVisa',emoji:'\ud83d\udcb3',online:!0},{method:'mastercard',labelKey:'payMastercard',emoji:'\ud83d\udcb3',online:!0},{method:'wallet',labelKey:'payWallet',emoji:'\ud83d\udc5b',online:!0},{method:'cash',labelKey:'payCash',emoji:'\ud83d\udcb5',online:!1}];e.isOnlineMethod=t=>n.find(o=>o.method===t)?.online??!1},668,[]);
 __d(function(g,r,i,_a,_m,_e,_d){Object.defineProperty(_e,"__esModule",{value:!0}),_e.withinOperatingHours=_e.windowsOverlap=_e.minutesOfDay=_e.generateSlots=_e.freeCancellationAllowed=_e.fmtHHMM=void 0;const t=t=>new Date(t).getTime(),e=(e,n)=>t(e.starts_at)<t(n.ends_at)&&t(n.starts_at)<t(e.ends_at);_e.windowsOverlap=e;const n=t=>{const e=new Date(t);return 60*e.getHours()+e.getMinutes()};_e.minutesOfDay=n;_e.withinOperatingHours=(t,e,a,o)=>{const s=n(t),l=new Date(e),u=60*l.getHours()+l.getMinutes(),w=0===u?1440:u;return new Date(t).toDateString()===new Date(e).toDateString()&&s>=a&&w<=o&&s<w};_e.generateSlots=(t,n,a,o,s,l)=>{const u=[],w=Date.now();for(let c=n;c+o<=a;c+=s){const n=new Date(t);n.setHours(0,c,0,0);const a=new Date(n.getTime()+6e4*o);if(n.getTime()<w)continue;const s={starts_at:n.toISOString(),ends_at:a.toISOString()},d=!l.some(t=>e(s,t));u.push(Object.assign({},s,{available:d}))}return u};_e.freeCancellationAllowed=(e,n,a=Date.now())=>t(e)-a>=36e5*n;_e.fmtHHMM=t=>{const e=Math.floor(t/60),n=t%60;return`${String(e).padStart(2,'0')}:${String(n).padStart(2,'0')}`}},669,[]);
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.refundDeadlineMs=e.refundDeadlineIso=e.msUntilRefundDeadline=e.isRefundEligible=e.SEAT_REFUND_CUTOFF_MS=e.SEAT_REFUND_CUTOFF_HOURS=void 0;const n=e.SEAT_REFUND_CUTOFF_HOURS=2,_=e.SEAT_REFUND_CUTOFF_MS=36e5*n,l=n=>new Date(n).getTime()-_;e.refundDeadlineMs=l;e.refundDeadlineIso=n=>new Date(l(n)).toISOString();e.isRefundEligible=(n,_)=>_<=l(n);e.msUntilRefundDeadline=(n,_)=>l(n)-_},670,[]);
@@ -51299,7 +51584,363 @@ __d(function(g,r,i,a,_m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule
 __d(function(g,r,_i,_a,_m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{id:e}=(0,p.useLocalSearchParams)(),{user:i}=(0,b.useAuth)(),{colors:W}=(0,j.useTheme)(),D=(0,p.useRouter)(),A=(0,B.useT)(),[F,M]=(0,t.useState)(null),[$,H]=(0,t.useState)([]),[q,V]=(0,t.useState)(!1),[N,U]=(0,t.useState)(!1),[O,E]=(0,t.useState)(!1),[G,Y]=(0,t.useState)(null),J=e=>{Y(e),setTimeout(()=>Y(null),2e3)},K=(0,t.useCallback)(async()=>{if(i&&e)try{const t=await(0,_.fetchPlayerProfile)(i.id,e);M(t),E(!1),H(t.limited?[]:await(0,_.fetchHighlightCollections)(e))}catch{E(!0)}},[i,e]);(0,p.useFocusEffect)((0,t.useCallback)(()=>{K()},[K]));const Q=async()=>{i&&F&&(U(!1),F.is_blocked?(await(0,_.unblockUser)(i.id,F.user_id),J(A('unblockedToast'))):(await(0,_.blockUser)(i.id,F.user_id),J(A('blockedToast'))),await K())},X=async e=>{if(i&&F){V(!0);try{await(0,_.respondFollowRequest)(i.id,F.user_id,e),await K()}finally{V(!1)}}};if(O)return(0,S.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:W.bg},children:[(0,S.jsx)(c.default,{style:L.header,children:(0,S.jsx)(a.default,{onPress:()=>D.back(),accessibilityRole:"button",accessibilityLabel:A('back'),style:[L.iconBtn,{backgroundColor:W.surface,borderColor:W.border}],children:(0,S.jsx)(h.Ionicons,{name:(0,R.chevronBack)(),size:22,color:W.text})})}),(0,S.jsxs)(c.default,{style:[L.center,{paddingHorizontal:w.spacing.xl}],children:[(0,S.jsx)(h.Ionicons,{name:"lock-closed-outline",size:36,color:W.textMuted,style:{marginBottom:w.spacing.md}}),(0,S.jsx)(n.default,{style:[w.typography.h3,{color:W.text,textAlign:'center'}],children:A('privateAccount')}),(0,S.jsx)(n.default,{style:[w.typography.body,{color:W.textMuted,textAlign:'center',marginTop:w.spacing.xs}],children:A('privateAccountBody')})]})]});return F?(0,S.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:W.bg},children:[(0,S.jsxs)(o.default,{contentContainerStyle:{paddingBottom:w.spacing.xxxl},children:[(0,S.jsxs)(c.default,{style:[L.cover,{backgroundColor:W.accentMuted}],children:[(0,S.jsx)(a.default,{onPress:()=>D.back(),accessibilityRole:"button",accessibilityLabel:A('back'),style:[L.iconBtn,{backgroundColor:W.surface,borderColor:W.border}],children:(0,S.jsx)(h.Ionicons,{name:(0,R.chevronBack)(),size:22,color:W.text})}),!F.is_self&&(0,S.jsx)(a.default,{onPress:()=>U(!0),accessibilityRole:"button",accessibilityLabel:A('moreActions'),style:[L.iconBtn,{backgroundColor:W.surface,borderColor:W.border,position:'absolute',top:w.spacing.md},(0,R.inlineEnd)(w.spacing.lg)],children:(0,S.jsx)(h.Ionicons,{name:"ellipsis-horizontal",size:20,color:W.text})})]}),(0,S.jsxs)(c.default,{style:{paddingHorizontal:w.spacing.lg,marginTop:-34},children:[F.avatar_url?(0,S.jsx)(c.default,{style:[L.avatar,{borderColor:W.bg,overflow:'hidden'}],children:(0,S.jsx)(C.PlayerAvatar,{name:F.display_name||'P',seed:0,uri:F.avatar_url,size:70})}):(0,S.jsx)(c.default,{style:[L.avatar,{backgroundColor:W.surface,borderColor:W.bg}],children:(0,S.jsx)(n.default,{style:[w.typography.h1,{color:W.accentText}],children:(F.display_name||'?').slice(0,1).toUpperCase()})}),(0,S.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',marginTop:w.spacing.sm},children:[(0,S.jsxs)(c.default,{style:{flex:1},children:[(0,S.jsx)(n.default,{style:[w.typography.h2,{color:W.text}],numberOfLines:1,children:F.display_name}),!!F.username&&(0,S.jsxs)(n.default,{style:[w.typography.caption,{color:W.textMuted}],children:["@",F.username]}),F.online?(0,S.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',marginTop:2},children:[(0,S.jsx)(c.default,{style:[L.dot,{backgroundColor:W.success}]}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.success,marginStart:5}],children:A('activeNow')})]}):F.last_active?(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.textMuted,marginTop:2}],children:(0,T.formatRelative)(F.last_active)}):null]}),!F.is_self&&(0,S.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',gap:w.spacing.sm},children:[F.can_message&&(0,S.jsx)(a.default,{onPress:async()=>{if(!i||!F)return;try{const e=await(0,_.startConversation)(i.id,F.user_id);D.push(`/messages/${e.id}`)}catch(e){const t=String(e.message);J(A('messages_followers_only'===t?'msgFollowersToast':'messages_disabled'===t?'msgDisabledToast':'cannotMessageBlocked'))}},accessibilityRole:"button",accessibilityLabel:A('messageBtn'),style:[L.msgBtn,{backgroundColor:W.surface,borderColor:W.border}],children:(0,S.jsx)(h.Ionicons,{name:"chatbubble-ellipses-outline",size:18,color:W.text})}),F.is_blocked?(0,S.jsx)(y.Button,{title:A('unblockBtn'),size:"sm",variant:"secondary",onPress:Q}):(0,S.jsx)(k.FollowButton,{viewerId:i.id,targetId:F.user_id,targetName:F.display_name,isFollowing:F.is_following,isRequested:F.is_requested,onChanged:K})]})]}),(0,S.jsxs)(c.default,{style:{flexDirection:'row',gap:w.spacing.sm,marginTop:w.spacing.xs,flexWrap:'wrap'},children:[F.is_friend&&(0,S.jsx)(m.Badge,{label:A('friendLabel'),tone:"success"}),F.looking_for_game&&(0,S.jsx)(m.Badge,{label:A('lookingForGame'),tone:"accent"}),F.is_muted&&(0,S.jsx)(m.Badge,{label:A('muteBtn'),tone:"warning"})]}),F.requested_me&&(0,S.jsxs)(x.Card,{padding:"lg",style:{marginTop:w.spacing.lg},children:[(0,S.jsx)(n.default,{style:[w.typography.bodyStrong,{color:W.text}],children:A('followRequestFrom',{name:F.display_name})}),(0,S.jsxs)(c.default,{style:{flexDirection:'row',gap:w.spacing.sm,marginTop:w.spacing.md},children:[(0,S.jsx)(c.default,{style:{flex:1},children:(0,S.jsx)(y.Button,{title:A('approve'),size:"sm",fullWidth:!0,loading:q,onPress:()=>X(!0)})}),(0,S.jsx)(c.default,{style:{flex:1},children:(0,S.jsx)(y.Button,{title:A('declineBtn'),size:"sm",fullWidth:!0,variant:"secondary",loading:q,onPress:()=>X(!1)})})]})]}),F.limited&&(0,S.jsxs)(S.Fragment,{children:[(0,S.jsxs)(c.default,{style:[L.statsRow,{borderColor:W.border}],children:[(0,S.jsx)(P,{n:F.followers,label:A('followersLabel'),colors:W}),(0,S.jsx)(P,{n:F.following,label:A('followingLabel'),colors:W}),(0,S.jsx)(P,{n:'\u2014',label:A('matchesPlayedLabel'),colors:W}),(0,S.jsx)(P,{n:'\u2014',label:A('hostedLabel'),colors:W})]}),(0,S.jsxs)(x.Card,{padding:"lg",style:{marginTop:w.spacing.lg,alignItems:'center'},children:[(0,S.jsx)(h.Ionicons,{name:"lock-closed-outline",size:32,color:W.accentText}),(0,S.jsx)(n.default,{style:[w.typography.bodyStrong,{color:W.text,marginTop:w.spacing.sm,textAlign:'center'}],children:'private'===F.limited_reason?A('privateAccount'):A('limitedFollowHint',{name:F.display_name})}),(0,S.jsx)(n.default,{style:[w.typography.small,{color:W.textMuted,textAlign:'center',marginTop:2}],children:'private'===F.limited_reason?A('privateAccountStrict'):A('limitedProfileSub')}),'private'!==F.limited_reason&&!F.is_blocked&&(0,S.jsx)(c.default,{style:{alignSelf:'stretch',marginTop:w.spacing.lg},children:(0,S.jsx)(k.FollowButton,{viewerId:i.id,targetId:F.user_id,targetName:F.display_name,isFollowing:F.is_following,isRequested:F.is_requested,onChanged:K,fullWidth:!0,size:"md"})})]})]}),!F.limited&&(0,S.jsxs)(S.Fragment,{children:[(0,S.jsxs)(c.default,{style:[L.statsRow,{borderColor:W.border}],children:[(0,S.jsx)(P,{n:F.followers,label:A('followersLabel'),colors:W,onPress:()=>D.push(`/follows/${F.user_id}?kind=followers`)}),(0,S.jsx)(P,{n:F.following,label:A('followingLabel'),colors:W,onPress:()=>D.push(`/follows/${F.user_id}?kind=following`)}),(0,S.jsx)(P,{n:F.matches_played,label:A('matchesPlayedLabel'),colors:W}),null!=F.matches_hosted&&(0,S.jsx)(P,{n:F.matches_hosted,label:A('hostedLabel'),colors:W})]}),(0,S.jsx)(z,{title:A('aboutLabel'),colors:W,children:(0,S.jsx)(n.default,{style:[w.typography.body,{color:F.bio?W.text:W.textMuted}],children:F.bio||A('noBioYet')})}),(0,S.jsx)(z,{title:A('favoriteSports'),colors:W,children:(0,S.jsxs)(c.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:w.spacing.sm},children:[F.favorite_sports.map(e=>(0,S.jsx)(m.Badge,{label:A(I[e]),tone:"neutral"},e)),(0,S.jsx)(f.Explainer,{k:"classification",children:(0,S.jsx)(m.Badge,{label:A(F.skill_level),tone:"accent"})}),(0,S.jsx)(m.Badge,{label:`${F.attendance.emoji??''} ${A(F.attendance.key)}`.trim(),tone:F.attendance.tone})]})}),(F.achievements.length>0||F.badges.length>0)&&(0,S.jsx)(z,{title:A('achievementsTitle'),colors:W,children:(0,S.jsx)(c.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:w.spacing.sm},children:[...F.achievements,...F.badges].slice(0,12).map(e=>(0,S.jsxs)(c.default,{style:[L.badgeChip,{backgroundColor:W.surface,borderColor:W.border}],children:[(0,S.jsx)(n.default,{style:{fontSize:16},children:e.emoji}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.text,marginStart:4}],children:A(e.key)})]},e.id))})}),$.length>0&&(0,S.jsx)(z,{title:A('highlightsTitle'),colors:W,children:(0,S.jsx)(c.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:w.spacing.sm},children:$.map(e=>(0,S.jsxs)(c.default,{style:[L.badgeChip,{backgroundColor:W.surface,borderColor:W.border}],children:[(0,S.jsx)(h.Ionicons,{name:"film-outline",size:15,color:W.accentText}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.text,marginHorizontal:4}],children:A(e.label_key)}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.textMuted}],children:A('collectionCount',{n:(0,v.formatNumber)(e.count)})})]},e.cover_clip_id))})}),F.teams.length>0&&(0,S.jsx)(z,{title:A('teamsLabel'),colors:W,children:(0,S.jsx)(c.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:w.spacing.sm},children:F.teams.map(e=>{const t=(e.win_streak??0)>=2,l=(e.loss_streak??0)>=2;return(0,S.jsxs)(a.default,{onPress:()=>D.push(`/teams/${e.id}`),style:[L.badgeChip,{backgroundColor:W.surface,borderColor:W.border}],children:[(0,S.jsx)(n.default,{style:{fontSize:15},children:e.emoji}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.text,marginStart:4,flexShrink:1,maxWidth:150}],numberOfLines:1,children:e.name}),t&&(0,S.jsxs)(n.default,{style:[w.typography.caption,{marginStart:3}],children:["\ud83d\udd25",e.win_streak]}),l&&(0,S.jsxs)(n.default,{style:[w.typography.caption,{marginStart:3}],children:["\ud83e\uddca",e.loss_streak]})]},e.id)})})}),F.mutual_friends.length>0&&(0,S.jsx)(z,{title:`${A('mutualFriends')} \xb7 ${F.mutual_friends.length}`,colors:W,children:(0,S.jsx)(c.default,{style:{flexDirection:'row',flexWrap:'wrap'},children:F.mutual_friends.map((e,t)=>(0,S.jsx)(a.default,{onPress:()=>D.push(`/player/${e.id}`),accessibilityRole:"button",accessibilityLabel:e.name,children:(0,S.jsxs)(n.default,{style:[w.typography.small,{color:W.accentText}],children:[e.name,t<F.mutual_friends.length-1?', ':'']})},e.id))})}),F.mutual_teams.length>0&&(0,S.jsx)(z,{title:`${A('mutualTeams')} \xb7 ${F.mutual_teams.length}`,colors:W,children:(0,S.jsx)(n.default,{style:[w.typography.small,{color:W.textMuted}],numberOfLines:2,children:F.mutual_teams.map(e=>e.name).join(', ')})})]})]})]}),(0,S.jsx)(s.default,{visible:N,transparent:!0,animationType:"fade",onRequestClose:()=>U(!1),children:(0,S.jsx)(a.default,{style:L.scrim,onPress:()=>U(!1),children:(0,S.jsxs)(a.default,{style:[L.sheet,{backgroundColor:W.surface}],onPress:()=>{},children:[(0,S.jsxs)(a.default,{onPress:async()=>{if(!i||!F)return;U(!1),F.is_muted?(await(0,_.unmuteUser)(i.id,F.user_id),J(A('unmutedToast'))):(await(0,_.muteUser)(i.id,F.user_id),J(A('mutedToast')));await K()},accessibilityRole:"button",style:L.sheetRow,children:[(0,S.jsx)(h.Ionicons,{name:F.is_muted?'volume-high-outline':'volume-mute-outline',size:20,color:W.text}),(0,S.jsx)(n.default,{style:[w.typography.body,{color:W.text,marginStart:w.spacing.md}],children:F.is_muted?A('unmuteBtn'):A('muteBtn')})]}),(0,S.jsx)(c.default,{style:[L.sheetDivider,{backgroundColor:W.border}]}),(0,S.jsxs)(a.default,{onPress:Q,accessibilityRole:"button",style:L.sheetRow,children:[(0,S.jsx)(h.Ionicons,{name:"ban-outline",size:20,color:W.danger}),(0,S.jsx)(n.default,{style:[w.typography.body,{color:W.danger,marginStart:w.spacing.md}],children:F.is_blocked?A('unblockBtn'):A('blockBtn')})]})]})})}),G&&(0,S.jsx)(c.default,{style:[L.toast,{backgroundColor:W.text}],children:(0,S.jsx)(n.default,{style:[w.typography.smallStrong,{color:W.bg,textAlign:'center'}],children:G})})]}):(0,S.jsx)(u.SafeAreaView,{style:[L.center,{backgroundColor:W.bg}],children:(0,S.jsx)(l.default,{color:W.accentText})})};var t=r(d[1]),l=e(r(d[2])),s=e(r(d[3])),a=e(r(d[4])),o=e(r(d[5])),i=e(r(d[6])),n=e(r(d[7])),c=e(r(d[8])),u=r(d[9]),h=r(d[10]),p=r(d[11]),x=r(d[12]),m=r(d[13]),f=r(d[14]),y=r(d[15]),b=r(d[16]),j=r(d[17]),w=r(d[18]),_=r(d[19]),k=r(d[20]),C=r(d[21]),v=r(d[22]),T=r(d[23]),B=r(d[24]),R=r(d[25]),S=r(d[26]);const I={football:'football',padel:'padel',tennis:'tennis'};const P=({n:e,label:t,colors:l,onPress:s})=>{const o=(0,S.jsxs)(S.Fragment,{children:[(0,S.jsx)(n.default,{style:[w.typography.h3,{color:l.text}],children:'number'==typeof e?(0,v.formatNumber)(e):e}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:l.textMuted}],children:t})]});return s?(0,S.jsx)(a.default,{onPress:s,accessibilityRole:"button",accessibilityLabel:t,style:{alignItems:'center',flex:1},children:o}):(0,S.jsx)(c.default,{style:{alignItems:'center',flex:1},children:o})},z=({title:e,colors:t,children:l})=>(0,S.jsxs)(c.default,{style:{marginTop:w.spacing.lg},children:[(0,S.jsx)(n.default,{style:[w.typography.smallStrong,{color:t.textMuted,marginBottom:w.spacing.sm}],children:e}),l]}),L=i.default.create({center:{flex:1,alignItems:'center',justifyContent:'center'},cover:{height:120,paddingTop:w.spacing.md,paddingHorizontal:w.spacing.lg},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:i.default.hairlineWidth},avatar:{width:76,height:76,borderRadius:38,alignItems:'center',justifyContent:'center',borderWidth:3},statsRow:{flexDirection:'row',marginTop:w.spacing.lg,paddingVertical:w.spacing.md,borderTopWidth:i.default.hairlineWidth,borderBottomWidth:i.default.hairlineWidth},badgeChip:{flexDirection:'row',alignItems:'center',paddingHorizontal:w.spacing.md,paddingVertical:6,borderRadius:w.radius.pill,borderWidth:i.default.hairlineWidth},msgBtn:{width:36,height:36,borderRadius:18,alignItems:'center',justifyContent:'center',borderWidth:i.default.hairlineWidth},header:{flexDirection:'row',alignItems:'center',paddingHorizontal:w.spacing.lg,paddingVertical:w.spacing.md},dot:{width:8,height:8,borderRadius:4},scrim:{flex:1,backgroundColor:'rgba(0,0,0,0.4)',justifyContent:'flex-end'},sheet:{borderTopLeftRadius:w.radius.xl,borderTopRightRadius:w.radius.xl,padding:w.spacing.sm,paddingBottom:w.spacing.xxxl},sheetRow:{flexDirection:'row',alignItems:'center',padding:w.spacing.lg},sheetDivider:{height:i.default.hairlineWidth,marginHorizontal:w.spacing.lg},toast:{position:'absolute',bottom:28,left:w.spacing.lg,right:w.spacing.lg,padding:w.spacing.md,borderRadius:w.radius.md}})},2475,[33,15,461,467,369,281,158,146,273,381,1086,20,1623,1624,1668,626,630,615,616,671,2377,1679,1311,1626,675,1171,13]);
 __d(function(g,r,i,a,m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{user:e,profile:o,refreshProfile:T}=(0,y.useAuth)(),{colors:I}=(0,x.useTheme)(),M=(0,h.useRouter)(),R=(0,k.useT)(),[z,L]=(0,t.useState)([]),[A,W]=(0,t.useState)(null),[D,E]=(0,t.useState)(null),[H,V]=(0,t.useState)(!1);(0,h.useFocusEffect)((0,t.useCallback)(()=>{o&&(L(o.preferred_sports??[]),W(o.skill_level&&'all'!==o.skill_level?o.skill_level:null),E(o.home_area??null))},[o]));const F=({on:e,label:t,onPress:l})=>(0,P.jsxs)(s.default,{onPress:l,accessibilityRole:"button",accessibilityState:{selected:e},style:[C.chip,{backgroundColor:e?I.accent:I.surface,borderColor:e?I.accent:I.border}],children:[e&&(0,P.jsx)(p.Ionicons,{name:"checkmark",size:14,color:I.accentInk,style:{marginEnd:4}}),(0,P.jsx)(n.default,{style:[b.typography.small,{color:e?I.accentInk:I.text}],children:t})]});return(0,P.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:I.bg},children:[(0,P.jsxs)(c.default,{style:C.header,children:[(0,P.jsx)(s.default,{onPress:()=>M.back(),accessibilityRole:"button",accessibilityLabel:R('back'),hitSlop:10,style:[C.iconBtn,{backgroundColor:I.surface,borderColor:I.border}],children:(0,P.jsx)(p.Ionicons,{name:(0,w.chevronBack)(),size:22,color:I.text})}),(0,P.jsx)(n.default,{style:[b.typography.h2,{color:I.text,flex:1,textAlign:'center'}],children:R('prefsTitle')}),(0,P.jsx)(c.default,{style:{width:40}})]}),(0,P.jsxs)(c.default,{style:{padding:b.spacing.lg},children:[(0,P.jsx)(n.default,{style:[b.typography.body,{color:I.textMuted,marginBottom:b.spacing.lg}],children:R('prefsBody')}),(0,P.jsx)(n.default,{style:[b.typography.smallStrong,{color:I.textMuted,marginBottom:b.spacing.xs}],children:R('sportsLabel')}),(0,P.jsx)(c.default,{style:C.row,children:S.map(e=>(0,P.jsx)(F,{on:z.includes(e),label:R(e),onPress:()=>L(t=>t.includes(e)?t.filter(t=>t!==e):[...t,e])},e))}),(0,P.jsx)(n.default,{style:[b.typography.smallStrong,{color:I.textMuted,marginTop:b.spacing.lg,marginBottom:b.spacing.xs}],children:R('levelLabel')}),(0,P.jsx)(c.default,{style:C.row,children:B.map(e=>(0,P.jsx)(F,{on:A===e,label:R(e),onPress:()=>W(t=>t===e?null:e)},e))}),(0,P.jsx)(n.default,{style:[b.typography.smallStrong,{color:I.textMuted,marginTop:b.spacing.lg,marginBottom:b.spacing.xs}],children:R('areaLabel')}),(0,P.jsx)(_.AreaPicker,{value:D,onChange:E}),(0,P.jsx)(f.Button,{title:R('saveLabel'),size:"lg",fullWidth:!0,loading:H,onPress:async()=>{if(e){V(!0);try{await(0,j.updateProfile)(e.id,Object.assign({},z.length?{preferred_sports:z}:{},A?{skill_level:A}:{},D?{home_area:D}:{})),await T(),M.back()}catch(e){l.default.alert(R('error'),(0,v.storeErrorText)(e?.message??'')||R('error'))}finally{V(!1)}}},style:{marginTop:b.spacing.xl}}),(0,P.jsx)(s.default,{onPress:()=>M.back(),accessibilityRole:"button",hitSlop:12,style:{alignItems:'center',marginTop:b.spacing.md,minHeight:b.touch.minTarget,justifyContent:'center'},children:(0,P.jsx)(n.default,{style:[b.typography.small,{color:I.textMuted}],children:R('skipForNow')})})]})]})};var t=r(d[1]),l=e(r(d[2])),s=e(r(d[3])),o=e(r(d[4])),n=e(r(d[5])),c=e(r(d[6])),u=r(d[7]),p=r(d[8]),h=r(d[9]),f=r(d[10]),y=r(d[11]),x=r(d[12]),b=r(d[13]),j=r(d[14]),k=r(d[15]),w=r(d[16]),v=r(d[17]),_=r(d[18]),P=r(d[19]);const S=['football','padel','tennis'],B=['beginner','intermediate','advanced'];const C=o.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:b.spacing.lg,paddingVertical:b.spacing.sm},iconBtn:{width:40,height:40,borderRadius:20,borderWidth:1,alignItems:'center',justifyContent:'center'},row:{flexDirection:'row',flexWrap:'wrap',gap:b.spacing.sm},chip:{flexDirection:'row',alignItems:'center',borderRadius:b.radius.pill,borderWidth:1,paddingHorizontal:b.spacing.md,paddingVertical:13}})},2476,[33,15,445,369,158,146,273,381,1086,20,626,630,615,616,671,675,1171,674,1841,13]);
 __d(function(g,r,i,_a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{user:t,profile:M}=(0,x.useAuth)(),{colors:T}=(0,v.useTheme)(),I=(0,f.useRouter)(),A=(0,S.useT)(),[P,R]=(0,a.useState)(null),[B,W]=(0,a.useState)(!1);(0,f.useFocusEffect)((0,a.useCallback)(()=>{t&&(0,C.fetchPrivacy)(t.id).then(R).catch(()=>R(null))},[t]));const z=async a=>{if(t&&!B){W(!0);try{R(await(0,C.updatePrivacy)(t.id,a))}finally{W(!1)}}};if(!P)return(0,w.jsx)(p.SafeAreaView,{style:{flex:1,backgroundColor:T.bg,alignItems:'center',justifyContent:'center'},children:(0,w.jsx)(o.default,{color:T.accentText})});const V=M?.full_name??'Player',D=V.split(' ').map(t=>t[0]).slice(0,2).join('').toUpperCase(),E=[{key:'everyone',label:A('visEveryone'),sub:A('visEveryoneSub')},{key:'same_audience',label:A('visSameAudience'),sub:A('visSameAudienceSub')},{key:'connections',label:A('visConnections'),sub:A('visConnectionsSub')}],L=[{key:'photo',label:A('avatarPhoto')},{key:'initials',label:A('avatarInitials')}];return(0,w.jsxs)(p.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:T.bg},children:[(0,w.jsxs)(y.default,{style:_.header,children:[(0,w.jsx)(l.default,{onPress:()=>I.back(),accessibilityRole:"button",accessibilityLabel:A('back'),style:[_.iconBtn,{backgroundColor:T.surface,borderColor:T.border}],children:(0,w.jsx)(b.Ionicons,{name:(0,k.chevronBack)(),size:22,color:T.text})}),(0,w.jsx)(u.default,{style:[j.typography.h2,{color:T.text,flex:1,textAlign:'center'}],children:A('privacyTitle')}),(0,w.jsx)(y.default,{style:{width:40}})]}),(0,w.jsxs)(n.default,{contentContainerStyle:{padding:j.spacing.lg,paddingBottom:j.spacing.xxxl},children:[(0,w.jsxs)(y.default,{style:[_.preview,{backgroundColor:T.surface,borderColor:T.border}],children:[(0,w.jsx)(u.default,{style:[_.caption,{color:T.textMuted}],children:A('howOthersSeeMe').toUpperCase()}),(0,w.jsxs)(y.default,{style:{flexDirection:'row',alignItems:'center',marginTop:j.spacing.md},children:['initials'===P.avatar_mode?(0,w.jsx)(y.default,{style:[_.initialsAvatar,{backgroundColor:T.accent}],children:(0,w.jsx)(u.default,{style:[j.typography.bodyStrong,{color:T.accentInk}],children:D})}):(0,w.jsx)(h.PlayerAvatar,{name:V,seed:3,size:44,uri:M?.avatar_url??void 0}),(0,w.jsxs)(y.default,{style:{flex:1,marginStart:j.spacing.md},children:[(0,w.jsx)(u.default,{style:[j.typography.bodyStrong,{color:T.text}],children:'connections'===P.privacy_visibility?A('previewNameHidden'):V}),(0,w.jsx)(u.default,{style:[j.typography.caption,{color:T.textMuted,marginTop:2}],children:'everyone'===P.privacy_visibility?A('visEveryoneSub'):'same_audience'===P.privacy_visibility?A('visSameAudienceSub'):A('visConnectionsSub')})]})]}),(0,w.jsx)(u.default,{style:[j.typography.caption,{color:T.textMuted,marginTop:j.spacing.md}],children:A('privacyNeverShown')})]}),(0,w.jsx)(u.default,{style:[_.caption,{color:T.textMuted,marginTop:j.spacing.lg,marginBottom:j.spacing.sm}],children:A('visibilityLabel').toUpperCase()}),E.map(t=>{const a=P.privacy_visibility===t.key;return(0,w.jsxs)(l.default,{onPress:()=>z({privacy_visibility:t.key}),accessibilityRole:"button",accessibilityState:{selected:a},style:[_.row,{backgroundColor:T.surface,borderColor:a?T.accent:T.border,borderWidth:a?1.5:s.default.hairlineWidth}],children:[(0,w.jsxs)(y.default,{style:{flex:1},children:[(0,w.jsx)(u.default,{style:[j.typography.bodyStrong,{color:T.text}],children:t.label}),(0,w.jsx)(u.default,{style:[j.typography.caption,{color:T.textMuted,marginTop:2}],children:t.sub})]}),(0,w.jsx)(b.Ionicons,{name:a?'radio-button-on':'radio-button-off',size:20,color:a?T.accent:T.textMuted})]},t.key)}),(0,w.jsx)(u.default,{style:[_.caption,{color:T.textMuted,marginTop:j.spacing.lg,marginBottom:j.spacing.sm}],children:A('avatarModeLabel').toUpperCase()}),(0,w.jsx)(y.default,{style:{flexDirection:'row',gap:j.spacing.sm},children:L.map(t=>{const a=P.avatar_mode===t.key;return(0,w.jsx)(l.default,{onPress:()=>z({avatar_mode:t.key}),accessibilityRole:"button",accessibilityState:{selected:a},style:[_.avatarOpt,{backgroundColor:a?T.accent:T.surface,borderColor:a?T.accent:T.border}],children:(0,w.jsx)(u.default,{style:[j.typography.smallStrong,{color:a?T.accentInk:T.text}],children:t.label})},t.key)})}),(0,w.jsx)(u.default,{style:[j.typography.caption,{color:T.textMuted,marginTop:j.spacing.xs}],children:A('avatarModeSub')}),(0,w.jsxs)(y.default,{style:[_.row,{backgroundColor:T.surface,borderColor:T.border,marginTop:j.spacing.lg}],children:[(0,w.jsxs)(y.default,{style:{flex:1},children:[(0,w.jsx)(u.default,{style:[j.typography.bodyStrong,{color:T.text}],children:A('mediaConsentLabel')}),(0,w.jsx)(u.default,{style:[j.typography.caption,{color:T.textMuted,marginTop:2}],children:A('mediaConsentSub')})]}),(0,w.jsx)(c.default,{value:P.media_consent,onValueChange:t=>z({media_consent:t}),trackColor:{true:T.accent,false:T.surfaceAlt},thumbColor:"#fff"})]})]})]})};var a=r(d[1]),o=t(r(d[2])),l=t(r(d[3])),n=t(r(d[4])),s=t(r(d[5])),c=t(r(d[6])),u=t(r(d[7])),y=t(r(d[8])),p=r(d[9]),b=r(d[10]),f=r(d[11]),h=r(d[12]),x=r(d[13]),v=r(d[14]),j=r(d[15]),C=r(d[16]),S=r(d[17]),k=r(d[18]),w=r(d[19]);const _=s.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:j.spacing.lg,paddingVertical:j.spacing.sm},iconBtn:{width:40,height:40,borderRadius:20,borderWidth:1,alignItems:'center',justifyContent:'center'},caption:{fontSize:10.5,fontWeight:'800',letterSpacing:1.5},preview:{borderRadius:j.radius.lg,borderWidth:1,padding:j.spacing.md},initialsAvatar:{width:44,height:44,borderRadius:22,alignItems:'center',justifyContent:'center'},row:{flexDirection:'row',alignItems:'center',borderRadius:j.radius.lg,padding:j.spacing.md,marginBottom:j.spacing.sm},avatarOpt:{flex:1,alignItems:'center',borderRadius:j.radius.pill,borderWidth:1,paddingVertical:12}})},2477,[33,15,461,369,281,158,477,146,273,381,1086,20,1679,630,615,616,671,675,1171,13]);
-__d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{user:t,profile:u,refreshProfile:M,signOut:H}=(0,C.useAuth)(),{colors:O}=(0,w.useTheme)(),D=(0,b.useRouter)(),z=(0,S.useT)(),[E,R]=(0,l.useState)(u?.consent??{analytics:!1,marketing:!1}),[V,F]=(0,l.useState)(!1),[L,W]=(0,l.useState)(null),[N,J]=(0,l.useState)(0);(0,b.useFocusEffect)((0,l.useCallback)(()=>{t&&((0,B.fetchPrivacySettings)(t.id).then(W),(0,B.fetchBlockedList)(t.id).then(t=>J(t.length)))},[t]));const U=async l=>{t&&(W(t=>t?Object.assign({},t,l):t),W(await(0,B.setPrivacySettings)(t.id,l)))},$=async(l,o)=>{if(!t)return;const s=Object.assign({},E,{[l]:o});R(s),await(0,B.updateConsent)(t.id,s),await M()};return(0,T.jsxs)(x.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:O.bg},children:[(0,T.jsx)(h.default,{style:I.header,children:(0,T.jsx)(s.default,{onPress:()=>D.back(),accessibilityRole:"button",accessibilityLabel:z('close'),style:[I.back,{backgroundColor:O.surface,borderColor:O.border}],children:(0,T.jsx)(f.Ionicons,{name:(0,A.chevronBack)(),size:22,color:O.text})})}),(0,T.jsxs)(n.default,{contentContainerStyle:{padding:k.spacing.lg,paddingBottom:k.spacing.xxxl},children:[(0,T.jsx)(p.default,{style:[k.typography.display,{color:O.text}],children:z('privacy')}),(0,T.jsx)(p.default,{style:[k.typography.body,{color:O.textMuted,marginTop:k.spacing.xs,marginBottom:k.spacing.xl}],children:z('privacyIntro')}),L&&(0,T.jsxs)(T.Fragment,{children:[(0,T.jsx)(p.default,{style:[k.typography.h3,{color:O.text,marginBottom:k.spacing.sm}],children:z('safetyTitle')}),(0,T.jsxs)(j.Card,{padding:"md",style:{marginBottom:k.spacing.xl},children:[(0,T.jsx)(p.default,{style:[k.typography.bodyStrong,{color:O.text,marginBottom:k.spacing.sm}],children:z('profileVisibility')}),(0,T.jsx)(_,{options:[{value:'public',label:z('visibilityPublic')},{value:'followers',label:z('visibilityFollowers')},{value:'private',label:z('visibilityPrivate')}],value:L.profile_visibility,onChange:t=>U({profile_visibility:t}),colors:O}),(0,T.jsx)(h.default,{style:[I.divider,{backgroundColor:O.border}]}),(0,T.jsx)(p.default,{style:[k.typography.bodyStrong,{color:O.text,marginBottom:k.spacing.sm}],children:z('allowMessages')}),(0,T.jsx)(_,{options:[{value:'everyone',label:z('msgEveryone')},{value:'followers',label:z('msgFollowers')},{value:'none',label:z('msgNone')}],value:L.allow_messages,onChange:t=>U({allow_messages:t}),colors:O}),(0,T.jsx)(h.default,{style:[I.divider,{backgroundColor:O.border}]}),(0,T.jsxs)(h.default,{style:I.row,children:[(0,T.jsxs)(h.default,{style:{flex:1,marginEnd:k.spacing.md},children:[(0,T.jsx)(p.default,{style:[k.typography.bodyStrong,{color:O.text}],children:z('showOnline')}),(0,T.jsx)(p.default,{style:[k.typography.small,{color:O.textMuted,marginTop:2}],children:z('showOnlineHint')})]}),(0,T.jsx)(y.default,{value:L.show_online,onValueChange:t=>U({show_online:t}),trackColor:{false:O.surfaceAlt,true:O.accent},thumbColor:"#fff",ios_backgroundColor:O.surfaceAlt,accessibilityLabel:z('showOnline')})]})]}),(0,T.jsx)(j.Card,{onPress:()=>D.push('/blocked'),padding:"md",style:{marginBottom:k.spacing.xl},children:(0,T.jsxs)(h.default,{style:I.row,children:[(0,T.jsx)(f.Ionicons,{name:"ban-outline",size:20,color:O.text}),(0,T.jsxs)(h.default,{style:{flex:1,marginHorizontal:k.spacing.md},children:[(0,T.jsxs)(p.default,{style:[k.typography.bodyStrong,{color:O.text}],children:[z('blockedAccounts'),N>0?` \xb7 ${N}`:'']}),(0,T.jsx)(p.default,{style:[k.typography.small,{color:O.textMuted,marginTop:2}],children:z('blockedAccountsHint')})]}),(0,T.jsx)(f.Ionicons,{name:(0,A.chevronForward)(),size:18,color:O.textMuted})]})})]}),(0,T.jsx)(p.default,{style:[k.typography.h3,{color:O.text,marginBottom:k.spacing.sm}],children:z('consentTitle')}),(0,T.jsxs)(j.Card,{padding:"md",children:[(0,T.jsx)(P,{label:z('consentAnalytics'),hint:z('consentAnalyticsHint'),value:E.analytics,onChange:t=>$('analytics',t),colors:O}),(0,T.jsx)(h.default,{style:[I.divider,{backgroundColor:O.border}]}),(0,T.jsx)(P,{label:z('consentMarketing'),hint:z('consentMarketingHint'),value:E.marketing,onChange:t=>$('marketing',t),colors:O})]}),(0,T.jsx)(p.default,{style:[k.typography.h3,{color:O.text,marginTop:k.spacing.xl,marginBottom:k.spacing.sm}],children:z('yourData')}),(0,T.jsxs)(j.Card,{padding:"md",children:[(0,T.jsx)(p.default,{style:[k.typography.bodyStrong,{color:O.text}],children:z('exportData')}),(0,T.jsx)(p.default,{style:[k.typography.small,{color:O.textMuted,marginTop:2,marginBottom:k.spacing.sm}],children:z('exportDataHint')}),(0,T.jsx)(v.Button,{title:z('exportData'),variant:"secondary",onPress:async()=>{if(t){F(!0);try{const l=await(0,B.exportUserData)(t.id),s=JSON.stringify(l,null,2);try{await c.default.share({message:s,title:'Playora data export'})}catch{o.default.alert(z('dataExported'),z('dataExportedBody'))}}finally{F(!1)}}},loading:V,leftIcon:(0,T.jsx)(f.Ionicons,{name:"download-outline",size:18,color:O.text})})]}),(0,T.jsxs)(j.Card,{padding:"md",style:{marginTop:k.spacing.md,borderColor:O.danger},children:[(0,T.jsx)(p.default,{style:[k.typography.bodyStrong,{color:O.danger}],children:z('deleteAccount')}),(0,T.jsx)(p.default,{style:[k.typography.small,{color:O.textMuted,marginTop:2,marginBottom:k.spacing.sm}],children:z('deleteAccountHint')}),(0,T.jsx)(v.Button,{title:z('deleteAccount'),variant:"danger",onPress:()=>{t&&o.default.alert(z('deleteConfirmTitle'),z('deleteConfirmBody'),[{text:z('cancel'),style:'cancel'},{text:z('deleteAccount'),style:'destructive',onPress:async()=>{await(0,B.deleteAccount)(t.id),await H()}}])}})]})]})]})};var l=r(d[1]),o=t(r(d[2])),s=t(r(d[3])),n=t(r(d[4])),c=t(r(d[5])),u=t(r(d[6])),y=t(r(d[7])),p=t(r(d[8])),h=t(r(d[9])),x=r(d[10]),f=r(d[11]),b=r(d[12]),j=r(d[13]),v=r(d[14]),C=r(d[15]),w=r(d[16]),k=r(d[17]),B=r(d[18]),S=r(d[19]),A=r(d[20]),T=r(d[21]);const P=({label:t,hint:l,value:o,onChange:s,colors:n})=>(0,T.jsxs)(h.default,{style:I.row,children:[(0,T.jsxs)(h.default,{style:{flex:1,marginEnd:k.spacing.md},children:[(0,T.jsx)(p.default,{style:[k.typography.bodyStrong,{color:n.text}],children:t}),(0,T.jsx)(p.default,{style:[k.typography.small,{color:n.textMuted,marginTop:2}],children:l})]}),(0,T.jsx)(y.default,{value:o,onValueChange:s,trackColor:{false:n.surfaceAlt,true:n.accent},thumbColor:"#fff",ios_backgroundColor:n.surfaceAlt,accessibilityLabel:t})]}),_=({options:t,value:l,onChange:o,colors:n})=>(0,T.jsx)(h.default,{style:[I.segment,{backgroundColor:n.surfaceAlt}],children:t.map(t=>{const c=t.value===l;return(0,T.jsx)(s.default,{onPress:()=>o(t.value),accessibilityRole:"button",accessibilityLabel:t.label,style:[I.segmentItem,c&&{backgroundColor:n.accent}],children:(0,T.jsx)(p.default,{style:[k.typography.smallStrong,{color:c?'#fff':n.text}],children:t.label})},t.value)})}),I=u.default.create({header:{paddingHorizontal:k.spacing.lg,paddingTop:k.spacing.lg},segment:{flexDirection:'row',borderRadius:k.radius.md,padding:3,gap:3},segmentItem:{flex:1,paddingVertical:k.spacing.sm,borderRadius:k.radius.sm,alignItems:'center'},back:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:u.default.hairlineWidth},row:{flexDirection:'row',alignItems:'center'},divider:{height:u.default.hairlineWidth,marginVertical:k.spacing.md}})},2478,[33,15,445,369,281,459,158,477,146,273,381,1086,20,1623,626,630,615,616,671,675,1171,13]);
+__d(
+  function (g, r, i, a, m, e, d) {
+    var t = r(d[0]);
+    (Object.defineProperty(e, "__esModule", { value: !0 }),
+      (e.default = function () {
+        const { user: t, profile: u, refreshProfile: M, signOut: H } = (0, C.useAuth)(),
+          { colors: O } = (0, w.useTheme)(),
+          D = (0, b.useRouter)(),
+          z = (0, S.useT)(),
+          [E, R] = (0, l.useState)(u?.consent ?? { analytics: !1, marketing: !1 }),
+          [V, F] = (0, l.useState)(!1),
+          [L, W] = (0, l.useState)(null),
+          [N, J] = (0, l.useState)(0);
+        (0, b.useFocusEffect)(
+          (0, l.useCallback)(() => {
+            t &&
+              ((0, B.fetchPrivacySettings)(t.id).then(W),
+              (0, B.fetchBlockedList)(t.id).then((t) => J(t.length)));
+          }, [t]),
+        );
+        const U = async (l) => {
+            t && (W((t) => (t ? Object.assign({}, t, l) : t)), W(await (0, B.setPrivacySettings)(t.id, l)));
+          },
+          $ = async (l, o) => {
+            if (!t) return;
+            const s = Object.assign({}, E, { [l]: o });
+            (R(s), await (0, B.updateConsent)(t.id, s), await M());
+          };
+        return (0, T.jsxs)(x.SafeAreaView, {
+          edges: ["top"],
+          style: { flex: 1, backgroundColor: O.bg },
+          children: [
+            (0, T.jsx)(h.default, {
+              style: I.header,
+              children: (0, T.jsx)(s.default, {
+                onPress: () => D.back(),
+                accessibilityRole: "button",
+                accessibilityLabel: z("close"),
+                style: [I.back, { backgroundColor: O.surface, borderColor: O.border }],
+                children: (0, T.jsx)(f.Ionicons, { name: (0, A.chevronBack)(), size: 22, color: O.text }),
+              }),
+            }),
+            (0, T.jsxs)(n.default, {
+              contentContainerStyle: { padding: k.spacing.lg, paddingBottom: k.spacing.xxxl },
+              children: [
+                (0, T.jsx)(p.default, {
+                  style: [k.typography.display, { color: O.text }],
+                  children: z("privacy"),
+                }),
+                (0, T.jsx)(p.default, {
+                  style: [
+                    k.typography.body,
+                    { color: O.textMuted, marginTop: k.spacing.xs, marginBottom: k.spacing.xl },
+                  ],
+                  children: z("privacyIntro"),
+                }),
+                L &&
+                  (0, T.jsxs)(T.Fragment, {
+                    children: [
+                      (0, T.jsx)(p.default, {
+                        style: [k.typography.h3, { color: O.text, marginBottom: k.spacing.sm }],
+                        children: z("safetyTitle"),
+                      }),
+                      (0, T.jsxs)(j.Card, {
+                        padding: "md",
+                        style: { marginBottom: k.spacing.xl },
+                        children: [
+                          (0, T.jsx)(p.default, {
+                            style: [k.typography.bodyStrong, { color: O.text, marginBottom: k.spacing.sm }],
+                            children: z("profileVisibility"),
+                          }),
+                          (0, T.jsx)(_, {
+                            options: [
+                              { value: "public", label: z("visibilityPublic") },
+                              { value: "followers", label: z("visibilityFollowers") },
+                              { value: "private", label: z("visibilityPrivate") },
+                            ],
+                            value: L.profile_visibility,
+                            onChange: (t) => U({ profile_visibility: t }),
+                            colors: O,
+                          }),
+                          (0, T.jsx)(h.default, { style: [I.divider, { backgroundColor: O.border }] }),
+                          (0, T.jsx)(p.default, {
+                            style: [k.typography.bodyStrong, { color: O.text, marginBottom: k.spacing.sm }],
+                            children: z("allowMessages"),
+                          }),
+                          (0, T.jsx)(_, {
+                            options: [
+                              { value: "everyone", label: z("msgEveryone") },
+                              { value: "followers", label: z("msgFollowers") },
+                              { value: "none", label: z("msgNone") },
+                            ],
+                            value: L.allow_messages,
+                            onChange: (t) => U({ allow_messages: t }),
+                            colors: O,
+                          }),
+                          (0, T.jsx)(h.default, { style: [I.divider, { backgroundColor: O.border }] }),
+                          (0, T.jsxs)(h.default, {
+                            style: I.row,
+                            children: [
+                              (0, T.jsxs)(h.default, {
+                                style: { flex: 1, marginEnd: k.spacing.md },
+                                children: [
+                                  (0, T.jsx)(p.default, {
+                                    style: [k.typography.bodyStrong, { color: O.text }],
+                                    children: z("showOnline"),
+                                  }),
+                                  (0, T.jsx)(p.default, {
+                                    style: [k.typography.small, { color: O.textMuted, marginTop: 2 }],
+                                    children: z("showOnlineHint"),
+                                  }),
+                                ],
+                              }),
+                              (0, T.jsx)(y.default, {
+                                value: L.show_online,
+                                onValueChange: (t) => U({ show_online: t }),
+                                trackColor: { false: O.surfaceAlt, true: O.accent },
+                                thumbColor: "#fff",
+                                ios_backgroundColor: O.surfaceAlt,
+                                accessibilityLabel: z("showOnline"),
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                      (0, T.jsx)(j.Card, {
+                        onPress: () => D.push("/blocked"),
+                        padding: "md",
+                        style: { marginBottom: k.spacing.xl },
+                        children: (0, T.jsxs)(h.default, {
+                          style: I.row,
+                          children: [
+                            (0, T.jsx)(f.Ionicons, { name: "ban-outline", size: 20, color: O.text }),
+                            (0, T.jsxs)(h.default, {
+                              style: { flex: 1, marginHorizontal: k.spacing.md },
+                              children: [
+                                (0, T.jsxs)(p.default, {
+                                  style: [k.typography.bodyStrong, { color: O.text }],
+                                  children: [z("blockedAccounts"), N > 0 ? ` \xb7 ${N}` : ""],
+                                }),
+                                (0, T.jsx)(p.default, {
+                                  style: [k.typography.small, { color: O.textMuted, marginTop: 2 }],
+                                  children: z("blockedAccountsHint"),
+                                }),
+                              ],
+                            }),
+                            (0, T.jsx)(f.Ionicons, {
+                              name: (0, A.chevronForward)(),
+                              size: 18,
+                              color: O.textMuted,
+                            }),
+                          ],
+                        }),
+                      }),
+                    ],
+                  }),
+                (0, T.jsx)(p.default, {
+                  style: [k.typography.h3, { color: O.text, marginBottom: k.spacing.sm }],
+                  children: z("consentTitle"),
+                }),
+                (0, T.jsxs)(j.Card, {
+                  padding: "md",
+                  children: [
+                    (0, T.jsx)(P, {
+                      label: z("consentAnalytics"),
+                      hint: z("consentAnalyticsHint"),
+                      value: E.analytics,
+                      onChange: (t) => $("analytics", t),
+                      colors: O,
+                    }),
+                    (0, T.jsx)(h.default, { style: [I.divider, { backgroundColor: O.border }] }),
+                    (0, T.jsx)(P, {
+                      label: z("consentMarketing"),
+                      hint: z("consentMarketingHint"),
+                      value: E.marketing,
+                      onChange: (t) => $("marketing", t),
+                      colors: O,
+                    }),
+                  ],
+                }),
+                (0, T.jsx)(p.default, {
+                  style: [
+                    k.typography.h3,
+                    { color: O.text, marginTop: k.spacing.xl, marginBottom: k.spacing.sm },
+                  ],
+                  children: z("yourData"),
+                }),
+                (0, T.jsxs)(j.Card, {
+                  padding: "md",
+                  children: [
+                    (0, T.jsx)(p.default, {
+                      style: [k.typography.bodyStrong, { color: O.text }],
+                      children: z("exportData"),
+                    }),
+                    (0, T.jsx)(p.default, {
+                      style: [
+                        k.typography.small,
+                        { color: O.textMuted, marginTop: 2, marginBottom: k.spacing.sm },
+                      ],
+                      children: z("exportDataHint"),
+                    }),
+                    (0, T.jsx)(v.Button, {
+                      title: z("exportData"),
+                      variant: "secondary",
+                      onPress: async () => {
+                        if (t) {
+                          F(!0);
+                          try {
+                            const l = await (0, B.exportUserData)(t.id),
+                              s = JSON.stringify(l, null, 2);
+                            try {
+                              await c.default.share({ message: s, title: "Rush X data export" });
+                            } catch {
+                              o.default.alert(z("dataExported"), z("dataExportedBody"));
+                            }
+                          } finally {
+                            F(!1);
+                          }
+                        }
+                      },
+                      loading: V,
+                      leftIcon: (0, T.jsx)(f.Ionicons, { name: "download-outline", size: 18, color: O.text }),
+                    }),
+                  ],
+                }),
+                (0, T.jsxs)(j.Card, {
+                  padding: "md",
+                  style: { marginTop: k.spacing.md, borderColor: O.danger },
+                  children: [
+                    (0, T.jsx)(p.default, {
+                      style: [k.typography.bodyStrong, { color: O.danger }],
+                      children: z("deleteAccount"),
+                    }),
+                    (0, T.jsx)(p.default, {
+                      style: [
+                        k.typography.small,
+                        { color: O.textMuted, marginTop: 2, marginBottom: k.spacing.sm },
+                      ],
+                      children: z("deleteAccountHint"),
+                    }),
+                    (0, T.jsx)(v.Button, {
+                      title: z("deleteAccount"),
+                      variant: "danger",
+                      onPress: () => {
+                        t &&
+                          o.default.alert(z("deleteConfirmTitle"), z("deleteConfirmBody"), [
+                            { text: z("cancel"), style: "cancel" },
+                            {
+                              text: z("deleteAccount"),
+                              style: "destructive",
+                              onPress: async () => {
+                                (await (0, B.deleteAccount)(t.id), await H());
+                              },
+                            },
+                          ]);
+                      },
+                    }),
+                  ],
+                }),
+              ],
+            }),
+          ],
+        });
+      }));
+    var l = r(d[1]),
+      o = t(r(d[2])),
+      s = t(r(d[3])),
+      n = t(r(d[4])),
+      c = t(r(d[5])),
+      u = t(r(d[6])),
+      y = t(r(d[7])),
+      p = t(r(d[8])),
+      h = t(r(d[9])),
+      x = r(d[10]),
+      f = r(d[11]),
+      b = r(d[12]),
+      j = r(d[13]),
+      v = r(d[14]),
+      C = r(d[15]),
+      w = r(d[16]),
+      k = r(d[17]),
+      B = r(d[18]),
+      S = r(d[19]),
+      A = r(d[20]),
+      T = r(d[21]);
+    const P = ({ label: t, hint: l, value: o, onChange: s, colors: n }) =>
+        (0, T.jsxs)(h.default, {
+          style: I.row,
+          children: [
+            (0, T.jsxs)(h.default, {
+              style: { flex: 1, marginEnd: k.spacing.md },
+              children: [
+                (0, T.jsx)(p.default, { style: [k.typography.bodyStrong, { color: n.text }], children: t }),
+                (0, T.jsx)(p.default, {
+                  style: [k.typography.small, { color: n.textMuted, marginTop: 2 }],
+                  children: l,
+                }),
+              ],
+            }),
+            (0, T.jsx)(y.default, {
+              value: o,
+              onValueChange: s,
+              trackColor: { false: n.surfaceAlt, true: n.accent },
+              thumbColor: "#fff",
+              ios_backgroundColor: n.surfaceAlt,
+              accessibilityLabel: t,
+            }),
+          ],
+        }),
+      _ = ({ options: t, value: l, onChange: o, colors: n }) =>
+        (0, T.jsx)(h.default, {
+          style: [I.segment, { backgroundColor: n.surfaceAlt }],
+          children: t.map((t) => {
+            const c = t.value === l;
+            return (0, T.jsx)(
+              s.default,
+              {
+                onPress: () => o(t.value),
+                accessibilityRole: "button",
+                accessibilityLabel: t.label,
+                style: [I.segmentItem, c && { backgroundColor: n.accent }],
+                children: (0, T.jsx)(p.default, {
+                  style: [k.typography.smallStrong, { color: c ? "#fff" : n.text }],
+                  children: t.label,
+                }),
+              },
+              t.value,
+            );
+          }),
+        }),
+      I = u.default.create({
+        header: { paddingHorizontal: k.spacing.lg, paddingTop: k.spacing.lg },
+        segment: { flexDirection: "row", borderRadius: k.radius.md, padding: 3, gap: 3 },
+        segmentItem: {
+          flex: 1,
+          paddingVertical: k.spacing.sm,
+          borderRadius: k.radius.sm,
+          alignItems: "center",
+        },
+        back: {
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          alignItems: "center",
+          justifyContent: "center",
+          borderWidth: u.default.hairlineWidth,
+        },
+        row: { flexDirection: "row", alignItems: "center" },
+        divider: { height: u.default.hairlineWidth, marginVertical: k.spacing.md },
+      });
+  },
+  2478,
+  [
+    33, 15, 445, 369, 281, 459, 158, 477, 146, 273, 381, 1086, 20, 1623, 626, 630, 615, 616, 671, 675, 1171,
+    13,
+  ],
+);
 __d(function(g,_r,i,_a,_m,_e,d){var e=_r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{user:e}=(0,h.useAuth)(),{colors:n}=(0,x.useTheme)(),m=(0,p.useRouter)(),b=(0,S.useT)(),[w,T]=(0,t.useState)([]),[E,L]=(0,t.useState)([]),[R,B]=(0,t.useState)(!0),[D,O]=(0,t.useState)(null),F=(0,t.useCallback)(async()=>{if(e){O(null);try{const[t,s]=await Promise.all([(0,_.fetchMyCancellations)(e.id),(0,_.fetchMyPaymentRequests)(e.id)]);T(t),L(s)}catch(e){O((0,C.storeErrorText)(e?.message??'')||b('error'))}finally{B(!1)}}},[e,b]);(0,p.useFocusEffect)((0,t.useCallback)(()=>{F()},[F]));const W=(0,t.useMemo)(()=>{const e=Date.now();return E.filter(t=>'pending'===t.status&&(!t.reserved_until||Date.parse(t.reserved_until)>e)).sort((e,t)=>Date.parse(e.reserved_until??'')-Date.parse(t.reserved_until??''))},[E]),G=(0,t.useMemo)(()=>{const e=new Map;for(const t of E){if('seat'!==t.kind||!t.game_id)continue;const s=e.get(t.game_id);(!s||Date.parse(t.created_at)>Date.parse(s.created_at))&&e.set(t.game_id,t)}return e},[E]);return(0,M.jsxs)(c.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:n.bg},children:[(0,M.jsxs)(l.default,{style:A.header,children:[(0,M.jsx)(r.default,{onPress:()=>m.back(),accessibilityRole:"button",accessibilityLabel:b('back'),style:[A.iconBtn,{backgroundColor:n.surface,borderColor:n.border}],children:(0,M.jsx)(u.Ionicons,{name:(0,k.chevronBack)(),size:22,color:n.text})}),(0,M.jsx)(o.default,{style:[j.typography.h2,{color:n.text,flex:1,textAlign:'center'}],children:b('refundsTitle')}),(0,M.jsx)(l.default,{style:{width:40}})]}),R?(0,M.jsx)(l.default,{style:{flex:1,alignItems:'center',justifyContent:'center'},children:(0,M.jsx)(s.default,{color:n.accentText})}):D?(0,M.jsxs)(l.default,{style:{paddingVertical:j.spacing.xl,paddingHorizontal:j.spacing.lg},children:[(0,M.jsx)(y.EmptyState,{icon:"cloud-offline-outline",title:b('error'),body:b('refundsErrorBody')}),(0,M.jsx)(f.Button,{title:b('retry'),fullWidth:!0,onPress:()=>{B(!0),F()},style:{marginTop:j.spacing.md}})]}):(0,M.jsx)(a.default,{data:w,keyExtractor:e=>e.id,contentContainerStyle:{padding:j.spacing.lg,paddingBottom:j.spacing.xxxl,flexGrow:1},ListHeaderComponent:W.length?(0,M.jsxs)(l.default,{style:{marginBottom:j.spacing.lg},children:[(0,M.jsx)(o.default,{style:[j.typography.smallStrong,{color:n.textMuted,marginBottom:j.spacing.sm}],children:b('refundsStillToPay')}),W.map(e=>(0,M.jsx)(v,{p:e,colors:n,t:b,onPress:()=>m.push(`/pay/${e.id}`)},e.id))]}):null,ListEmptyComponent:(0,M.jsxs)(l.default,{children:[(0,M.jsx)(y.EmptyState,{icon:"receipt-outline",title:b('refundsEmptyTitle'),body:b('refundsEmptyBody')}),(0,M.jsx)(f.Button,{title:b('findAGame'),variant:"ghost",fullWidth:!0,onPress:()=>m.push('/(tabs)/games')})]}),renderItem:({item:e})=>(0,M.jsx)(P,{row:e,paid:G.get(e.game_id)??null,colors:n,t:b,onPress:()=>m.push(`/game/${e.game_id}`)})})]})};var t=_r(d[1]),s=e(_r(d[2])),a=e(_r(d[3])),r=e(_r(d[4])),n=e(_r(d[5])),o=e(_r(d[6])),l=e(_r(d[7])),c=_r(d[8]),u=_r(d[9]),p=_r(d[10]),f=_r(d[11]),m=_r(d[12]),y=_r(d[13]),h=_r(d[14]),x=_r(d[15]),j=_r(d[16]),_=_r(d[17]),b=_r(d[18]),w=_r(d[19]),T=_r(d[20]),C=_r(d[21]),S=_r(d[22]),k=_r(d[23]),M=_r(d[24]);const v=({p:e,colors:t,t:s,onPress:a})=>{const r=s('seat'===e.kind?'refundsSeatFee':'refundsCourtShare'),n=(0,b.formatAmount)(e.amount_kwd);return(0,M.jsx)(m.Card,{style:{marginBottom:j.spacing.sm,borderColor:t.accent},onPress:a,accessibilityLabel:s('refundsPayA11y',{amount:n,what:r}),children:(0,M.jsxs)(l.default,{style:A.top,children:[(0,M.jsxs)(l.default,{style:{flex:1,minWidth:0},children:[(0,M.jsx)(o.default,{style:[j.typography.bodyStrong,{color:t.text}],numberOfLines:1,children:r}),(0,M.jsx)(o.default,{style:[j.typography.caption,{color:t.textMuted}],numberOfLines:1,children:e.venue_name}),e.reserved_until?(0,M.jsx)(o.default,{style:[j.typography.caption,{color:t.text}],numberOfLines:1,children:s('refundsHoldEnds',{when:(0,b.formatGameTime)(e.reserved_until)})}):null]}),(0,M.jsx)(o.default,{style:[j.typography.bodyStrong,{color:t.accentText}],children:n})]})})},P=({row:e,paid:t,colors:s,t:a,onPress:r})=>{const n=e.paid_kwd>0&&0===e.refunded_kwd,c=e.refunded_kwd>0,u='free_spot'===e.reason||'unpaid'===e.reason,p=n?s.danger:c?s.success:s.textMuted,f=a(c?'refundedChip':n?'keptChip':'noChargeChip'),y=t?.method?w.PAYMENT_METHODS.find(e=>e.method===t.method):null,h=y?a(y.labelKey):t?.method??null;return(0,M.jsxs)(m.Card,{style:{marginBottom:j.spacing.sm},onPress:r,accessibilityLabel:a('refundsRowA11y',{title:e.title||a('matchLabel'),state:f}),children:[(0,M.jsxs)(l.default,{style:A.top,children:[(0,M.jsxs)(l.default,{style:{flex:1,minWidth:0},children:[(0,M.jsx)(o.default,{style:[j.typography.bodyStrong,{color:s.text}],numberOfLines:1,children:e.title||a('matchLabel')}),(0,M.jsxs)(o.default,{style:[j.typography.caption,{color:s.textMuted}],numberOfLines:1,children:[e.venue_name,e.starts_at?` \xb7 ${(0,b.formatGameTime)(e.starts_at)}`:'']})]}),(0,M.jsx)(l.default,{style:[A.chip,{backgroundColor:s.surfaceAlt}],children:(0,M.jsx)(o.default,{style:[A.chipText,{color:p}],numberOfLines:1,children:f.toUpperCase()})})]}),!u&&(0,M.jsxs)(l.default,{style:{marginTop:j.spacing.sm},children:[(0,M.jsx)(E,{label:a('youPaidRow'),value:(0,b.formatAmount)(e.paid_kwd),colors:s}),(0,M.jsx)(E,{label:a('refundRow'),value:(0,b.formatAmount)(e.refunded_kwd),colors:s,tone:c?'success':'muted'}),(0,M.jsx)(E,{label:a('youReceiveRow'),value:(0,b.formatAmount)(e.refunded_kwd),colors:s,tone:c?'success':'muted',strong:!0}),h&&t?.paid_at?(0,M.jsx)(o.default,{style:[j.typography.caption,{color:s.textMuted,marginTop:2}],children:a('refundsPaidBy',{method:h,when:(0,b.formatGameTime)(t.paid_at)})}):null]}),'past_cutoff'===e.reason&&e.starts_at?(0,M.jsxs)(l.default,{style:{marginTop:j.spacing.sm,gap:2},children:[(0,M.jsx)(o.default,{style:[j.typography.caption,{color:s.textMuted}],children:a('forfeitKickoff',{when:(0,b.formatGameTime)(e.starts_at)})}),(0,M.jsx)(o.default,{style:[j.typography.caption,{color:s.textMuted}],children:a('forfeitWindowClosed',{when:(0,b.formatGameTime)((0,T.refundDeadlineIso)(e.starts_at)),hours:T.SEAT_REFUND_CUTOFF_HOURS})}),(0,M.jsx)(o.default,{style:[j.typography.caption,{color:s.text}],children:a('forfeitYouLeft',{when:(0,b.formatGameTime)(e.cancelled_at)})})]}):(0,M.jsxs)(M.Fragment,{children:[(0,M.jsx)(o.default,{style:[j.typography.caption,{color:s.textMuted,marginTop:j.spacing.sm}],children:'past_cutoff'===e.reason?a('refundNoneWhy',{hours:T.SEAT_REFUND_CUTOFF_HOURS}):'free_spot'===e.reason?a('refundFreeSpot'):'unpaid'===e.reason?a('refundUnpaidWhy'):a('refundedInFullWhy')}),(0,M.jsx)(o.default,{style:[j.typography.caption,{color:s.textMuted,marginTop:2}],children:a('cancelledOn',{when:(0,b.formatGameTime)(e.cancelled_at)})})]})]})},E=({label:e,value:t,colors:s,tone:a,strong:r})=>(0,M.jsxs)(l.default,{style:A.money,children:[(0,M.jsx)(o.default,{style:[j.typography.small,{color:s.textMuted,flex:1}],children:e}),(0,M.jsx)(o.default,{style:[r?j.typography.bodyStrong:j.typography.small,{color:'success'===a?s.success:'muted'===a?s.textMuted:s.text}],children:t})]}),A=n.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:j.spacing.lg,paddingVertical:j.spacing.sm,gap:j.spacing.sm},iconBtn:{width:40,height:40,borderRadius:20,borderWidth:1,alignItems:'center',justifyContent:'center'},top:{flexDirection:'row',alignItems:'flex-start',gap:j.spacing.sm},chip:{borderRadius:j.radius.pill,paddingHorizontal:j.spacing.sm,paddingVertical:3},chipText:{fontSize:10,fontWeight:'800',letterSpacing:.6},money:{flexDirection:'row',alignItems:'center',gap:j.spacing.md,paddingVertical:3}})},2479,[33,15,461,271,369,158,146,273,381,1086,20,626,1623,1627,630,615,616,671,1311,668,670,674,675,1171,13]);
 __d(function(g,r,i,a,m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{id:e}=(0,x.useLocalSearchParams)(),{user:c}=(0,I.useAuth)(),{colors:M}=(0,_.useTheme)(),R=(0,x.useRouter)(),z=(0,w.useT)(),[O,P]=(0,t.useState)(null),[E,V]=(0,t.useState)(!0),[W,F]=(0,t.useState)(!1),N=(0,t.useCallback)(async()=>{e&&(P(await(0,k.fetchReplacementOffer)(e,c?.id)),V(!1))},[e,c?.id]);(0,x.useFocusEffect)((0,t.useCallback)(()=>{N()},[N]));if(E)return(0,v.jsx)(p.SafeAreaView,{style:[A.center,{backgroundColor:M.bg}],children:(0,v.jsx)(n.default,{color:M.accentText})});const $=O&&'offered'===O.status&&O.expires_in_min>0;return(0,v.jsxs)(p.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:M.bg},children:[(0,v.jsxs)(f.default,{style:A.header,children:[(0,v.jsx)(s.default,{onPress:()=>R.back(),accessibilityRole:"button",accessibilityLabel:z('back'),style:[A.iconBtn,{backgroundColor:M.surface,borderColor:M.border}],children:(0,v.jsx)(y.Ionicons,{name:(0,B.chevronBack)(),size:22,color:M.text})}),(0,v.jsx)(u.default,{style:[C.typography.h2,{color:M.text,flex:1,marginHorizontal:C.spacing.md}],children:z('replacementOfferTitle')})]}),(0,v.jsx)(o.default,{contentContainerStyle:{padding:C.spacing.lg},children:O?(0,v.jsxs)(v.Fragment,{children:[(0,v.jsxs)(h.Card,{style:{alignItems:'center',marginBottom:C.spacing.lg},children:[(0,v.jsx)(f.default,{style:[A.sportIcon,{backgroundColor:(0,T.sportColor)(O.sport)}],children:(0,v.jsx)(y.Ionicons,{name:T.sportIcon[O.sport],size:28,color:"#fff"})}),(0,v.jsx)(u.default,{style:[C.typography.h2,{color:M.text,marginTop:C.spacing.sm}],children:O.venue_name}),(0,v.jsx)(u.default,{style:[C.typography.body,{color:M.textMuted}],children:(0,T.formatGameTime)(O.starts_at)}),(0,v.jsxs)(u.default,{style:[C.typography.small,{color:M.textMuted,marginTop:2}],children:[(0,T.formatNumber)(O.confirmed)," / ",(0,T.formatNumber)(O.max_players)," ",z('players')]}),(0,v.jsx)(f.default,{style:{marginTop:C.spacing.sm},children:$?(0,v.jsx)(j.Badge,{label:z('offerExpiresIn',{n:(0,T.formatNumber)(O.expires_in_min)}),tone:"warning"}):(0,v.jsx)(j.Badge,{label:z(`offerStatus_${O.status}`),tone:"neutral"})})]}),(0,v.jsx)(u.default,{style:[C.typography.small,{color:M.textMuted,textAlign:'center',marginBottom:C.spacing.lg}],children:z('replacementOfferBody')}),$?(0,v.jsxs)(v.Fragment,{children:[(0,v.jsx)(b.Button,{title:z('acceptSpot'),fullWidth:!0,loading:W,onPress:async()=>{if(c&&O){F(!0);try{const e=await(0,k.acceptReplacement)(c.id,O.id);if(e.payment_due)return void R.replace(`/pay/${e.payment_due.payment_id}`);l.default.alert(z('spotAccepted'),''),R.replace(`/game/${O.game_id}`)}catch(e){l.default.alert(z('error'),(0,S.storeErrorText)(e?.message??'')||z('noActiveOffer')),await N()}finally{F(!1)}}},leftIcon:(0,v.jsx)(y.Ionicons,{name:"checkmark-circle-outline",size:18,color:"#fff"})}),(0,v.jsx)(b.Button,{title:z('declineSpot'),variant:"secondary",fullWidth:!0,onPress:async()=>{if(c&&O){F(!0);try{await(0,k.declineReplacement)(c.id,O.id),R.back()}finally{F(!1)}}},style:{marginTop:C.spacing.sm}})]}):(0,v.jsx)(h.Card,{style:{alignItems:'center'},children:(0,v.jsx)(u.default,{style:[C.typography.small,{color:M.textMuted}],children:z('offerExpired')})})]}):(0,v.jsxs)(h.Card,{style:{alignItems:'center',paddingVertical:C.spacing.xl},children:[(0,v.jsx)(y.Ionicons,{name:"time-outline",size:40,color:M.textMuted}),(0,v.jsx)(u.default,{style:[C.typography.body,{color:M.textMuted,marginTop:C.spacing.sm}],children:z('noActiveOffer')})]})})]})};var t=r(d[1]),n=e(r(d[2])),l=e(r(d[3])),s=e(r(d[4])),o=e(r(d[5])),c=e(r(d[6])),u=e(r(d[7])),f=e(r(d[8])),p=r(d[9]),y=r(d[10]),x=r(d[11]),h=r(d[12]),j=r(d[13]),b=r(d[14]),I=r(d[15]),_=r(d[16]),C=r(d[17]),k=r(d[18]),T=r(d[19]),w=r(d[20]),B=r(d[21]),S=r(d[22]),v=r(d[23]);const A=c.default.create({center:{flex:1,alignItems:'center',justifyContent:'center'},header:{flexDirection:'row',alignItems:'center',paddingHorizontal:C.spacing.lg,paddingVertical:C.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:c.default.hairlineWidth},sportIcon:{width:56,height:56,borderRadius:18,alignItems:'center',justifyContent:'center'}})},2480,[33,15,461,445,369,281,158,146,273,381,1086,20,1623,1624,626,630,615,616,671,1311,675,1171,674,13]);
 __d(function(g,_r,_i,_a,m,_e,d){var e=_r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{user:e}=(0,y.useAuth)(),{colors:I}=(0,b.useTheme)(),z=(0,u.useRouter)(),A=(0,k.useT)(),[E,W]=(0,t.useState)(null),[V,P]=(0,t.useState)([]),[D,N]=(0,t.useState)([]),[H,O]=(0,t.useState)([]),[F,K]=(0,t.useState)(!0),[U,Y]=(0,t.useState)(null),[G,Z]=(0,t.useState)(null),$=(0,t.useCallback)(async()=>{if(e){Y(null);try{const[t,r,a,l]=await Promise.all([(0,T.fetchLoyaltyAccount)(e.id),(0,T.fetchLoyaltyEarnBreakdown)(e.id),(0,T.fetchRewards)(e.id),(0,T.fetchMyRedemptions)(e.id)]);W(t),P(r),N(a),O(l)}catch(e){Y((0,C.storeErrorText)(e?.message??'')||A('error'))}finally{K(!1)}}},[e,A]);return(0,u.useFocusEffect)((0,t.useCallback)(()=>{$()},[$])),(0,B.jsxs)(i.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:I.bg},children:[(0,B.jsxs)(s.default,{style:v.header,children:[(0,B.jsx)(a.default,{onPress:()=>z.back(),accessibilityRole:"button",accessibilityLabel:A('back'),style:[v.iconBtn,{backgroundColor:I.surface,borderColor:I.border}],children:(0,B.jsx)(c.Ionicons,{name:(0,R.chevronBack)(),size:22,color:I.text})}),(0,B.jsx)(n.default,{style:[j.typography.h2,{color:I.text,flex:1,textAlign:'center'}],children:A('loyaltyTitle')}),(0,B.jsx)(a.default,{onPress:()=>z.push('/rewards/ledger'),accessibilityRole:"button",accessibilityLabel:A('rewardsLedgerTitle'),style:[v.iconBtn,{backgroundColor:I.surface,borderColor:I.border}],children:(0,B.jsx)(c.Ionicons,{name:"list-outline",size:20,color:I.text})})]}),F?(0,B.jsx)(s.default,{style:{flex:1,alignItems:'center',justifyContent:'center'},children:(0,B.jsx)(r.default,{color:I.accentText})}):U||!E?(0,B.jsxs)(s.default,{style:{paddingVertical:j.spacing.xl,paddingHorizontal:j.spacing.lg},children:[(0,B.jsx)(f.EmptyState,{icon:"cloud-offline-outline",title:A('error'),body:A('rewardsErrorBody')}),(0,B.jsx)(p.Button,{title:A('retry'),fullWidth:!0,onPress:()=>{K(!0),$()},style:{marginTop:j.spacing.md}})]}):(0,B.jsxs)(l.default,{contentContainerStyle:{padding:j.spacing.lg,paddingBottom:j.spacing.xxxl},children:[(0,B.jsx)(M,{account:E,colors:I,t:A}),(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:I.textMuted,marginTop:j.spacing.lg,marginBottom:j.spacing.sm}],children:A('waysToEarn')}),(0,B.jsxs)(h.Card,{padding:"md",children:[w.LOYALTY_ACTIONS.map((e,t)=>{const r=V.find(t=>t.action===e.action),a=r?.rate??0;return(0,B.jsxs)(s.default,{style:[v.earnRow,{borderTopColor:I.border,borderTopWidth:0===t?0:o.default.hairlineWidth}],children:[(0,B.jsx)(n.default,{style:{fontSize:18},children:e.emoji}),(0,B.jsx)(n.default,{style:[j.typography.small,{color:I.text,flex:1}],children:A(e.labelKey)}),(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:I.accentText}],children:A('perActionPts',{n:(0,S.formatNumber)((0,w.earnAmount)(a,E.lifetime))})})]},e.action)}),(0,B.jsx)(n.default,{style:[j.typography.caption,{color:I.textMuted,marginTop:j.spacing.sm}],children:A('rewardsEarnHint')})]}),(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:I.textMuted,marginTop:j.spacing.lg,marginBottom:j.spacing.sm}],children:A('rewardsCatalog')}),0===D.length?(0,B.jsx)(h.Card,{children:(0,B.jsx)(f.EmptyState,{icon:"gift-outline",title:A('noRewardsYet'),body:A('rewardsCatalogEmpty')})}):D.map(e=>(0,B.jsx)(_,{r:e,colors:I,t:A,onRedeem:()=>Z(e)},e.id)),H.length>0&&(0,B.jsxs)(B.Fragment,{children:[(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:I.textMuted,marginTop:j.spacing.lg,marginBottom:j.spacing.sm}],children:A('myVouchers')}),(0,B.jsx)(h.Card,{padding:"md",children:H.map((e,t)=>(0,B.jsx)(L,{v:e,first:0===t,colors:I,t:A},e.id))})]}),(0,B.jsx)(p.Button,{title:A('rewardsLedgerLink'),variant:"ghost",fullWidth:!0,style:{marginTop:j.spacing.lg},onPress:()=>z.push('/rewards/ledger')})]}),e&&(0,B.jsx)(x.RedeemSheet,{visible:!!G,reward:G,balance:E?.balance??0,userId:e.id,onClose:()=>Z(null),onRedeemed:()=>{$()}})]})};var t=_r(d[1]),r=e(_r(d[2])),a=e(_r(d[3])),l=e(_r(d[4])),o=e(_r(d[5])),n=e(_r(d[6])),s=e(_r(d[7])),i=_r(d[8]),c=_r(d[9]),u=_r(d[10]),p=_r(d[11]),h=_r(d[12]),f=_r(d[13]),x=_r(d[14]),y=_r(d[15]),b=_r(d[16]),j=_r(d[17]),T=_r(d[18]),w=_r(d[19]),S=_r(d[20]),C=_r(d[21]),k=_r(d[22]),R=_r(d[23]),B=_r(d[24]);const I=e=>w.TIERS.find(t=>t.tier===e)??w.TIERS[0];const M=({account:e,colors:t,t:r})=>{const a=I(e.tier),l=r(a.labelKey),o=Math.round(100*(e.multiplier-1)),i=e.nextTier?I(e.nextTier):null;return(0,B.jsxs)(s.default,{style:[v.hero,{backgroundColor:t.accent}],accessibilityLabel:r('rewardsHeroA11y',{n:(0,S.formatNumber)(e.balance),tier:l}),children:[(0,B.jsx)(n.default,{style:[j.typography.small,{color:'rgba(0,0,0,0.6)'}],children:r('balanceLabel')}),(0,B.jsxs)(s.default,{style:{flexDirection:'row',alignItems:'baseline',gap:j.spacing.xs},children:[(0,B.jsx)(n.default,{style:[v.heroAmount,{color:t.accentInk}],children:(0,S.formatNumber)(e.balance)}),(0,B.jsx)(n.default,{style:[v.heroUnit,{color:t.accentInk}],children:r('pointsUnit')})]}),0===e.balance&&0===e.lifetime?(0,B.jsx)(n.default,{style:[j.typography.small,{color:'rgba(0,0,0,0.7)'}],children:r('rewardsZeroBalance')}):null,(0,B.jsxs)(s.default,{style:v.tierRow,children:[(0,B.jsx)(s.default,{style:v.tierChip,children:(0,B.jsxs)(n.default,{style:v.tierText,children:[a.emoji," ",l]})}),(0,B.jsx)(n.default,{style:[j.typography.small,{color:'rgba(0,0,0,0.7)',flex:1}],children:o>0?r('rewardsTierGrants',{pct:o}):r('rewardsTierBase')})]}),(0,B.jsx)(s.default,{style:v.track,children:(0,B.jsx)(s.default,{style:[v.fill,{width:`${Math.round(100*e.progress)}%`,backgroundColor:t.accentInk}]})}),(0,B.jsx)(n.default,{style:[j.typography.caption,{color:'rgba(0,0,0,0.7)',marginTop:j.spacing.xs}],children:i?r('toNextTier',{n:(0,S.formatNumber)(e.pointsToNext),tier:r(i.labelKey)}):r('maxTier')})]})},_=({r:e,colors:t,t:r,onRedeem:a})=>(0,B.jsxs)(h.Card,{style:{marginBottom:j.spacing.sm},children:[(0,B.jsxs)(s.default,{style:v.top,children:[(0,B.jsxs)(s.default,{style:{flex:1,minWidth:0},children:[(0,B.jsx)(n.default,{style:[j.typography.bodyStrong,{color:t.text}],numberOfLines:2,children:e.name}),e.description?(0,B.jsx)(n.default,{style:[j.typography.caption,{color:t.textMuted,marginTop:2}],numberOfLines:2,children:e.description}):null,e.partner?(0,B.jsx)(n.default,{style:[j.typography.caption,{color:t.textMuted,marginTop:2}],children:r('rewardsPartnerAt',{partner:e.partner})}):null]}),(0,B.jsx)(s.default,{style:[v.chip,{backgroundColor:t.surfaceAlt}],children:(0,B.jsx)(n.default,{style:[v.chipText,{color:e.affordable?t.accentText:t.textMuted}],children:r('costPts',{n:(0,S.formatNumber)(e.cost_points)})})})]}),(0,B.jsx)(s.default,{style:{marginTop:j.spacing.sm},children:(0,B.jsx)(p.Button,{title:e.out_of_stock?r('outOfStock'):r('redeem'),variant:e.affordable&&!e.out_of_stock?'primary':'secondary',size:"sm",fullWidth:!0,disabled:e.out_of_stock,onPress:a})})]}),L=({v:e,first:t,colors:r,t:a})=>{const l='active'!==e.status||Date.parse(e.expires_at)<Date.now();return(0,B.jsxs)(s.default,{style:[v.voucherRow,{borderTopColor:r.border,borderTopWidth:t?0:o.default.hairlineWidth}],children:[(0,B.jsxs)(s.default,{style:{flex:1,minWidth:0},children:[(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:r.text}],numberOfLines:1,children:e.reward_name}),(0,B.jsx)(n.default,{style:[j.typography.caption,{color:l?r.danger:r.textMuted}],children:a(l?'rewardsVoucherExpired':'rewardsVoucherExpires',{when:(0,S.formatHistoryDate)(e.expires_at)})})]}),(0,B.jsx)(n.default,{style:[v.codeText,{color:l?r.textMuted:r.text}],selectable:!0,children:e.code})]})},v=o.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:j.spacing.lg,paddingVertical:j.spacing.sm,gap:j.spacing.sm},iconBtn:{width:40,height:40,borderRadius:20,borderWidth:1,alignItems:'center',justifyContent:'center'},hero:{borderRadius:j.radius.lg,padding:j.spacing.lg},heroAmount:{fontSize:34,fontWeight:'800',marginVertical:j.spacing.xs},heroUnit:{fontSize:16,fontWeight:'600'},tierRow:{flexDirection:'row',alignItems:'center',gap:j.spacing.sm,marginTop:j.spacing.sm},tierChip:{backgroundColor:'rgba(0,0,0,0.14)',paddingHorizontal:j.spacing.md,paddingVertical:6,borderRadius:12},tierText:{color:'rgba(0,0,0,0.8)',fontFamily:'SpaceMonoBold',fontSize:13,letterSpacing:.5},track:{height:6,borderRadius:3,backgroundColor:'rgba(0,0,0,0.14)',marginTop:j.spacing.md,overflow:'hidden'},fill:{height:6,borderRadius:3},earnRow:{flexDirection:'row',alignItems:'center',gap:j.spacing.sm,paddingVertical:j.spacing.sm},top:{flexDirection:'row',alignItems:'flex-start',gap:j.spacing.sm},chip:{borderRadius:j.radius.pill,paddingHorizontal:j.spacing.sm,paddingVertical:4},chipText:{fontSize:12,fontWeight:'800'},voucherRow:{flexDirection:'row',alignItems:'center',gap:j.spacing.sm,paddingVertical:j.spacing.sm},codeText:{fontFamily:'SpaceMonoBold',fontSize:14,letterSpacing:1}})},2481,[33,15,461,369,281,158,146,273,381,1086,20,626,1623,1627,2482,630,615,616,671,664,1311,674,675,1171,13]);
