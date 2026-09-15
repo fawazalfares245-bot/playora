@@ -443,32 +443,36 @@ __d(
                           }),
                         ],
                       }),
-                      (0, I.jsxs)(p.default, {
-                        style: [W.row, { borderTopColor: D.border }],
-                        children: [
-                          (0, I.jsx)(u.default, {
-                            style: [k.typography.small, { color: D.textMuted }],
-                            children: q("platformCommission"),
-                          }),
-                          (0, I.jsxs)(u.default, {
-                            style: [k.typography.smallStrong, { color: D.text }],
-                            children: ["\u2212", (0, B.formatAmount)(E.settlement.commission)],
-                          }),
-                        ],
-                      }),
-                      (0, I.jsxs)(p.default, {
-                        style: [W.row, { borderTopColor: D.border }],
-                        children: [
-                          (0, I.jsx)(u.default, {
-                            style: [k.typography.small, { color: D.textMuted }],
-                            children: q("netPayout"),
-                          }),
-                          (0, I.jsx)(u.default, {
-                            style: [k.typography.smallStrong, { color: D.success }],
-                            children: (0, B.formatAmount)(E.settlement.net),
-                          }),
-                        ],
-                      }),
+                      // The venue's commission rate and net payout only reach the venue-facing read
+                      // now, so these two rows appear only when that is who is looking.
+                      null != E.settlement.commission &&
+                        (0, I.jsxs)(p.default, {
+                          style: [W.row, { borderTopColor: D.border }],
+                          children: [
+                            (0, I.jsx)(u.default, {
+                              style: [k.typography.small, { color: D.textMuted }],
+                              children: q("platformCommission"),
+                            }),
+                            (0, I.jsxs)(u.default, {
+                              style: [k.typography.smallStrong, { color: D.text }],
+                              children: ["\u2212", (0, B.formatAmount)(E.settlement.commission)],
+                            }),
+                          ],
+                        }),
+                      null != E.settlement.net &&
+                        (0, I.jsxs)(p.default, {
+                          style: [W.row, { borderTopColor: D.border }],
+                          children: [
+                            (0, I.jsx)(u.default, {
+                              style: [k.typography.small, { color: D.textMuted }],
+                              children: q("netPayout"),
+                            }),
+                            (0, I.jsx)(u.default, {
+                              style: [k.typography.smallStrong, { color: D.success }],
+                              children: (0, B.formatAmount)(E.settlement.net),
+                            }),
+                          ],
+                        }),
                     ],
                   }),
                 X &&

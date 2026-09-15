@@ -7794,13 +7794,19 @@ __d(
             "confirmed" === a.status && new Date(a.ends_at).getTime() < e && (await Nr(a.id)));
         t && (await Za(me, Qt.courtBookings));
       },
-      Pr = (e) => {
-        const t = fr(e.court_id);
+      // The settlement breakdown - gross, the venue's commission and what it nets - is the venue's
+      // business. This mapper serves the organizer-facing reads as well, so any organizer who booked a
+      // court could read that venue's negotiated commission rate and exactly what it takes home.
+      // The organizer sees the gross, which is the price they pay. qr_token stays: they need it to
+      // check players in.
+      Pr = (e, venueSide9) => {
+        const t = fr(e.court_id),
+          s9 = Rr(e);
         return Object.assign({}, e, {
           court_name: t?.name ?? "Court",
           venue_name: Ai(e.venue_id),
           sport: t?.sport ?? "padel",
-          settlement: Rr(e),
+          settlement: venueSide9 ? s9 : { gross: s9.gross },
         });
       };
     r.mockGetOrganizerBookings = async (e) => (
@@ -7819,7 +7825,7 @@ __d(
       Qt.courtBookings
         .filter((e) => e.venue_id === t)
         .sort((e, t) => new Date(t.starts_at).getTime() - new Date(e.starts_at).getTime())
-        .map(Pr)
+        .map((e) => Pr(e, !0))
     );
     r.mockGetBooking = async (e, t) => {
       (await ei(), await Cr());

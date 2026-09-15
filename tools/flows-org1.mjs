@@ -527,5 +527,58 @@ await run('a court cannot be given a made-up sport or impossible hours', async (
   await browser.close();
 });
 
+// The booking DTO decorated every court booking with {gross, commission, net}, and the same mapper
+// served the organizer-facing reads - so any organizer who booked a court could read that venue's
+// negotiated commission rate and exactly what it takes home.
+await run('an organizer cannot read the venue cut', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/' });
+  const out = await page.evaluate(async ([admin, owner, organizer]) => {
+    const api = __r(671);
+    const profile = await api.applyVenue(owner, {
+      name: 'Commission Courts', area: 'Salmiya', sports: ['padel'], lat: 29.33, lng: 48.07,
+    });
+    await api.reviewVenue(admin, profile.venue_id, 'approve', null);
+    const courts = JSON.parse(localStorage.getItem('playora.mock.courtbookings.v1') || '[]');
+    courts.push({
+      id: 'cb-commission', court_id: null, venue_id: profile.venue_id, organizer_id: organizer,
+      game_id: null, starts_at: new Date(Date.now() + 4 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 4 * 864e5 + 36e5).toISOString(), status: 'confirmed',
+      court_price_kwd: 20, split_mode: 'organizer_pays', commission_type: 'percentage',
+      commission_value: 17, requires_venue_approval: false, reserved_until: null,
+      cancellation_reason: null, qr_token: 'PLQR-COMMISSION00000',
+      created_at: new Date().toISOString(), confirmed_at: new Date().toISOString(), released_at: null,
+    });
+    localStorage.setItem('playora.mock.courtbookings.v1', JSON.stringify(courts));
+    return { venueId: profile.venue_id, ownerId: owner };
+  }, [IDS.admin, IDS.organizer, IDS.user]);
+  const seed = out;
+
+  await page.goto(ORIGIN + '/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const seen = await page.evaluate(async ([organizer, seed]) => {
+    const api = __r(671);
+    const mine = (await api.fetchOrganizerBookings(organizer)).find((b) => b.id === 'cb-commission');
+    const detail = await api.fetchBooking('cb-commission', organizer);
+    const venueSide = (await api.fetchVenueBookings(seed.ownerId, seed.venueId)).find((b) => b.id === 'cb-commission');
+    return {
+      orgKeys: mine ? Object.keys(mine.settlement).sort() : null,
+      detailKeys: detail ? Object.keys(detail.settlement).sort() : null,
+      orgGross: mine ? mine.settlement.gross : null,
+      orgToken: mine ? !!mine.qr_token : null,
+      venueKeys: venueSide ? Object.keys(venueSide.settlement).sort() : null,
+      venueNet: venueSide ? venueSide.settlement.net : null,
+    };
+  }, [IDS.user, seed]);
+
+  ok('the organizer list carries gross only', JSON.stringify(seen.orgKeys) === '["gross"]', JSON.stringify(seen.orgKeys));
+  ok('so does the organizer detail', JSON.stringify(seen.detailKeys) === '["gross"]', JSON.stringify(seen.detailKeys));
+  ok('the price they pay is still there', seen.orgGross === 20, String(seen.orgGross));
+  ok('and so is the check-in token', seen.orgToken === true, String(seen.orgToken));
+  ok('the venue still sees the full breakdown', JSON.stringify(seen.venueKeys) === '["commission","gross","net"]', JSON.stringify(seen.venueKeys));
+  ok('with its own net', Math.abs(seen.venueNet - 16.6) < 5e-3, String(seen.venueNet));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);
