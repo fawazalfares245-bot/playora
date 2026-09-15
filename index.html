@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "8115b98525"
+  buildId: "1f9606dffb"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -20412,7 +20412,70 @@ __d(
   667,
   [],
 );
-__d(function(_g,r,i,_a,_m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.splitAmounts=e.settlement=e.roundKwd=e.isOnlineMethod=e.hoursBetween=e.courtPrice=e.PAYMENT_METHODS=void 0;const t=t=>Math.round(1e3*t)/1e3;e.roundKwd=t;const o=(t,o)=>Math.max(0,(new Date(o).getTime()-new Date(t).getTime())/36e5);e.hoursBetween=o;e.courtPrice=(n,a,l)=>t(Math.max(0,n)*o(a,l));e.splitAmounts=o=>{const{mode:n,total:a,payerIds:l,organizerId:m,custom:s}=o,h=t(Math.max(0,a)),c={};if(0===l.length)return c;if('organizer_pays'===n){for(const t of l)c[t]=0;return c[m]=h,c}if('custom'===n){let o=0;for(const n of l){const a=t(Math.max(0,s?.[n]??0));c[n]=a,o+=a}return c[m]=t(Math.max(0,(c[m]??0)+(h-o))),c}const y=Math.floor(h/l.length*1e3)/1e3;let M=0;for(const t of l)c[t]=y,M+=y;const p=t(h-M);return c[m]=t((c[m]??0)+p),c};e.settlement=(o,n,a)=>{const l=t(Math.max(0,o)),m='percentage'===n?l*(Math.max(0,Math.min(100,a))/100):Math.max(0,a),s=t(Math.min(l,m));return{gross:l,commission:s,net:t(l-s)}};const n=e.PAYMENT_METHODS=[{method:'knet',labelKey:'payKnet',emoji:'\ud83d\udcb3',online:!0},{method:'apple_pay',labelKey:'payApplePay',emoji:'',online:!0},{method:'google_pay',labelKey:'payGooglePay',emoji:'G',online:!0},{method:'visa',labelKey:'payVisa',emoji:'\ud83d\udcb3',online:!0},{method:'mastercard',labelKey:'payMastercard',emoji:'\ud83d\udcb3',online:!0},{method:'wallet',labelKey:'payWallet',emoji:'\ud83d\udc5b',online:!0},{method:'cash',labelKey:'payCash',emoji:'\ud83d\udcb5',online:!1}];e.isOnlineMethod=t=>n.find(o=>o.method===t)?.online??!1},668,[]);
+__d(
+  function (_g, r, i, _a, _m, e, d) {
+    (Object.defineProperty(e, "__esModule", { value: !0 }),
+      (e.splitAmounts =
+        e.settlement =
+        e.roundKwd =
+        e.isOnlineMethod =
+        e.hoursBetween =
+        e.courtPrice =
+        e.PAYMENT_METHODS =
+          void 0));
+    const t = (t) => Math.round(1e3 * t) / 1e3;
+    e.roundKwd = t;
+    const o = (t, o) => Math.max(0, (new Date(o).getTime() - new Date(t).getTime()) / 36e5);
+    e.hoursBetween = o;
+    e.courtPrice = (n, a, l) => t(Math.max(0, n) * o(a, l));
+    e.splitAmounts = (o) => {
+      const { mode: n, total: a, payerIds: l, organizerId: m, custom: s } = o,
+        h = t(Math.max(0, a)),
+        c = {};
+      if (0 === l.length) return c;
+      if ("organizer_pays" === n) {
+        for (const t of l) c[t] = 0;
+        return ((c[m] = h), c);
+      }
+      if ("custom" === n) {
+        // The organizer supplies these amounts and nothing bounded them. The correction below is
+        // clamped at zero, so a sum over the total simply survived: a 12 KWD court split 50/50/0
+        // returned 50/50/0 and mockCreatePaymentPlan billed 100 for it, while the settlement row
+        // still recorded 12 - the surplus was invisible to every financial report. Sum first and
+        // refuse, rather than clamping away the evidence.
+        let o = 0;
+        for (const n of l) o += t(Math.max(0, s?.[n] ?? 0));
+        if (t(o) - h > 5e-4) throw new Error("E_SPLIT_EXCEEDS_TOTAL");
+        for (const n of l) c[n] = t(Math.max(0, s?.[n] ?? 0));
+        return ((c[m] = t(Math.max(0, (c[m] ?? 0) + (h - o)))), c);
+      }
+      const y = Math.floor((h / l.length) * 1e3) / 1e3;
+      let M = 0;
+      for (const t of l) ((c[t] = y), (M += y));
+      const p = t(h - M);
+      return ((c[m] = t((c[m] ?? 0) + p)), c);
+    };
+    e.settlement = (o, n, a) => {
+      const l = t(Math.max(0, o)),
+        m = "percentage" === n ? l * (Math.max(0, Math.min(100, a)) / 100) : Math.max(0, a),
+        s = t(Math.min(l, m));
+      return { gross: l, commission: s, net: t(l - s) };
+    };
+    const n = (e.PAYMENT_METHODS = [
+      { method: "knet", labelKey: "payKnet", emoji: "\ud83d\udcb3", online: !0 },
+      { method: "apple_pay", labelKey: "payApplePay", emoji: "", online: !0 },
+      { method: "google_pay", labelKey: "payGooglePay", emoji: "G", online: !0 },
+      { method: "visa", labelKey: "payVisa", emoji: "\ud83d\udcb3", online: !0 },
+      { method: "mastercard", labelKey: "payMastercard", emoji: "\ud83d\udcb3", online: !0 },
+      { method: "wallet", labelKey: "payWallet", emoji: "\ud83d\udc5b", online: !0 },
+      { method: "cash", labelKey: "payCash", emoji: "\ud83d\udcb5", online: !1 },
+    ]);
+    e.isOnlineMethod = (t) => n.find((o) => o.method === t)?.online ?? !1;
+  },
+  668,
+  [],
+);
+
 __d(function(g,r,i,_a,_m,_e,_d){Object.defineProperty(_e,"__esModule",{value:!0}),_e.withinOperatingHours=_e.windowsOverlap=_e.minutesOfDay=_e.generateSlots=_e.freeCancellationAllowed=_e.fmtHHMM=void 0;const t=t=>new Date(t).getTime(),e=(e,n)=>t(e.starts_at)<t(n.ends_at)&&t(n.starts_at)<t(e.ends_at);_e.windowsOverlap=e;const n=t=>{const e=new Date(t);return 60*e.getHours()+e.getMinutes()};_e.minutesOfDay=n;_e.withinOperatingHours=(t,e,a,o)=>{const s=n(t),l=new Date(e),u=60*l.getHours()+l.getMinutes(),w=0===u?1440:u;return new Date(t).toDateString()===new Date(e).toDateString()&&s>=a&&w<=o&&s<w};_e.generateSlots=(t,n,a,o,s,l)=>{const u=[],w=Date.now();for(let c=n;c+o<=a;c+=s){const n=new Date(t);n.setHours(0,c,0,0);const a=new Date(n.getTime()+6e4*o);if(n.getTime()<w)continue;const s={starts_at:n.toISOString(),ends_at:a.toISOString()},d=!l.some(t=>e(s,t));u.push(Object.assign({},s,{available:d}))}return u};_e.freeCancellationAllowed=(e,n,a=Date.now())=>t(e)-a>=36e5*n;_e.fmtHHMM=t=>{const e=Math.floor(t/60),n=t%60;return`${String(e).padStart(2,'0')}:${String(n).padStart(2,'0')}`}},669,[]);
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.refundDeadlineMs=e.refundDeadlineIso=e.msUntilRefundDeadline=e.isRefundEligible=e.SEAT_REFUND_CUTOFF_MS=e.SEAT_REFUND_CUTOFF_HOURS=void 0;const n=e.SEAT_REFUND_CUTOFF_HOURS=2,_=e.SEAT_REFUND_CUTOFF_MS=36e5*n,l=n=>new Date(n).getTime()-_;e.refundDeadlineMs=l;e.refundDeadlineIso=n=>new Date(l(n)).toISOString();e.isRefundEligible=(n,_)=>_<=l(n);e.msUntilRefundDeadline=(n,_)=>l(n)-_},670,[]);
 __d(
@@ -21304,6 +21367,7 @@ __d(
         followers_only: "seFollowersOnly",
         E_USERNAME_IS_SET_FOR_LIFE: "seUsernameLocked",
         E_PAY_ONLINE_TO_HOLD_A_SEAT: "sePayOnlineForSeat",
+        E_SPLIT_EXCEEDS_TOTAL: "seSplitExceedsTotal",
         E_SQUAD_WINDOW_IS_NOT_OPEN: "seSquadWindowNotOpen",
         E_PICK_A_SIMPLER_USERNAME: "seUsernameInvalid",
         E_THAT_USERNAME_IS_TAKEN: "seUsernameTaken",
@@ -21620,6 +21684,7 @@ __d(
   674,
   [675],
 );
+
 
 __d(function(g,r,i,a,m,e,_d){Object.defineProperty(e,"__esModule",{value:!0}),e.t=e.setLocale=e.getLocale=e.default=void 0,Object.defineProperty(e,"useT",{enumerable:!0,get:function(){return l.useT}});var t=r(_d[0]),n=r(_d[1]),o=r(_d[2]),l=r(_d[3]);const c=new t.I18n(o.translations);c.enableFallback=!0,c.defaultLocale='en';const s='ar'===(0,n.getLocales)()[0]?.languageCode?'ar':'en';c.locale=s;e.setLocale=t=>{c.locale=t};const u=t=>t.replace(/[0-9]/g,t=>"\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669"[+t]);e.t=(t,n)=>{if(n&&'ar'===c.locale){const o={};for(const t of Object.keys(n)){const l=n[t];o[t]='number'==typeof l?u(String(l)):l}return c.t(t,o)}return c.t(t,n)};e.getLocale=()=>c.locale??'en';e.default=c},675,[676,904,909,910]);
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0});var n={I18n:!0,Locales:!0,MissingTranslation:!0,Pluralization:!0,useMakePlural:!0};Object.defineProperty(e,"I18n",{enumerable:!0,get:function(){return t.I18n}}),Object.defineProperty(e,"Locales",{enumerable:!0,get:function(){return u.Locales}}),Object.defineProperty(e,"MissingTranslation",{enumerable:!0,get:function(){return l.MissingTranslation}}),Object.defineProperty(e,"Pluralization",{enumerable:!0,get:function(){return o.Pluralization}}),Object.defineProperty(e,"useMakePlural",{enumerable:!0,get:function(){return o.useMakePlural}});var t=r(d[0]),u=r(d[1]),l=r(d[2]),o=r(d[3]),c=r(d[4]);Object.keys(c).forEach(function(t){"default"!==t&&"__esModule"!==t&&(Object.prototype.hasOwnProperty.call(n,t)||t in e&&e[t]===c[t]||Object.defineProperty(e,t,{enumerable:!0,get:function(){return c[t]}}))})},676,[677,789,808,806,903]);
@@ -22420,6 +22485,7 @@ __d(
         seNotFriends: "You need to be connected first.",
         seNotEnoughSlots: "There aren\u2019t enough places left.",
         seInvalidSplit: "That split doesn\u2019t add up.",
+        seSplitExceedsTotal: "The shares add up to more than the total.",
         seGroupExpired: "This group payment has expired.",
         seNothingDue: "There\u2019s nothing to pay.",
         seNoSavedPayment: "No saved payment method.",
@@ -26056,6 +26122,7 @@ __d(
           "\u0644\u0627 \u062a\u0648\u062c\u062f \u0623\u0645\u0627\u0643\u0646 \u0643\u0627\u0641\u064a\u0629.",
         seInvalidSplit:
           "\u0627\u0644\u062a\u0642\u0633\u064a\u0645 \u063a\u064a\u0631 \u0645\u062a\u0637\u0627\u0628\u0642.",
+        seSplitExceedsTotal: "\u0645\u062c\u0645\u0648\u0639 \u0627\u0644\u062d\u0635\u0635 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0627\u0644\u0645\u0628\u0644\u063a \u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a.",
         seGroupExpired:
           "\u0627\u0646\u062a\u0647\u062a \u0635\u0644\u0627\u062d\u064a\u0629 \u0647\u0630\u0627 \u0627\u0644\u062f\u0641\u0639 \u0627\u0644\u062c\u0645\u0627\u0639\u064a.",
         seNothingDue:
@@ -30016,6 +30083,7 @@ __d(
   909,
   [],
 );
+
 
 
 

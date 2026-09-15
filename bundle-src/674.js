@@ -10,6 +10,7 @@ __d(
         followers_only: "seFollowersOnly",
         E_USERNAME_IS_SET_FOR_LIFE: "seUsernameLocked",
         E_PAY_ONLINE_TO_HOLD_A_SEAT: "sePayOnlineForSeat",
+        E_SPLIT_EXCEEDS_TOTAL: "seSplitExceedsTotal",
         E_SQUAD_WINDOW_IS_NOT_OPEN: "seSquadWindowNotOpen",
         E_PICK_A_SIMPLER_USERNAME: "seUsernameInvalid",
         E_THAT_USERNAME_IS_TAKEN: "seUsernameTaken",

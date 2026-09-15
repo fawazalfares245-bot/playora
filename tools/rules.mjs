@@ -59,6 +59,17 @@ const out = await page.evaluate(async (ids) => {
     res.inviteErr = e.message;
   }
 
+  // splitAmounts 'custom' summed organizer-supplied amounts with no upper bound and clamped the
+  // negative correction to zero, so the surplus survived: a 12 KWD court split 50/50/0 collected 100.
+  {
+    const sp = __r(668).splitAmounts;
+    const call = (o) => { try { return sp(o); } catch (e) { return e.code || e.message; } };
+    res.splitOver = call({ mode: 'custom', total: 12, payerIds: ['p1', 'p2', 'org'], organizerId: 'org', custom: { p1: 50, p2: 50, org: 0 } });
+    res.splitExact = call({ mode: 'custom', total: 12, payerIds: ['p1', 'p2', 'org'], organizerId: 'org', custom: { p1: 6, p2: 6, org: 0 } });
+    res.splitUnder = call({ mode: 'custom', total: 12, payerIds: ['p1', 'p2', 'org'], organizerId: 'org', custom: { p1: 4, p2: 4, org: 0 } });
+    res.splitEqual = call({ mode: 'split_equal', total: 10, payerIds: ['p1', 'p2', 'org'], organizerId: 'org' });
+  }
+
   // --- authorization ---
   res.adminOnly = await code(() => api.fetchOrganizerApplications(ids.user));
   res.analystBI = await code(() => api.fetchBIDashboard(ids.analyst));
@@ -290,6 +301,11 @@ ok('a match invite without a caller is refused', out.inviteNoCaller === 'E_YOU_A
 ok('a stranger cannot read a match invite', out.inviteStranger === 'E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE', String(out.inviteStranger));
 ok('the organizer still gets the invite code', out.inviteOwner === true, String(out.inviteOwner));
 ok('an admin still gets the invite code', out.inviteAdmin === true, String(out.inviteAdmin));
+const sum = (o) => Object.values(o).reduce((a, b) => a + b, 0);
+ok('a custom split over the total is refused', out.splitOver === 'E_SPLIT_EXCEEDS_TOTAL', JSON.stringify(out.splitOver));
+ok('a custom split that matches the total is allowed', typeof out.splitExact === 'object' && Math.abs(sum(out.splitExact) - 12) < 5e-4, JSON.stringify(out.splitExact));
+ok('an under-split still tops the organizer up to the total', typeof out.splitUnder === 'object' && Math.abs(sum(out.splitUnder) - 12) < 5e-4, JSON.stringify(out.splitUnder));
+ok('split_equal over three payers still sums to the total', typeof out.splitEqual === 'object' && Math.abs(sum(out.splitEqual) - 10) < 5e-4, JSON.stringify(out.splitEqual));
 ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
 await browser.close();
 

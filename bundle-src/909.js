@@ -563,6 +563,7 @@ __d(
         seNotFriends: "You need to be connected first.",
         seNotEnoughSlots: "There aren\u2019t enough places left.",
         seInvalidSplit: "That split doesn\u2019t add up.",
+        seSplitExceedsTotal: "The shares add up to more than the total.",
         seGroupExpired: "This group payment has expired.",
         seNothingDue: "There\u2019s nothing to pay.",
         seNoSavedPayment: "No saved payment method.",
@@ -4199,6 +4200,7 @@ __d(
           "\u0644\u0627 \u062a\u0648\u062c\u062f \u0623\u0645\u0627\u0643\u0646 \u0643\u0627\u0641\u064a\u0629.",
         seInvalidSplit:
           "\u0627\u0644\u062a\u0642\u0633\u064a\u0645 \u063a\u064a\u0631 \u0645\u062a\u0637\u0627\u0628\u0642.",
+        seSplitExceedsTotal: "\u0645\u062c\u0645\u0648\u0639 \u0627\u0644\u062d\u0635\u0635 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0627\u0644\u0645\u0628\u0644\u063a \u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a.",
         seGroupExpired:
           "\u0627\u0646\u062a\u0647\u062a \u0635\u0644\u0627\u062d\u064a\u0629 \u0647\u0630\u0627 \u0627\u0644\u062f\u0641\u0639 \u0627\u0644\u062c\u0645\u0627\u0639\u064a.",
         seNothingDue:
