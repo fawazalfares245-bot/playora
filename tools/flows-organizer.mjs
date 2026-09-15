@@ -1,5 +1,5 @@
 // Interactive flow checks for the organizer match/series screens. Run: node tools/flows-organizer.mjs
-import { openApp, IDS } from './smoke.mjs';
+import { openApp, IDS, ORIGIN } from './smoke.mjs';
 import fs from 'node:fs';
 const en = fs.readFileSync(new URL('../bundle-src/909.js', import.meta.url), 'utf8');
 const t = (k) => { const m = en.match(new RegExp(`^\\s+${k}: "((?:[^"\\\\]|\\\\.)*)"`, 'm')); if (!m) throw new Error('missing key ' + k); return JSON.parse('"' + m[1] + '"'); };
@@ -147,6 +147,69 @@ await run('a finished match never promotes its waitlist', async () => {
   ok('no waitlist_promoted notification was sent', out.promotedNotes === 0, String(out.promotedNotes));
   // The other half of Di must stay unconditional, or stale holds never clear on a finished match.
   ok('the stale reserved hold still expired', out.staleHoldStatus === 'cancelled', String(out.staleHoldStatus));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// mockApproveParticipant ran Di - which fills the match from the waitlist - before its own capacity
+// check, so a manual-approval match with a waitlist was unapprovable by construction.
+await run('a waitlist does not block approving a pending request', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/' });
+  const seed = await page.evaluate(async ([org, pending, waiter]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Manual approval', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 15 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 15 * 864e5 + 54e5).toISOString(),
+      max_players: 4, waitlist_capacity: 4, price_kwd: 0, visibility: 'public',
+      format: '5v5', approval_mode: 'manual',
+    });
+    const now = new Date().toISOString();
+    const row = (uid, name, status, ageMs) => ({
+      id: 'bk-' + status + '-' + uid.slice(0, 8), game_id: g.id, user_id: uid, display_name: name,
+      status, attendance: null, reserved_until: null,
+      created_at: new Date(Date.now() - ageMs).toISOString(), updated_at: now,
+    });
+    const all = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]');
+    const held = all.filter((b) => b.game_id === g.id && b.status === 'confirmed').length;
+    // Three of the four seats taken (the organizer holds one), one pending request, and one player
+    // waitlisted after it - the state an auto -> manual switch on a busy match leaves behind.
+    const fillers = [];
+    for (let k = held; k < 3; k++)
+      fillers.push(row('f' + k + '000000-0000-4000-8000-00000000000' + k, 'Filler ' + k, 'confirmed', 9e5));
+    const pendingRow = row(pending, 'Pending Player', 'pending', 6e5);
+    const waitRow = row(waiter, 'Waitlisted Player', 'waitlisted', 3e5);
+    localStorage.setItem('playora.mock.bookings.v1', JSON.stringify([...all, ...fillers, pendingRow, waitRow]));
+    return { gameId: g.id, pendingId: pendingRow.id, waitId: waitRow.id, seats: fillers.length + held };
+  }, [IDS.organizer, IDS.admin, IDS.analyst]);
+
+  ok('three of the four seats are taken', seed.seats === 3, String(seed.seats));
+  await page.goto(ORIGIN + '/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const out = await page.evaluate(async ([org, latecomer, seed]) => {
+    const api = __r(671);
+    const res = {};
+    const pre = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]');
+    res.preWait = (pre.find((b) => b.id === seed.waitId) || {}).status ?? null;
+    res.prePending = (pre.find((b) => b.id === seed.pendingId) || {}).status ?? null;
+    try { await api.approveParticipant(seed.gameId, org, seed.pendingId); res.approved = true; }
+    catch (e) { res.approved = false; res.err = e.code || e.message; }
+    const all = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]');
+    res.pendingStatus = (all.find((b) => b.id === seed.pendingId) || {}).status ?? null;
+    res.waitStatus = (all.find((b) => b.id === seed.waitId) || {}).status ?? null;
+    // The match is full now. A manual-approval join must not become a pending request against a
+    // seat that does not exist.
+    try { res.lateJoin = (await api.joinMatch(seed.gameId, latecomer)).status; }
+    catch (e) { res.lateJoin = 'ERR:' + (e.code || e.message); }
+    return res;
+  }, [IDS.organizer, IDS.user, seed]);
+
+  ok('the seeded state survived boot', out.preWait === 'waitlisted' && out.prePending === 'pending', `wait=${out.preWait} pending=${out.prePending}`);
+  ok('the approval succeeds', out.approved === true, String(out.err));
+  ok('the approved player has the free seat', out.pendingStatus === 'confirmed', String(out.pendingStatus));
+  ok('the waitlisted player stays waitlisted', out.waitStatus === 'waitlisted', String(out.waitStatus));
+  ok('a join on a full manual match is refused, not left pending', out.lateJoin === 'ERR:E_THIS_MATCH_IS_ALREADY_FULL', String(out.lateJoin));
   ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
   await browser.close();
 });

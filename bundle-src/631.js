@@ -3108,6 +3108,13 @@ __d(
               created_at: n,
               updated_at: n,
             };
+            // A manual-approval join became a pending request with no capacity test at all, so
+            // requests piled up against seats that did not exist while Di kept handing those seats
+            // to waitlisters who joined later. Reject rather than waitlist: Di promotes a
+            // waitlisted player straight to a reserved seat, which would walk them into a
+            // manual-approval match the organizer never approved.
+            if ("manual" === a.approval_mode && ki(e, i) >= a.max_players)
+              throw new Error("E_THIS_MATCH_IS_ALREADY_FULL");
             if ("manual" === a.approval_mode || d)
               return (
                 Qt.bookings.push(Object.assign({}, l, { status: "pending" })),
@@ -3247,11 +3254,18 @@ __d(
         await Xt(e, async () => {
           const i = hi(e);
           if (!i) throw new Error("E_MATCH_NOT_FOUND");
-          (zi(i, t), await Di(i));
+          zi(i, t);
+          // Di used to run here, before the capacity check below. It fills the match from the
+          // waitlist up to max_players, so on any manual-approval match with a waitlist the
+          // organizer's approval was blocked by the promotion this very call had just performed -
+          // unapprovable by construction, and every retry repeated it. Take the seat first, then
+          // backfill whatever is still free at the end.
           if ("scheduled" !== i.status || new Date(i.ends_at).getTime() < Date.now())
             throw new Error("E_THIS_MATCH_CAN_NO_LONGER_BE");
           const n = Qt.bookings.find((t) => t.id === a && t.game_id === e);
           if (!n || "pending" !== n.status) return;
+          // ki counts an expired reserved hold as gone already, so the seat count is honest here
+          // without Di having swept first.
           if (ki(e) >= i.max_players) throw new Error("E_MATCH_IS_FULL_FREE_A_SLOT");
           ((n.status = "confirmed"),
             (n.updated_at = new Date().toISOString()),
@@ -3282,6 +3296,10 @@ __d(
               read: !1,
               created_at: new Date().toISOString(),
             }));
+          // Now that the approved seat is taken, expire stale holds and backfill anything still
+          // free. Called directly: this already holds the Xt lock for the match, and Oi would
+          // re-take it.
+          await Di(i);
         }));
     };
     r.mockRejectParticipant = async (e, t, a, r9) => {
