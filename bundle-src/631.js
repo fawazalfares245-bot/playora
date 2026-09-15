@@ -6493,11 +6493,16 @@ __d(
         cancellationRate: t.length ? r.length / t.length : 0,
         returningPlayers: _,
         retentionRate: c ? _ / c : 0,
-        // Real takings: paid seat payments for the series' games, minus refunds.
+        // Gross seat takings for the series' games. This used to count every payment carrying one of
+        // those game ids, and court-booking payment-plan rows carry game_id too - so the organizer's
+        // own court fee and every co-payer's share were counted as series revenue. Filter on the seat
+        // kind. (The old comment said "minus refunds"; refunds are excluded rather than subtracted,
+        // which is the same answer for a sum of paid rows, but the comment was describing something
+        // the code did not do.)
         revenueKwd: (0, z.roundKwd)(
           Qt.payments
-            .filter((a) => t.some((t) => t.id === a.game_id))
-            .reduce((e, t) => e + ("paid" === t.status ? t.amount_kwd : "refunded" === t.status ? 0 : 0), 0),
+            .filter((a) => "seat" === a.kind && "paid" === a.status && t.some((t) => t.id === a.game_id))
+            .reduce((e, t) => e + Number(t.amount_kwd || 0), 0),
         ),
         revenueEstimatedKwd: s * (Wn(e)?.price_kwd ?? 0),
       };
@@ -7383,10 +7388,21 @@ __d(
         .filter((e) => !!e.venue)
         .sort((e, t) => ("pending" === e.profile.status ? -1 : 1) - ("pending" === t.profile.status ? -1 : 1))
         .map(({ venue: e, profile: t }) => ({
-          venue: { id: e.id, name: e.name, area: e.area, sports: e.sports },
+          // An admin could not tell a deliberate venue-partner application from a name an organizer
+          // typed into the match wizard - which, because that path makes the organizer the registered
+          // owner, quietly hands them a venue they can later add courts to and claim payouts from.
+          venue: {
+            id: e.id,
+            name: e.name,
+            area: e.area,
+            sports: e.sports,
+            review_status: e.review_status ?? null,
+            created_by: e.created_by ?? null,
+          },
           profile: {
             venue_id: t.venue_id,
             owner_id: t.owner_id,
+            origin: t.origin ?? null,
             status: t.status,
             commission_type: t.commission_type,
             commission_value: t.commission_value,

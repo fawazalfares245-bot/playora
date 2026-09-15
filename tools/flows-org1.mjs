@@ -580,5 +580,85 @@ await run('an organizer cannot read the venue cut', async () => {
   await browser.close();
 });
 
+// The admin venue queue could not distinguish a venue-partner application from a name an organizer
+// typed into the match wizard - which makes that organizer the registered owner of the venue.
+await run('the venue queue says where each row came from', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer' });
+  const out = await page.evaluate(async ([org, admin, applicant]) => {
+    const api = __r(671);
+    const now = new Date();
+    await api.createSeries(org, {
+      title: 'Origin series', sport: 'football', format: 'football_5v5', skill_level: 'all',
+      custom_venue: { name: 'Typed In Pitch', address: 'Salmiya, Kuwait', lat: 29.3339, lng: 48.0754 },
+      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public',
+      approval_mode: 'auto', skill_policy: 'open',
+      start_date: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2).toISOString(),
+      start_minutes: 1080, end_minutes: 1170, frequency: 'weekly',
+      weekdays: [(now.getDay() + 2) % 7], horizon_weeks: 2, auto_invite: false,
+    });
+    await api.applyVenue(applicant, {
+      name: 'Applied For Courts', area: 'Salmiya', sports: ['padel'], lat: 29.33, lng: 48.07,
+    });
+    const rows = await api.fetchPendingVenues(admin);
+    const typed = rows.find((r) => r.venue.name === 'Typed In Pitch');
+    const applied = rows.find((r) => r.venue.name === 'Applied For Courts');
+    return {
+      typedOrigin: typed ? typed.profile.origin : null,
+      typedCreator: typed ? typed.venue.created_by : null,
+      typedOwner: typed ? typed.profile.owner_id : null,
+      typedReview: typed ? typed.venue.review_status : null,
+      appliedOrigin: applied ? applied.profile.origin : null,
+    };
+  }, [IDS.organizer, IDS.admin, IDS.user]);
+
+  ok('a wizard venue is marked as one', out.typedOrigin === 'organizer_custom', String(out.typedOrigin));
+  ok('and names the organizer who typed it', out.typedCreator === IDS.organizer, String(out.typedCreator));
+  ok('who is also its registered owner', out.typedOwner === IDS.organizer, String(out.typedOwner));
+  ok('and it is pending review', out.typedReview === 'pending', String(out.typedReview));
+  ok('a real application is marked differently', out.appliedOrigin === 'venue_application', String(out.appliedOrigin));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// mockGetSeriesAnalytics counted every payment carrying one of the series' game ids as revenue, and
+// court-booking payment-plan rows carry game_id too.
+await run('series revenue counts seat takings only', async () => {
+  const { browser, page } = await openApp({ role: 'organizer', route: '/organizer' });
+  const seed = await page.evaluate(async ([org, player]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const now = new Date();
+    const { template } = await api.createSeries(org, {
+      title: 'Revenue series', sport: 'football', format: 'football_5v5', skill_level: 'all',
+      venue_id: venues[0].id, max_players: 10, waitlist_capacity: 2, price_kwd: 3,
+      visibility: 'public', approval_mode: 'auto', skill_policy: 'open',
+      start_date: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2).toISOString(),
+      start_minutes: 1080, end_minutes: 1170, frequency: 'weekly',
+      weekdays: [(now.getDay() + 2) % 7], horizon_weeks: 2, auto_invite: false,
+    });
+    const occ = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]')
+      .filter((g) => g.series_id === template.id)
+      .sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at))[0];
+    await api.checkoutJoin(player, occ.id, 'knet');
+    // a paid court-fee share on the same occurrence, which is venue money, not series takings
+    const pays = JSON.parse(localStorage.getItem('playora.mock.payments.v1') || '[]');
+    pays.push({
+      id: 'pay-court-share', kind: 'court', booking_id: 'cb-series-rev', game_id: occ.id,
+      payer_id: org, payer_name: 'Test Organizer', payee_venue_id: venues[0].id, amount_kwd: 40,
+      status: 'paid', method: 'knet', gateway_ref: 'x', reminders_sent: 0, reserved_until: null,
+      paid_at: new Date().toISOString(), refunded_at: null, created_at: new Date().toISOString(),
+    });
+    localStorage.setItem('playora.mock.payments.v1', JSON.stringify(pays));
+    return { templateId: template.id };
+  }, [IDS.organizer, IDS.user]);
+
+  await page.goto(ORIGIN + '/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const rev = await page.evaluate(async ([org, id]) =>
+    (await __r(671).fetchSeriesAnalytics(id, org)).revenueKwd, [IDS.organizer, seed.templateId]);
+  ok('the court fee is not series revenue', Math.abs(rev - 3) < 5e-3, `${rev} (seat 3, court share 40)`);
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);
