@@ -322,5 +322,85 @@ await run('the awards header counts down instead of saying Just now', async () =
   await browser.close();
 });
 
+// Cancelling reported refunded as the number of bookings cancelled, not the number of seats actually
+// refunded, so the summary told the organizer everyone got their money back. And a court booking
+// cancelled inside the cutoff kept the money, skipped the refund and then deleted the pending
+// settlement - so the forfeited money had no settlement, no refund and no posting anywhere.
+await run('cancelling reports real refunds and keeps the forfeited money on the books', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer' });
+  const seed = await page.evaluate(async ([org, payer, freeloader]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Late cancel', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 27 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 27 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 4, visibility: 'public', format: '5v5',
+    });
+    // one player pays, one joins and never pays
+    await api.checkoutJoin(payer, g.id, 'knet');
+    await api.joinMatch(g.id, freeloader);
+    // a confirmed court booking for the match, already paid, starting inside the free-cancel cutoff
+    const soon = new Date(Date.now() + 36e5).toISOString();
+    const courts = JSON.parse(localStorage.getItem('playora.mock.courtbookings.v1') || '[]');
+    courts.push({
+      id: 'cb-late-cancel', court_id: null, venue_id: venues[0].id, organizer_id: org, game_id: g.id,
+      starts_at: soon, ends_at: new Date(Date.now() + 54e5).toISOString(), status: 'confirmed',
+      court_price_kwd: 20, split_mode: 'organizer_pays', commission_type: 'percentage',
+      commission_value: 10, requires_venue_approval: false, reserved_until: null,
+      cancellation_reason: null, qr_token: 'PLQR-LATECANCEL000000',
+      created_at: new Date().toISOString(), confirmed_at: new Date().toISOString(), released_at: null,
+    });
+    localStorage.setItem('playora.mock.courtbookings.v1', JSON.stringify(courts));
+    const pays = JSON.parse(localStorage.getItem('playora.mock.payments.v1') || '[]');
+    pays.push({
+      id: 'pay-late-cancel', kind: 'court', booking_id: 'cb-late-cancel', game_id: g.id,
+      payer_id: org, payer_name: 'Test Organizer', payee_venue_id: venues[0].id, amount_kwd: 20,
+      status: 'paid', method: 'knet', gateway_ref: 'x', reminders_sent: 0, reserved_until: null,
+      paid_at: new Date().toISOString(), refunded_at: null, created_at: new Date().toISOString(),
+    });
+    localStorage.setItem('playora.mock.payments.v1', JSON.stringify(pays));
+    const sets = JSON.parse(localStorage.getItem('playora.mock.settlements.v1') || '[]');
+    sets.push({
+      id: 'set-late-cancel', booking_id: 'cb-late-cancel', venue_id: venues[0].id,
+      gross_kwd: 20, commission_kwd: 2, net_to_venue_kwd: 18, status: 'pending',
+      created_at: new Date().toISOString(), settled_at: null,
+    });
+    localStorage.setItem('playora.mock.settlements.v1', JSON.stringify(sets));
+    // the match has to point back at the court booking, or the cancel never touches the court money
+    const games = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]');
+    for (const row of games) if (row.id === g.id) row.court_booking_id = 'cb-late-cancel';
+    localStorage.setItem('playora.mock.games.v1', JSON.stringify(games));
+    return { gameId: g.id, venueId: venues[0].id };
+  }, [IDS.organizer, IDS.user, IDS.analyst]);
+
+  await page.goto(ORIGIN + '/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const out = await page.evaluate(async ([org, seed]) => {
+    const api = __r(671);
+    const res = await api.cancelMatch(seed.gameId, org, 'Pitch flooded after the storm');
+    const sets = JSON.parse(localStorage.getItem('playora.mock.settlements.v1') || '[]')
+      .filter((s) => s.booking_id === 'cb-late-cancel');
+    const pay = JSON.parse(localStorage.getItem('playora.mock.payments.v1') || '[]')
+      .find((p) => p.id === 'pay-late-cancel');
+    return {
+      res,
+      settlementStatus: sets.length ? sets[0].status : null,
+      settlementNet: sets.length ? sets[0].net_to_venue_kwd : null,
+      courtPaymentStatus: pay ? pay.status : null,
+    };
+  }, [IDS.organizer, seed]);
+
+  // the organizer holds a seat too, so three bookings but only one paid seat
+  ok('three bookings were cancelled', out.res.cancelled === 3, JSON.stringify(out.res));
+  ok('only the seat that was paid counts as refunded', out.res.refunded === 1, JSON.stringify(out.res));
+  ok('the refunded amount is reported', Math.abs(out.res.refunded_kwd - 4) < 5e-3, String(out.res.refunded_kwd));
+  ok('the court money was kept', out.courtPaymentStatus === 'paid', String(out.courtPaymentStatus));
+  ok('its settlement survives as forfeited', out.settlementStatus === 'forfeited', String(out.settlementStatus));
+  ok('the forfeited net matches the retained amount less commission', Math.abs(out.settlementNet - 18) < 5e-3, String(out.settlementNet));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

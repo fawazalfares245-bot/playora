@@ -3861,7 +3861,15 @@ __d(
           (t.updated_at = new Date().toISOString()),
           o.push(t.user_id));
       await Za(W, Qt.bookings);
-      for (const e of o) await Br(n, e, !0);
+      // refunded used to report o.length - the number of bookings cancelled, not the number of seats
+      // actually refunded - so mockCancelSeries's summary told the organizer every player got their
+      // money back even when most of them had never paid. Br already returns the amounts; count them.
+      let refunded9 = 0,
+        refundedKwd9 = 0;
+      for (const e of o) {
+        const t = await Br(n, e, !0);
+        t && t.refund_kwd > 0 && ((refunded9 += 1), (refundedKwd9 += Number(t.refund_kwd)));
+      }
       let s = !0;
       if (n.court_booking_id)
         try {
@@ -3878,11 +3886,12 @@ __d(
         await (0, w.logAudit)("match.cancelled", (0, w.actorRef)(t), {
           game: e.slice(-6),
           reason: r,
-          refunded: o.length,
+          cancelled: o.length,
+          refunded: refunded9,
           court_released: s,
           series: o9.series ?? null,
         }),
-        { court_released: s, refunded: o.length }
+        { court_released: s, refunded: refunded9, cancelled: o.length, refunded_kwd: (0, z.roundKwd)(refundedKwd9) }
       );
     };
     r.mockCancelMatch = async (e, t, a) => {
@@ -7649,9 +7658,14 @@ __d(
       const o = Qt.payments.filter(
         (e) => e.booking_id === i.id && ("paid" === e.status || "pending" === e.status),
       );
+      // Money kept because free cancellation had already lapsed. The condition below deliberately
+      // skips the refund in that case, so it has to be accounted for somewhere - see the settlement
+      // handling at the end.
+      let kept9 = 0;
       for (const e of o) {
         const t = "paid" === e.status;
-        ((!r && t) ||
+        (!r && t && (kept9 += Number(e.amount_kwd || 0)),
+          (!r && t) ||
           ((e.status = t ? "refunded" : "expired"),
           t && ((e.refunded_at = new Date().toISOString()), await ac(e.payer_id, e.amount_kwd, e.id))),
           t &&
@@ -7666,11 +7680,33 @@ __d(
               created_at: new Date().toISOString(),
             })));
       }
+      // The pending settlement used to be deleted outright. Combined with the skipped refund above,
+      // forfeited money ended up with no settlement, no refund and no posting anywhere: the venue
+      // lost the slot and the money, the organizer lost the money, and no report could see it. Keep
+      // the row and mark it forfeited for whatever was retained, so venue revenue and the admin
+      // financials can account for it. (The matching ledger transfer is the backend half.)
+      const st9 = Qt.settlements.find((e) => e.booking_id === i.id && "pending" === e.status);
+      if (st9 && kept9 > 0) {
+        // The commission snapshot lives on the booking, not on the settlement row, and is what
+        // insulates it from a later mockAdminSetCommission change.
+        const c9 = (0, z.settlement)(kept9, i.commission_type, i.commission_value);
+        ((st9.status = "forfeited"),
+          (st9.gross_kwd = c9.gross),
+          (st9.commission_kwd = c9.commission),
+          (st9.net_to_venue_kwd = c9.net),
+          (st9.forfeited_at = new Date().toISOString()));
+      } else
+        Qt.settlements = Qt.settlements.filter(
+          (e) => !(e.booking_id === i.id && "pending" === e.status),
+        );
       return (
         o.length && (await Za(we, Qt.payments)),
-        (Qt.settlements = Qt.settlements.filter((e) => !(e.booking_id === i.id && "pending" === e.status))),
         await Za(fe, Qt.settlements),
-        await (0, w.logAudit)("booking.cancelled", (0, w.actorRef)(e), { booking: i.id.slice(-6), free: r }),
+        await (0, w.logAudit)("booking.cancelled", (0, w.actorRef)(e), {
+          booking: i.id.slice(-6),
+          free: r,
+          kept: kept9,
+        }),
         i
       );
     };
