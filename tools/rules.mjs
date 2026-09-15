@@ -1,6 +1,7 @@
 // Backend rule checks executed inside the real runtime via the Metro require (__r).
 // Run: node tools/rules.mjs
 import { openApp, IDS } from './smoke.mjs';
+import fs from 'node:fs';
 const results = [];
 const ok = (n, c, x = '') => results.push(`${c ? 'PASS' : 'FAIL'} ${n} ${x}`);
 
@@ -266,5 +267,27 @@ ok('a participant can read the match they joined', out.privParticipantSees === t
 ok('the invite code is withheld from a participant', out.privParticipantCode === false, String(out.privParticipantCode));
 ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
 await browser.close();
+
+// --- i18n: en and ar must agree, key for key and placeholder for placeholder ---
+// Four refund strings interpolated %{hours} in English and hardcoded the number in Arabic, so moving
+// SEAT_REFUND_CUTOFF_HOURS would have told the two languages different refund windows. A locale that
+// silently drops a placeholder states a different fact, so this is a parity check, not a lint.
+{
+  const src = fs.readFileSync(new URL('../bundle-src/909.js', import.meta.url), 'utf8');
+  // One Arabic value contains a double quote and is therefore single-quoted; accept both forms.
+  const entry = /^ {8}(\w+):\s*\n? *(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'),$/gm;
+  const seen = new Map();
+  for (const m of src.matchAll(entry)) {
+    if (!seen.has(m[1])) seen.set(m[1], []);
+    seen.get(m[1]).push(m[2] ?? m[3]);
+  }
+  const pairs = [...seen].filter(([, v]) => v.length === 2);
+  const ph = (v) => [...new Set([...v.matchAll(/%\{(\w+)\}/g)].map((x) => x[1]))].sort().join(',');
+  const mismatched = pairs.filter(([, [en, ar]]) => ph(en) !== ph(ar)).map(([k]) => k);
+  const lonely = [...seen].filter(([, v]) => v.length !== 2).map(([k]) => k);
+  ok('every translation key has both locales', lonely.length === 0, lonely.slice(0, 5).join(','));
+  ok('both locales interpolate the same placeholders', mismatched.length === 0, mismatched.slice(0, 5).join(','));
+  ok('the parity check actually read the table', pairs.length > 3000, String(pairs.length));
+}
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

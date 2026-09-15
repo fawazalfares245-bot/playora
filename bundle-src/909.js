@@ -273,12 +273,14 @@ __d(
         reviewPlayoraFee: "Rush X fee",
         reviewYouPay: "You pay",
         refundPolicyNote: "Free cancellation up to %{hours} hours before kick-off. No refund after that.",
+        refundPolicyNoteTwo: "Free cancellation up to two hours before kick-off. No refund after that.",
         cancelSeatTitle: "Cancel your booking",
         refundFullTitle: "You\u2019ll receive a full refund",
         refundNoneTitle: "No refund available",
         refundDeadlineBefore: "Free until %{when} \u2014 after that the fee stays with the match.",
         refundDeadlinePassed: "The free window closed at %{when}.",
         refundNoneWhy: "Kick-off is in less than %{hours} hours.",
+        refundNoneWhyTwo: "Kick-off is in less than two hours.",
         refundFreeSpot: "This was a free spot \u2014 no payment to refund.",
         youPaidRow: "You paid",
         refundRow: "Refund",
@@ -288,6 +290,7 @@ __d(
         leftTitle: "You\u2019re out",
         leftRefundBody: "%{amount} will be returned to your wallet within 24 hours.",
         leftNoRefundBody: "No refund \u2014 kick-off was less than %{hours} hours away.",
+        leftNoRefundBodyTwo: "No refund \u2014 kick-off was less than two hours away.",
         spotReleasedTitle: "Spot released",
         spotReleasedBody: "No payment was made \u2014 nothing to refund.",
         backToGames: "Back to games",
@@ -1014,6 +1017,7 @@ __d(
         refundsErrorBody: "Your bookings could not be loaded. Nothing has changed with your money.",
         forfeitKickoff: "Kick-off was %{when}.",
         forfeitWindowClosed: "Free cancellation ended %{when} \u2014 %{hours} hours before kick-off.",
+        forfeitWindowClosedTwo: "Free cancellation ended %{when} \u2014 two hours before kick-off.",
         forfeitYouLeft: "You left %{when}, so the fee stayed with the match.",
         browseGames: "Browse",
         noBookingsTitle: "No bookings yet",
@@ -3776,8 +3780,8 @@ __d(
         reviewGameFee: "\u0631\u0633\u0648\u0645 \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629",
         reviewPlayoraFee: "\u0631\u0633\u0648\u0645 Rush X",
         reviewYouPay: "\u0627\u0644\u0645\u0628\u0644\u063a \u0627\u0644\u0645\u0633\u062a\u062d\u0642",
-        refundPolicyNote:
-          "\u0625\u0644\u063a\u0627\u0621 \u0645\u062c\u0627\u0646\u064a \u062d\u062a\u0649 \u0633\u0627\u0639\u062a\u064a\u0646 \u0642\u0628\u0644 \u0627\u0644\u0628\u062f\u0627\u064a\u0629. \u0644\u0627 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u0628\u0639\u062f \u0630\u0644\u0643.",
+        refundPolicyNote: "\u0625\u0644\u063a\u0627\u0621 \u0645\u062c\u0627\u0646\u064a \u062d\u062a\u0649 %{hours} \u0633\u0627\u0639\u0629 \u0642\u0628\u0644 \u0627\u0644\u0628\u062f\u0627\u064a\u0629. \u0644\u0627 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u0628\u0639\u062f \u0630\u0644\u0643.",
+        refundPolicyNoteTwo: "\u0625\u0644\u063a\u0627\u0621 \u0645\u062c\u0627\u0646\u064a \u062d\u062a\u0649 \u0633\u0627\u0639\u062a\u064a\u0646 \u0642\u0628\u0644 \u0627\u0644\u0628\u062f\u0627\u064a\u0629. \u0644\u0627 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u0628\u0639\u062f \u0630\u0644\u0643.",
         cancelSeatTitle: "\u0625\u0644\u063a\u0627\u0621 \u062d\u062c\u0632\u0643",
         refundFullTitle:
           "\u0633\u062a\u062d\u0635\u0644 \u0639\u0644\u0649 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u0643\u0627\u0645\u0644",
@@ -3786,8 +3790,8 @@ __d(
           "\u0645\u062c\u0627\u0646\u064a \u062d\u062a\u0649 %{when} \u2014 \u0628\u0639\u062f\u0647\u0627 \u062a\u0628\u0642\u0649 \u0627\u0644\u0631\u0633\u0648\u0645 \u0644\u0644\u0645\u0628\u0627\u0631\u0627\u0629.",
         refundDeadlinePassed:
           "\u0627\u0646\u062a\u0647\u062a \u0641\u062a\u0631\u0629 \u0627\u0644\u0625\u0644\u063a\u0627\u0621 \u0627\u0644\u0645\u062c\u0627\u0646\u064a \u0641\u064a %{when}.",
-        refundNoneWhy:
-          "\u0627\u0644\u0628\u062f\u0627\u064a\u0629 \u062e\u0644\u0627\u0644 \u0623\u0642\u0644 \u0645\u0646 \u0633\u0627\u0639\u062a\u064a\u0646.",
+        refundNoneWhy: "\u0627\u0644\u0628\u062f\u0627\u064a\u0629 \u062e\u0644\u0627\u0644 \u0623\u0642\u0644 \u0645\u0646 %{hours} \u0633\u0627\u0639\u0629.",
+        refundNoneWhyTwo: "\u0627\u0644\u0628\u062f\u0627\u064a\u0629 \u062e\u0644\u0627\u0644 \u0623\u0642\u0644 \u0645\u0646 \u0633\u0627\u0639\u062a\u064a\u0646.",
         refundFreeSpot:
           "\u0643\u0627\u0646 \u0645\u0642\u0639\u062f\u0627\u064b \u0645\u062c\u0627\u0646\u064a\u0627\u064b \u2014 \u0644\u0627 \u064a\u0648\u062c\u062f \u0645\u0628\u0644\u063a \u0644\u0627\u0633\u062a\u0631\u062f\u0627\u062f\u0647.",
         youPaidRow: "\u0627\u0644\u0645\u0628\u0644\u063a \u0627\u0644\u0645\u062f\u0641\u0648\u0639",
@@ -3799,8 +3803,8 @@ __d(
         leftTitle: "\u0644\u0642\u062f \u0627\u0646\u0633\u062d\u0628\u062a",
         leftRefundBody:
           "\u0633\u064a\u064f\u0639\u0627\u062f %{amount} \u0625\u0644\u0649 \u0645\u062d\u0641\u0638\u062a\u0643 \u062e\u0644\u0627\u0644 \u0662\u0664 \u0633\u0627\u0639\u0629.",
-        leftNoRefundBody:
-          "\u0644\u0627 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u2014 \u0643\u0627\u0646 \u0648\u0642\u062a \u0627\u0644\u0628\u062f\u0621 \u0623\u0642\u0644 \u0645\u0646 \u0633\u0627\u0639\u062a\u064a\u0646.",
+        leftNoRefundBody: "\u0644\u0627 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u2014 \u0643\u0627\u0646 \u0648\u0642\u062a \u0627\u0644\u0628\u062f\u0621 \u0623\u0642\u0644 \u0645\u0646 %{hours} \u0633\u0627\u0639\u0629.",
+        leftNoRefundBodyTwo: "\u0644\u0627 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u2014 \u0643\u0627\u0646 \u0648\u0642\u062a \u0627\u0644\u0628\u062f\u0621 \u0623\u0642\u0644 \u0645\u0646 \u0633\u0627\u0639\u062a\u064a\u0646.",
         spotReleasedTitle: "\u0623\u064f\u0637\u0644\u0642 \u0627\u0644\u0645\u0642\u0639\u062f",
         spotReleasedBody:
           "\u0644\u0645 \u064a\u064f\u062f\u0641\u0639 \u0623\u064a \u0645\u0628\u0644\u063a \u2014 \u0644\u0627 \u0634\u064a\u0621 \u0644\u0627\u0633\u062a\u0631\u062f\u0627\u062f\u0647.",
@@ -4936,8 +4940,8 @@ __d(
         refundsErrorBody:
           "\u062a\u0639\u0630\u0651\u0631 \u062a\u062d\u0645\u064a\u0644 \u062d\u062c\u0648\u0632\u0627\u062a\u0643. \u0644\u0645 \u064a\u062a\u063a\u064a\u0651\u0631 \u0634\u064a\u0621 \u0641\u064a \u0623\u0645\u0648\u0627\u0644\u0643.",
         forfeitKickoff: "\u0643\u0627\u0646\u062a \u0627\u0644\u0628\u062f\u0627\u064a\u0629 %{when}.",
-        forfeitWindowClosed:
-          "\u0627\u0646\u062a\u0647\u0649 \u0627\u0644\u0625\u0644\u063a\u0627\u0621 \u0627\u0644\u0645\u062c\u0627\u0646\u064a %{when}\u060c \u0623\u064a \u0642\u0628\u0644 \u0627\u0644\u0628\u062f\u0627\u064a\u0629 \u0628\u0633\u0627\u0639\u062a\u064a\u0646.",
+        forfeitWindowClosed: "\u0627\u0646\u062a\u0647\u0649 \u0627\u0644\u0625\u0644\u063a\u0627\u0621 \u0627\u0644\u0645\u062c\u0627\u0646\u064a %{when}\u060c \u0623\u064a \u0642\u0628\u0644 \u0627\u0644\u0628\u062f\u0627\u064a\u0629 \u0628\u0640 %{hours} \u0633\u0627\u0639\u0629.",
+        forfeitWindowClosedTwo: "\u0627\u0646\u062a\u0647\u0649 \u0627\u0644\u0625\u0644\u063a\u0627\u0621 \u0627\u0644\u0645\u062c\u0627\u0646\u064a %{when}\u060c \u0623\u064a \u0642\u0628\u0644 \u0627\u0644\u0628\u062f\u0627\u064a\u0629 \u0628\u0633\u0627\u0639\u062a\u064a\u0646.",
         forfeitYouLeft:
           "\u0627\u0646\u0633\u062d\u0628\u062a %{when}\u060c \u0641\u0628\u0642\u064a\u062a \u0627\u0644\u0631\u0633\u0648\u0645 \u0644\u0644\u0645\u0628\u0627\u0631\u0627\u0629.",
         browseGames: "\u062a\u0635\u0641\u062d",

@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "ab30228d57"
+  buildId: "d4770a42f6"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -21700,12 +21700,14 @@ __d(
         reviewPlayoraFee: "Rush X fee",
         reviewYouPay: "You pay",
         refundPolicyNote: "Free cancellation up to %{hours} hours before kick-off. No refund after that.",
+        refundPolicyNoteTwo: "Free cancellation up to two hours before kick-off. No refund after that.",
         cancelSeatTitle: "Cancel your booking",
         refundFullTitle: "You\u2019ll receive a full refund",
         refundNoneTitle: "No refund available",
         refundDeadlineBefore: "Free until %{when} \u2014 after that the fee stays with the match.",
         refundDeadlinePassed: "The free window closed at %{when}.",
         refundNoneWhy: "Kick-off is in less than %{hours} hours.",
+        refundNoneWhyTwo: "Kick-off is in less than two hours.",
         refundFreeSpot: "This was a free spot \u2014 no payment to refund.",
         youPaidRow: "You paid",
         refundRow: "Refund",
@@ -21715,6 +21717,7 @@ __d(
         leftTitle: "You\u2019re out",
         leftRefundBody: "%{amount} will be returned to your wallet within 24 hours.",
         leftNoRefundBody: "No refund \u2014 kick-off was less than %{hours} hours away.",
+        leftNoRefundBodyTwo: "No refund \u2014 kick-off was less than two hours away.",
         spotReleasedTitle: "Spot released",
         spotReleasedBody: "No payment was made \u2014 nothing to refund.",
         backToGames: "Back to games",
@@ -22441,6 +22444,7 @@ __d(
         refundsErrorBody: "Your bookings could not be loaded. Nothing has changed with your money.",
         forfeitKickoff: "Kick-off was %{when}.",
         forfeitWindowClosed: "Free cancellation ended %{when} \u2014 %{hours} hours before kick-off.",
+        forfeitWindowClosedTwo: "Free cancellation ended %{when} \u2014 two hours before kick-off.",
         forfeitYouLeft: "You left %{when}, so the fee stayed with the match.",
         browseGames: "Browse",
         noBookingsTitle: "No bookings yet",
@@ -25203,8 +25207,8 @@ __d(
         reviewGameFee: "\u0631\u0633\u0648\u0645 \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629",
         reviewPlayoraFee: "\u0631\u0633\u0648\u0645 Rush X",
         reviewYouPay: "\u0627\u0644\u0645\u0628\u0644\u063a \u0627\u0644\u0645\u0633\u062a\u062d\u0642",
-        refundPolicyNote:
-          "\u0625\u0644\u063a\u0627\u0621 \u0645\u062c\u0627\u0646\u064a \u062d\u062a\u0649 \u0633\u0627\u0639\u062a\u064a\u0646 \u0642\u0628\u0644 \u0627\u0644\u0628\u062f\u0627\u064a\u0629. \u0644\u0627 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u0628\u0639\u062f \u0630\u0644\u0643.",
+        refundPolicyNote: "\u0625\u0644\u063a\u0627\u0621 \u0645\u062c\u0627\u0646\u064a \u062d\u062a\u0649 %{hours} \u0633\u0627\u0639\u0629 \u0642\u0628\u0644 \u0627\u0644\u0628\u062f\u0627\u064a\u0629. \u0644\u0627 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u0628\u0639\u062f \u0630\u0644\u0643.",
+        refundPolicyNoteTwo: "\u0625\u0644\u063a\u0627\u0621 \u0645\u062c\u0627\u0646\u064a \u062d\u062a\u0649 \u0633\u0627\u0639\u062a\u064a\u0646 \u0642\u0628\u0644 \u0627\u0644\u0628\u062f\u0627\u064a\u0629. \u0644\u0627 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u0628\u0639\u062f \u0630\u0644\u0643.",
         cancelSeatTitle: "\u0625\u0644\u063a\u0627\u0621 \u062d\u062c\u0632\u0643",
         refundFullTitle:
           "\u0633\u062a\u062d\u0635\u0644 \u0639\u0644\u0649 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u0643\u0627\u0645\u0644",
@@ -25213,8 +25217,8 @@ __d(
           "\u0645\u062c\u0627\u0646\u064a \u062d\u062a\u0649 %{when} \u2014 \u0628\u0639\u062f\u0647\u0627 \u062a\u0628\u0642\u0649 \u0627\u0644\u0631\u0633\u0648\u0645 \u0644\u0644\u0645\u0628\u0627\u0631\u0627\u0629.",
         refundDeadlinePassed:
           "\u0627\u0646\u062a\u0647\u062a \u0641\u062a\u0631\u0629 \u0627\u0644\u0625\u0644\u063a\u0627\u0621 \u0627\u0644\u0645\u062c\u0627\u0646\u064a \u0641\u064a %{when}.",
-        refundNoneWhy:
-          "\u0627\u0644\u0628\u062f\u0627\u064a\u0629 \u062e\u0644\u0627\u0644 \u0623\u0642\u0644 \u0645\u0646 \u0633\u0627\u0639\u062a\u064a\u0646.",
+        refundNoneWhy: "\u0627\u0644\u0628\u062f\u0627\u064a\u0629 \u062e\u0644\u0627\u0644 \u0623\u0642\u0644 \u0645\u0646 %{hours} \u0633\u0627\u0639\u0629.",
+        refundNoneWhyTwo: "\u0627\u0644\u0628\u062f\u0627\u064a\u0629 \u062e\u0644\u0627\u0644 \u0623\u0642\u0644 \u0645\u0646 \u0633\u0627\u0639\u062a\u064a\u0646.",
         refundFreeSpot:
           "\u0643\u0627\u0646 \u0645\u0642\u0639\u062f\u0627\u064b \u0645\u062c\u0627\u0646\u064a\u0627\u064b \u2014 \u0644\u0627 \u064a\u0648\u062c\u062f \u0645\u0628\u0644\u063a \u0644\u0627\u0633\u062a\u0631\u062f\u0627\u062f\u0647.",
         youPaidRow: "\u0627\u0644\u0645\u0628\u0644\u063a \u0627\u0644\u0645\u062f\u0641\u0648\u0639",
@@ -25226,8 +25230,8 @@ __d(
         leftTitle: "\u0644\u0642\u062f \u0627\u0646\u0633\u062d\u0628\u062a",
         leftRefundBody:
           "\u0633\u064a\u064f\u0639\u0627\u062f %{amount} \u0625\u0644\u0649 \u0645\u062d\u0641\u0638\u062a\u0643 \u062e\u0644\u0627\u0644 \u0662\u0664 \u0633\u0627\u0639\u0629.",
-        leftNoRefundBody:
-          "\u0644\u0627 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u2014 \u0643\u0627\u0646 \u0648\u0642\u062a \u0627\u0644\u0628\u062f\u0621 \u0623\u0642\u0644 \u0645\u0646 \u0633\u0627\u0639\u062a\u064a\u0646.",
+        leftNoRefundBody: "\u0644\u0627 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u2014 \u0643\u0627\u0646 \u0648\u0642\u062a \u0627\u0644\u0628\u062f\u0621 \u0623\u0642\u0644 \u0645\u0646 %{hours} \u0633\u0627\u0639\u0629.",
+        leftNoRefundBodyTwo: "\u0644\u0627 \u0627\u0633\u062a\u0631\u062f\u0627\u062f \u2014 \u0643\u0627\u0646 \u0648\u0642\u062a \u0627\u0644\u0628\u062f\u0621 \u0623\u0642\u0644 \u0645\u0646 \u0633\u0627\u0639\u062a\u064a\u0646.",
         spotReleasedTitle: "\u0623\u064f\u0637\u0644\u0642 \u0627\u0644\u0645\u0642\u0639\u062f",
         spotReleasedBody:
           "\u0644\u0645 \u064a\u064f\u062f\u0641\u0639 \u0623\u064a \u0645\u0628\u0644\u063a \u2014 \u0644\u0627 \u0634\u064a\u0621 \u0644\u0627\u0633\u062a\u0631\u062f\u0627\u062f\u0647.",
@@ -26363,8 +26367,8 @@ __d(
         refundsErrorBody:
           "\u062a\u0639\u0630\u0651\u0631 \u062a\u062d\u0645\u064a\u0644 \u062d\u062c\u0648\u0632\u0627\u062a\u0643. \u0644\u0645 \u064a\u062a\u063a\u064a\u0651\u0631 \u0634\u064a\u0621 \u0641\u064a \u0623\u0645\u0648\u0627\u0644\u0643.",
         forfeitKickoff: "\u0643\u0627\u0646\u062a \u0627\u0644\u0628\u062f\u0627\u064a\u0629 %{when}.",
-        forfeitWindowClosed:
-          "\u0627\u0646\u062a\u0647\u0649 \u0627\u0644\u0625\u0644\u063a\u0627\u0621 \u0627\u0644\u0645\u062c\u0627\u0646\u064a %{when}\u060c \u0623\u064a \u0642\u0628\u0644 \u0627\u0644\u0628\u062f\u0627\u064a\u0629 \u0628\u0633\u0627\u0639\u062a\u064a\u0646.",
+        forfeitWindowClosed: "\u0627\u0646\u062a\u0647\u0649 \u0627\u0644\u0625\u0644\u063a\u0627\u0621 \u0627\u0644\u0645\u062c\u0627\u0646\u064a %{when}\u060c \u0623\u064a \u0642\u0628\u0644 \u0627\u0644\u0628\u062f\u0627\u064a\u0629 \u0628\u0640 %{hours} \u0633\u0627\u0639\u0629.",
+        forfeitWindowClosedTwo: "\u0627\u0646\u062a\u0647\u0649 \u0627\u0644\u0625\u0644\u063a\u0627\u0621 \u0627\u0644\u0645\u062c\u0627\u0646\u064a %{when}\u060c \u0623\u064a \u0642\u0628\u0644 \u0627\u0644\u0628\u062f\u0627\u064a\u0629 \u0628\u0633\u0627\u0639\u062a\u064a\u0646.",
         forfeitYouLeft:
           "\u0627\u0646\u0633\u062d\u0628\u062a %{when}\u060c \u0641\u0628\u0642\u064a\u062a \u0627\u0644\u0631\u0633\u0648\u0645 \u0644\u0644\u0645\u0628\u0627\u0631\u0627\u0629.",
         browseGames: "\u062a\u0635\u0641\u062d",
@@ -29576,6 +29580,8 @@ __d(
   909,
   [],
 );
+
+
 
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.useT=void 0;var u=r(d[0]),o=r(d[1]);e.useT=()=>((0,u.useLocale)(),o.t)},910,[911,675]);
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.useLocale=e.LocaleProvider=void 0;var o=r(d[1]),l=t(r(d[2])),n=(t(r(d[3])),t(r(d[4]))),s=r(d[5]),c=r(d[6]),u=r(d[7]);const f='playora.locale',L='playora.region.v1',v=(0,o.createContext)(void 0),y=(t,o)=>{l.default.isRTL!==t&&(l.default.allowRTL(t),l.default.forceRTL(t)),'undefined'!=typeof document&&(document.documentElement.dir=t?'rtl':'ltr',document.documentElement.lang=o)};e.LocaleProvider=({children:t})=>{const[l,R]=(0,o.useState)((0,s.getLocale)()),[b,p]=(0,o.useState)((0,c.getRegionSettings)());(0,o.useEffect)(()=>{n.default.getItem(f).then(t=>{'en'===t||'ar'===t?((0,s.setLocale)(t),R(t),y('ar'===t,t)):y('ar'===(0,s.getLocale)(),(0,s.getLocale)())}),n.default.getItem(L).then(t=>{if(t)try{const o=Object.assign({},c.DEFAULT_REGION,JSON.parse(t));p((0,c.setRegionSettings)(o))}catch{}})},[]);const h=(0,o.useCallback)(async t=>{await n.default.setItem(f,t),(0,s.setLocale)(t),R(t),y('ar'===t,t)},[]),w=(0,o.useCallback)(async t=>{p(Object.assign({},t)),await n.default.setItem(L,JSON.stringify(t))},[]),S=(0,o.useCallback)(async t=>{await w((0,c.setRegionSettings)(t))},[w]),C=(0,o.useCallback)(async t=>{await w((0,c.applyRegionDefaults)(t))},[w]),E=(0,o.useMemo)(()=>({locale:l,isRTL:'ar'===l,setLocale:h,region:b,updateRegion:S,chooseRegion:C}),[l,h,b,S,C]);return(0,u.jsx)(v.Provider,{value:E,children:t})};e.useLocale=()=>{const t=(0,o.useContext)(v);if(!t)throw new Error('useLocale must be used inside <LocaleProvider>');return t}},911,[33,15,132,137,618,675,912,13]);
@@ -44805,8 +44811,554 @@ __d(
     671, 2380, 2381, 668, 2382, 1311, 675, 1171, 2383, 1676, 2385, 2386, 1679, 2387, 2389, 623, 1803, 674, 13,
   ],
 );
-__d(function(g,r,i,a,_m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.CheckoutSheet=void 0;var t=r(d[1]),l=e(r(d[2])),o=e(r(d[3])),s=e(r(d[4])),n=e(r(d[5])),c=e(r(d[6])),u=e(r(d[7])),p=r(d[8]),y=r(d[9]),h=r(d[10]),x=r(d[11]),f=r(d[12]),m=r(d[13]),b=r(d[14]),j=r(d[15]),w=r(d[16]),T=r(d[17]),v=r(d[18]),C=r(d[19]);const S=b.PAYMENT_METHODS.filter(e=>e.online);_e.CheckoutSheet=({visible:e,gameId:n,priceKwd:b,userId:P,summary:W,onClose:k,onDone:A})=>{const{colors:I}=(0,h.useTheme)(),_=(0,T.useT)(),D=(0,x.useReducedMotion)(),[B,E]=(0,t.useState)('wallet'),[O,V]=(0,t.useState)(null),[F,L]=(0,t.useState)(!1),[z,H]=(0,t.useState)(null);(0,t.useEffect)(()=>{if(!e)return H(null),void L(!1);E('wallet'),(0,m.fetchWallet)(P).then(e=>V(e.available_fils+e.credits_fils)).catch(()=>V(null))},[e,P]);const K='wallet'===B&&null!=O&&O<Math.round(1e3*b);return(0,C.jsx)(o.default,{visible:e,transparent:!0,animationType:(0,x.sheetAnimation)(D),onRequestClose:k,children:(0,C.jsx)(s.default,{style:M.scrim,onPress:k,accessibilityRole:"button",accessibilityLabel:_('cancel'),children:(0,C.jsxs)(s.default,{style:[M.sheet,{backgroundColor:I.surface}],onPress:()=>{},accessibilityViewIsModal:!0,children:[(0,C.jsx)(c.default,{style:[f.typography.h3,{color:I.text}],children:_(W?'reviewBookingTitle':'checkoutTitle')}),W&&(0,C.jsxs)(u.default,{style:[M.summary,{backgroundColor:I.surfaceAlt,borderColor:I.border}],children:[(0,C.jsx)(R,{label:_('reviewGameRow'),value:W.title,colors:I}),(0,C.jsx)(R,{label:_('reviewVenueRow'),value:W.venue,colors:I}),(0,C.jsx)(R,{label:_('reviewDateRow'),value:W.when,colors:I}),(0,C.jsx)(R,{label:_('reviewSpotRow'),value:W.spot,colors:I})]}),(0,C.jsxs)(u.default,{style:[M.row,{borderColor:I.border,marginTop:f.spacing.md}],children:[(0,C.jsx)(c.default,{style:[f.typography.body,{color:I.textMuted,flex:1}],children:_(W?'reviewGameFee':'perPlayer')}),(0,C.jsx)(c.default,{style:[f.typography.body,{color:I.text}],children:(0,j.formatAmount)(b)})]}),(0,C.jsxs)(u.default,{style:[M.row,{borderColor:I.border}],children:[(0,C.jsx)(c.default,{style:[f.typography.body,{color:I.textMuted,flex:1}],children:_('reviewPlayoraFee')}),(0,C.jsx)(c.default,{style:[f.typography.body,{color:I.textMuted}],children:(0,j.formatAmount)(0)})]}),(0,C.jsxs)(u.default,{style:[M.total,{borderColor:I.text}],children:[(0,C.jsx)(c.default,{style:[f.typography.bodyStrong,{color:I.text,flex:1}],children:_('reviewYouPay')}),(0,C.jsx)(c.default,{style:[f.typography.h3,{color:I.accentText}],children:(0,j.formatAmount)(b)})]}),null!=O&&(0,C.jsxs)(u.default,{style:[M.row,{borderColor:I.border}],children:[(0,C.jsx)(c.default,{style:[f.typography.body,{color:I.textMuted,flex:1}],children:_('walletBalanceLine')}),(0,C.jsx)(c.default,{style:[f.typography.bodyStrong,{color:I.text}],children:(0,j.formatAmount)(O/1e3)})]}),K&&(0,C.jsx)(c.default,{style:[f.typography.caption,{color:I.warning,marginTop:f.spacing.xs}],children:_('remainderOnKnet')}),(0,C.jsx)(u.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:f.spacing.xs,marginTop:f.spacing.md},children:S.map(e=>{const t=B===e.method;return(0,C.jsx)(s.default,{onPress:()=>E(e.method),accessibilityRole:"button",accessibilityState:{selected:t},style:[M.chip,{backgroundColor:t?I.accent:I.surfaceAlt,borderColor:t?I.accent:I.border}],children:(0,C.jsxs)(c.default,{style:[f.typography.smallStrong,{color:t?I.accentInk:I.text}],children:[e.emoji?`${e.emoji} `:'',_(e.labelKey)]})},e.method)})}),(0,C.jsx)(c.default,{style:[f.typography.caption,{color:I.textMuted,marginTop:f.spacing.md}],children:_('refundPolicyNote',{hours:v.SEAT_REFUND_CUTOFF_HOURS})}),z&&(0,C.jsxs)(u.default,{style:{flexDirection:'row',alignItems:'center',marginTop:f.spacing.md},children:[(0,C.jsx)(p.Ionicons,{name:"alert-circle",size:16,color:I.danger}),(0,C.jsx)(c.default,{style:[f.typography.small,{color:I.danger,marginStart:6,flex:1}],children:z})]}),(0,C.jsxs)(u.default,{style:{marginTop:f.spacing.lg},children:[F?(0,C.jsx)(u.default,{style:{alignItems:'center',paddingVertical:f.spacing.sm},children:(0,C.jsx)(l.default,{color:I.accentText})}):(0,C.jsx)(y.Button,{title:_('payAmountBtn',{amount:(0,j.formatPrice)(b)}),fullWidth:!0,size:"lg",onPress:async()=>{L(!0),H(null);try{const e=await(0,m.checkoutJoin)(P,n,B);A(e)}catch(e){H((0,w.storeErrorText)(String(e?.message??'')))}finally{L(!1)}}}),(0,C.jsx)(u.default,{style:{height:f.spacing.sm}}),(0,C.jsx)(y.Button,{title:_('cancel'),variant:"ghost",fullWidth:!0,onPress:k})]})]})})})};const R=({label:e,value:t,colors:l})=>(0,C.jsxs)(u.default,{style:{flexDirection:'row',alignItems:'center',gap:f.spacing.md,paddingVertical:4},children:[(0,C.jsx)(c.default,{style:[f.typography.small,{color:l.textMuted,flex:1}],children:e}),(0,C.jsx)(c.default,{style:[f.typography.small,{color:l.text,maxWidth:'62%'}],numberOfLines:1,children:t})]}),M=n.default.create({scrim:{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'flex-end'},sheet:{borderTopLeftRadius:f.radius.xl,borderTopRightRadius:f.radius.xl,padding:f.spacing.lg,paddingBottom:f.spacing.xxxl},row:{flexDirection:'row',alignItems:'center',paddingVertical:f.spacing.sm,borderBottomWidth:n.default.hairlineWidth},chip:{paddingVertical:f.spacing.sm,paddingHorizontal:f.spacing.md,borderRadius:f.radius.pill,borderWidth:n.default.hairlineWidth},summary:{borderRadius:f.radius.lg,borderWidth:n.default.hairlineWidth,padding:f.spacing.md,marginTop:f.spacing.md},total:{flexDirection:'row',alignItems:'center',paddingTop:f.spacing.sm,marginTop:2,borderTopWidth:1}})},2380,[33,15,461,467,369,158,146,273,1086,626,615,1621,616,671,668,1311,674,675,631,13]);
-__d(function(g,r,i,a,m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.LeaveMatchSheet=void 0;var t=r(d[1]),l=e(r(d[2])),s=e(r(d[3])),n=e(r(d[4])),o=e(r(d[5])),c=e(r(d[6])),u=e(r(d[7])),f=r(d[8]),p=r(d[9]),h=r(d[10]),x=r(d[11]),y=r(d[12]),j=r(d[13]),b=r(d[14]),T=r(d[15]),v=r(d[16]),R=r(d[17]),w=r(d[18]),S=r(d[19]);_e.LeaveMatchSheet=({visible:e,gameId:o,userId:M,startsAt:I,paidKwd:A,onClose:C,onLeft:B})=>{const{colors:P}=(0,x.useTheme)(),F=(0,w.useT)(),D=(0,y.useReducedMotion)(),L=(0,p.useRouter)(),[z,E]=(0,t.useState)(!1),[W,V]=(0,t.useState)(null),[N,O]=(0,t.useState)(null);(0,t.useEffect)(()=>{e||(V(null),O(null),E(!1))},[e]);const[U,G]=(0,t.useState)(null);(0,t.useEffect)(()=>{if(!e)return void G(null);let t=!0;return(0,T.fetchSeatRefundQuote)(M,o).then(e=>{t&&G(e)}).catch(()=>{}),()=>{t=!1}},[e,M,o]);const q=(U?.paid_kwd??A)>0,H=U?.eligible??!1,K=U?.refund_kwd??0,Q=U?.paid_kwd??A;return(0,S.jsx)(s.default,{visible:e,transparent:!0,animationType:(0,y.sheetAnimation)(D),onRequestClose:C,children:(0,S.jsx)(n.default,{style:k.scrim,onPress:W?void 0:C,accessibilityRole:"button",accessibilityLabel:F('closeLabel'),children:(0,S.jsx)(n.default,{style:[k.sheet,{backgroundColor:P.surface}],onPress:()=>{},accessibilityViewIsModal:!0,children:W?(0,S.jsxs)(u.default,{style:{alignItems:'center',paddingVertical:j.spacing.lg},children:[(0,S.jsx)(f.Ionicons,{name:'past_cutoff'===W.reason?'close-circle':'checkmark-circle',size:56,color:'past_cutoff'===W.reason?P.danger:P.success}),(0,S.jsx)(c.default,{style:[j.typography.h2,{color:P.text,marginTop:j.spacing.md,textAlign:'center'}],children:W.paid_kwd>0?F('leftTitle'):F('spotReleasedTitle')}),(0,S.jsx)(c.default,{style:[j.typography.small,{color:P.textMuted,marginTop:j.spacing.sm,textAlign:'center'}],children:W.refunded?F('leftRefundBody',{amount:(0,v.formatAmount)(W.refund_kwd)}):'past_cutoff'===W.reason?F('leftNoRefundBody',{hours:b.SEAT_REFUND_CUTOFF_HOURS}):F('spotReleasedBody')}),(0,S.jsx)(u.default,{style:{height:j.spacing.lg}}),(0,S.jsx)(h.Button,{title:F('backToGames'),fullWidth:!0,size:"lg",onPress:()=>{C(),L.replace('/(tabs)')}})]}):(0,S.jsxs)(S.Fragment,{children:[(0,S.jsx)(c.default,{style:[j.typography.h3,{color:P.text}],children:F('cancelSeatTitle')}),(0,S.jsx)(u.default,{style:[k.card,{backgroundColor:P.surfaceAlt,borderColor:P.border}],children:q?(0,S.jsxs)(S.Fragment,{children:[(0,S.jsxs)(u.default,{style:{flexDirection:'row',alignItems:'center',gap:j.spacing.sm},children:[(0,S.jsx)(f.Ionicons,{name:H?'checkmark-circle':'warning',size:18,color:H?P.success:P.danger}),(0,S.jsx)(c.default,{style:[j.typography.smallStrong,{color:P.text,flex:1}],children:F(H?'refundFullTitle':'refundNoneTitle')})]}),(0,S.jsxs)(u.default,{style:{marginTop:j.spacing.sm},children:[(0,S.jsx)(_,{label:F('youPaidRow'),value:(0,v.formatAmount)(Q),colors:P}),(0,S.jsx)(_,{label:F('refundRow'),value:(0,v.formatAmount)(K),colors:P,tone:H?'success':'muted'}),(0,S.jsx)(_,{label:F('youReceiveRow'),value:(0,v.formatAmount)(K),colors:P,tone:H?'success':'muted',strong:!0})]}),U&&(0,S.jsx)(c.default,{style:[j.typography.caption,{color:P.textMuted,marginTop:j.spacing.sm}],children:F(H?'refundDeadlineBefore':'refundDeadlinePassed',{when:(0,v.formatGameTime)(U.deadline)})})]}):(0,S.jsx)(c.default,{style:[j.typography.small,{color:P.textMuted}],children:F('refundFreeSpot')})}),N&&(0,S.jsxs)(u.default,{style:{flexDirection:'row',alignItems:'center',gap:6,marginTop:j.spacing.md},children:[(0,S.jsx)(f.Ionicons,{name:"alert-circle",size:16,color:P.danger}),(0,S.jsx)(c.default,{style:[j.typography.small,{color:P.danger,flex:1}],children:N})]}),(0,S.jsxs)(u.default,{style:{marginTop:j.spacing.lg},children:[z?(0,S.jsx)(u.default,{style:{alignItems:'center',paddingVertical:j.spacing.sm},children:(0,S.jsx)(l.default,{color:P.accentText})}):(0,S.jsx)(h.Button,{title:F('leaveConfirmCta'),variant:"danger",fullWidth:!0,size:"lg",onPress:async()=>{E(!0),O(null);try{const e=await(0,T.leaveMatch)(o,M);V(e),B()}catch(e){O((0,R.storeErrorText)(String(e?.message??'')))}finally{E(!1)}}}),(0,S.jsx)(u.default,{style:{height:j.spacing.sm}}),(0,S.jsx)(h.Button,{title:F('keepMySpot'),variant:"ghost",fullWidth:!0,onPress:C})]})]})})})})};const _=({label:e,value:t,colors:l,tone:s,strong:n})=>(0,S.jsxs)(u.default,{style:{flexDirection:'row',alignItems:'center',gap:j.spacing.md,paddingVertical:4},children:[(0,S.jsx)(c.default,{style:[j.typography.small,{color:l.textMuted,flex:1}],children:e}),(0,S.jsx)(c.default,{style:[n?j.typography.bodyStrong:j.typography.small,{color:'success'===s?l.success:'muted'===s?l.textMuted:l.text}],children:t})]}),k=o.default.create({scrim:{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'flex-end'},sheet:{borderTopLeftRadius:j.radius.xl,borderTopRightRadius:j.radius.xl,padding:j.spacing.lg,paddingBottom:j.spacing.xxxl},card:{borderRadius:j.radius.lg,borderWidth:o.default.hairlineWidth,padding:j.spacing.md,marginTop:j.spacing.md}})},2381,[33,15,461,467,369,158,146,273,1086,20,626,615,1621,616,670,671,1311,674,675,13]);
+__d(
+  function (g, r, i, a, _m, _e, d) {
+    var e = r(d[0]);
+    (Object.defineProperty(_e, "__esModule", { value: !0 }), (_e.CheckoutSheet = void 0));
+    var t = r(d[1]),
+      l = e(r(d[2])),
+      o = e(r(d[3])),
+      s = e(r(d[4])),
+      n = e(r(d[5])),
+      c = e(r(d[6])),
+      u = e(r(d[7])),
+      p = r(d[8]),
+      y = r(d[9]),
+      h = r(d[10]),
+      x = r(d[11]),
+      f = r(d[12]),
+      m = r(d[13]),
+      b = r(d[14]),
+      j = r(d[15]),
+      w = r(d[16]),
+      T = r(d[17]),
+      v = r(d[18]),
+      C = r(d[19]);
+    const S = b.PAYMENT_METHODS.filter((e) => e.online);
+    _e.CheckoutSheet = ({
+      visible: e,
+      gameId: n,
+      priceKwd: b,
+      userId: P,
+      summary: W,
+      onClose: k,
+      onDone: A,
+    }) => {
+      const { colors: I } = (0, h.useTheme)(),
+        _ = (0, T.useT)(),
+        D = (0, x.useReducedMotion)(),
+        [B, E] = (0, t.useState)("wallet"),
+        [O, V] = (0, t.useState)(null),
+        [F, L] = (0, t.useState)(!1),
+        [z, H] = (0, t.useState)(null);
+      (0, t.useEffect)(() => {
+        if (!e) return (H(null), void L(!1));
+        (E("wallet"),
+          (0, m.fetchWallet)(P)
+            .then((e) => V(e.available_fils + e.credits_fils))
+            .catch(() => V(null)));
+      }, [e, P]);
+      const K = "wallet" === B && null != O && O < Math.round(1e3 * b);
+      return (0, C.jsx)(o.default, {
+        visible: e,
+        transparent: !0,
+        animationType: (0, x.sheetAnimation)(D),
+        onRequestClose: k,
+        children: (0, C.jsx)(s.default, {
+          style: M.scrim,
+          onPress: k,
+          accessibilityRole: "button",
+          accessibilityLabel: _("cancel"),
+          children: (0, C.jsxs)(s.default, {
+            style: [M.sheet, { backgroundColor: I.surface }],
+            onPress: () => {},
+            accessibilityViewIsModal: !0,
+            children: [
+              (0, C.jsx)(c.default, {
+                style: [f.typography.h3, { color: I.text }],
+                children: _(W ? "reviewBookingTitle" : "checkoutTitle"),
+              }),
+              W &&
+                (0, C.jsxs)(u.default, {
+                  style: [M.summary, { backgroundColor: I.surfaceAlt, borderColor: I.border }],
+                  children: [
+                    (0, C.jsx)(R, { label: _("reviewGameRow"), value: W.title, colors: I }),
+                    (0, C.jsx)(R, { label: _("reviewVenueRow"), value: W.venue, colors: I }),
+                    (0, C.jsx)(R, { label: _("reviewDateRow"), value: W.when, colors: I }),
+                    (0, C.jsx)(R, { label: _("reviewSpotRow"), value: W.spot, colors: I }),
+                  ],
+                }),
+              (0, C.jsxs)(u.default, {
+                style: [M.row, { borderColor: I.border, marginTop: f.spacing.md }],
+                children: [
+                  (0, C.jsx)(c.default, {
+                    style: [f.typography.body, { color: I.textMuted, flex: 1 }],
+                    children: _(W ? "reviewGameFee" : "perPlayer"),
+                  }),
+                  (0, C.jsx)(c.default, {
+                    style: [f.typography.body, { color: I.text }],
+                    children: (0, j.formatAmount)(b),
+                  }),
+                ],
+              }),
+              (0, C.jsxs)(u.default, {
+                style: [M.row, { borderColor: I.border }],
+                children: [
+                  (0, C.jsx)(c.default, {
+                    style: [f.typography.body, { color: I.textMuted, flex: 1 }],
+                    children: _("reviewPlayoraFee"),
+                  }),
+                  (0, C.jsx)(c.default, {
+                    style: [f.typography.body, { color: I.textMuted }],
+                    children: (0, j.formatAmount)(0),
+                  }),
+                ],
+              }),
+              (0, C.jsxs)(u.default, {
+                style: [M.total, { borderColor: I.text }],
+                children: [
+                  (0, C.jsx)(c.default, {
+                    style: [f.typography.bodyStrong, { color: I.text, flex: 1 }],
+                    children: _("reviewYouPay"),
+                  }),
+                  (0, C.jsx)(c.default, {
+                    style: [f.typography.h3, { color: I.accentText }],
+                    children: (0, j.formatAmount)(b),
+                  }),
+                ],
+              }),
+              null != O &&
+                (0, C.jsxs)(u.default, {
+                  style: [M.row, { borderColor: I.border }],
+                  children: [
+                    (0, C.jsx)(c.default, {
+                      style: [f.typography.body, { color: I.textMuted, flex: 1 }],
+                      children: _("walletBalanceLine"),
+                    }),
+                    (0, C.jsx)(c.default, {
+                      style: [f.typography.bodyStrong, { color: I.text }],
+                      children: (0, j.formatAmount)(O / 1e3),
+                    }),
+                  ],
+                }),
+              K &&
+                (0, C.jsx)(c.default, {
+                  style: [f.typography.caption, { color: I.warning, marginTop: f.spacing.xs }],
+                  children: _("remainderOnKnet"),
+                }),
+              (0, C.jsx)(u.default, {
+                style: { flexDirection: "row", flexWrap: "wrap", gap: f.spacing.xs, marginTop: f.spacing.md },
+                children: S.map((e) => {
+                  const t = B === e.method;
+                  return (0, C.jsx)(
+                    s.default,
+                    {
+                      onPress: () => E(e.method),
+                      accessibilityRole: "button",
+                      accessibilityState: { selected: t },
+                      style: [
+                        M.chip,
+                        {
+                          backgroundColor: t ? I.accent : I.surfaceAlt,
+                          borderColor: t ? I.accent : I.border,
+                        },
+                      ],
+                      children: (0, C.jsxs)(c.default, {
+                        style: [f.typography.smallStrong, { color: t ? I.accentInk : I.text }],
+                        children: [e.emoji ? `${e.emoji} ` : "", _(e.labelKey)],
+                      }),
+                    },
+                    e.method,
+                  );
+                }),
+              }),
+              (0, C.jsx)(c.default, {
+                style: [f.typography.caption, { color: I.textMuted, marginTop: f.spacing.md }],
+                // The Arabic copy used to hardcode the dual form of "two hours" instead of
+                // interpolating, so moving SEAT_REFUND_CUTOFF_HOURS told English users the new window
+                // and Arabic users the old one, on the screens that decide whether their money comes
+                // back. The base string now interpolates; the dual form survives as a Two sibling
+                // because Arabic agreement makes "%{hours} hours" wrong when the number is exactly 2.
+                children: _(
+                  2 === v.SEAT_REFUND_CUTOFF_HOURS ? "refundPolicyNoteTwo" : "refundPolicyNote",
+                  { hours: v.SEAT_REFUND_CUTOFF_HOURS },
+                ),
+              }),
+              z &&
+                (0, C.jsxs)(u.default, {
+                  style: { flexDirection: "row", alignItems: "center", marginTop: f.spacing.md },
+                  children: [
+                    (0, C.jsx)(p.Ionicons, { name: "alert-circle", size: 16, color: I.danger }),
+                    (0, C.jsx)(c.default, {
+                      style: [f.typography.small, { color: I.danger, marginStart: 6, flex: 1 }],
+                      children: z,
+                    }),
+                  ],
+                }),
+              (0, C.jsxs)(u.default, {
+                style: { marginTop: f.spacing.lg },
+                children: [
+                  F
+                    ? (0, C.jsx)(u.default, {
+                        style: { alignItems: "center", paddingVertical: f.spacing.sm },
+                        children: (0, C.jsx)(l.default, { color: I.accentText }),
+                      })
+                    : (0, C.jsx)(y.Button, {
+                        title: _("payAmountBtn", { amount: (0, j.formatPrice)(b) }),
+                        fullWidth: !0,
+                        size: "lg",
+                        onPress: async () => {
+                          (L(!0), H(null));
+                          try {
+                            const e = await (0, m.checkoutJoin)(P, n, B);
+                            A(e);
+                          } catch (e) {
+                            H((0, w.storeErrorText)(String(e?.message ?? "")));
+                          } finally {
+                            L(!1);
+                          }
+                        },
+                      }),
+                  (0, C.jsx)(u.default, { style: { height: f.spacing.sm } }),
+                  (0, C.jsx)(y.Button, { title: _("cancel"), variant: "ghost", fullWidth: !0, onPress: k }),
+                ],
+              }),
+            ],
+          }),
+        }),
+      });
+    };
+    const R = ({ label: e, value: t, colors: l }) =>
+        (0, C.jsxs)(u.default, {
+          style: { flexDirection: "row", alignItems: "center", gap: f.spacing.md, paddingVertical: 4 },
+          children: [
+            (0, C.jsx)(c.default, {
+              style: [f.typography.small, { color: l.textMuted, flex: 1 }],
+              children: e,
+            }),
+            (0, C.jsx)(c.default, {
+              style: [f.typography.small, { color: l.text, maxWidth: "62%" }],
+              numberOfLines: 1,
+              children: t,
+            }),
+          ],
+        }),
+      M = n.default.create({
+        scrim: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+        sheet: {
+          borderTopLeftRadius: f.radius.xl,
+          borderTopRightRadius: f.radius.xl,
+          padding: f.spacing.lg,
+          paddingBottom: f.spacing.xxxl,
+        },
+        row: {
+          flexDirection: "row",
+          alignItems: "center",
+          paddingVertical: f.spacing.sm,
+          borderBottomWidth: n.default.hairlineWidth,
+        },
+        chip: {
+          paddingVertical: f.spacing.sm,
+          paddingHorizontal: f.spacing.md,
+          borderRadius: f.radius.pill,
+          borderWidth: n.default.hairlineWidth,
+        },
+        summary: {
+          borderRadius: f.radius.lg,
+          borderWidth: n.default.hairlineWidth,
+          padding: f.spacing.md,
+          marginTop: f.spacing.md,
+        },
+        total: {
+          flexDirection: "row",
+          alignItems: "center",
+          paddingTop: f.spacing.sm,
+          marginTop: 2,
+          borderTopWidth: 1,
+        },
+      });
+  },
+  2380,
+  [33, 15, 461, 467, 369, 158, 146, 273, 1086, 626, 615, 1621, 616, 671, 668, 1311, 674, 675, 631, 13],
+);
+
+__d(
+  function (g, r, i, a, m, _e, d) {
+    var e = r(d[0]);
+    (Object.defineProperty(_e, "__esModule", { value: !0 }), (_e.LeaveMatchSheet = void 0));
+    var t = r(d[1]),
+      l = e(r(d[2])),
+      s = e(r(d[3])),
+      n = e(r(d[4])),
+      o = e(r(d[5])),
+      c = e(r(d[6])),
+      u = e(r(d[7])),
+      f = r(d[8]),
+      p = r(d[9]),
+      h = r(d[10]),
+      x = r(d[11]),
+      y = r(d[12]),
+      j = r(d[13]),
+      b = r(d[14]),
+      T = r(d[15]),
+      v = r(d[16]),
+      R = r(d[17]),
+      w = r(d[18]),
+      S = r(d[19]);
+    _e.LeaveMatchSheet = ({
+      visible: e,
+      gameId: o,
+      userId: M,
+      startsAt: I,
+      paidKwd: A,
+      onClose: C,
+      onLeft: B,
+    }) => {
+      const { colors: P } = (0, x.useTheme)(),
+        F = (0, w.useT)(),
+        D = (0, y.useReducedMotion)(),
+        L = (0, p.useRouter)(),
+        [z, E] = (0, t.useState)(!1),
+        [W, V] = (0, t.useState)(null),
+        [N, O] = (0, t.useState)(null);
+      (0, t.useEffect)(() => {
+        e || (V(null), O(null), E(!1));
+      }, [e]);
+      const [U, G] = (0, t.useState)(null);
+      (0, t.useEffect)(() => {
+        if (!e) return void G(null);
+        let t = !0;
+        return (
+          (0, T.fetchSeatRefundQuote)(M, o)
+            .then((e) => {
+              t && G(e);
+            })
+            .catch(() => {}),
+          () => {
+            t = !1;
+          }
+        );
+      }, [e, M, o]);
+      const q = (U?.paid_kwd ?? A) > 0,
+        H = U?.eligible ?? !1,
+        K = U?.refund_kwd ?? 0,
+        Q = U?.paid_kwd ?? A;
+      return (0, S.jsx)(s.default, {
+        visible: e,
+        transparent: !0,
+        animationType: (0, y.sheetAnimation)(D),
+        onRequestClose: C,
+        children: (0, S.jsx)(n.default, {
+          style: k.scrim,
+          onPress: W ? void 0 : C,
+          accessibilityRole: "button",
+          accessibilityLabel: F("closeLabel"),
+          children: (0, S.jsx)(n.default, {
+            style: [k.sheet, { backgroundColor: P.surface }],
+            onPress: () => {},
+            accessibilityViewIsModal: !0,
+            children: W
+              ? (0, S.jsxs)(u.default, {
+                  style: { alignItems: "center", paddingVertical: j.spacing.lg },
+                  children: [
+                    (0, S.jsx)(f.Ionicons, {
+                      name: "past_cutoff" === W.reason ? "close-circle" : "checkmark-circle",
+                      size: 56,
+                      color: "past_cutoff" === W.reason ? P.danger : P.success,
+                    }),
+                    (0, S.jsx)(c.default, {
+                      style: [
+                        j.typography.h2,
+                        { color: P.text, marginTop: j.spacing.md, textAlign: "center" },
+                      ],
+                      children: W.paid_kwd > 0 ? F("leftTitle") : F("spotReleasedTitle"),
+                    }),
+                    (0, S.jsx)(c.default, {
+                      style: [
+                        j.typography.small,
+                        { color: P.textMuted, marginTop: j.spacing.sm, textAlign: "center" },
+                      ],
+                      children: W.refunded
+                        ? F("leftRefundBody", { amount: (0, v.formatAmount)(W.refund_kwd) })
+                        : "past_cutoff" === W.reason
+                          ? // Two picks the Arabic dual form; see the note in 2380.
+                            F(
+                              2 === b.SEAT_REFUND_CUTOFF_HOURS
+                                ? "leftNoRefundBodyTwo"
+                                : "leftNoRefundBody",
+                              { hours: b.SEAT_REFUND_CUTOFF_HOURS },
+                            )
+                          : F("spotReleasedBody"),
+                    }),
+                    (0, S.jsx)(u.default, { style: { height: j.spacing.lg } }),
+                    (0, S.jsx)(h.Button, {
+                      title: F("backToGames"),
+                      fullWidth: !0,
+                      size: "lg",
+                      onPress: () => {
+                        (C(), L.replace("/(tabs)"));
+                      },
+                    }),
+                  ],
+                })
+              : (0, S.jsxs)(S.Fragment, {
+                  children: [
+                    (0, S.jsx)(c.default, {
+                      style: [j.typography.h3, { color: P.text }],
+                      children: F("cancelSeatTitle"),
+                    }),
+                    (0, S.jsx)(u.default, {
+                      style: [k.card, { backgroundColor: P.surfaceAlt, borderColor: P.border }],
+                      children: q
+                        ? (0, S.jsxs)(S.Fragment, {
+                            children: [
+                              (0, S.jsxs)(u.default, {
+                                style: { flexDirection: "row", alignItems: "center", gap: j.spacing.sm },
+                                children: [
+                                  (0, S.jsx)(f.Ionicons, {
+                                    name: H ? "checkmark-circle" : "warning",
+                                    size: 18,
+                                    color: H ? P.success : P.danger,
+                                  }),
+                                  (0, S.jsx)(c.default, {
+                                    style: [j.typography.smallStrong, { color: P.text, flex: 1 }],
+                                    children: F(H ? "refundFullTitle" : "refundNoneTitle"),
+                                  }),
+                                ],
+                              }),
+                              (0, S.jsxs)(u.default, {
+                                style: { marginTop: j.spacing.sm },
+                                children: [
+                                  (0, S.jsx)(_, {
+                                    label: F("youPaidRow"),
+                                    value: (0, v.formatAmount)(Q),
+                                    colors: P,
+                                  }),
+                                  (0, S.jsx)(_, {
+                                    label: F("refundRow"),
+                                    value: (0, v.formatAmount)(K),
+                                    colors: P,
+                                    tone: H ? "success" : "muted",
+                                  }),
+                                  (0, S.jsx)(_, {
+                                    label: F("youReceiveRow"),
+                                    value: (0, v.formatAmount)(K),
+                                    colors: P,
+                                    tone: H ? "success" : "muted",
+                                    strong: !0,
+                                  }),
+                                ],
+                              }),
+                              U &&
+                                (0, S.jsx)(c.default, {
+                                  style: [
+                                    j.typography.caption,
+                                    { color: P.textMuted, marginTop: j.spacing.sm },
+                                  ],
+                                  children: F(H ? "refundDeadlineBefore" : "refundDeadlinePassed", {
+                                    when: (0, v.formatGameTime)(U.deadline),
+                                  }),
+                                }),
+                            ],
+                          })
+                        : (0, S.jsx)(c.default, {
+                            style: [j.typography.small, { color: P.textMuted }],
+                            children: F("refundFreeSpot"),
+                          }),
+                    }),
+                    N &&
+                      (0, S.jsxs)(u.default, {
+                        style: {
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 6,
+                          marginTop: j.spacing.md,
+                        },
+                        children: [
+                          (0, S.jsx)(f.Ionicons, { name: "alert-circle", size: 16, color: P.danger }),
+                          (0, S.jsx)(c.default, {
+                            style: [j.typography.small, { color: P.danger, flex: 1 }],
+                            children: N,
+                          }),
+                        ],
+                      }),
+                    (0, S.jsxs)(u.default, {
+                      style: { marginTop: j.spacing.lg },
+                      children: [
+                        z
+                          ? (0, S.jsx)(u.default, {
+                              style: { alignItems: "center", paddingVertical: j.spacing.sm },
+                              children: (0, S.jsx)(l.default, { color: P.accentText }),
+                            })
+                          : (0, S.jsx)(h.Button, {
+                              title: F("leaveConfirmCta"),
+                              variant: "danger",
+                              fullWidth: !0,
+                              size: "lg",
+                              onPress: async () => {
+                                (E(!0), O(null));
+                                try {
+                                  const e = await (0, T.leaveMatch)(o, M);
+                                  (V(e), B());
+                                } catch (e) {
+                                  O((0, R.storeErrorText)(String(e?.message ?? "")));
+                                } finally {
+                                  E(!1);
+                                }
+                              },
+                            }),
+                        (0, S.jsx)(u.default, { style: { height: j.spacing.sm } }),
+                        (0, S.jsx)(h.Button, {
+                          title: F("keepMySpot"),
+                          variant: "ghost",
+                          fullWidth: !0,
+                          onPress: C,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+          }),
+        }),
+      });
+    };
+    const _ = ({ label: e, value: t, colors: l, tone: s, strong: n }) =>
+        (0, S.jsxs)(u.default, {
+          style: { flexDirection: "row", alignItems: "center", gap: j.spacing.md, paddingVertical: 4 },
+          children: [
+            (0, S.jsx)(c.default, {
+              style: [j.typography.small, { color: l.textMuted, flex: 1 }],
+              children: e,
+            }),
+            (0, S.jsx)(c.default, {
+              style: [
+                n ? j.typography.bodyStrong : j.typography.small,
+                { color: "success" === s ? l.success : "muted" === s ? l.textMuted : l.text },
+              ],
+              children: t,
+            }),
+          ],
+        }),
+      k = o.default.create({
+        scrim: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+        sheet: {
+          borderTopLeftRadius: j.radius.xl,
+          borderTopRightRadius: j.radius.xl,
+          padding: j.spacing.lg,
+          paddingBottom: j.spacing.xxxl,
+        },
+        card: {
+          borderRadius: j.radius.lg,
+          borderWidth: o.default.hairlineWidth,
+          padding: j.spacing.md,
+          marginTop: j.spacing.md,
+        },
+      });
+  },
+  2381,
+  [33, 15, 461, 467, 369, 158, 146, 273, 1086, 20, 626, 615, 1621, 616, 670, 671, 1311, 674, 675, 13],
+);
+
 __d(
   function (g, r, i, _a, m, e, d) {
     var t = r(d[0]);
@@ -56390,7 +56942,391 @@ __d(
     13,
   ],
 );
-__d(function(g,_r,i,_a,_m,_e,d){var e=_r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{user:e}=(0,h.useAuth)(),{colors:n}=(0,x.useTheme)(),m=(0,p.useRouter)(),b=(0,S.useT)(),[w,T]=(0,t.useState)([]),[E,L]=(0,t.useState)([]),[R,B]=(0,t.useState)(!0),[D,O]=(0,t.useState)(null),F=(0,t.useCallback)(async()=>{if(e){O(null);try{const[t,s]=await Promise.all([(0,_.fetchMyCancellations)(e.id),(0,_.fetchMyPaymentRequests)(e.id)]);T(t),L(s)}catch(e){O((0,C.storeErrorText)(e?.message??'')||b('error'))}finally{B(!1)}}},[e,b]);(0,p.useFocusEffect)((0,t.useCallback)(()=>{F()},[F]));const W=(0,t.useMemo)(()=>{const e=Date.now();return E.filter(t=>'pending'===t.status&&(!t.reserved_until||Date.parse(t.reserved_until)>e)).sort((e,t)=>Date.parse(e.reserved_until??'')-Date.parse(t.reserved_until??''))},[E]),G=(0,t.useMemo)(()=>{const e=new Map;for(const t of E){if('seat'!==t.kind||!t.game_id)continue;const s=e.get(t.game_id);(!s||Date.parse(t.created_at)>Date.parse(s.created_at))&&e.set(t.game_id,t)}return e},[E]);return(0,M.jsxs)(c.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:n.bg},children:[(0,M.jsxs)(l.default,{style:A.header,children:[(0,M.jsx)(r.default,{onPress:()=>m.back(),accessibilityRole:"button",accessibilityLabel:b('back'),style:[A.iconBtn,{backgroundColor:n.surface,borderColor:n.border}],children:(0,M.jsx)(u.Ionicons,{name:(0,k.chevronBack)(),size:22,color:n.text})}),(0,M.jsx)(o.default,{style:[j.typography.h2,{color:n.text,flex:1,textAlign:'center'}],children:b('refundsTitle')}),(0,M.jsx)(l.default,{style:{width:40}})]}),R?(0,M.jsx)(l.default,{style:{flex:1,alignItems:'center',justifyContent:'center'},children:(0,M.jsx)(s.default,{color:n.accentText})}):D?(0,M.jsxs)(l.default,{style:{paddingVertical:j.spacing.xl,paddingHorizontal:j.spacing.lg},children:[(0,M.jsx)(y.EmptyState,{icon:"cloud-offline-outline",title:b('error'),body:b('refundsErrorBody')}),(0,M.jsx)(f.Button,{title:b('retry'),fullWidth:!0,onPress:()=>{B(!0),F()},style:{marginTop:j.spacing.md}})]}):(0,M.jsx)(a.default,{data:w,keyExtractor:e=>e.id,contentContainerStyle:{padding:j.spacing.lg,paddingBottom:j.spacing.xxxl,flexGrow:1},ListHeaderComponent:W.length?(0,M.jsxs)(l.default,{style:{marginBottom:j.spacing.lg},children:[(0,M.jsx)(o.default,{style:[j.typography.smallStrong,{color:n.textMuted,marginBottom:j.spacing.sm}],children:b('refundsStillToPay')}),W.map(e=>(0,M.jsx)(v,{p:e,colors:n,t:b,onPress:()=>m.push(`/pay/${e.id}`)},e.id))]}):null,ListEmptyComponent:(0,M.jsxs)(l.default,{children:[(0,M.jsx)(y.EmptyState,{icon:"receipt-outline",title:b('refundsEmptyTitle'),body:b('refundsEmptyBody')}),(0,M.jsx)(f.Button,{title:b('findAGame'),variant:"ghost",fullWidth:!0,onPress:()=>m.push('/(tabs)/games')})]}),renderItem:({item:e})=>(0,M.jsx)(P,{row:e,paid:G.get(e.game_id)??null,colors:n,t:b,onPress:()=>m.push(`/game/${e.game_id}`)})})]})};var t=_r(d[1]),s=e(_r(d[2])),a=e(_r(d[3])),r=e(_r(d[4])),n=e(_r(d[5])),o=e(_r(d[6])),l=e(_r(d[7])),c=_r(d[8]),u=_r(d[9]),p=_r(d[10]),f=_r(d[11]),m=_r(d[12]),y=_r(d[13]),h=_r(d[14]),x=_r(d[15]),j=_r(d[16]),_=_r(d[17]),b=_r(d[18]),w=_r(d[19]),T=_r(d[20]),C=_r(d[21]),S=_r(d[22]),k=_r(d[23]),M=_r(d[24]);const v=({p:e,colors:t,t:s,onPress:a})=>{const r=s('seat'===e.kind?'refundsSeatFee':'refundsCourtShare'),n=(0,b.formatAmount)(e.amount_kwd);return(0,M.jsx)(m.Card,{style:{marginBottom:j.spacing.sm,borderColor:t.accent},onPress:a,accessibilityLabel:s('refundsPayA11y',{amount:n,what:r}),children:(0,M.jsxs)(l.default,{style:A.top,children:[(0,M.jsxs)(l.default,{style:{flex:1,minWidth:0},children:[(0,M.jsx)(o.default,{style:[j.typography.bodyStrong,{color:t.text}],numberOfLines:1,children:r}),(0,M.jsx)(o.default,{style:[j.typography.caption,{color:t.textMuted}],numberOfLines:1,children:e.venue_name}),e.reserved_until?(0,M.jsx)(o.default,{style:[j.typography.caption,{color:t.text}],numberOfLines:1,children:s('refundsHoldEnds',{when:(0,b.formatGameTime)(e.reserved_until)})}):null]}),(0,M.jsx)(o.default,{style:[j.typography.bodyStrong,{color:t.accentText}],children:n})]})})},P=({row:e,paid:t,colors:s,t:a,onPress:r})=>{const n=e.paid_kwd>0&&0===e.refunded_kwd,c=e.refunded_kwd>0,u='free_spot'===e.reason||'unpaid'===e.reason,p=n?s.danger:c?s.success:s.textMuted,f=a(c?'refundedChip':n?'keptChip':'noChargeChip'),y=t?.method?w.PAYMENT_METHODS.find(e=>e.method===t.method):null,h=y?a(y.labelKey):t?.method??null;return(0,M.jsxs)(m.Card,{style:{marginBottom:j.spacing.sm},onPress:r,accessibilityLabel:a('refundsRowA11y',{title:e.title||a('matchLabel'),state:f}),children:[(0,M.jsxs)(l.default,{style:A.top,children:[(0,M.jsxs)(l.default,{style:{flex:1,minWidth:0},children:[(0,M.jsx)(o.default,{style:[j.typography.bodyStrong,{color:s.text}],numberOfLines:1,children:e.title||a('matchLabel')}),(0,M.jsxs)(o.default,{style:[j.typography.caption,{color:s.textMuted}],numberOfLines:1,children:[e.venue_name,e.starts_at?` \xb7 ${(0,b.formatGameTime)(e.starts_at)}`:'']})]}),(0,M.jsx)(l.default,{style:[A.chip,{backgroundColor:s.surfaceAlt}],children:(0,M.jsx)(o.default,{style:[A.chipText,{color:p}],numberOfLines:1,children:f.toUpperCase()})})]}),!u&&(0,M.jsxs)(l.default,{style:{marginTop:j.spacing.sm},children:[(0,M.jsx)(E,{label:a('youPaidRow'),value:(0,b.formatAmount)(e.paid_kwd),colors:s}),(0,M.jsx)(E,{label:a('refundRow'),value:(0,b.formatAmount)(e.refunded_kwd),colors:s,tone:c?'success':'muted'}),(0,M.jsx)(E,{label:a('youReceiveRow'),value:(0,b.formatAmount)(e.refunded_kwd),colors:s,tone:c?'success':'muted',strong:!0}),h&&t?.paid_at?(0,M.jsx)(o.default,{style:[j.typography.caption,{color:s.textMuted,marginTop:2}],children:a('refundsPaidBy',{method:h,when:(0,b.formatGameTime)(t.paid_at)})}):null]}),'past_cutoff'===e.reason&&e.starts_at?(0,M.jsxs)(l.default,{style:{marginTop:j.spacing.sm,gap:2},children:[(0,M.jsx)(o.default,{style:[j.typography.caption,{color:s.textMuted}],children:a('forfeitKickoff',{when:(0,b.formatGameTime)(e.starts_at)})}),(0,M.jsx)(o.default,{style:[j.typography.caption,{color:s.textMuted}],children:a('forfeitWindowClosed',{when:(0,b.formatGameTime)((0,T.refundDeadlineIso)(e.starts_at)),hours:T.SEAT_REFUND_CUTOFF_HOURS})}),(0,M.jsx)(o.default,{style:[j.typography.caption,{color:s.text}],children:a('forfeitYouLeft',{when:(0,b.formatGameTime)(e.cancelled_at)})})]}):(0,M.jsxs)(M.Fragment,{children:[(0,M.jsx)(o.default,{style:[j.typography.caption,{color:s.textMuted,marginTop:j.spacing.sm}],children:'past_cutoff'===e.reason?a('refundNoneWhy',{hours:T.SEAT_REFUND_CUTOFF_HOURS}):'free_spot'===e.reason?a('refundFreeSpot'):'unpaid'===e.reason?a('refundUnpaidWhy'):a('refundedInFullWhy')}),(0,M.jsx)(o.default,{style:[j.typography.caption,{color:s.textMuted,marginTop:2}],children:a('cancelledOn',{when:(0,b.formatGameTime)(e.cancelled_at)})})]})]})},E=({label:e,value:t,colors:s,tone:a,strong:r})=>(0,M.jsxs)(l.default,{style:A.money,children:[(0,M.jsx)(o.default,{style:[j.typography.small,{color:s.textMuted,flex:1}],children:e}),(0,M.jsx)(o.default,{style:[r?j.typography.bodyStrong:j.typography.small,{color:'success'===a?s.success:'muted'===a?s.textMuted:s.text}],children:t})]}),A=n.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:j.spacing.lg,paddingVertical:j.spacing.sm,gap:j.spacing.sm},iconBtn:{width:40,height:40,borderRadius:20,borderWidth:1,alignItems:'center',justifyContent:'center'},top:{flexDirection:'row',alignItems:'flex-start',gap:j.spacing.sm},chip:{borderRadius:j.radius.pill,paddingHorizontal:j.spacing.sm,paddingVertical:3},chipText:{fontSize:10,fontWeight:'800',letterSpacing:.6},money:{flexDirection:'row',alignItems:'center',gap:j.spacing.md,paddingVertical:3}})},2479,[33,15,461,271,369,158,146,273,381,1086,20,626,1623,1627,630,615,616,671,1311,668,670,674,675,1171,13]);
+__d(
+  function (g, _r, i, _a, _m, _e, d) {
+    var e = _r(d[0]);
+    (Object.defineProperty(_e, "__esModule", { value: !0 }),
+      (_e.default = function () {
+        const { user: e } = (0, h.useAuth)(),
+          { colors: n } = (0, x.useTheme)(),
+          m = (0, p.useRouter)(),
+          b = (0, S.useT)(),
+          [w, T] = (0, t.useState)([]),
+          [E, L] = (0, t.useState)([]),
+          [R, B] = (0, t.useState)(!0),
+          [D, O] = (0, t.useState)(null),
+          F = (0, t.useCallback)(async () => {
+            if (e) {
+              O(null);
+              try {
+                const [t, s] = await Promise.all([
+                  (0, _.fetchMyCancellations)(e.id),
+                  (0, _.fetchMyPaymentRequests)(e.id),
+                ]);
+                (T(t), L(s));
+              } catch (e) {
+                O((0, C.storeErrorText)(e?.message ?? "") || b("error"));
+              } finally {
+                B(!1);
+              }
+            }
+          }, [e, b]);
+        (0, p.useFocusEffect)(
+          (0, t.useCallback)(() => {
+            F();
+          }, [F]),
+        );
+        const W = (0, t.useMemo)(() => {
+            const e = Date.now();
+            return E.filter(
+              (t) => "pending" === t.status && (!t.reserved_until || Date.parse(t.reserved_until) > e),
+            ).sort((e, t) => Date.parse(e.reserved_until ?? "") - Date.parse(t.reserved_until ?? ""));
+          }, [E]),
+          G = (0, t.useMemo)(() => {
+            const e = new Map();
+            for (const t of E) {
+              if ("seat" !== t.kind || !t.game_id) continue;
+              const s = e.get(t.game_id);
+              (!s || Date.parse(t.created_at) > Date.parse(s.created_at)) && e.set(t.game_id, t);
+            }
+            return e;
+          }, [E]);
+        return (0, M.jsxs)(c.SafeAreaView, {
+          edges: ["top"],
+          style: { flex: 1, backgroundColor: n.bg },
+          children: [
+            (0, M.jsxs)(l.default, {
+              style: A.header,
+              children: [
+                (0, M.jsx)(r.default, {
+                  onPress: () => m.back(),
+                  accessibilityRole: "button",
+                  accessibilityLabel: b("back"),
+                  style: [A.iconBtn, { backgroundColor: n.surface, borderColor: n.border }],
+                  children: (0, M.jsx)(u.Ionicons, { name: (0, k.chevronBack)(), size: 22, color: n.text }),
+                }),
+                (0, M.jsx)(o.default, {
+                  style: [j.typography.h2, { color: n.text, flex: 1, textAlign: "center" }],
+                  children: b("refundsTitle"),
+                }),
+                (0, M.jsx)(l.default, { style: { width: 40 } }),
+              ],
+            }),
+            R
+              ? (0, M.jsx)(l.default, {
+                  style: { flex: 1, alignItems: "center", justifyContent: "center" },
+                  children: (0, M.jsx)(s.default, { color: n.accentText }),
+                })
+              : D
+                ? (0, M.jsxs)(l.default, {
+                    style: { paddingVertical: j.spacing.xl, paddingHorizontal: j.spacing.lg },
+                    children: [
+                      (0, M.jsx)(y.EmptyState, {
+                        icon: "cloud-offline-outline",
+                        title: b("error"),
+                        body: b("refundsErrorBody"),
+                      }),
+                      (0, M.jsx)(f.Button, {
+                        title: b("retry"),
+                        fullWidth: !0,
+                        onPress: () => {
+                          (B(!0), F());
+                        },
+                        style: { marginTop: j.spacing.md },
+                      }),
+                    ],
+                  })
+                : (0, M.jsx)(a.default, {
+                    data: w,
+                    keyExtractor: (e) => e.id,
+                    contentContainerStyle: {
+                      padding: j.spacing.lg,
+                      paddingBottom: j.spacing.xxxl,
+                      flexGrow: 1,
+                    },
+                    ListHeaderComponent: W.length
+                      ? (0, M.jsxs)(l.default, {
+                          style: { marginBottom: j.spacing.lg },
+                          children: [
+                            (0, M.jsx)(o.default, {
+                              style: [
+                                j.typography.smallStrong,
+                                { color: n.textMuted, marginBottom: j.spacing.sm },
+                              ],
+                              children: b("refundsStillToPay"),
+                            }),
+                            W.map((e) =>
+                              (0, M.jsx)(
+                                v,
+                                { p: e, colors: n, t: b, onPress: () => m.push(`/pay/${e.id}`) },
+                                e.id,
+                              ),
+                            ),
+                          ],
+                        })
+                      : null,
+                    ListEmptyComponent: (0, M.jsxs)(l.default, {
+                      children: [
+                        (0, M.jsx)(y.EmptyState, {
+                          icon: "receipt-outline",
+                          title: b("refundsEmptyTitle"),
+                          body: b("refundsEmptyBody"),
+                        }),
+                        (0, M.jsx)(f.Button, {
+                          title: b("findAGame"),
+                          variant: "ghost",
+                          fullWidth: !0,
+                          onPress: () => m.push("/(tabs)/games"),
+                        }),
+                      ],
+                    }),
+                    renderItem: ({ item: e }) =>
+                      (0, M.jsx)(P, {
+                        row: e,
+                        paid: G.get(e.game_id) ?? null,
+                        colors: n,
+                        t: b,
+                        onPress: () => m.push(`/game/${e.game_id}`),
+                      }),
+                  }),
+          ],
+        });
+      }));
+    var t = _r(d[1]),
+      s = e(_r(d[2])),
+      a = e(_r(d[3])),
+      r = e(_r(d[4])),
+      n = e(_r(d[5])),
+      o = e(_r(d[6])),
+      l = e(_r(d[7])),
+      c = _r(d[8]),
+      u = _r(d[9]),
+      p = _r(d[10]),
+      f = _r(d[11]),
+      m = _r(d[12]),
+      y = _r(d[13]),
+      h = _r(d[14]),
+      x = _r(d[15]),
+      j = _r(d[16]),
+      _ = _r(d[17]),
+      b = _r(d[18]),
+      w = _r(d[19]),
+      T = _r(d[20]),
+      C = _r(d[21]),
+      S = _r(d[22]),
+      k = _r(d[23]),
+      M = _r(d[24]);
+    const v = ({ p: e, colors: t, t: s, onPress: a }) => {
+        const r = s("seat" === e.kind ? "refundsSeatFee" : "refundsCourtShare"),
+          n = (0, b.formatAmount)(e.amount_kwd);
+        return (0, M.jsx)(m.Card, {
+          style: { marginBottom: j.spacing.sm, borderColor: t.accent },
+          onPress: a,
+          accessibilityLabel: s("refundsPayA11y", { amount: n, what: r }),
+          children: (0, M.jsxs)(l.default, {
+            style: A.top,
+            children: [
+              (0, M.jsxs)(l.default, {
+                style: { flex: 1, minWidth: 0 },
+                children: [
+                  (0, M.jsx)(o.default, {
+                    style: [j.typography.bodyStrong, { color: t.text }],
+                    numberOfLines: 1,
+                    children: r,
+                  }),
+                  (0, M.jsx)(o.default, {
+                    style: [j.typography.caption, { color: t.textMuted }],
+                    numberOfLines: 1,
+                    children: e.venue_name,
+                  }),
+                  e.reserved_until
+                    ? (0, M.jsx)(o.default, {
+                        style: [j.typography.caption, { color: t.text }],
+                        numberOfLines: 1,
+                        children: s("refundsHoldEnds", { when: (0, b.formatGameTime)(e.reserved_until) }),
+                      })
+                    : null,
+                ],
+              }),
+              (0, M.jsx)(o.default, {
+                style: [j.typography.bodyStrong, { color: t.accentText }],
+                children: n,
+              }),
+            ],
+          }),
+        });
+      },
+      P = ({ row: e, paid: t, colors: s, t: a, onPress: r }) => {
+        const n = e.paid_kwd > 0 && 0 === e.refunded_kwd,
+          c = e.refunded_kwd > 0,
+          u = "free_spot" === e.reason || "unpaid" === e.reason,
+          p = n ? s.danger : c ? s.success : s.textMuted,
+          f = a(c ? "refundedChip" : n ? "keptChip" : "noChargeChip"),
+          y = t?.method ? w.PAYMENT_METHODS.find((e) => e.method === t.method) : null,
+          h = y ? a(y.labelKey) : (t?.method ?? null);
+        return (0, M.jsxs)(m.Card, {
+          style: { marginBottom: j.spacing.sm },
+          onPress: r,
+          accessibilityLabel: a("refundsRowA11y", { title: e.title || a("matchLabel"), state: f }),
+          children: [
+            (0, M.jsxs)(l.default, {
+              style: A.top,
+              children: [
+                (0, M.jsxs)(l.default, {
+                  style: { flex: 1, minWidth: 0 },
+                  children: [
+                    (0, M.jsx)(o.default, {
+                      style: [j.typography.bodyStrong, { color: s.text }],
+                      numberOfLines: 1,
+                      children: e.title || a("matchLabel"),
+                    }),
+                    (0, M.jsxs)(o.default, {
+                      style: [j.typography.caption, { color: s.textMuted }],
+                      numberOfLines: 1,
+                      children: [
+                        e.venue_name,
+                        e.starts_at ? ` \xb7 ${(0, b.formatGameTime)(e.starts_at)}` : "",
+                      ],
+                    }),
+                  ],
+                }),
+                (0, M.jsx)(l.default, {
+                  style: [A.chip, { backgroundColor: s.surfaceAlt }],
+                  children: (0, M.jsx)(o.default, {
+                    style: [A.chipText, { color: p }],
+                    numberOfLines: 1,
+                    children: f.toUpperCase(),
+                  }),
+                }),
+              ],
+            }),
+            !u &&
+              (0, M.jsxs)(l.default, {
+                style: { marginTop: j.spacing.sm },
+                children: [
+                  (0, M.jsx)(E, {
+                    label: a("youPaidRow"),
+                    value: (0, b.formatAmount)(e.paid_kwd),
+                    colors: s,
+                  }),
+                  (0, M.jsx)(E, {
+                    label: a("refundRow"),
+                    value: (0, b.formatAmount)(e.refunded_kwd),
+                    colors: s,
+                    tone: c ? "success" : "muted",
+                  }),
+                  (0, M.jsx)(E, {
+                    label: a("youReceiveRow"),
+                    value: (0, b.formatAmount)(e.refunded_kwd),
+                    colors: s,
+                    tone: c ? "success" : "muted",
+                    strong: !0,
+                  }),
+                  h && t?.paid_at
+                    ? (0, M.jsx)(o.default, {
+                        style: [j.typography.caption, { color: s.textMuted, marginTop: 2 }],
+                        children: a("refundsPaidBy", { method: h, when: (0, b.formatGameTime)(t.paid_at) }),
+                      })
+                    : null,
+                ],
+              }),
+            "past_cutoff" === e.reason && e.starts_at
+              ? (0, M.jsxs)(l.default, {
+                  style: { marginTop: j.spacing.sm, gap: 2 },
+                  children: [
+                    (0, M.jsx)(o.default, {
+                      style: [j.typography.caption, { color: s.textMuted }],
+                      children: a("forfeitKickoff", { when: (0, b.formatGameTime)(e.starts_at) }),
+                    }),
+                    (0, M.jsx)(o.default, {
+                      style: [j.typography.caption, { color: s.textMuted }],
+                      // Two picks the Arabic dual form; see the note in 2380.
+                      children: a(
+                        2 === T.SEAT_REFUND_CUTOFF_HOURS
+                          ? "forfeitWindowClosedTwo"
+                          : "forfeitWindowClosed",
+                        {
+                          when: (0, b.formatGameTime)((0, T.refundDeadlineIso)(e.starts_at)),
+                          hours: T.SEAT_REFUND_CUTOFF_HOURS,
+                        },
+                      ),
+                    }),
+                    (0, M.jsx)(o.default, {
+                      style: [j.typography.caption, { color: s.text }],
+                      children: a("forfeitYouLeft", { when: (0, b.formatGameTime)(e.cancelled_at) }),
+                    }),
+                  ],
+                })
+              : (0, M.jsxs)(M.Fragment, {
+                  children: [
+                    (0, M.jsx)(o.default, {
+                      style: [j.typography.caption, { color: s.textMuted, marginTop: j.spacing.sm }],
+                      children:
+                        "past_cutoff" === e.reason
+                          ? a(2 === T.SEAT_REFUND_CUTOFF_HOURS ? "refundNoneWhyTwo" : "refundNoneWhy", {
+                              hours: T.SEAT_REFUND_CUTOFF_HOURS,
+                            })
+                          : "free_spot" === e.reason
+                            ? a("refundFreeSpot")
+                            : "unpaid" === e.reason
+                              ? a("refundUnpaidWhy")
+                              : a("refundedInFullWhy"),
+                    }),
+                    (0, M.jsx)(o.default, {
+                      style: [j.typography.caption, { color: s.textMuted, marginTop: 2 }],
+                      children: a("cancelledOn", { when: (0, b.formatGameTime)(e.cancelled_at) }),
+                    }),
+                  ],
+                }),
+          ],
+        });
+      },
+      E = ({ label: e, value: t, colors: s, tone: a, strong: r }) =>
+        (0, M.jsxs)(l.default, {
+          style: A.money,
+          children: [
+            (0, M.jsx)(o.default, {
+              style: [j.typography.small, { color: s.textMuted, flex: 1 }],
+              children: e,
+            }),
+            (0, M.jsx)(o.default, {
+              style: [
+                r ? j.typography.bodyStrong : j.typography.small,
+                { color: "success" === a ? s.success : "muted" === a ? s.textMuted : s.text },
+              ],
+              children: t,
+            }),
+          ],
+        }),
+      A = n.default.create({
+        header: {
+          flexDirection: "row",
+          alignItems: "center",
+          paddingHorizontal: j.spacing.lg,
+          paddingVertical: j.spacing.sm,
+          gap: j.spacing.sm,
+        },
+        iconBtn: {
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          borderWidth: 1,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        top: { flexDirection: "row", alignItems: "flex-start", gap: j.spacing.sm },
+        chip: { borderRadius: j.radius.pill, paddingHorizontal: j.spacing.sm, paddingVertical: 3 },
+        chipText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.6 },
+        money: { flexDirection: "row", alignItems: "center", gap: j.spacing.md, paddingVertical: 3 },
+      });
+  },
+  2479,
+  [
+    33, 15, 461, 271, 369, 158, 146, 273, 381, 1086, 20, 626, 1623, 1627, 630, 615, 616, 671, 1311, 668, 670,
+    674, 675, 1171, 13,
+  ],
+);
+
 __d(function(g,r,i,a,m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{id:e}=(0,x.useLocalSearchParams)(),{user:c}=(0,I.useAuth)(),{colors:M}=(0,_.useTheme)(),R=(0,x.useRouter)(),z=(0,w.useT)(),[O,P]=(0,t.useState)(null),[E,V]=(0,t.useState)(!0),[W,F]=(0,t.useState)(!1),N=(0,t.useCallback)(async()=>{e&&(P(await(0,k.fetchReplacementOffer)(e,c?.id)),V(!1))},[e,c?.id]);(0,x.useFocusEffect)((0,t.useCallback)(()=>{N()},[N]));if(E)return(0,v.jsx)(p.SafeAreaView,{style:[A.center,{backgroundColor:M.bg}],children:(0,v.jsx)(n.default,{color:M.accentText})});const $=O&&'offered'===O.status&&O.expires_in_min>0;return(0,v.jsxs)(p.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:M.bg},children:[(0,v.jsxs)(f.default,{style:A.header,children:[(0,v.jsx)(s.default,{onPress:()=>R.back(),accessibilityRole:"button",accessibilityLabel:z('back'),style:[A.iconBtn,{backgroundColor:M.surface,borderColor:M.border}],children:(0,v.jsx)(y.Ionicons,{name:(0,B.chevronBack)(),size:22,color:M.text})}),(0,v.jsx)(u.default,{style:[C.typography.h2,{color:M.text,flex:1,marginHorizontal:C.spacing.md}],children:z('replacementOfferTitle')})]}),(0,v.jsx)(o.default,{contentContainerStyle:{padding:C.spacing.lg},children:O?(0,v.jsxs)(v.Fragment,{children:[(0,v.jsxs)(h.Card,{style:{alignItems:'center',marginBottom:C.spacing.lg},children:[(0,v.jsx)(f.default,{style:[A.sportIcon,{backgroundColor:(0,T.sportColor)(O.sport)}],children:(0,v.jsx)(y.Ionicons,{name:T.sportIcon[O.sport],size:28,color:"#fff"})}),(0,v.jsx)(u.default,{style:[C.typography.h2,{color:M.text,marginTop:C.spacing.sm}],children:O.venue_name}),(0,v.jsx)(u.default,{style:[C.typography.body,{color:M.textMuted}],children:(0,T.formatGameTime)(O.starts_at)}),(0,v.jsxs)(u.default,{style:[C.typography.small,{color:M.textMuted,marginTop:2}],children:[(0,T.formatNumber)(O.confirmed)," / ",(0,T.formatNumber)(O.max_players)," ",z('players')]}),(0,v.jsx)(f.default,{style:{marginTop:C.spacing.sm},children:$?(0,v.jsx)(j.Badge,{label:z('offerExpiresIn',{n:(0,T.formatNumber)(O.expires_in_min)}),tone:"warning"}):(0,v.jsx)(j.Badge,{label:z(`offerStatus_${O.status}`),tone:"neutral"})})]}),(0,v.jsx)(u.default,{style:[C.typography.small,{color:M.textMuted,textAlign:'center',marginBottom:C.spacing.lg}],children:z('replacementOfferBody')}),$?(0,v.jsxs)(v.Fragment,{children:[(0,v.jsx)(b.Button,{title:z('acceptSpot'),fullWidth:!0,loading:W,onPress:async()=>{if(c&&O){F(!0);try{const e=await(0,k.acceptReplacement)(c.id,O.id);if(e.payment_due)return void R.replace(`/pay/${e.payment_due.payment_id}`);l.default.alert(z('spotAccepted'),''),R.replace(`/game/${O.game_id}`)}catch(e){l.default.alert(z('error'),(0,S.storeErrorText)(e?.message??'')||z('noActiveOffer')),await N()}finally{F(!1)}}},leftIcon:(0,v.jsx)(y.Ionicons,{name:"checkmark-circle-outline",size:18,color:"#fff"})}),(0,v.jsx)(b.Button,{title:z('declineSpot'),variant:"secondary",fullWidth:!0,onPress:async()=>{if(c&&O){F(!0);try{await(0,k.declineReplacement)(c.id,O.id),R.back()}finally{F(!1)}}},style:{marginTop:C.spacing.sm}})]}):(0,v.jsx)(h.Card,{style:{alignItems:'center'},children:(0,v.jsx)(u.default,{style:[C.typography.small,{color:M.textMuted}],children:z('offerExpired')})})]}):(0,v.jsxs)(h.Card,{style:{alignItems:'center',paddingVertical:C.spacing.xl},children:[(0,v.jsx)(y.Ionicons,{name:"time-outline",size:40,color:M.textMuted}),(0,v.jsx)(u.default,{style:[C.typography.body,{color:M.textMuted,marginTop:C.spacing.sm}],children:z('noActiveOffer')})]})})]})};var t=r(d[1]),n=e(r(d[2])),l=e(r(d[3])),s=e(r(d[4])),o=e(r(d[5])),c=e(r(d[6])),u=e(r(d[7])),f=e(r(d[8])),p=r(d[9]),y=r(d[10]),x=r(d[11]),h=r(d[12]),j=r(d[13]),b=r(d[14]),I=r(d[15]),_=r(d[16]),C=r(d[17]),k=r(d[18]),T=r(d[19]),w=r(d[20]),B=r(d[21]),S=r(d[22]),v=r(d[23]);const A=c.default.create({center:{flex:1,alignItems:'center',justifyContent:'center'},header:{flexDirection:'row',alignItems:'center',paddingHorizontal:C.spacing.lg,paddingVertical:C.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:c.default.hairlineWidth},sportIcon:{width:56,height:56,borderRadius:18,alignItems:'center',justifyContent:'center'}})},2480,[33,15,461,445,369,281,158,146,273,381,1086,20,1623,1624,626,630,615,616,671,1311,675,1171,674,13]);
 __d(function(g,_r,_i,_a,m,_e,d){var e=_r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{user:e}=(0,y.useAuth)(),{colors:I}=(0,b.useTheme)(),z=(0,u.useRouter)(),A=(0,k.useT)(),[E,W]=(0,t.useState)(null),[V,P]=(0,t.useState)([]),[D,N]=(0,t.useState)([]),[H,O]=(0,t.useState)([]),[F,K]=(0,t.useState)(!0),[U,Y]=(0,t.useState)(null),[G,Z]=(0,t.useState)(null),$=(0,t.useCallback)(async()=>{if(e){Y(null);try{const[t,r,a,l]=await Promise.all([(0,T.fetchLoyaltyAccount)(e.id),(0,T.fetchLoyaltyEarnBreakdown)(e.id),(0,T.fetchRewards)(e.id),(0,T.fetchMyRedemptions)(e.id)]);W(t),P(r),N(a),O(l)}catch(e){Y((0,C.storeErrorText)(e?.message??'')||A('error'))}finally{K(!1)}}},[e,A]);return(0,u.useFocusEffect)((0,t.useCallback)(()=>{$()},[$])),(0,B.jsxs)(i.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:I.bg},children:[(0,B.jsxs)(s.default,{style:v.header,children:[(0,B.jsx)(a.default,{onPress:()=>z.back(),accessibilityRole:"button",accessibilityLabel:A('back'),style:[v.iconBtn,{backgroundColor:I.surface,borderColor:I.border}],children:(0,B.jsx)(c.Ionicons,{name:(0,R.chevronBack)(),size:22,color:I.text})}),(0,B.jsx)(n.default,{style:[j.typography.h2,{color:I.text,flex:1,textAlign:'center'}],children:A('loyaltyTitle')}),(0,B.jsx)(a.default,{onPress:()=>z.push('/rewards/ledger'),accessibilityRole:"button",accessibilityLabel:A('rewardsLedgerTitle'),style:[v.iconBtn,{backgroundColor:I.surface,borderColor:I.border}],children:(0,B.jsx)(c.Ionicons,{name:"list-outline",size:20,color:I.text})})]}),F?(0,B.jsx)(s.default,{style:{flex:1,alignItems:'center',justifyContent:'center'},children:(0,B.jsx)(r.default,{color:I.accentText})}):U||!E?(0,B.jsxs)(s.default,{style:{paddingVertical:j.spacing.xl,paddingHorizontal:j.spacing.lg},children:[(0,B.jsx)(f.EmptyState,{icon:"cloud-offline-outline",title:A('error'),body:A('rewardsErrorBody')}),(0,B.jsx)(p.Button,{title:A('retry'),fullWidth:!0,onPress:()=>{K(!0),$()},style:{marginTop:j.spacing.md}})]}):(0,B.jsxs)(l.default,{contentContainerStyle:{padding:j.spacing.lg,paddingBottom:j.spacing.xxxl},children:[(0,B.jsx)(M,{account:E,colors:I,t:A}),(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:I.textMuted,marginTop:j.spacing.lg,marginBottom:j.spacing.sm}],children:A('waysToEarn')}),(0,B.jsxs)(h.Card,{padding:"md",children:[w.LOYALTY_ACTIONS.map((e,t)=>{const r=V.find(t=>t.action===e.action),a=r?.rate??0;return(0,B.jsxs)(s.default,{style:[v.earnRow,{borderTopColor:I.border,borderTopWidth:0===t?0:o.default.hairlineWidth}],children:[(0,B.jsx)(n.default,{style:{fontSize:18},children:e.emoji}),(0,B.jsx)(n.default,{style:[j.typography.small,{color:I.text,flex:1}],children:A(e.labelKey)}),(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:I.accentText}],children:A('perActionPts',{n:(0,S.formatNumber)((0,w.earnAmount)(a,E.lifetime))})})]},e.action)}),(0,B.jsx)(n.default,{style:[j.typography.caption,{color:I.textMuted,marginTop:j.spacing.sm}],children:A('rewardsEarnHint')})]}),(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:I.textMuted,marginTop:j.spacing.lg,marginBottom:j.spacing.sm}],children:A('rewardsCatalog')}),0===D.length?(0,B.jsx)(h.Card,{children:(0,B.jsx)(f.EmptyState,{icon:"gift-outline",title:A('noRewardsYet'),body:A('rewardsCatalogEmpty')})}):D.map(e=>(0,B.jsx)(_,{r:e,colors:I,t:A,onRedeem:()=>Z(e)},e.id)),H.length>0&&(0,B.jsxs)(B.Fragment,{children:[(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:I.textMuted,marginTop:j.spacing.lg,marginBottom:j.spacing.sm}],children:A('myVouchers')}),(0,B.jsx)(h.Card,{padding:"md",children:H.map((e,t)=>(0,B.jsx)(L,{v:e,first:0===t,colors:I,t:A},e.id))})]}),(0,B.jsx)(p.Button,{title:A('rewardsLedgerLink'),variant:"ghost",fullWidth:!0,style:{marginTop:j.spacing.lg},onPress:()=>z.push('/rewards/ledger')})]}),e&&(0,B.jsx)(x.RedeemSheet,{visible:!!G,reward:G,balance:E?.balance??0,userId:e.id,onClose:()=>Z(null),onRedeemed:()=>{$()}})]})};var t=_r(d[1]),r=e(_r(d[2])),a=e(_r(d[3])),l=e(_r(d[4])),o=e(_r(d[5])),n=e(_r(d[6])),s=e(_r(d[7])),i=_r(d[8]),c=_r(d[9]),u=_r(d[10]),p=_r(d[11]),h=_r(d[12]),f=_r(d[13]),x=_r(d[14]),y=_r(d[15]),b=_r(d[16]),j=_r(d[17]),T=_r(d[18]),w=_r(d[19]),S=_r(d[20]),C=_r(d[21]),k=_r(d[22]),R=_r(d[23]),B=_r(d[24]);const I=e=>w.TIERS.find(t=>t.tier===e)??w.TIERS[0];const M=({account:e,colors:t,t:r})=>{const a=I(e.tier),l=r(a.labelKey),o=Math.round(100*(e.multiplier-1)),i=e.nextTier?I(e.nextTier):null;return(0,B.jsxs)(s.default,{style:[v.hero,{backgroundColor:t.accent}],accessibilityLabel:r('rewardsHeroA11y',{n:(0,S.formatNumber)(e.balance),tier:l}),children:[(0,B.jsx)(n.default,{style:[j.typography.small,{color:'rgba(0,0,0,0.6)'}],children:r('balanceLabel')}),(0,B.jsxs)(s.default,{style:{flexDirection:'row',alignItems:'baseline',gap:j.spacing.xs},children:[(0,B.jsx)(n.default,{style:[v.heroAmount,{color:t.accentInk}],children:(0,S.formatNumber)(e.balance)}),(0,B.jsx)(n.default,{style:[v.heroUnit,{color:t.accentInk}],children:r('pointsUnit')})]}),0===e.balance&&0===e.lifetime?(0,B.jsx)(n.default,{style:[j.typography.small,{color:'rgba(0,0,0,0.7)'}],children:r('rewardsZeroBalance')}):null,(0,B.jsxs)(s.default,{style:v.tierRow,children:[(0,B.jsx)(s.default,{style:v.tierChip,children:(0,B.jsxs)(n.default,{style:v.tierText,children:[a.emoji," ",l]})}),(0,B.jsx)(n.default,{style:[j.typography.small,{color:'rgba(0,0,0,0.7)',flex:1}],children:o>0?r('rewardsTierGrants',{pct:o}):r('rewardsTierBase')})]}),(0,B.jsx)(s.default,{style:v.track,children:(0,B.jsx)(s.default,{style:[v.fill,{width:`${Math.round(100*e.progress)}%`,backgroundColor:t.accentInk}]})}),(0,B.jsx)(n.default,{style:[j.typography.caption,{color:'rgba(0,0,0,0.7)',marginTop:j.spacing.xs}],children:i?r('toNextTier',{n:(0,S.formatNumber)(e.pointsToNext),tier:r(i.labelKey)}):r('maxTier')})]})},_=({r:e,colors:t,t:r,onRedeem:a})=>(0,B.jsxs)(h.Card,{style:{marginBottom:j.spacing.sm},children:[(0,B.jsxs)(s.default,{style:v.top,children:[(0,B.jsxs)(s.default,{style:{flex:1,minWidth:0},children:[(0,B.jsx)(n.default,{style:[j.typography.bodyStrong,{color:t.text}],numberOfLines:2,children:e.name}),e.description?(0,B.jsx)(n.default,{style:[j.typography.caption,{color:t.textMuted,marginTop:2}],numberOfLines:2,children:e.description}):null,e.partner?(0,B.jsx)(n.default,{style:[j.typography.caption,{color:t.textMuted,marginTop:2}],children:r('rewardsPartnerAt',{partner:e.partner})}):null]}),(0,B.jsx)(s.default,{style:[v.chip,{backgroundColor:t.surfaceAlt}],children:(0,B.jsx)(n.default,{style:[v.chipText,{color:e.affordable?t.accentText:t.textMuted}],children:r('costPts',{n:(0,S.formatNumber)(e.cost_points)})})})]}),(0,B.jsx)(s.default,{style:{marginTop:j.spacing.sm},children:(0,B.jsx)(p.Button,{title:e.out_of_stock?r('outOfStock'):r('redeem'),variant:e.affordable&&!e.out_of_stock?'primary':'secondary',size:"sm",fullWidth:!0,disabled:e.out_of_stock,onPress:a})})]}),L=({v:e,first:t,colors:r,t:a})=>{const l='active'!==e.status||Date.parse(e.expires_at)<Date.now();return(0,B.jsxs)(s.default,{style:[v.voucherRow,{borderTopColor:r.border,borderTopWidth:t?0:o.default.hairlineWidth}],children:[(0,B.jsxs)(s.default,{style:{flex:1,minWidth:0},children:[(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:r.text}],numberOfLines:1,children:e.reward_name}),(0,B.jsx)(n.default,{style:[j.typography.caption,{color:l?r.danger:r.textMuted}],children:a(l?'rewardsVoucherExpired':'rewardsVoucherExpires',{when:(0,S.formatHistoryDate)(e.expires_at)})})]}),(0,B.jsx)(n.default,{style:[v.codeText,{color:l?r.textMuted:r.text}],selectable:!0,children:e.code})]})},v=o.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:j.spacing.lg,paddingVertical:j.spacing.sm,gap:j.spacing.sm},iconBtn:{width:40,height:40,borderRadius:20,borderWidth:1,alignItems:'center',justifyContent:'center'},hero:{borderRadius:j.radius.lg,padding:j.spacing.lg},heroAmount:{fontSize:34,fontWeight:'800',marginVertical:j.spacing.xs},heroUnit:{fontSize:16,fontWeight:'600'},tierRow:{flexDirection:'row',alignItems:'center',gap:j.spacing.sm,marginTop:j.spacing.sm},tierChip:{backgroundColor:'rgba(0,0,0,0.14)',paddingHorizontal:j.spacing.md,paddingVertical:6,borderRadius:12},tierText:{color:'rgba(0,0,0,0.8)',fontFamily:'SpaceMonoBold',fontSize:13,letterSpacing:.5},track:{height:6,borderRadius:3,backgroundColor:'rgba(0,0,0,0.14)',marginTop:j.spacing.md,overflow:'hidden'},fill:{height:6,borderRadius:3},earnRow:{flexDirection:'row',alignItems:'center',gap:j.spacing.sm,paddingVertical:j.spacing.sm},top:{flexDirection:'row',alignItems:'flex-start',gap:j.spacing.sm},chip:{borderRadius:j.radius.pill,paddingHorizontal:j.spacing.sm,paddingVertical:4},chipText:{fontSize:12,fontWeight:'800'},voucherRow:{flexDirection:'row',alignItems:'center',gap:j.spacing.sm,paddingVertical:j.spacing.sm},codeText:{fontFamily:'SpaceMonoBold',fontSize:14,letterSpacing:1}})},2481,[33,15,461,369,281,158,146,273,381,1086,20,626,1623,1627,2482,630,615,616,671,664,1311,674,675,1171,13]);
 __d(function(g,_r,i,a,m,_e,d){var e=_r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.RedeemSheet=void 0;var t=_r(d[1]),r=e(_r(d[2])),s=e(_r(d[3])),l=e(_r(d[4])),o=e(_r(d[5])),n=e(_r(d[6])),c=_r(d[7]),u=_r(d[8]),p=_r(d[9]),h=_r(d[10]),y=_r(d[11]),x=_r(d[12]),f=_r(d[13]),b=_r(d[14]),j=_r(d[15]),R=_r(d[16]),T=_r(d[17]);_e.RedeemSheet=({visible:e,reward:l,balance:S,userId:_,onClose:B,onRedeemed:C})=>{const{colors:M}=(0,h.useTheme)(),v=(0,R.useT)(),A=(0,y.useReducedMotion)(),[P,W]=(0,t.useState)(!1),[k,I]=(0,t.useState)(null),[z,E]=(0,t.useState)(null);if((0,t.useEffect)(()=>{e||(I(null),E(null),W(!1))},[e]),!l)return null;const N=[l.name,l.value,l.partner?v('rewardsPartnerAt',{partner:l.partner}):null].filter(Boolean).join(' \xb7 ');return(0,T.jsx)(r.default,{visible:e,transparent:!0,animationType:(0,y.sheetAnimation)(A),onRequestClose:B,children:(0,T.jsx)(s.default,{style:w.scrim,onPress:B,accessibilityRole:"button",accessibilityLabel:v('closeLabel'),children:(0,T.jsx)(s.default,{style:[w.sheet,{backgroundColor:M.surface}],onPress:()=>{},accessibilityViewIsModal:!0,children:k?(0,T.jsxs)(n.default,{style:{alignItems:'center',paddingVertical:x.spacing.lg},children:[(0,T.jsx)(c.Ionicons,{name:"checkmark-circle",size:56,color:M.success}),(0,T.jsx)(o.default,{style:[x.typography.h2,{color:M.text,marginTop:x.spacing.md,textAlign:'center'}],children:v('rewardsRedeemedTitle')}),(0,T.jsx)(o.default,{style:[x.typography.small,{color:M.textMuted,marginTop:x.spacing.sm,textAlign:'center'}],children:v('rewardsRedeemedBody')}),(0,T.jsxs)(n.default,{style:[w.code,{backgroundColor:M.surfaceAlt,borderColor:M.border}],children:[(0,T.jsx)(o.default,{style:[x.typography.caption,{color:M.textMuted}],children:v('rewardsVoucherCode')}),(0,T.jsx)(o.default,{style:[w.codeText,{color:M.text}],selectable:!0,children:k.code}),(0,T.jsx)(o.default,{style:[x.typography.caption,{color:M.textMuted}],children:v('rewardsVoucherExpires',{when:(0,b.formatHistoryDate)(k.expires_at)})})]}),(0,T.jsx)(n.default,{style:{height:x.spacing.lg}}),(0,T.jsx)(u.Button,{title:v('actionDone'),fullWidth:!0,size:"lg",onPress:B})]}):(0,T.jsxs)(T.Fragment,{children:[(0,T.jsx)(o.default,{style:[x.typography.h3,{color:M.text}],children:v('redeem')}),(0,T.jsxs)(n.default,{style:[w.card,{backgroundColor:M.surfaceAlt,borderColor:M.border}],children:[(0,T.jsx)(o.default,{style:[x.typography.bodyStrong,{color:M.text}],children:v('rewardsRedeemBody',{n:(0,b.formatNumber)(l.cost_points),what:N})}),l.description?(0,T.jsx)(o.default,{style:[x.typography.small,{color:M.textMuted,marginTop:x.spacing.xs}],children:l.description}):null,(0,T.jsx)(o.default,{style:[x.typography.small,{color:S<l.cost_points?M.danger:M.textMuted,marginTop:x.spacing.sm}],children:S<l.cost_points?v('rewardsShortBy',{n:(0,b.formatNumber)(l.cost_points-S)}):v('rewardsRedeemBalanceAfter',{n:(0,b.formatNumber)(S-l.cost_points)})})]}),(0,T.jsx)(p.FormError,{text:z,style:{marginTop:x.spacing.sm}}),(0,T.jsx)(n.default,{style:{height:x.spacing.md}}),(0,T.jsx)(u.Button,{title:v('rewardsRedeemA11y',{name:l.name,n:(0,b.formatNumber)(l.cost_points)}),fullWidth:!0,size:"lg",loading:P,onPress:async()=>{W(!0),E(null);try{const e=await(0,f.redeemReward)(_,l.id);I(e),C(e)}catch(e){E((0,j.storeErrorText)(e?.message??'')||v('error'))}finally{W(!1)}}}),(0,T.jsx)(n.default,{style:{height:x.spacing.sm}}),(0,T.jsx)(u.Button,{title:v('cancel'),variant:"ghost",fullWidth:!0,onPress:B})]})})})})};const w=l.default.create({scrim:{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'flex-end'},sheet:{borderTopLeftRadius:x.radius.xl,borderTopRightRadius:x.radius.xl,padding:x.spacing.lg,paddingBottom:x.spacing.xxxl},card:{borderRadius:x.radius.lg,borderWidth:l.default.hairlineWidth,padding:x.spacing.md,marginTop:x.spacing.md},code:{borderRadius:x.radius.lg,borderWidth:l.default.hairlineWidth,padding:x.spacing.md,marginTop:x.spacing.lg,alignItems:'center',gap:4,alignSelf:'stretch'},codeText:{fontFamily:'SpaceMonoBold',fontSize:22,letterSpacing:2}})},2482,[33,15,467,369,158,146,273,1086,626,624,615,1621,616,671,1311,674,675,13]);
