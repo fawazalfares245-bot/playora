@@ -13,6 +13,30 @@ const out = await page.evaluate(async (ids) => {
   const games = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]');
   const anyGame = games[0];
 
+  // --- private match visibility (F-PRIV: `visibility` used to be decorative) ---
+  try {
+    const vs = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const pg = await api.createMatch(ids.organizer, {
+      title: 'Rules private match', sport: 'football', venue_id: vs[0].id,
+      starts_at: new Date(Date.now() + 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 864e5 + 54e5).toISOString(),
+      max_players: 10, price_kwd: 0, visibility: 'private', format: '5v5',
+    });
+    res.privMinted = !!pg.invite_code;
+    const read = async (uid) => { const g = await api.fetchGame(pg.id, uid); return g === null ? null : g; };
+    res.privOutsider = await read(ids.user);
+    const own = await read(ids.organizer);
+    res.privOwnerSees = !!own && own.id === pg.id;
+    res.privOwnerCode = !!(own && own.invite_code);
+    const adm = await read(ids.admin);
+    res.privAdminSees = !!adm && adm.id === pg.id;
+    res.privAdminCode = !!(adm && adm.invite_code);
+    await api.joinMatch(pg.id, ids.user);
+    const joined = await read(ids.user);
+    res.privParticipantSees = !!joined && joined.id === pg.id;
+    res.privParticipantCode = !!(joined && joined.invite_code);
+  } catch (e) { res.privError = e.code || e.message; }
+
   // --- authorization ---
   res.adminOnly = await code(() => api.fetchOrganizerApplications(ids.user));
   res.analystBI = await code(() => api.fetchBIDashboard(ids.analyst));
@@ -233,6 +257,13 @@ ok('the backend recognises the existing account', out.otpReturningExisting === t
 ok('a returning user signs in', out.otpReturningSignedIn === true, out.otpReturningError || 'ok');
 ok('the returning session carries an expiry', out.otpReturningHasExpiry === true, String(out.otpReturningHasExpiry));
 ok('a session with no expiry is rejected', out.sessionNoExpiryRejected === true, String(out.sessionNoExpiryRejected));
+ok('a private match is invisible to an outsider', out.privOutsider === null, String(out.privOutsider));
+ok('the organizer still sees their private match', out.privOwnerSees === true, out.privError || String(out.privOwnerSees));
+ok('the organizer still sees the invite code', out.privOwnerCode === true, String(out.privOwnerCode));
+ok('an admin can read a private match', out.privAdminSees === true, String(out.privAdminSees));
+ok('the invite code is withheld from an admin', out.privAdminCode === false, String(out.privAdminCode));
+ok('a participant can read the match they joined', out.privParticipantSees === true, String(out.privParticipantSees));
+ok('the invite code is withheld from a participant', out.privParticipantCode === false, String(out.privParticipantCode));
 ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
 await browser.close();
 console.log(results.join('\n'));

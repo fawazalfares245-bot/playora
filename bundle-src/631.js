@@ -2688,6 +2688,11 @@ __d(
         const i = t.get(e.venue_id),
           n = Ri(e.id, a);
         return Object.assign({}, e, {
+          // The invite code is a capability - holding it is enough to join a private match - and this
+          // DTO spread the whole row, so every caller got it. mockGetOrganizerMatches already treats it
+          // as the organizer's alone and withholds it from admins too; match that here rather than
+          // inventing a second rule.
+          invite_code: e.organizer_id === a ? (e.invite_code ?? null) : null,
           venue: i,
           bookings_count: ki(e.id),
           waitlist_count: vi(e.id).length,
@@ -2723,6 +2728,12 @@ __d(
       const a = hi(e);
       if (!a) return null;
       ra(t, a.audience);
+      // `visibility` was decorative: join never read it and this getter returned the whole row, so
+      // anyone holding the id could read a private match and its invite code. Mirrors the team rule in
+      // mockGetTeams - "private" !== privacy || member || admin - with a live booking standing in for
+      // membership. Note an invite holder reaches the match through mockResolveInviteCode, not here.
+      if ("private" === a.visibility && a.organizer_id !== t && null == Ri(e, t) && !(t && ro(t)))
+        return null;
       const i = new Map((await pi()).map((e) => [e.id, e]));
       return Ii(a, i, t);
     };
