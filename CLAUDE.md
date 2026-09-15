@@ -113,3 +113,17 @@ every five minutes and skipped for guests. `/admin` (module 9006) is the mainten
 `reconcileSeatPayments` on demand and lists the admin screens, which were previously reachable only by
 typing their URLs. Anything that needs to run on a clock has to be hung off that boot hook until the
 backend exists.
+
+## The per-game and per-court locks
+
+`Xt(gameId, fn)` and `pr(courtId, fn)` chain work per id in an in-memory Map and then call
+`Ha(name, keys, fn)` (631), which looks for `withAdvisoryLock`, `getRows` and `setRows` on the storage
+adapter. All three were absent, so the locks were per-tab promise chains and the re-read of the named
+row sets was skipped entirely. Module 618 now provides them: `withAdvisoryLock` over the Web Locks API
+(origin-scoped, so tabs queue against each other), and `getRows`/`setRows` as JSON row accessors.
+
+Two things to keep in mind when touching this. Web Locks are not reentrant: taking the same lock name
+inside a callback that already holds it deadlocks - the in-memory chain would have hung on that too, so
+no current call site nests, and new ones must not. And each `Ha` call names the collections it re-reads;
+a callback that writes a collection the call does not name still runs against whatever was in memory.
+`Xt` names bookings only, while `qi` also writes payments, lineups and seatCancellations.

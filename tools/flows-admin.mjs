@@ -238,15 +238,6 @@ const seedDrift = async (page) =>
     return { gameId: g.id, cursorBefore: localStorage.getItem('playora.mock.reconcilecursor.v1') };
   }, [IDS.organizer, IDS.user, IDS.analyst]);
 
-const readDrift = ([seatless, gameId]) => {
-  const bookings = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
-    .filter((b) => b.game_id === gameId);
-  return {
-    cursor: localStorage.getItem('playora.mock.reconcilecursor.v1'),
-    seatedRow: (bookings.find((b) => b.user_id === seatless) || {}).status ?? null,
-    voidedRow: (bookings.find((b) => b.id === 'bk-recon-unpaid') || {}).status ?? null,
-  };
-};
 
 // Guest: the boot sweep is skipped for a session-less visitor, so the reconciler is called cold here
 // and its return value can be pinned exactly.
@@ -256,10 +247,17 @@ await run('the seat payment reconciler reports the drift it fixed', async () => 
   ok('the cursor starts unset', seed.cursorBefore === null, String(seed.cursorBefore));
   await page.goto('http://localhost/profile', { waitUntil: 'load' });
   await page.waitForTimeout(2500);
-  const out = await page.evaluate(async ([seatless, seed, read]) => {
+  const out = await page.evaluate(async ([seatless, gameId]) => {
     const res = await __r(671).reconcileSeatPayments();
-    return Object.assign({ res }, new Function('a', 'return (' + read + ')(a)')([seatless, seed.gameId]));
-  }, [IDS.user, seed, readDrift.toString()]);
+    const bookings = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+      .filter((b) => b.game_id === gameId);
+    return {
+      res,
+      cursor: localStorage.getItem('playora.mock.reconcilecursor.v1'),
+      seatedRow: (bookings.find((b) => b.user_id === seatless) || {}).status ?? null,
+      voidedRow: (bookings.find((b) => b.id === 'bk-recon-unpaid') || {}).status ?? null,
+    };
+  }, [IDS.user, seed.gameId]);
 
   ok('one player was re-seated', out.res.seated === 1, JSON.stringify(out.res));
   ok('one unpaid seat was voided', out.res.seats_voided === 1, JSON.stringify(out.res));
@@ -277,9 +275,15 @@ await run('booting a session runs the scheduled sweep', async () => {
   const seed = await seedDrift(page);
   await page.goto('http://localhost/profile', { waitUntil: 'load' });
   await page.waitForTimeout(3500);
-  const out = await page.evaluate(([seatless, seed, read]) =>
-    new Function('a', 'return (' + read + ')(a)')([seatless, seed.gameId]),
-  [IDS.user, seed, readDrift.toString()]);
+  const out = await page.evaluate(([seatless, gameId]) => {
+    const bookings = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+      .filter((b) => b.game_id === gameId);
+    return {
+      cursor: localStorage.getItem('playora.mock.reconcilecursor.v1'),
+      seatedRow: (bookings.find((b) => b.user_id === seatless) || {}).status ?? null,
+      voidedRow: (bookings.find((b) => b.id === 'bk-recon-unpaid') || {}).status ?? null,
+    };
+  }, [IDS.user, seed.gameId]);
 
   ok('boot re-seated the paid player with no seat', out.seatedRow === 'confirmed', String(out.seatedRow));
   ok('boot voided the unpaid confirmed seat', out.voidedRow === 'cancelled', String(out.voidedRow));

@@ -1,5 +1,6 @@
 // Interactive flow checks for the organizer onboarding / creation screens. Run: node tools/flows-org1.mjs
-import { openApp, IDS } from './smoke.mjs';
+import { openApp, IDS, seedScript } from './smoke.mjs';
+import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
 import fs from 'node:fs';
 const en = fs.readFileSync(new URL('../bundle-src/909.js', import.meta.url), 'utf8');
 const t = (k) => { const m = en.match(new RegExp(`^\\s+${k}: "((?:[^"\\\\]|\\\\.)*)"`, 'm')); if (!m) throw new Error('missing key ' + k); return JSON.parse('"' + m[1] + '"'); };
@@ -347,6 +348,67 @@ await run('a series does not consume the one-off match limit', async () => {
   ok('a one-off match still succeeds right after', out.afterSeries === 'accepted', String(out.afterSeries));
   ok('the hand-created limit still bites', out.codes.includes('E_YOU_HAVE_CREATED_TOO_MANY_MATCHES'), JSON.stringify(out.codes));
   ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// The per-game and per-court mutexes chained promises in an in-memory Map and then called a storage
+// hook that did not exist, so the whole thing degraded to a per-tab chain: two tabs both read stale
+// rows, both passed the capacity test and both wrote. Web Locks are per origin, so they queue - but
+// only if the two tabs really share one browser context, hence the explicit context here rather than
+// openApp, whose pages each live in their own.
+await run('a second tab cannot overbook the same seat', async () => {
+  const boot = await openApp({ role: 'organizer', route: '/organizer' });
+  const seed = await boot.page.evaluate(async ([org]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    // two seats, and the organizer holds one, so exactly one is left to race for
+    const g = await api.createMatch(org, {
+      title: 'Two tabs', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 31 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 31 * 864e5 + 54e5).toISOString(),
+      max_players: 2, waitlist_capacity: 0, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+    const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); o[k] = localStorage.getItem(k); }
+    return { id: g.id, state: o };
+  }, [IDS.organizer]);
+  await boot.browser.close();
+
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const restore = `(() => { const s = ${JSON.stringify(seed.state)}; for (const k of Object.keys(s)) if (k !== 'secure.playora_session') localStorage.setItem(k, s[k]); })();`;
+  const browser = await chromium.launch();
+  const ctx = await browser.newContext({ viewport: { width: 420, height: 900 } });
+  const open = async (role) => {
+    const pg = await ctx.newPage();
+    await pg.route('http://localhost/**', (r) => {
+      const path = new URL(r.request().url()).pathname;
+      if (r.request().resourceType() === 'document' || path === '/' || path === '/index.html')
+        return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+      return r.fulfill({ status: 404, body: '' });
+    });
+    await pg.addInitScript(seedScript(role));
+    await pg.addInitScript(restore);
+    await pg.goto('http://localhost/', { waitUntil: 'load' });
+    await pg.waitForTimeout(2500);
+    return pg;
+  };
+  const a = await open('user');
+  const b = await open('analyst');
+  const locks = await a.evaluate(() => !!(navigator.locks && navigator.locks.request));
+  ok('the browser provides Web Locks', locks, String(locks));
+
+  const join = (pg, who) => pg.evaluate(async ([gid, uid]) => {
+    try { return (await __r(671).joinMatch(gid, uid)).status; } catch (e) { return 'ERR:' + (e.code || e.message); }
+  }, [seed.id, who]);
+  const [r1, r2] = await Promise.all([join(a, IDS.user), join(b, IDS.analyst)]);
+
+  const rows = await a.evaluate(([gid]) =>
+    JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+      .filter((x) => x.game_id === gid).map((x) => `${x.user_id.slice(0, 4)}:${x.status}`),
+  [seed.id]);
+  const seats = rows.filter((x) => /confirmed|reserved/.test(x)).length;
+
+  ok('exactly one of the two tabs got the seat', [r1, r2].filter((x) => x === 'confirmed').length === 1, `${r1} / ${r2}`);
+  ok('the match is not overbooked', seats === 2, `${seats} live seats: ${rows.join(', ')}`);
   await browser.close();
 });
 

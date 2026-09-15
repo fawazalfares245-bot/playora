@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "296503ee83"
+  buildId: "fd5f40c0b8"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -1909,7 +1909,56 @@ __d(function(g,r,i,a,m,e,d){var l=r(d[0]);Object.defineProperty(e,"__esModule",{
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.useTheme=void 0;var s=r(d[0]),o=r(d[1]),t=r(d[2]);e.useTheme=()=>{const{scheme:n,isDark:c,highContrast:u}=(0,o.useThemeMode)(),h=(0,t.useAudience)(),l=(0,s.getColors)(n,u);return{colors:'female'===h?Object.assign({},l,(0,t.roseAccent)(c,u)):l,isDark:c,highContrast:u}}},615,[616,617,623]);
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.typography=e.touch=e.spacing=e.radius=e.palette=e.lightColorsHC=e.lightColors=e.getColors=e.darkColorsHC=e.darkColors=void 0;const t=e.palette={black:'#0B0B0F',ink:'#111218',surface:'#16171F',surfaceAlt:'#1E1F29',border:'#363846',mutedDark:'#9DA1AD',white:'#FFFFFF',paper:'#F7F7F9',subtle:'#EEEFF3',borderLight:'#D5D8E0',mutedLight:'#5C5E69',accent:'#CCFF00',accentMuted:'#EFFFC2',accentInk:'#131A03',success:'#1FA974',warning:'#E0A100',danger:'#D43F3F'},n=e.lightColors={bg:t.paper,surface:t.white,surfaceAlt:t.subtle,border:t.borderLight,text:t.ink,textMuted:t.mutedLight,accent:t.accent,accentMuted:t.accentMuted,accentInk:t.accentInk,accentText:'#4E6B00',success:t.success,warning:t.warning,danger:t.danger,overlay:'rgba(11,11,15,0.45)'},c=e.darkColors={bg:t.black,surface:t.ink,surfaceAlt:t.surface,border:t.border,text:t.white,textMuted:t.mutedDark,accent:t.accent,accentMuted:'#2A3A08',accentInk:t.accentInk,accentText:t.accent,success:t.success,warning:t.warning,danger:t.danger,overlay:'rgba(0,0,0,0.6)'},o=e.lightColorsHC={bg:'#FFFFFF',surface:'#FFFFFF',surfaceAlt:'#ECEDF1',border:'#8B8E99',text:'#000000',textMuted:'#33353F',accent:'#4E6B00',accentMuted:'#E9FFB8',accentInk:'#FFFFFF',accentText:'#3E5500',success:'#0E7A4E',warning:'#8A6200',danger:'#B0241D',overlay:'rgba(0,0,0,0.55)'},F=e.darkColorsHC={bg:'#000000',surface:'#15161E',surfaceAlt:'#23242F',border:'#5E6273',text:'#FFFFFF',textMuted:'#D4D6DE',accent:'#D9FF4D',accentMuted:'#2A3A08',accentInk:'#0E1400',accentText:'#D9FF4D',success:'#33D38F',warning:'#FFC53D',danger:'#FF6B6B',overlay:'rgba(0,0,0,0.75)'};e.getColors=(t,s=!1)=>{const l='dark'===t;return s?l?F:o:l?c:n};e.spacing={xs:4,sm:8,md:12,lg:16,xl:24,xxl:32,xxxl:48},e.radius={sm:8,md:12,lg:16,xl:24,pill:999},e.typography={display:{fontSize:32,fontWeight:'700',letterSpacing:-.5},h1:{fontSize:24,fontWeight:'700',letterSpacing:-.3},h2:{fontSize:20,fontWeight:'600',letterSpacing:-.2},h3:{fontSize:17,fontWeight:'600'},body:{fontSize:16,fontWeight:'400',lineHeight:22},bodyStrong:{fontSize:16,fontWeight:'600',lineHeight:22},small:{fontSize:13,fontWeight:'400',lineHeight:18},smallStrong:{fontSize:13,fontWeight:'600',lineHeight:18},caption:{fontSize:11,fontWeight:'500',letterSpacing:.4}},e.touch={minTarget:44}},616,[]);
 __d(function(g,r,i,a,_m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.useThemeMode=e.ThemeProvider=void 0;var s=r(d[1]),o=t(r(d[2])),u=t(r(d[3])),n=r(d[4]);const l='playora.themeMode',h='playora.highContrast',m=(0,s.createContext)(void 0);e.ThemeProvider=({children:t})=>{const c=(0,o.default)(),[f,k]=(0,s.useState)('system'),[v,y]=(0,s.useState)(!1);(0,s.useEffect)(()=>{u.default.getItem(l).then(t=>{'light'!==t&&'dark'!==t&&'system'!==t||k(t)}),u.default.getItem(h).then(t=>{'1'===t&&y(!0)})},[]);const C=(0,s.useCallback)(async t=>{k(t),await u.default.setItem(l,t)},[]),M=(0,s.useCallback)(async t=>{y(t),await u.default.setItem(h,t?'1':'0')},[]),T='system'===f?'dark'===c?'dark':'light':f,b=(0,s.useCallback)(async()=>{await C('dark'===T?'light':'dark')},[T,C]),w=(0,s.useMemo)(()=>({mode:f,scheme:T,isDark:'dark'===T,highContrast:v,setMode:C,toggle:b,setHighContrast:M}),[f,T,v,C,b,M]);return(0,n.jsx)(m.Provider,{value:w,children:t})};e.useThemeMode=()=>{const t=(0,s.useContext)(m);if(!t)throw new Error('useThemeMode must be used inside <ThemeProvider>');return t}},617,[33,15,491,618,13]);
-__d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=void 0,Object.defineProperty(e,"useAsyncStorage",{enumerable:!0,get:function(){return n.useAsyncStorage}});var u=t(r(d[1])),n=r(d[2]);e.default=u.default},618,[33,619,622]);
+__d(
+  function (g, r, i, a, m, e, d) {
+    var t = r(d[0]);
+    (Object.defineProperty(e, "__esModule", { value: !0 }),
+      (e.default = void 0),
+      Object.defineProperty(e, "useAsyncStorage", {
+        enumerable: !0,
+        get: function () {
+          return n.useAsyncStorage;
+        },
+      }));
+    var u = t(r(d[1])),
+      n = r(d[2]);
+    // 631 looks for three optional hooks on this adapter and silently degrades when they are absent,
+    // which they were: withAdvisoryLock, getRows and setRows. Without withAdvisoryLock the per-game
+    // and per-court mutexes were only in-memory promise chains, so two tabs of the same origin both
+    // read stale rows, both passed the capacity and overlap tests, and both wrote - last write wins.
+    // Without getRows, the re-read those locks are supposed to perform was skipped too, so even
+    // within one tab a guarded transition ran against whatever happened to be in memory.
+    //
+    // Web Locks are scoped to the origin and shared across tabs, which is exactly the scope needed
+    // here. They need a secure context; localhost and https qualify, and anywhere else this falls
+    // through to running the work directly, which is no worse than before - and 631 still performs
+    // its re-read, because it keys that off this hook being present rather than off the lock working.
+    const L9 = async (o9, f9) => {
+      const n9 = "undefined" != typeof navigator ? navigator : null;
+      return n9 && n9.locks && n9.locks.request
+        ? n9.locks.request("playora:" + o9, f9)
+        : f9();
+    };
+    const G9 = async (k9) => {
+      const v9 = await u.default.getItem(k9);
+      if (!v9) return null;
+      try {
+        const p9 = JSON.parse(v9);
+        return Array.isArray(p9) ? p9 : null;
+      } catch {
+        return null;
+      }
+    };
+    const S9 = async (k9, rows9) => u.default.setItem(k9, JSON.stringify(rows9));
+    ((u.default.withAdvisoryLock = L9), (u.default.getRows = G9), (u.default.setRows = S9));
+    e.default = u.default;
+  },
+  618,
+  [33, 619, 622],
+);
+
+
+
 __d(function(g,r,_i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=void 0;const o=t(r(d[1])).default.bind({concatArrays:!0,ignoreUndefined:!0});function l(t,l){const n=window.localStorage.getItem(t);if(n){const i=JSON.parse(n),c=JSON.parse(l),s=JSON.stringify(o(i,c));window.localStorage.setItem(t,s)}else window.localStorage.setItem(t,l)}function n(t,o){return new Promise((l,n)=>{try{const n=t();null==o||o(null,n),l(n)}catch(t){null==o||o(t),n(t)}})}function i(t,o,l){return Promise.all(t).then(t=>{const n=(null==l?void 0:l(t))??null;return null==o||o(null,n),Promise.resolve(n)},t=>(null==o||o(t),Promise.reject(t)))}const c={getItem:(t,o)=>n(()=>window.localStorage.getItem(t),o),setItem:(t,o,l)=>n(()=>window.localStorage.setItem(t,o),l),removeItem:(t,o)=>n(()=>window.localStorage.removeItem(t),o),mergeItem:(t,o,i)=>n(()=>l(t,o),i),clear:t=>n(()=>window.localStorage.clear(),t),getAllKeys:t=>n(()=>{const t=window.localStorage.length,o=[];for(let l=0;l<t;l+=1){const t=window.localStorage.key(l)||"";o.push(t)}return o},t),flushGetRequests:()=>{},multiGet:(t,o)=>i(t.map(t=>c.getItem(t)),o,o=>o.map((o,l)=>[t[l],o])),multiSet:(t,o)=>i(t.map(t=>c.setItem(t[0],t[1])),o),multiRemove:(t,o)=>i(t.map(t=>c.removeItem(t)),o),multiMerge:(t,o)=>i(t.map(t=>c.mergeItem(t[0],t[1])),o)};e.default=c},619,[33,620]);
 __d(function(g,r,i,a,m,e,d){'use strict';const t=r(d[0]),{hasOwnProperty:n}=Object.prototype,{propertyIsEnumerable:o}=Object,c=(t,n,o)=>Object.defineProperty(t,n,{value:o,writable:!0,enumerable:!0,configurable:!0}),s=this,f={concatArrays:!1,ignoreUndefined:!1},l=t=>{const c=[];for(const o in t)n.call(t,o)&&c.push(o);if(Object.getOwnPropertySymbols){const n=Object.getOwnPropertySymbols(t);for(const s of n)o.call(t,s)&&c.push(s)}return c};function u(n){return Array.isArray(n)?y(n):t(n)?p(n):n}function y(t){const n=t.slice(0,0);return l(t).forEach(o=>{c(n,o,u(t[o]))}),n}function p(t){const n=null===Object.getPrototypeOf(t)?Object.create(null):{};return l(t).forEach(o=>{c(n,o,u(t[o]))}),n}const b=(t,n,o,s)=>(o.forEach(o=>{void 0===n[o]&&s.ignoreUndefined||(o in t&&t[o]!==Object.getPrototypeOf(t)?c(t,o,h(t[o],n[o],s)):c(t,o,u(n[o])))}),t),O=(t,o,s)=>{let f=t.slice(0,0),y=0;return[t,o].forEach(o=>{const p=[];for(let s=0;s<o.length;s++)n.call(o,s)&&(p.push(String(s)),c(f,y++,o===t?o[s]:u(o[s])));f=b(f,o,l(o).filter(t=>!p.includes(t)),s)}),f};function h(n,o,c){return c.concatArrays&&Array.isArray(n)&&Array.isArray(o)?O(n,o,c):t(o)&&t(n)?b(n,o,l(o),c):u(o)}m.exports=function(...n){const o=h(u(f),this!==s&&this||{},f);let c={_:{}};for(const s of n)if(void 0!==s){if(!t(s))throw new TypeError('`'+s+'` is not an Option Object');c=h(c,{_:s},o)}return c._}},620,[621]);
 __d(function(g,r,i,a,m,e,d){'use strict';m.exports=t=>{if('[object Object]'!==Object.prototype.toString.call(t))return!1;const o=Object.getPrototypeOf(t);return null===o||o===Object.prototype}},621,[]);
