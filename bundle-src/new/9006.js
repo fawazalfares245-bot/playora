@@ -14,6 +14,7 @@ __d(
           [busy, setBusy] = (0, n.useState)(!1),
           [res, setRes] = (0, n.useState)(null),
           [err, setErr] = (0, n.useState)(null),
+          [kyc, setKyc] = (0, n.useState)([]),
           run = (0, n.useCallback)(async () => {
             (setBusy(!0), setErr(null));
             try {
@@ -22,7 +23,32 @@ __d(
               (setRes(null), setErr((0, G9.classifyError)(x)));
             }
             setBusy(!1);
-          }, []);
+          }, []),
+          // Wallet identity checks used to stamp themselves verified on submission, so the gate in
+          // front of withdrawals was decorative. They wait for a human now, which means a human
+          // needs somewhere to look.
+          loadKyc = (0, n.useCallback)(async () => {
+            if (!u) return;
+            try {
+              setKyc(await (0, F.fetchPendingWalletKyc)(u.id));
+            } catch {
+              setKyc([]);
+            }
+          }, [u]),
+          decide = (0, n.useCallback)(
+            async (t9, ok9) => {
+              if (!u) return;
+              try {
+                (await (0, F.reviewWalletKyc)(u.id, t9, ok9, null), await loadKyc());
+              } catch (x) {
+                setErr((0, G9.classifyError)(x));
+              }
+            },
+            [u, loadKyc],
+          );
+        (0, n.useEffect)(() => {
+          loadKyc();
+        }, [loadKyc]);
         if (gate.ready && !gate.allowed)
           return (0, J.jsx)(G9.GateScreen, { kind: "denied", onBack: () => nav.back() });
         if (!gate.ready)
@@ -130,6 +156,59 @@ __d(
                       : null,
                   ],
                 }),
+                kyc.length
+                  ? (0, J.jsxs)(s.default, {
+                      style: [D.card, { borderColor: c.border, backgroundColor: c.surface }],
+                      children: [
+                        (0, J.jsx)(i.default, {
+                          style: [b.typography.h3, { color: c.text }],
+                          children: tr("adminKycTitle"),
+                        }),
+                        ...kyc.map((k9) =>
+                          (0, J.jsxs)(
+                            s.default,
+                            {
+                              style: [D.row, { borderColor: c.border }],
+                              children: [
+                                (0, J.jsxs)(s.default, {
+                                  style: { flex: 1 },
+                                  children: [
+                                    (0, J.jsx)(i.default, {
+                                      style: [b.typography.body, { color: c.text }],
+                                      children: k9.full_name || k9.display_name,
+                                    }),
+                                    (0, J.jsx)(i.default, {
+                                      style: [b.typography.caption, { color: c.textMuted }],
+                                      children: k9.id_masked,
+                                    }),
+                                  ],
+                                }),
+                                (0, J.jsx)(o.default, {
+                                  onPress: () => decide(k9.user_id, !0),
+                                  accessibilityRole: "button",
+                                  style: [D.chip, { backgroundColor: c.accent }],
+                                  children: (0, J.jsx)(i.default, {
+                                    style: [b.typography.caption, { color: c.accentInk, fontWeight: "700" }],
+                                    children: tr("adminKycApprove"),
+                                  }),
+                                }),
+                                (0, J.jsx)(o.default, {
+                                  onPress: () => decide(k9.user_id, !1),
+                                  accessibilityRole: "button",
+                                  style: [D.chip, { borderWidth: 1, borderColor: c.border }],
+                                  children: (0, J.jsx)(i.default, {
+                                    style: [b.typography.caption, { color: c.text, fontWeight: "700" }],
+                                    children: tr("adminKycReject"),
+                                  }),
+                                }),
+                              ],
+                            },
+                            k9.user_id,
+                          ),
+                        ),
+                      ],
+                    })
+                  : null,
                 (0, J.jsxs)(s.default, {
                   children: [
                     (0, J.jsx)(i.default, {
@@ -215,6 +294,12 @@ __d(
         alignItems: "center",
         borderTopWidth: k.default.hairlineWidth,
         paddingVertical: b.spacing.md,
+      },
+      chip: {
+        borderRadius: b.radius.pill,
+        paddingHorizontal: b.spacing.md,
+        paddingVertical: 6,
+        marginLeft: b.spacing.sm,
       },
     });
   },

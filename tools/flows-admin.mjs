@@ -300,5 +300,42 @@ await run('the admin maintenance screen runs the reconciler', async () => {
   await browser.close();
 });
 
+// withdrawEligible qualified every approved organizer regardless of earnings, but nothing writes the
+// organizer_payout ledger kind - so the button sat over a zero balance with nothing claimable behind
+// it. And wallet KYC stamped itself verified on submission, making the gate behind it decorative.
+await run('withdrawal follows the money, and identity waits for a human', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/' });
+  const out = await page.evaluate(async ([org, admin]) => {
+    const api = __r(671);
+    const res = {};
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    const w1 = await api.fetchWallet(org);
+    res.organizerEligible = w1.withdraw_eligible;
+    res.organizerClaimable = w1.claimable_payout_fils;
+    res.withdrawAttempt = await code(() => api.walletWithdraw(org, 5000));
+
+    // the identity check now queues instead of verifying itself
+    const kyc = await api.submitWalletKyc(org, 'Test Organizer', '123456789012');
+    res.kycStatus = kyc.status;
+    res.queued = (await api.fetchPendingWalletKyc(admin)).some((k) => k.user_id === org);
+    res.strangerReview = await code(() => api.reviewWalletKyc(org, org, true, null));
+    await api.reviewWalletKyc(admin, org, true, null);
+    res.afterReview = (await api.fetchWallet(org)).kyc_status;
+    res.secondReview = await code(() => api.reviewWalletKyc(admin, org, true, null));
+    return res;
+  }, [IDS.organizer, IDS.admin]);
+
+  ok('an organizer with no venue is not withdraw-eligible', out.organizerEligible === false, String(out.organizerEligible));
+  ok('and has nothing claimable anyway', out.organizerClaimable === 0, String(out.organizerClaimable));
+  ok('withdrawing is refused', out.withdrawAttempt === 'E_WITHDRAWALS_ARE_AVAILABLE_TO_VERIFIED_ORGANIZERS', String(out.withdrawAttempt));
+  ok('a submitted identity check is pending, not verified', out.kycStatus === 'pending', String(out.kycStatus));
+  ok('it appears in the admin queue', out.queued === true, String(out.queued));
+  ok('a non-admin cannot review it', out.strangerReview !== 'accepted', String(out.strangerReview));
+  ok('an admin verifies it', out.afterReview === 'verified', String(out.afterReview));
+  ok('it cannot be reviewed twice', out.secondReview === 'E_KYC_ALREADY_REVIEWED', String(out.secondReview));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

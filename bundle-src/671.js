@@ -559,6 +559,8 @@ e.fetchOrganizerMatches = (o, c) => {
     e.fetchPayment = (o, c) => t.store.mockGetPayment(o, c);
     e.payRequest = (o, c, s) => t.store.mockPayRequest(o, c, s);
     e.confirmCashPayment = (o, c) => t.store.mockConfirmCashPayment(o, c);
+    e.fetchPendingWalletKyc = (o) => t.store.mockGetPendingWalletKyc(o);
+    e.reviewWalletKyc = (o, c, s, n) => t.store.mockReviewWalletKyc(o, c, s, n);
     e.refundPayment = (o, c) => t.store.mockRefundPayment(o, c);
     e.sendPaymentReminders = (o, c) => t.store.mockSendPaymentReminders(o, c);
     e.paymentMethods = () => t.store.mockGetPaymentMethods();

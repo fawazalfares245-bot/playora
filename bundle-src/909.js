@@ -36,6 +36,9 @@ __d(
         adminReconcileMore: "More payments to go \u2014 run it again.",
         adminReconcileDone: "Every seat payment has been checked.",
         adminScreens: "Admin screens",
+        adminKycTitle: "Identity checks waiting",
+        adminKycApprove: "Verify",
+        adminKycReject: "Reject",
         biHealthMeasured: "Measured on this device",
         biHealthSimulated: "Not measured",
         biHealthSimulatedNote: "These three are placeholder values. Nothing on the device measures uptime, latency or error rate, so treat them as illustrative until a server reports them.",
@@ -600,6 +603,7 @@ __d(
         seAmountIsOutsideTheAllowedTop: "Amount is outside the allowed top-up range.",
         seAmountIsOutsideTheAllowedTransfer: "Amount is outside the allowed transfer range.",
         seApplicationNotFound: "Application not found.",
+        seKycAlreadyReviewed: "That verification has already been reviewed.",
         seAssignAPlayerFirst: "Assign a player first.",
         seBlockEndMustBeAfterStart: "Block end must be after start.",
         seBookingNotFound: "Booking not found.",
@@ -3531,6 +3535,9 @@ __d(
         adminReconcileMore: "\u0628\u0642\u064a\u062a \u0645\u062f\u0641\u0648\u0639\u0627\u062a \u0623\u062e\u0631\u0649 \u2014 \u0634\u063a\u0651\u0644\u0647\u0627 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.",
         adminReconcileDone: "\u062a\u0645 \u0641\u062d\u0635 \u062c\u0645\u064a\u0639 \u0645\u062f\u0641\u0648\u0639\u0627\u062a \u0627\u0644\u0645\u0642\u0627\u0639\u062f.",
         adminScreens: "\u0634\u0627\u0634\u0627\u062a \u0627\u0644\u0625\u062f\u0627\u0631\u0629",
+        adminKycTitle: "\u062a\u062d\u0642\u0642\u0627\u062a \u0627\u0644\u0647\u0648\u064a\u0629 \u0627\u0644\u0645\u0639\u0644\u0651\u0642\u0629",
+        adminKycApprove: "\u062a\u0648\u062b\u064a\u0642",
+        adminKycReject: "\u0631\u0641\u0636",
         biHealthMeasured: "\u0645\u0642\u0627\u0633\u0629 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632",
         biHealthSimulated: "\u063a\u064a\u0631 \u0645\u0642\u0627\u0633\u0629",
         biHealthSimulatedNote: "\u0647\u0630\u0647 \u0627\u0644\u0642\u064a\u0645 \u0627\u0644\u062b\u0644\u0627\u062b \u062a\u0642\u0631\u064a\u0628\u064a\u0629. \u0644\u0627 \u0634\u064a\u0621 \u0639\u0644\u0649 \u0627\u0644\u062c\u0647\u0627\u0632 \u064a\u0642\u064a\u0633 \u0632\u0645\u0646 \u0627\u0644\u062a\u0634\u063a\u064a\u0644 \u0623\u0648 \u0627\u0644\u0627\u0633\u062a\u062c\u0627\u0628\u0629 \u0623\u0648 \u0646\u0633\u0628\u0629 \u0627\u0644\u0623\u062e\u0637\u0627\u0621\u060c \u0641\u0627\u0639\u062a\u0628\u0631\u0647\u0627 \u0625\u064a\u0636\u0627\u062d\u064a\u0629 \u062d\u062a\u0649 \u064a\u0648\u0641\u0631\u0647\u0627 \u0627\u0644\u062e\u0627\u062f\u0645.",
@@ -4263,6 +4270,7 @@ __d(
           "\u0627\u0644\u0645\u0628\u0644\u063a \u062e\u0627\u0631\u062c \u0646\u0637\u0627\u0642 \u0627\u0644\u062a\u062d\u0648\u064a\u0644 \u0627\u0644\u0645\u0633\u0645\u0648\u062d.",
         seApplicationNotFound:
           "\u0627\u0644\u0637\u0644\u0628 \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f.",
+        seKycAlreadyReviewed: "\u062a\u0645\u062a \u0645\u0631\u0627\u062c\u0639\u0629 \u0647\u0630\u0627 \u0627\u0644\u062a\u062d\u0642\u0642 \u0645\u0633\u0628\u0642\u064b\u0627.",
         seAssignAPlayerFirst:
           "\u0639\u064a\u0651\u0646 \u0644\u0627\u0639\u0628\u064b\u0627 \u0623\u0648\u0644\u064b\u0627.",
         seBlockEndMustBeAfterStart:

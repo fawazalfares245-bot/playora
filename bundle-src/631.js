@@ -16619,18 +16619,60 @@ __d(
       if (!i) throw new Error("E_ENTER_YOUR_LEGAL_NAME");
       if (!(0, A.looksLikeCivilId)(a)) throw new Error("E_ENTER_A_VALID_12_DIGIT_CIVIL");
       await (0, w.logAudit)("wallet.kyc_submitted", (0, w.actorRef)(e));
+      // This used to stamp itself verified on submission, which made the identity gate in front of
+      // withdrawals decorative. It waits for a human now, the same way venue and organizer
+      // applications do.
       const n = {
         user_id: e,
-        status: "verified",
+        status: "pending",
         full_name: i,
         id_masked: (0, A.maskIdNumber)(a),
         submitted_at: new Date().toISOString(),
-        reviewed_at: new Date().toISOString(),
+        reviewed_at: null,
+        reviewed_by: null,
+        review_note: null,
       };
       return (
         (Qt.walletKyc = [...Qt.walletKyc.filter((t) => t.user_id !== e), n]),
         await Za(it, Qt.walletKyc),
-        await (0, w.logAudit)("wallet.kyc_verified", (0, w.actorRef)(e)),
+        await br((t9) => ({
+          id: ea(),
+          user_id: t9,
+          type: "kyc_submitted",
+          read: !1,
+          created_at: new Date().toISOString(),
+        })),
+        n
+      );
+    };
+    r.mockGetPendingWalletKyc = async (e) => (
+      await ei(),
+      await sn(e),
+      Qt.walletKyc
+        .filter((e) => "pending" === e.status)
+        .map((e) => Object.assign({}, e, { display_name: or(e.user_id) }))
+    );
+    r.mockReviewWalletKyc = async (e, t, a, i) => {
+      (await ei(), await sn(e));
+      const n = Qt.walletKyc.find((e) => e.user_id === t);
+      if (!n) throw new Error("E_APPLICATION_NOT_FOUND");
+      if ("pending" !== n.status) throw new Error("E_KYC_ALREADY_REVIEWED");
+      return (
+        (n.status = a ? "verified" : "rejected"),
+        (n.reviewed_at = new Date().toISOString()),
+        (n.reviewed_by = e),
+        (n.review_note = i ? (0, v.sanitizeText)(i, 200) : null),
+        await Za(it, Qt.walletKyc),
+        await bi({
+          id: ea(),
+          user_id: t,
+          type: a ? "kyc_verified" : "kyc_rejected",
+          read: !1,
+          created_at: new Date().toISOString(),
+        }),
+        await (0, w.logAdminAudit)(a ? "wallet.kyc_verified" : "wallet.kyc_rejected", e, t, {
+          note: n.review_note,
+        }),
         n
       );
     };
