@@ -284,5 +284,25 @@ await run('a zero balance reads as money, not as Free', async () => {
   await browser.close();
 });
 
+// The Play sheet's first row says "Browse matches near you and join one" and opened /discover, a
+// people directory that cannot show a game.
+await run('the Play sheet finds games, and finds people separately', async () => {
+  // Start on Profile, not Home, so the row actually has somewhere to go.
+  const { browser, page, errors } = await openApp({ role: 'user', route: '/profile' });
+  const before = await page.evaluate(() => document.body.innerText);
+  await page.getByRole('button', { name: t('playTab'), exact: true }).first().click().catch(() => {});
+  await page.waitForTimeout(600);
+  const sheet = await page.evaluate(() => document.body.innerText);
+  ok('the sheet opened', sheet !== before && sheet.includes(t('findAGame')), sheet.slice(0, 120).replace(/\n/g, '|'));
+  ok('the sheet offers finding people under its own name', sheet.includes(t('discoverTitle')), sheet.slice(0, 200).replace(/\n/g, '|'));
+  await page.getByText(t('findAGame'), { exact: true }).first().click();
+  await page.waitForTimeout(1800);
+  const body = await page.evaluate(() => document.body.innerText);
+  ok('it lands somewhere that shows games', /\d+\s*\/\s*\d+/.test(body), body.slice(0, 200).replace(/\n/g, '|'));
+  ok('it is not the people directory', !body.includes(t('discoverTitle')) && !body.includes(t('noPlayersFound')), body.slice(0, 160).replace(/\n/g, '|'));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

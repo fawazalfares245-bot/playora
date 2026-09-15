@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "440136d710"
+  buildId: "459edecb96"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -32383,7 +32383,14 @@ __d(
                       children: L("playTab"),
                     }),
                     (0, C.jsxs)(s.default, {
-                      onPress: () => F("/discover"),
+                      // This row says "Browse matches near you and join one" and used to open
+                      // /discover, which is a people directory - Discover players, Find people to play
+                      // with, follow and message. The app's most important call to action landed on a
+                      // screen that cannot show a game. Games are on the Home tab. navigate rather
+                      // than push, so tapping it from Home does not stack a second copy.
+                      onPress: () => {
+                        (H(!1), z.navigate("index"));
+                      },
                       accessibilityRole: "button",
                       style: [R.sheetRow, { borderColor: M.border }],
                       children: [
@@ -32481,6 +32488,39 @@ __d(
                         }),
                       ],
                     }),
+                    (0, C.jsxs)(s.default, {
+                      onPress: () => F("/discover"),
+                      accessibilityRole: "button",
+                      style: [R.sheetRow, { borderColor: M.border }],
+                      children: [
+                        (0, C.jsx)(l.default, {
+                          style: [R.sheetIcon, { backgroundColor: M.accent }],
+                          children: (0, C.jsx)(c.Ionicons, {
+                            name: "people-outline",
+                            size: 20,
+                            color: M.accentInk,
+                          }),
+                        }),
+                        (0, C.jsxs)(l.default, {
+                          style: { flex: 1, marginHorizontal: x.spacing.md },
+                          children: [
+                            (0, C.jsx)(i.default, {
+                              style: [x.typography.bodyStrong, { color: M.text }],
+                              children: L("discoverTitle"),
+                            }),
+                            (0, C.jsx)(i.default, {
+                              style: [x.typography.caption, { color: M.textMuted }],
+                              children: L("discoverSub"),
+                            }),
+                          ],
+                        }),
+                        (0, C.jsx)(c.Ionicons, {
+                          name: (0, k.chevronForward)(),
+                          size: 18,
+                          color: M.textMuted,
+                        }),
+                      ],
+                    }),
                   ],
                 }),
               ],
@@ -32538,6 +32578,9 @@ __d(
   1620,
   [33, 15, 467, 369, 158, 146, 273, 1086, 20, 381, 630, 673, 615, 1621, 616, 675, 1171, 13],
 );
+
+
+
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.useReducedMotion=e.sheetAnimation=void 0;var n=r(d[1]),o=t(r(d[2])),u=r(d[3]);e.useReducedMotion=()=>{const t=(0,u.useReducedMotion)()??!1,[s,c]=(0,n.useState)(t);return(0,n.useEffect)(()=>{let t=!0;o.default.isReduceMotionEnabled().then(n=>{t&&c(!!n)}).catch(()=>{});const n=o.default.addEventListener('reduceMotionChanged',t=>c(!!t));return()=>{t=!1,n?.remove?.()}},[]),s};e.sheetAnimation=t=>t?'fade':'slide'},1621,[33,15,444,918]);
 __d(
   function (g, r, i, a, _m, _e, d) {
