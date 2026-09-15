@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "978d985c55"
+  buildId: "8115b98525"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -5507,6 +5507,82 @@ __d(
     };
     r.validateMatchInput = validateMatchInput;
     const e9 = (e) => String(e ?? "").slice(0, 40);
+    // ORG1 (F-ORG1-19): a venue an organizer types in is usable for their own match straight away but
+    // stays out of the public directory (listed: false) until an admin reviews the pending
+    // registration created below. `created_by` records the organizer, not the venue name.
+    //
+    // Three paths used to create venues and only this one governed them: mockCreateSeries built its
+    // own literal with no listed, no review_status, no created_by and no venueProfile at all, and
+    // mockGetVenues filters on `!1 !== listed`, so undefined passed and a series venue went straight
+    // into the public directory with nothing in the admin queue. Both lanes are fed the identical
+    // object by the same UI field, so they now share the same helper and the same outcome.
+    const createCustomVenue9 = async (e, sport9, cv9) => {
+      const vn9 = (0, v.sanitizeText)(cv9.name, 80);
+      if (!vn9) throw new Error("E_ADD_A_VENUE_NAME");
+      const lat9 = Number(cv9.lat),
+        lng9 = Number(cv9.lng);
+      if (Number.isNaN(lat9) || Number.isNaN(lng9))
+        throw new Error("E_PICK_THE_VENUE_LOCATION_ON_THE");
+      const n = (0, v.sanitizeText)(cv9.address, 160),
+        r = {
+          id: ea(),
+          name: vn9,
+          city: "Kuwait",
+          area: n ? n.split(",")[0] : "Custom location",
+          sports: [sport9],
+          cover_url: null,
+          rating: 0,
+          rating_count: 0,
+          description: null,
+          address: n || null,
+          lat: lat9,
+          lng: lng9,
+          custom: !0,
+          listed: !1,
+          review_status: "pending",
+          created_by: e,
+          created_at: new Date().toISOString(),
+        };
+      (Qt.venues.push(r), await Za(ae, Qt.venues));
+      const vp9 = {
+        venue_id: r.id,
+        owner_id: e,
+        status: "pending",
+        commission_type: he,
+        commission_value: 10,
+        payout_iban_last4: null,
+        cancellation_policy: "Free cancellation up to 6 hours before start.",
+        cancellation_cutoff_hours: 6,
+        amenities: [],
+        photos: [],
+        auto_accept: !1,
+        staff: [],
+        origin: "organizer_custom",
+        created_at: new Date().toISOString(),
+        reviewed_at: null,
+        reviewed_by: null,
+        review_note: null,
+      };
+      return (
+        Qt.venueProfiles.push(vp9),
+        await Za(ce, Qt.venueProfiles),
+        await br((t9) => ({
+          id: ea(),
+          user_id: t9,
+          type: "venue_application",
+          venue_id: r.id,
+          venue_name: r.name,
+          read: !1,
+          created_at: new Date().toISOString(),
+        })),
+        await (0, w.logAudit)("venue.created", (0, w.actorRef)(e), {
+          venue: r.id.slice(-6),
+          name: e9(r.name),
+          listed: !1,
+        }),
+        r.id
+      );
+    };
     const Wi = async (e, t) => {
       (await ei(), await on(e));
       const a = (0, v.sanitizeText)(t.title, 100);
@@ -5537,71 +5613,7 @@ __d(
       }
       if (l) d = l.venue_id;
       else if (t.custom_venue) {
-        // ORG1 (F-ORG1-19): a venue an organizer types in is usable for their own match straight away
-        // but stays out of the public directory (listed: false) until an admin reviews the pending
-        // registration created below. `created_by` records the organizer, not the venue name.
-        const vn9 = (0, v.sanitizeText)(t.custom_venue.name, 80);
-        if (!vn9) throw new Error("E_ADD_A_VENUE_NAME");
-        const a = Number(t.custom_venue.lat),
-          i = Number(t.custom_venue.lng);
-        if (Number.isNaN(a) || Number.isNaN(i)) throw new Error("E_PICK_THE_VENUE_LOCATION_ON_THE");
-        const n = (0, v.sanitizeText)(t.custom_venue.address, 160),
-          r = {
-            id: ea(),
-            name: vn9,
-            city: "Kuwait",
-            area: n ? n.split(",")[0] : "Custom location",
-            sports: [t.sport],
-            cover_url: null,
-            rating: 0,
-            rating_count: 0,
-            description: null,
-            address: n || null,
-            lat: a,
-            lng: i,
-            custom: !0,
-            listed: !1,
-            review_status: "pending",
-            created_by: e,
-            created_at: new Date().toISOString(),
-          };
-        (Qt.venues.push(r), await Za(ae, Qt.venues));
-        const vp9 = {
-          venue_id: r.id,
-          owner_id: e,
-          status: "pending",
-          commission_type: he,
-          commission_value: 10,
-          payout_iban_last4: null,
-          cancellation_policy: "Free cancellation up to 6 hours before start.",
-          cancellation_cutoff_hours: 6,
-          amenities: [],
-          photos: [],
-          auto_accept: !1,
-          staff: [],
-          origin: "organizer_custom",
-          created_at: new Date().toISOString(),
-          reviewed_at: null,
-          reviewed_by: null,
-          review_note: null,
-        };
-        (Qt.venueProfiles.push(vp9),
-          await Za(ce, Qt.venueProfiles),
-          await br((t9) => ({
-            id: ea(),
-            user_id: t9,
-            type: "venue_application",
-            venue_id: r.id,
-            venue_name: r.name,
-            read: !1,
-            created_at: new Date().toISOString(),
-          })),
-          await (0, w.logAudit)("venue.created", (0, w.actorRef)(e), {
-            venue: r.id.slice(-6),
-            name: e9(r.name),
-            listed: !1,
-          }),
-          (d = r.id));
+        d = await createCustomVenue9(e, t.sport, t.custom_venue);
       } else {
         const v9 = fi().find((e) => e.id === t.venue_id);
         if (!t.venue_id || !v9) throw new Error("E_CHOOSE_A_VENUE");
@@ -8175,25 +8187,7 @@ __d(
         throw new Error("E_PICK_THE_MONTHLY_PATTERN");
       let i;
       if (t.custom_venue) {
-        const e = (0, v.sanitizeText)(t.custom_venue.name, 80);
-        if (!e) throw new Error("E_ADD_A_VENUE_NAME");
-        const a = {
-          id: ea(),
-          name: e,
-          city: "Kuwait",
-          area: (0, v.sanitizeText)(t.custom_venue.address, 80).split(",")[0] || "Custom location",
-          sports: [t.sport],
-          cover_url: null,
-          rating: 0,
-          rating_count: 0,
-          description: null,
-          address: (0, v.sanitizeText)(t.custom_venue.address, 160) || null,
-          lat: Number(t.custom_venue.lat),
-          lng: Number(t.custom_venue.lng),
-          custom: !0,
-          created_at: new Date().toISOString(),
-        };
-        (Qt.venues.push(a), await Za(ae, Qt.venues), (i = a.id));
+        i = await createCustomVenue9(e, t.sport, t.custom_venue);
       } else {
         if (!t.venue_id || !fi().some((e) => e.id === t.venue_id)) throw new Error("E_CHOOSE_A_VENUE");
         i = t.venue_id;
@@ -19521,6 +19515,7 @@ __d(
     657, 658, 659, 660, 661, 662, 663, 664, 665, 666, 667, 668, 669, 670,
   ],
 );
+
 
 
 

@@ -187,5 +187,58 @@ await run('a venue application waits for review', async () => {
   await browser.close();
 });
 
+// mockCreateSeries built its own venue literal with no listed, no review_status, no created_by and no
+// venueProfile, so a series venue went straight into the public directory with nothing in the admin
+// queue - while the identical field in the match wizard produced a governed, pending one.
+await run('a custom venue is governed whichever wizard made it', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer' });
+  const out = await page.evaluate(async ([org, admin]) => {
+    const api = __r(671);
+    const res = {};
+    const name = (k) => 'Backyard Pitch ' + k;
+    const cv = (k) => ({ name: name(k), address: 'Salmiya, Kuwait', lat: 29.3339, lng: 48.0754 });
+    const now = new Date();
+    res.seriesErr = null;
+    try {
+      await api.createSeries(org, {
+        title: 'Governed venue series', sport: 'football', format: 'football_5v5', skill_level: 'all',
+        custom_venue: cv('SERIES'), max_players: 10, waitlist_capacity: 2, price_kwd: 0,
+        visibility: 'public', approval_mode: 'auto', skill_policy: 'open',
+        start_date: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2).toISOString(),
+        start_minutes: 1080, end_minutes: 1170, frequency: 'weekly',
+        weekdays: [(now.getDay() + 2) % 7], horizon_weeks: 2, auto_invite: false,
+      });
+    } catch (e) { res.seriesErr = e.code || e.message; }
+    const listed = await api.fetchVenues();
+    res.inDirectory = listed.some((v) => v.name === name('SERIES'));
+    const pending = await api.fetchPendingVenues(admin);
+    const row = pending.find((p) => p.venue && p.venue.name === name('SERIES'));
+    res.inQueue = !!row;
+    res.owner = row ? row.profile.owner_id : null;
+    // a series venue with no coordinates used to store NaN; the shared helper refuses it
+    try {
+      await api.createSeries(org, {
+        title: 'No location series', sport: 'football', format: 'football_5v5', skill_level: 'all',
+        custom_venue: { name: name('NOLOC'), address: 'Somewhere' }, max_players: 10,
+        waitlist_capacity: 2, price_kwd: 0, visibility: 'public', approval_mode: 'auto',
+        skill_policy: 'open',
+        start_date: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3).toISOString(),
+        start_minutes: 1080, end_minutes: 1170, frequency: 'weekly',
+        weekdays: [(now.getDay() + 3) % 7], horizon_weeks: 2, auto_invite: false,
+      });
+      res.noLocation = 'accepted';
+    } catch (e) { res.noLocation = e.code || e.message; }
+    return res;
+  }, [IDS.organizer, IDS.admin]);
+
+  ok('the series was created', out.seriesErr === null, String(out.seriesErr));
+  ok('its venue is not in the public directory', out.inDirectory === false, String(out.inDirectory));
+  ok('its venue is in the admin queue', out.inQueue === true, String(out.inQueue));
+  ok('the queue row names the organizer as owner', out.owner === IDS.organizer, String(out.owner));
+  ok('a series venue with no coordinates is refused', out.noLocation === 'E_PICK_THE_VENUE_LOCATION_ON_THE', String(out.noLocation));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);
