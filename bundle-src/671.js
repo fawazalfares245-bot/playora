@@ -516,7 +516,11 @@ e.fetchOrganizerMatches = (o, c) => {
     e.fetchPassportPrivacy = (o) => t.store.mockGetPassportPrivacy(o);
     e.updatePassportPrivacy = (o, c) => t.store.mockUpdatePassportPrivacy(o, c);
     e.adminRemoveAchievement = (o, c, s) => t.store.mockAdminRemoveAchievement(o, c, s);
-    e.fetchMatchInvite = (o) => t.store.mockGetMatchInvite(o);
+    // The invite code is the organizer's; the caller is not optional.
+    e.fetchMatchInvite = (o, c) => {
+      if (!c) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE");
+      return t.store.mockGetMatchInvite(o, c);
+    };
     e.resolveInviteCode = (o, c) => t.store.mockResolveInviteCode(o, c);
     e.logShare = (o, c, s) => t.store.mockLogShare(o, c, s);
     e.joinByCode = (o, c) => t.store.mockJoinByCode(o, c);

@@ -6424,10 +6424,18 @@ __d(
         const r = { code: n, game_id: e, created_at: new Date().toISOString(), expires_at: i.ends_at };
         return (Qt.invites.push(r), await Za(zt, Qt.invites), r);
       };
-    r.mockGetMatchInvite = async (e) => {
+    r.mockGetMatchInvite = async (e, t) => {
       await ei();
-      const t = await Xn(e);
-      return { code: t.code, link: `https://playora.app/m/${t.code}`, expires_at: t.expires_at };
+      // This took no caller at all, and Xn mints and persists a code when the match has none - so any
+      // session could ask for a private match's invite link and have one created on demand. The code
+      // is a capability: holding it is enough to join. It belongs to the organizer, the same rule the
+      // DTO and mockGetOrganizerMatches already apply to invite_code.
+      const a = hi(e);
+      if (!a) throw new Error("E_MATCH_NOT_FOUND");
+      if (!t || (a.organizer_id !== t && !ro(t)))
+        throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE");
+      const i = await Xn(e);
+      return { code: i.code, link: `https://playora.app/m/${i.code}`, expires_at: i.expires_at };
     };
     const er = async (e, t) => {
       await ei();

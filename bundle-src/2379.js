@@ -39,7 +39,9 @@ __d(
             }
             (V(t.game),
               K(t.players),
-              (0, T.fetchMatchInvite)(e)
+              // e is the match id, A.id the viewer. A non-organizer is refused now, and the catch
+              // below leaves the share link unrendered, which is the point: the code is a capability.
+              (0, T.fetchMatchInvite)(e, A.id)
                 .then((e) => he(e?.link ?? null))
                 .catch(() => he(null)),
               ie(t.fit),

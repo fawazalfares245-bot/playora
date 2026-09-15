@@ -38,6 +38,27 @@ const out = await page.evaluate(async (ids) => {
     res.privParticipantCode = !!(joined && joined.invite_code);
   } catch (e) { res.privError = e.code || e.message; }
 
+  // mockGetMatchInvite took no caller at all, and Xn mints a code on demand - so any session could
+  // ask a private match for an invite link and have one created for it.
+  try {
+    // rules.mjs boots as admin, so demo seeding assigns no games to the organizer - make one.
+    const vs2 = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const ig = await api.createMatch(ids.organizer, {
+      title: 'Rules invite match', sport: 'football', venue_id: vs2[0].id,
+      starts_at: new Date(Date.now() + 21 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 21 * 864e5 + 54e5).toISOString(),
+      max_players: 10, price_kwd: 0, visibility: 'private', format: '5v5',
+    });
+    res.inviteNoCaller = await code(() => api.fetchMatchInvite(ig.id));
+    res.inviteStranger = await code(() => api.fetchMatchInvite(ig.id, ids.user));
+    const owned = await api.fetchMatchInvite(ig.id, ids.organizer).catch(() => null);
+    res.inviteOwner = !!(owned && owned.code);
+    const asAdmin = await api.fetchMatchInvite(ig.id, ids.admin).catch(() => null);
+    res.inviteAdmin = !!(asAdmin && asAdmin.code);
+  } catch (e) {
+    res.inviteErr = e.message;
+  }
+
   // --- authorization ---
   res.adminOnly = await code(() => api.fetchOrganizerApplications(ids.user));
   res.analystBI = await code(() => api.fetchBIDashboard(ids.analyst));
@@ -265,6 +286,10 @@ ok('an admin can read a private match', out.privAdminSees === true, String(out.p
 ok('the invite code is withheld from an admin', out.privAdminCode === false, String(out.privAdminCode));
 ok('a participant can read the match they joined', out.privParticipantSees === true, String(out.privParticipantSees));
 ok('the invite code is withheld from a participant', out.privParticipantCode === false, String(out.privParticipantCode));
+ok('a match invite without a caller is refused', out.inviteNoCaller === 'E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE', String(out.inviteNoCaller));
+ok('a stranger cannot read a match invite', out.inviteStranger === 'E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE', String(out.inviteStranger));
+ok('the organizer still gets the invite code', out.inviteOwner === true, String(out.inviteOwner));
+ok('an admin still gets the invite code', out.inviteAdmin === true, String(out.inviteAdmin));
 ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
 await browser.close();
 
