@@ -199,5 +199,106 @@ await run('admin activity log is denied to a player', async () => {
   await browser.close();
 });
 
+// mockReconcileSeatPayments had no caller anywhere in the bundle. seedDrift plants the two shapes it
+// exists to find, plus enough settled rows that one 100-row pass cannot reach the end.
+const seedDrift = async (page) =>
+  page.evaluate(async ([org, seatless, unpaid]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Reconcile drift', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 19 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 19 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 3, visibility: 'public', format: '5v5',
+    });
+    // Dated in 2020 so these sort ahead of every demo payment and the first pass is all ours.
+    const pay = (n, payer, status, extra) => Object.assign({
+      id: 'pay-recon-' + n, kind: 'seat', booking_id: null, game_id: g.id, payer_id: payer,
+      payer_name: 'Seeded', payee_venue_id: g.venue_id, amount_kwd: 3, status,
+      method: null, gateway_ref: null, reminders_sent: 0, reserved_until: null,
+      paid_at: null, refunded_at: null,
+      created_at: new Date(Date.UTC(2020, 0, 1, 0, 0, n)).toISOString(),
+    }, extra || {});
+    const payments = JSON.parse(localStorage.getItem('playora.mock.payments.v1') || '[]');
+    // 1. paid, but the player holds no seat -> the reconciler must re-seat them.
+    payments.push(pay(0, seatless, 'paid', { paid_at: new Date().toISOString(), method: 'knet' }));
+    // 2. seat confirmed, payment never made and the hold long expired -> the seat must be voided.
+    payments.push(pay(1, unpaid, 'pending', { reserved_until: new Date(Date.now() - 864e5).toISOString() }));
+    // 3. 101 settled rows, so the pass runs out at 100 and has to leave a cursor behind.
+    for (let k = 2; k < 103; k++) payments.push(pay(k, seatless, 'refunded'));
+    localStorage.setItem('playora.mock.payments.v1', JSON.stringify(payments));
+    const bookings = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]');
+    const now = new Date().toISOString();
+    bookings.push({
+      id: 'bk-recon-unpaid', game_id: g.id, user_id: unpaid, display_name: 'Unpaid Player',
+      status: 'confirmed', attendance: null, reserved_until: null, created_at: now, updated_at: now,
+    });
+    localStorage.setItem('playora.mock.bookings.v1', JSON.stringify(bookings));
+    localStorage.removeItem('playora.mock.reconcilecursor.v1');
+    return { gameId: g.id, cursorBefore: localStorage.getItem('playora.mock.reconcilecursor.v1') };
+  }, [IDS.organizer, IDS.user, IDS.analyst]);
+
+const readDrift = ([seatless, gameId]) => {
+  const bookings = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+    .filter((b) => b.game_id === gameId);
+  return {
+    cursor: localStorage.getItem('playora.mock.reconcilecursor.v1'),
+    seatedRow: (bookings.find((b) => b.user_id === seatless) || {}).status ?? null,
+    voidedRow: (bookings.find((b) => b.id === 'bk-recon-unpaid') || {}).status ?? null,
+  };
+};
+
+// Guest: the boot sweep is skipped for a session-less visitor, so the reconciler is called cold here
+// and its return value can be pinned exactly.
+await run('the seat payment reconciler reports the drift it fixed', async () => {
+  const { browser, page, errors } = await openApp({ role: 'guest', route: '/' });
+  const seed = await seedDrift(page);
+  ok('the cursor starts unset', seed.cursorBefore === null, String(seed.cursorBefore));
+  await page.goto('http://localhost/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const out = await page.evaluate(async ([seatless, seed, read]) => {
+    const res = await __r(671).reconcileSeatPayments();
+    return Object.assign({ res }, new Function('a', 'return (' + read + ')(a)')([seatless, seed.gameId]));
+  }, [IDS.user, seed, readDrift.toString()]);
+
+  ok('one player was re-seated', out.res.seated === 1, JSON.stringify(out.res));
+  ok('one unpaid seat was voided', out.res.seats_voided === 1, JSON.stringify(out.res));
+  ok('the re-seated player now holds a confirmed booking', out.seatedRow === 'confirmed', String(out.seatedRow));
+  ok('the unpaid booking was cancelled', out.voidedRow === 'cancelled', String(out.voidedRow));
+  ok('the pass stopped at 100 rows', out.res.scanned === 100 && out.res.done === false, JSON.stringify(out.res));
+  ok('the cursor advanced', String(out.cursor).includes('pay-recon-99'), String(out.cursor));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// Signed in: nothing calls the reconciler explicitly, so this asserts the AuthProvider boot sweep does.
+await run('booting a session runs the scheduled sweep', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/' });
+  const seed = await seedDrift(page);
+  await page.goto('http://localhost/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(3500);
+  const out = await page.evaluate(([seatless, seed, read]) =>
+    new Function('a', 'return (' + read + ')(a)')([seatless, seed.gameId]),
+  [IDS.user, seed, readDrift.toString()]);
+
+  ok('boot re-seated the paid player with no seat', out.seatedRow === 'confirmed', String(out.seatedRow));
+  ok('boot voided the unpaid confirmed seat', out.voidedRow === 'cancelled', String(out.voidedRow));
+  ok('boot left the paging cursor behind', String(out.cursor).includes('pay-recon-99'), String(out.cursor));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+await run('the admin maintenance screen runs the reconciler', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/admin' });
+  const body = await page.evaluate(() => document.body.innerText);
+  ok('the /admin route resolves', body.includes(t('adminReconcileTitle')), body.slice(0, 60).replace(/\n/g, '|'));
+  await page.getByRole('button', { name: t('adminReconcileCta'), exact: true }).first().click();
+  await page.waitForTimeout(1500);
+  const after = await page.evaluate(() => document.body.innerText);
+  ok('the button reports a result', /scanned/i.test(after), after.slice(0, 200).replace(/\n/g, '|'));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

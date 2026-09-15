@@ -104,3 +104,12 @@ shapes with no keeper, their own court markings, surface colour and aspect ratio
   keys, `playora_session`, `playora.audit.*`, the `@otp.playora.app` address that identifies every
   phone-created account, the `playora.app/t/` invite links already sent out, `__PLAYORA_CONFIG__`,
   and the Expo `slug`/`scheme`. Renaming those logs every user out or orphans their account.
+
+## Scheduled work
+
+`mockRunScheduledWork` (631) drives nine sweeps plus the reminder pass. There is no server and no cron,
+so it is called from the AuthProvider (630) on session boot and on tab foreground, throttled to once
+every five minutes and skipped for guests. `/admin` (module 9006) is the maintenance screen: it runs
+`reconcileSeatPayments` on demand and lists the admin screens, which were previously reachable only by
+typing their URLs. Anything that needs to run on a clock has to be hung off that boot hook until the
+backend exists.
