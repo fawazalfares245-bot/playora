@@ -2230,7 +2230,6 @@ __d(
         rtlReloadNote: "On device, switching language reloads the app to apply right-to-left layout.",
         regionLabel: "Region",
         timeZoneLabel: "Time zone",
-        currencyLabel: "Currency",
         timeFormatLabel: "Time format",
         clock12: "12-hour",
         clock24: "24-hour",
@@ -6508,7 +6507,6 @@ __d(
         regionLabel: "\u0627\u0644\u0645\u0646\u0637\u0642\u0629",
         timeZoneLabel:
           "\u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u0632\u0645\u0646\u064a\u0629",
-        currencyLabel: "\u0627\u0644\u0639\u0645\u0644\u0629",
         timeFormatLabel: "\u0635\u064a\u063a\u0629 \u0627\u0644\u0648\u0642\u062a",
         clock12: "\u0661\u0662 \u0633\u0627\u0639\u0629",
         clock24: "\u0662\u0664 \u0633\u0627\u0639\u0629",

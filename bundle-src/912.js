@@ -95,15 +95,19 @@ __d(
       });
     let o = Object.assign({}, r);
     e.getRegionSettings = () => o;
-    e.setRegionSettings = (n) => ((o = Object.assign({}, o, n)), o);
+    // Currency is pinned. formatMoney below applies no exchange rate - it only swaps the symbol and
+    // the decimal count - so any other value misstates the price of something still charged in KWD
+    // fils, and the 2-decimal currencies round the fils digit away entirely. Both writers therefore
+    // force it back, so a stored region carrying GBP from before this change cannot reintroduce it.
+    e.setRegionSettings = (n) => ((o = Object.assign({}, o, n, { currency: "KWD" })), o);
     e.applyRegionDefaults = (t) => {
       const r = n.find((n) => n.key === t);
       return r
         ? ((o = Object.assign({}, o, {
             region: r.key,
             timeZone: r.timeZone,
-            currency: r.currency,
             firstDayOfWeek: r.firstDayOfWeek,
+            currency: "KWD",
           })),
           o)
         : o;

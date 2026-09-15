@@ -227,5 +227,40 @@ await run('cancelBooking and leaveMatch both refund a paid seat', async () => {
   await browser.close();
 });
 
+// The currency picker offered seven currencies with no exchange rate behind any of them: formatMoney
+// only swapped the symbol and the decimal count, so a 25 KWD court read as 25 GBP and was still
+// charged in KWD fils. Prices are pinned to KWD; this proves the stored region cannot move them.
+await run('every region prices in KWD with the fils digit intact', async () => {
+  const money = /(\d[\d.,٠-٩]*)\s*(KWD|SAR|AED|QAR|BHD|£|\$|د\.ك|ر\.س)/g;
+  const seen = [];
+  for (const region of [
+    { region: 'KW', timeZone: 'Asia/Kuwait', currency: 'KWD', firstDayOfWeek: 6 },
+    { region: 'GB', timeZone: 'Europe/London', currency: 'GBP', firstDayOfWeek: 1 },
+    { region: 'SA', timeZone: 'Asia/Riyadh', currency: 'SAR', firstDayOfWeek: 0 },
+  ]) {
+    const { browser, page, errors } = await openApp({
+      role: 'user', route: '/booking/search',
+      initScript: `localStorage.setItem('playora.region.v1', ${JSON.stringify(JSON.stringify(region))});`,
+    });
+    const body = await page.evaluate(() => document.body.innerText);
+    const hits = [...body.matchAll(money)];
+    seen.push({
+      region: region.currency,
+      symbols: [...new Set(hits.map((h) => h[2]))].sort(),
+      decimals: [...new Set(hits.map((h) => (h[1].split('.')[1] || '').length))].sort(),
+      count: hits.length,
+      pageErrors: errors.filter((e) => e.startsWith('pageerror')).length,
+    });
+    await browser.close();
+  }
+  const [kw, gb, sa] = seen;
+  ok('the search screen shows prices at all', kw.count > 0, JSON.stringify(kw));
+  ok('GBP renders the same symbols as KWD', JSON.stringify(gb.symbols) === JSON.stringify(kw.symbols), JSON.stringify(seen.map((s) => s.symbols)));
+  ok('SAR renders the same symbols as KWD', JSON.stringify(sa.symbols) === JSON.stringify(kw.symbols), JSON.stringify(seen.map((s) => s.symbols)));
+  ok('the symbol is KWD', kw.symbols.every((x) => x === 'KWD'), JSON.stringify(kw.symbols));
+  ok('every region keeps three decimals', seen.every((s) => s.decimals.every((n) => n === 3)), JSON.stringify(seen.map((s) => s.decimals)));
+  ok('no page errors in any region', seen.every((s) => s.pageErrors === 0), JSON.stringify(seen.map((s) => s.pageErrors)));
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);
