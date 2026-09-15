@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "4fbeea75e6"
+  buildId: "296503ee83"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -14694,6 +14694,12 @@ __d(
           );
         const n = hi(a.game_id);
         if (!n || "cancelled" === n.status) throw new Error("E_MATCH_UNAVAILABLE");
+        // This pushed a booking row straight in, checking only capacity and offer expiry - none of
+        // the fourteen guards mockJoinMatch applies. A banned or suspended account, a guest, a
+        // cross-partition candidate or a player the organizer had closed registration against could
+        // all take a seat through an outstanding offer.
+        (ra(e, n.audience), md(e), await wd(e));
+        if (n.registration_closed_at) throw new Error("E_REGISTRATION_IS_CLOSED");
         const r = Date.now();
         if (ki(n.id, r) + id(n.id, r).filter((e) => e.id !== t).length >= n.max_players)
           throw (
@@ -14825,6 +14831,12 @@ __d(
       await ei();
       const i = hi(t);
       if (!i) throw new Error("E_MATCH_NOT_FOUND");
+      // The candidate id comes from the organizer and nothing checked it: not that the profile
+      // exists, not the audience partition, not sanctions. The auto path is safe only because its
+      // shortlist is pre-filtered, and neither path checked bans - so an offer could reach an
+      // account barred from matches, and accepting it seated them.
+      if (!Qt.profiles.some((e) => e.id === a)) throw new Error("E_NO_SUCH_PLAYER");
+      (ra(a, i.audience), await wd(a));
       (zi(i, e),
         await Xt(t, async () => {
           if (nd(i) <= 0) throw new Error("E_NO_OPEN_SLOTS_TO_FILL");
@@ -19668,6 +19680,7 @@ __d(
     657, 658, 659, 660, 661, 662, 663, 664, 665, 666, 667, 668, 669, 670,
   ],
 );
+
 
 
 

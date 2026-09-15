@@ -402,5 +402,67 @@ await run('cancelling reports real refunds and keeps the forfeited money on the 
   await browser.close();
 });
 
+// mockManualReplace took an organizer-supplied candidate id and validated nothing; neither it nor
+// mockAcceptReplacement called the join guards, so an offer could reach a banned account and
+// accepting it seated them without any of the fourteen checks mockJoinMatch applies.
+await run('replacement offers go through the join guards', async () => {
+  // A ban always needs a second admin to approve it, and there is only one admin in the seed, so the
+  // active sanction is planted before boot rather than issued through the API.
+  const ban = `(() => {
+    const k = 'playora.mock.sanctions.v1';
+    const rows = JSON.parse(localStorage.getItem(k) || '[]');
+    rows.push({ id: 'sanction-ban-test', user_id: '${IDS.analyst}', type: 'ban', category: 'abuse',
+      reason: 'seeded for the guard test', evidence_url: null, game_id: null,
+      issued_by: '${IDS.admin}', issuer_role: 'admin', status: 'active',
+      created_at: new Date().toISOString(), reviewed_by: '${IDS.admin}',
+      reviewed_at: new Date().toISOString(), review_note: null });
+    localStorage.setItem(k, JSON.stringify(rows));
+  })();`;
+
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer', initScript: ban });
+  const seed = await page.evaluate(async ([org, banned, clean]) => {
+    const api = __r(671);
+    const res = {};
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Replacement guards', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 29 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 29 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+    res.gameId = g.id;
+    res.ghost = await code(() => api.manualReplace(org, g.id, '00000000-0000-4000-8000-000000000000'));
+    res.banned = await code(() => api.manualReplace(org, g.id, banned));
+    res.clean = await code(() => api.manualReplace(org, g.id, clean));
+    // an offer that predates the ban, to prove acceptance is guarded too and not just the offer
+    const k = 'playora.mock.replacement.offers.v1';
+    const offers = JSON.parse(localStorage.getItem(k) || '[]');
+    offers.push({
+      id: 'offer-ban-test', game_id: g.id, candidate_id: banned, candidate_name: 'Test Analyst',
+      status: 'offered', reserved_until: new Date(Date.now() + 36e5).toISOString(),
+      triggered_at: new Date().toISOString(), manual: true,
+      created_at: new Date().toISOString(), responded_at: null,
+    });
+    localStorage.setItem(k, JSON.stringify(offers));
+    return res;
+  }, [IDS.organizer, IDS.analyst, IDS.user]);
+
+  ok('a candidate who is not a real profile is refused', seed.ghost === 'E_NO_SUCH_PLAYER', String(seed.ghost));
+  ok('a banned candidate is not offered a seat', seed.banned === 'E_ACCOUNT_BANNED_FROM_MATCHES', String(seed.banned));
+  ok('a clean candidate still is', seed.clean === 'accepted', String(seed.clean));
+
+  await page.goto(ORIGIN + '/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const out = await page.evaluate(async ([banned]) => {
+    const api = __r(671);
+    try { await api.acceptReplacement(banned, 'offer-ban-test'); return 'accepted'; }
+    catch (e) { return e.code || e.message; }
+  }, [IDS.analyst]);
+  ok('a banned candidate cannot accept an outstanding offer', out === 'E_ACCOUNT_BANNED_FROM_MATCHES', String(out));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);
