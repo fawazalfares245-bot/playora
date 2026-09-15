@@ -8484,8 +8484,38 @@ __d(
       const n = Qt.courtBookings.find((e) => e.qr_token === t);
       if (!n) throw new Error("E_INVALID_QR_CODE");
       if (n.organizer_id !== e && !vr(e, n.venue_id)) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_SCAN");
-      let r = Qt.checkins.find((e) => e.booking_id === n.id && e.player_id === a);
-      if (
+      // A scan writes booking.attendance - the same field mockSetAttendance guards - but enforced
+      // none of its rules: any venue staff could mark a player attended days before kickoff, or
+      // reopen a record the organizer's 48 h freeze had already closed. Apply the same window here.
+      // A court booking with no match has no attendance to write and keeps the plain check-in path.
+      const g9 = n.game_id ? hi(n.game_id) : null;
+      if (g9) {
+        if (new Date(g9.ends_at).getTime() > Date.now()) throw new Error("E_MATCH_NOT_FINISHED");
+        if (g9.score_submitted_at && Date.now() - new Date(g9.score_submitted_at).getTime() > 1728e5)
+          throw new Error("E_ATTENDANCE_LOCKED");
+      }
+      // The write was also unserialised, so two scanners raced the bookings table. Take the match
+      // lock it needs; a court booking with no match locks on itself.
+      return Xt(n.game_id ?? n.id, async () => {
+        // ji appends a fresh booking row when a player rejoins instead of reviving the cancelled
+        // one, so an unfiltered find returned the stale cancelled row: the live booking kept
+        // attendance: null and the player was scored as neither attended nor no-show. Take the
+        // newest live row, and refuse rather than silently skip when there is none.
+        let b9 = null;
+        if (g9) {
+          b9 = Qt.bookings
+            .filter(
+              (e) =>
+                e.game_id === n.game_id &&
+                e.user_id === a &&
+                "cancelled" !== e.status &&
+                "rejected" !== e.status,
+            )
+            .sort(xi)
+            .pop();
+          if (!b9) throw new Error("E_PLAYER_NOT_IN_THIS_MATCH");
+        }
+        let r = Qt.checkins.find((e) => e.booking_id === n.id && e.player_id === a);
         (r ||
           ((r = {
             id: ea(),
@@ -8498,22 +8528,22 @@ __d(
             scanned_at: null,
           }),
           Qt.checkins.push(r)),
-        (r.state = i),
-        (r.scanned_by = e),
-        (r.scanned_at = new Date().toISOString()),
-        await Za(pe, Qt.checkins),
-        n.game_id)
-      ) {
-        const e = Qt.bookings.find((e) => e.game_id === n.game_id && e.user_id === a);
-        e &&
-          ((e.attendance = "no_show" === i ? "no_show" : "pending" === i ? null : "attended"),
-          (e.updated_at = new Date().toISOString()),
-          await Za(W, Qt.bookings));
-      }
-      return (
-        await (0, w.logAudit)("checkin.scanned", (0, w.actorRef)(e), { booking: n.id.slice(-6), state: i }),
-        r
-      );
+          (r.state = i),
+          (r.scanned_by = e),
+          (r.scanned_at = new Date().toISOString()),
+          await Za(pe, Qt.checkins));
+        if (b9)
+          ((b9.attendance = "no_show" === i ? "no_show" : "pending" === i ? null : "attended"),
+            (b9.updated_at = new Date().toISOString()),
+            await Za(W, Qt.bookings));
+        return (
+          await (0, w.logAudit)("checkin.scanned", (0, w.actorRef)(e), {
+            booking: n.id.slice(-6),
+            state: i,
+          }),
+          r
+        );
+      });
     };
     r.mockGetVenueRevenue = async (e, t) => {
       (await ei(), await Sr(e, t), await Cr());

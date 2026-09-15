@@ -214,5 +214,90 @@ await run('a waitlist does not block approving a pending request', async () => {
   await browser.close();
 });
 
+// mockScanCheckin wrote booking.attendance with none of mockSetAttendance's rules, and resolved the
+// target with an unfiltered find - which returns the stale cancelled row for anyone who rejoined.
+await run('a check-in scan respects the attendance window and the live booking', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/' });
+  const seed = await page.evaluate(async ([org, player]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Check-in scan', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 17 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 17 * 864e5 + 54e5).toISOString(),
+      max_players: 6, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+    // Cancel then rejoin: ji appends a second row rather than reviving the first, which is what the
+    // unfiltered lookup used to trip over.
+    await api.joinMatch(g.id, player);
+    await api.leaveMatch(g.id, player);
+    await new Promise((r) => setTimeout(r, 50));
+    await api.joinMatch(g.id, player);
+    const rows = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+      .filter((b) => b.game_id === g.id && b.user_id === player);
+    const token = 'PLQR-SCANTEST0000000';
+    const courts = JSON.parse(localStorage.getItem('playora.mock.courtbookings.v1') || '[]');
+    courts.push({
+      id: 'cb-scan-test', court_id: null, venue_id: venues[0].id, organizer_id: org, game_id: g.id,
+      starts_at: g.starts_at, ends_at: g.ends_at, status: 'confirmed', court_price_kwd: 0,
+      split_mode: 'organizer', commission_type: 'percent', commission_value: 10,
+      requires_venue_approval: false, reserved_until: null, cancellation_reason: null,
+      qr_token: token, created_at: new Date().toISOString(),
+      confirmed_at: new Date().toISOString(), released_at: null,
+    });
+    localStorage.setItem('playora.mock.courtbookings.v1', JSON.stringify(courts));
+    return {
+      gameId: g.id, token,
+      cancelledId: (rows.find((b) => b.status === 'cancelled') || {}).id ?? null,
+      liveId: (rows.find((b) => b.status !== 'cancelled') || {}).id ?? null,
+      rows: rows.map((b) => b.status),
+    };
+  }, [IDS.organizer, IDS.user]);
+
+  ok('the rejoin left a cancelled row and a live row', !!seed.cancelledId && !!seed.liveId, JSON.stringify(seed.rows));
+  if (!seed.cancelledId || !seed.liveId) { await browser.close(); return; }
+
+  // Case 2: the match has not finished, so the scan must be refused.
+  await page.goto(ORIGIN + '/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const early = await page.evaluate(async ([org, player, seed]) => {
+    const api = __r(671);
+    try { await api.scanCheckin(org, seed.token, player, 'attended'); return 'NO_THROW'; }
+    catch (e) { return e.code || e.message; }
+  }, [IDS.organizer, IDS.user, seed]);
+  ok('a scan before the match ends is refused', early === 'E_MATCH_NOT_FINISHED', String(early));
+
+  // Case 1: move the match into the past, then scan.
+  await page.evaluate(([gameId]) => {
+    const past = Date.now() - 2 * 36e5;
+    const games = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]');
+    for (const row of games)
+      if (row.id === gameId) { row.starts_at = new Date(past).toISOString(); row.ends_at = new Date(past + 36e5).toISOString(); }
+    localStorage.setItem('playora.mock.games.v1', JSON.stringify(games));
+  }, [seed.gameId]);
+  await page.goto(ORIGIN + '/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const out = await page.evaluate(async ([org, player, stranger, seed]) => {
+    const api = __r(671);
+    const res = {};
+    try { await api.scanCheckin(org, seed.token, player, 'attended'); res.scanned = true; }
+    catch (e) { res.scanned = false; res.err = e.code || e.message; }
+    const all = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]');
+    res.live = (all.find((b) => b.id === seed.liveId) || {}).attendance ?? null;
+    res.cancelled = (all.find((b) => b.id === seed.cancelledId) || {}).attendance ?? null;
+    // A player with no live booking at all must be refused, not silently skipped.
+    try { await api.scanCheckin(org, seed.token, stranger, 'attended'); res.stranger = 'NO_THROW'; }
+    catch (e) { res.stranger = e.code || e.message; }
+    return res;
+  }, [IDS.organizer, IDS.user, IDS.analyst, seed]);
+
+  ok('the scan succeeds once the match has ended', out.scanned === true, String(out.err));
+  ok('the live booking carries the attendance', out.live === 'attended', String(out.live));
+  ok('the cancelled row is left alone', out.cancelled == null, String(out.cancelled));
+  ok('scanning a player with no live booking is refused', out.stranger === 'E_PLAYER_NOT_IN_THIS_MATCH', String(out.stranger));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);
