@@ -6389,15 +6389,34 @@ __d(
       (await ei(), md(t));
       const a = Wn(e);
       if (!a) throw new Error("E_SERIES_NOT_FOUND");
+      // A paused or ended series could still be joined through the occurrences it had already
+      // generated.
+      if ("active" !== a.status) throw new Error("E_THIS_MATCH_IS_NO_LONGER_OPEN");
       await jn(a);
+      // This kept two counts and threw away everything else each occurrence returned. On a paid
+      // series every seat comes back with a payment deadline attached, so a player who joined twelve
+      // weeks of matches was told "12 joined" and never told about twelve payment deadlines, each of
+      // which expires the seat when it passes. Genuine refusals - a ban, a closed registration, the
+      // wrong partition - were discarded too, so a blocked player saw the same two zeroes as a
+      // successful one. Carry the deadlines out, and surface the first refusal.
       let i = 0,
-        n = 0;
+        n = 0,
+        r9 = 0,
+        b9 = null;
+      const d9 = [];
       for (const a of Kn(e).sort((e, t) => new Date(e.starts_at).getTime() - new Date(t.starts_at).getTime()))
         try {
           const e = await ji(a.id, t);
-          "confirmed" === e.status ? (i += 1) : "waitlisted" === e.status && (n += 1);
-        } catch {}
-      return { joined: i, waitlisted: n };
+          ("confirmed" === e.status
+            ? (i += 1)
+            : "waitlisted" === e.status
+              ? (n += 1)
+              : "reserved" === e.status && (r9 += 1),
+            e.payment_due && d9.push(e.payment_due));
+        } catch (e) {
+          b9 || (b9 = e instanceof Error ? e.message : String(e));
+        }
+      return { joined: i, waitlisted: n, reserved: r9, payments_due: d9, blocked: b9 };
     };
     const Vn = (e, t) => {
       const a = Qt.games.filter((t) => t.series_id === e.id),

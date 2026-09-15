@@ -3004,6 +3004,7 @@ __d(
         joinSeriesAction: "Join the series",
         joinedSeriesTitle: "Joined the series",
         joinedSeriesBody: "Confirmed in %{joined} session(s), waitlisted in %{waitlisted}.",
+        joinedSeriesReserved: "%{n} seat(s) still need paying \u2014 each one is held until its deadline.",
         walletTitle: "Wallet",
         walletEntrySub: "Your balance, sending & earnings",
         walletAvailable: "Available",
@@ -7518,6 +7519,7 @@ __d(
         joinedSeriesTitle: "\u0627\u0646\u0636\u0645\u0645\u062a \u0644\u0644\u0633\u0644\u0633\u0644\u0629",
         joinedSeriesBody:
           "\u0645\u0624\u0643\u064e\u0651\u062f \u0641\u064a %{joined} \u062c\u0644\u0633\u0629\u060c \u0648\u0642\u0627\u0626\u0645\u0629 \u0627\u0646\u062a\u0638\u0627\u0631 \u0641\u064a %{waitlisted}.",
+        joinedSeriesReserved: "\u064a\u062a\u0628\u0642\u0651\u0649 \u062f\u0641\u0639 %{n} \u0645\u0642\u0639\u062f \u2014 \u0643\u0644 \u0645\u0642\u0639\u062f \u0645\u062d\u062c\u0648\u0632 \u062d\u062a\u0649 \u0645\u0648\u0639\u062f\u0647.",
         walletTitle: "\u0627\u0644\u0645\u062d\u0641\u0638\u0629",
         walletEntrySub:
           "\u0631\u0635\u064a\u062f\u0643 \u0648\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0645\u0627\u0644 \u0648\u0623\u0631\u0628\u0627\u062d\u0643",

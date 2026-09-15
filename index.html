@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "ca4ef06232"
+  buildId: "572f19901e"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -8481,15 +8481,34 @@ __d(
       (await ei(), md(t));
       const a = Wn(e);
       if (!a) throw new Error("E_SERIES_NOT_FOUND");
+      // A paused or ended series could still be joined through the occurrences it had already
+      // generated.
+      if ("active" !== a.status) throw new Error("E_THIS_MATCH_IS_NO_LONGER_OPEN");
       await jn(a);
+      // This kept two counts and threw away everything else each occurrence returned. On a paid
+      // series every seat comes back with a payment deadline attached, so a player who joined twelve
+      // weeks of matches was told "12 joined" and never told about twelve payment deadlines, each of
+      // which expires the seat when it passes. Genuine refusals - a ban, a closed registration, the
+      // wrong partition - were discarded too, so a blocked player saw the same two zeroes as a
+      // successful one. Carry the deadlines out, and surface the first refusal.
       let i = 0,
-        n = 0;
+        n = 0,
+        r9 = 0,
+        b9 = null;
+      const d9 = [];
       for (const a of Kn(e).sort((e, t) => new Date(e.starts_at).getTime() - new Date(t.starts_at).getTime()))
         try {
           const e = await ji(a.id, t);
-          "confirmed" === e.status ? (i += 1) : "waitlisted" === e.status && (n += 1);
-        } catch {}
-      return { joined: i, waitlisted: n };
+          ("confirmed" === e.status
+            ? (i += 1)
+            : "waitlisted" === e.status
+              ? (n += 1)
+              : "reserved" === e.status && (r9 += 1),
+            e.payment_due && d9.push(e.payment_due));
+        } catch (e) {
+          b9 || (b9 = e instanceof Error ? e.message : String(e));
+        }
+      return { joined: i, waitlisted: n, reserved: r9, payments_due: d9, blocked: b9 };
     };
     const Vn = (e, t) => {
       const a = Qt.games.filter((t) => t.series_id === e.id),
@@ -19866,6 +19885,8 @@ __d(
 
 
 
+
+
 __d(function(g,_r,_i,_a,m,_e,d){Object.defineProperty(_e,"__esModule",{value:!0}),_e.constantTimeEqual=a,_e.derivePasswordHash=n,_e.generateSalt=async function(e=16){const n=await t.getRandomBytesAsync(e);return Array.from(n).map(t=>t.toString(16).padStart(2,'0')).join('')},_e.hashIdentifier=async function(e){const n=e.replace(/\s+/g,'').toLowerCase();return t.digestStringAsync(t.CryptoDigestAlgorithm.SHA256,`${r}:${n}`)},_e.hashPassword=async function(t,e){if(o)return`scrypt$${i}$${s}$${c}$${await o(t,e,i,s,c)}`;return n(t,e)},_e.randomCode=function(e=6,n="ABCDEFGHJKMNPQRSTUVWXYZ23456789"){const r=t.getRandomBytes(e);let a='';for(let t=0;t<e;t++)a+=n[r[t]%n.length];return a},_e.randomSixDigit=function(){const e=t.getRandomBytes(4),n=((e[0]<<24|e[1]<<16|e[2]<<8|e[3])>>>0)%1e6;return String(n).padStart(6,'0')},_e.randomToken=async function(e=32){const n=await t.getRandomBytesAsync(e);return Array.from(n).map(t=>t.toString(16).padStart(2,'0')).join('')},_e.serverGradeHashing=void 0,_e.verifyPassword=async function(t,e,r){if(r.startsWith('scrypt$')){const[,n,i,s,c]=r.split('$');return!(!o||!c)&&a(await o(t,e,Number(n),Number(i),Number(s)),c)}return a(await n(t,e),r)};var t=(function(t,e){if("function"==typeof WeakMap)var n=new WeakMap,r=new WeakMap;return(function(t,e){if(!e&&t&&t.__esModule)return t;var a,o,i={__proto__:null,default:t};if(null===t||"object"!=typeof t&&"function"!=typeof t)return i;if(a=e?r:n){if(a.has(t))return a.get(t);a.set(t,i)}for(const e in t)"default"!==e&&{}.hasOwnProperty.call(t,e)&&((o=(a=Object.defineProperty)&&Object.getOwnPropertyDescriptor(t,e))&&(o.get||o.set)?a(i,e,o):i[e]=t[e]);return i})(t,e)})(_r(d[0]));const e=12e3;async function n(n,r){let a=`${r}:${n}`;for(let n=0;n<e;n++)a=await t.digestStringAsync(t.CryptoDigestAlgorithm.SHA256,a);return a}const r='playora.v1.identifier.pepper';function a(t,e){if(t.length!==e.length)return!1;let n=0;for(let r=0;r<t.length;r++)n|=t.charCodeAt(r)^e.charCodeAt(r);return 0===n}const o=t.scryptHex,i=(_e.serverGradeHashing=!!o,16384),s=8,c=1},632,[633]);
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0});var n={getRandomBytes:!0,getRandomBytesAsync:!0,digestStringAsync:!0,getRandomValues:!0,randomUUID:!0,digest:!0};e.digest=function(t,n){return new Promise((o,s)=>{try{if('function'==typeof y.default.digestAsync)o(y.default.digestAsync(t,n));else{const s=new Uint8Array(h[t]);y.default.digest(t,s,n),o(s.buffer)}}catch(t){s(t)}})},e.digestStringAsync=async function(t,n,o={encoding:c.CryptoEncoding.HEX}){if(!y.default.digestStringAsync)throw new s.UnavailabilityError('expo-crypto','digestStringAsync');return f(t),p(n),A(o.encoding),await y.default.digestStringAsync(t,n,o)},e.getRandomBytes=function(t){u(t,'getRandomBytes');const n=Math.floor(t);if(y.default.getRandomValues){const t=new Uint8Array(n);return y.default.getRandomValues(t),t}if(y.default.getRandomBase64String){const t=y.default.getRandomBase64String(n);return(0,o.toByteArray)(t)}throw new s.UnavailabilityError('expo-crypto','getRandomBytes')},e.getRandomBytesAsync=async function(t){u(t,'getRandomBytesAsync');const n=Math.floor(t);if(y.default.getRandomValues){const t=new Uint8Array(n);return y.default.getRandomValues(t),t}if(y.default.getRandomBase64StringAsync){const t=await y.default.getRandomBase64StringAsync(n);return(0,o.toByteArray)(t)}throw new s.UnavailabilityError('expo-crypto','getRandomBytesAsync')},e.getRandomValues=function(t){return y.default.getRandomValues(t),t},e.randomUUID=function(){return y.default.randomUUID()};var o=r(d[1]),s=r(d[2]),c=r(d[3]);Object.keys(c).forEach(function(t){"default"!==t&&"__esModule"!==t&&(Object.prototype.hasOwnProperty.call(n,t)||t in e&&e[t]===c[t]||Object.defineProperty(e,t,{enumerable:!0,get:function(){return c[t]}}))});var y=t(r(d[4]));class l extends TypeError{code='ERR_CRYPTO';constructor(t){super(`expo-crypto: ${t}`)}}function u(t,n){if('number'!=typeof t||isNaN(t)||Math.floor(t)<0||Math.floor(t)>1024)throw new TypeError(`expo-crypto: ${n}(${t}) expected a valid number from range 0...1024`)}function f(t){if(!Object.values(c.CryptoDigestAlgorithm).includes(t))throw new l(`Invalid algorithm provided. Expected one of: CryptoDigestAlgorithm.${Object.keys(c.CryptoDigestAlgorithm).join(', AlgCryptoDigestAlgorithmorithm.')}`)}function p(t){if('string'!=typeof t)throw new l("Invalid data provided. Expected a string.")}function A(t){if(!Object.values(c.CryptoEncoding).includes(t))throw new l(`Invalid encoding provided. Expected one of: CryptoEncoding.${Object.keys(c.CryptoEncoding).join(', CryptoEncoding.')}`)}const h={[c.CryptoDigestAlgorithm.SHA1]:20,[c.CryptoDigestAlgorithm.SHA256]:32,[c.CryptoDigestAlgorithm.SHA384]:48,[c.CryptoDigestAlgorithm.SHA512]:64,[c.CryptoDigestAlgorithm.MD2]:16,[c.CryptoDigestAlgorithm.MD4]:16,[c.CryptoDigestAlgorithm.MD5]:16}},633,[33,634,504,635,636]);
 __d(function(g,r,_i,a,m,e,d){'use strict';e.byteLength=function(t){var n=h(t),o=n[0],u=n[1];return 3*(o+u)/4-u},e.toByteArray=function(t){var u,c,f=h(t),A=f[0],C=f[1],y=new o(i(t,A,C)),s=0,v=C>0?A-4:A;for(c=0;c<v;c+=4)u=n[t.charCodeAt(c)]<<18|n[t.charCodeAt(c+1)]<<12|n[t.charCodeAt(c+2)]<<6|n[t.charCodeAt(c+3)],y[s++]=u>>16&255,y[s++]=u>>8&255,y[s++]=255&u;2===C&&(u=n[t.charCodeAt(c)]<<2|n[t.charCodeAt(c+1)]>>4,y[s++]=255&u);1===C&&(u=n[t.charCodeAt(c)]<<10|n[t.charCodeAt(c+1)]<<4|n[t.charCodeAt(c+2)]>>2,y[s++]=u>>8&255,y[s++]=255&u);return y},e.fromByteArray=function(n){for(var o,u=n.length,c=u%3,h=[],i=16383,f=0,C=u-c;f<C;f+=i)h.push(A(n,f,f+i>C?C:f+i));1===c?(o=n[u-1],h.push(t[o>>2]+t[o<<4&63]+'==')):2===c&&(o=(n[u-2]<<8)+n[u-1],h.push(t[o>>10]+t[o>>4&63]+t[o<<2&63]+'='));return h.join('')};for(var t=[],n=[],o='undefined'!=typeof Uint8Array?Uint8Array:Array,u='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',c=0;c<64;++c)t[c]=u[c],n[u.charCodeAt(c)]=c;function h(t){var n=t.length;if(n%4>0)throw new Error('Invalid string. Length must be a multiple of 4');var o=t.indexOf('=');return-1===o&&(o=n),[o,o===n?0:4-o%4]}function i(t,n,o){return 3*(n+o)/4-o}function f(n){return t[n>>18&63]+t[n>>12&63]+t[n>>6&63]+t[63&n]}function A(t,n,o){for(var u,c=[],h=n;h<o;h+=3)u=(t[h]<<16&16711680)+(t[h+1]<<8&65280)+(255&t[h+2]),c.push(f(u));return c.join('')}n['-'.charCodeAt(0)]=62,n['_'.charCodeAt(0)]=63},634,[]);
@@ -25363,6 +25384,7 @@ __d(
         joinSeriesAction: "Join the series",
         joinedSeriesTitle: "Joined the series",
         joinedSeriesBody: "Confirmed in %{joined} session(s), waitlisted in %{waitlisted}.",
+        joinedSeriesReserved: "%{n} seat(s) still need paying \u2014 each one is held until its deadline.",
         walletTitle: "Wallet",
         walletEntrySub: "Your balance, sending & earnings",
         walletAvailable: "Available",
@@ -29877,6 +29899,7 @@ __d(
         joinedSeriesTitle: "\u0627\u0646\u0636\u0645\u0645\u062a \u0644\u0644\u0633\u0644\u0633\u0644\u0629",
         joinedSeriesBody:
           "\u0645\u0624\u0643\u064e\u0651\u062f \u0641\u064a %{joined} \u062c\u0644\u0633\u0629\u060c \u0648\u0642\u0627\u0626\u0645\u0629 \u0627\u0646\u062a\u0638\u0627\u0631 \u0641\u064a %{waitlisted}.",
+        joinedSeriesReserved: "\u064a\u062a\u0628\u0642\u0651\u0649 \u062f\u0641\u0639 %{n} \u0645\u0642\u0639\u062f \u2014 \u0643\u0644 \u0645\u0642\u0639\u062f \u0645\u062d\u062c\u0648\u0632 \u062d\u062a\u0649 \u0645\u0648\u0639\u062f\u0647.",
         walletTitle: "\u0627\u0644\u0645\u062d\u0641\u0638\u0629",
         walletEntrySub:
           "\u0631\u0635\u064a\u062f\u0643 \u0648\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0645\u0627\u0644 \u0648\u0623\u0631\u0628\u0627\u062d\u0643",
@@ -30532,6 +30555,8 @@ __d(
   909,
   [],
 );
+
+
 
 
 
@@ -45095,11 +45120,27 @@ __d(
                           if (A && H.series_id) {
                             ee(!0);
                             try {
-                              const e = await (0, T.joinSeries)(H.series_id, A.id);
-                              (a.default.alert(
-                                F("joinedSeriesTitle"),
-                                F("joinedSeriesBody", { joined: e.joined, waitlisted: e.waitlisted }),
-                              ),
+                              const e = await (0, T.joinSeries)(H.series_id, A.id),
+                                // On a paid series every seat comes back reserved with a payment
+                                // deadline, so joined and waitlisted are both zero and the old
+                                // message said nothing had happened. A refusal that stopped every
+                                // occurrence used to read the same way.
+                                landed9 = (e.joined || 0) + (e.waitlisted || 0) + (e.reserved || 0);
+                              (!landed9 && e.blocked
+                                ? a.default.alert(
+                                    F("error"),
+                                    (0, N.storeErrorText)(e.blocked) || F("error"),
+                                  )
+                                : a.default.alert(
+                                    F("joinedSeriesTitle"),
+                                    F("joinedSeriesBody", {
+                                      joined: e.joined,
+                                      waitlisted: e.waitlisted,
+                                    }) +
+                                      (e.payments_due && e.payments_due.length
+                                        ? `\n${F("joinedSeriesReserved", { n: String(e.payments_due.length) })}`
+                                        : ""),
+                                  ),
                                 await Pe());
                             } catch (e) {
                               a.default.alert(
@@ -46256,6 +46297,8 @@ __d(
     671, 2380, 2381, 668, 2382, 1311, 675, 1171, 2383, 1676, 2385, 2386, 1679, 2387, 2389, 623, 1803, 674, 13,
   ],
 );
+
+
 
 __d(
   function (g, r, i, a, _m, _e, d) {

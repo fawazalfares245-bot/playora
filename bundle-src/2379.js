@@ -361,11 +361,27 @@ __d(
                           if (A && H.series_id) {
                             ee(!0);
                             try {
-                              const e = await (0, T.joinSeries)(H.series_id, A.id);
-                              (a.default.alert(
-                                F("joinedSeriesTitle"),
-                                F("joinedSeriesBody", { joined: e.joined, waitlisted: e.waitlisted }),
-                              ),
+                              const e = await (0, T.joinSeries)(H.series_id, A.id),
+                                // On a paid series every seat comes back reserved with a payment
+                                // deadline, so joined and waitlisted are both zero and the old
+                                // message said nothing had happened. A refusal that stopped every
+                                // occurrence used to read the same way.
+                                landed9 = (e.joined || 0) + (e.waitlisted || 0) + (e.reserved || 0);
+                              (!landed9 && e.blocked
+                                ? a.default.alert(
+                                    F("error"),
+                                    (0, N.storeErrorText)(e.blocked) || F("error"),
+                                  )
+                                : a.default.alert(
+                                    F("joinedSeriesTitle"),
+                                    F("joinedSeriesBody", {
+                                      joined: e.joined,
+                                      waitlisted: e.waitlisted,
+                                    }) +
+                                      (e.payments_due && e.payments_due.length
+                                        ? `\n${F("joinedSeriesReserved", { n: String(e.payments_due.length) })}`
+                                        : ""),
+                                  ),
                                 await Pe());
                             } catch (e) {
                               a.default.alert(

@@ -352,5 +352,70 @@ await run('a cash seat can be settled at the venue', async () => {
   await browser.close();
 });
 
+// mockJoinSeries counted only 'confirmed' and 'waitlisted' and swallowed everything else, so a player
+// who joined twelve weeks of a paid series was told nothing had happened while holding twelve
+// reserved seats with expiring holds - and a banned player saw the same two zeroes.
+await run('joining a paid series reports the seats it actually held', async () => {
+  const ban = `(() => {
+    const k = 'playora.mock.sanctions.v1';
+    const rows = JSON.parse(localStorage.getItem(k) || '[]');
+    rows.push({ id: 'sanction-series-ban', user_id: '${IDS.analyst}', type: 'ban', category: 'abuse',
+      reason: 'seeded', evidence_url: null, game_id: null, issued_by: '${IDS.admin}',
+      issuer_role: 'admin', status: 'active', created_at: new Date().toISOString(),
+      reviewed_by: '${IDS.admin}', reviewed_at: new Date().toISOString(), review_note: null });
+    localStorage.setItem(k, JSON.stringify(rows));
+  })();`;
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer', initScript: ban });
+  const out = await page.evaluate(async ([org, player, banned]) => {
+    const api = __r(671);
+    const res = {};
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const now = new Date();
+    const { template } = await api.createSeries(org, {
+      title: 'Paid series', sport: 'football', format: 'football_5v5', skill_level: 'all',
+      venue_id: venues[0].id, max_players: 10, waitlist_capacity: 2, price_kwd: 2.5,
+      visibility: 'public', approval_mode: 'auto', skill_policy: 'open',
+      start_date: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2).toISOString(),
+      start_minutes: 1080, end_minutes: 1170, frequency: 'weekly',
+      weekdays: [(now.getDay() + 2) % 7], horizon_weeks: 6, auto_invite: false,
+    });
+    const joined = await api.joinSeries(template.id, player);
+    res.joined = joined.joined;
+    res.reserved = joined.reserved;
+    res.duesCount = (joined.payments_due || []).length;
+    res.duesHaveDeadlines = (joined.payments_due || []).every((d) => !!d.deadline && d.amount_kwd > 0);
+    res.blocked = joined.blocked;
+
+    const refused = await api.joinSeries(template.id, banned);
+    res.bannedLanded = (refused.joined || 0) + (refused.waitlisted || 0) + (refused.reserved || 0);
+    res.bannedReason = refused.blocked;
+
+    // a paused series cannot be joined through its already-generated occurrences
+    const tpls = JSON.parse(localStorage.getItem('playora.mock.templates.v1') || '[]');
+    for (const t of tpls) if (t.id === template.id) t.status = 'paused';
+    localStorage.setItem('playora.mock.templates.v1', JSON.stringify(tpls));
+    res.templateId = template.id;
+    return res;
+  }, [IDS.organizer, IDS.user, IDS.analyst]);
+
+  ok('every occurrence was joined', out.joined > 0, String(out.joined));
+  // A fresh join on a paid match confirms the seat and attaches a payment deadline; the old summary
+  // reported the twelve seats and none of the twelve deadlines.
+  ok('every seat comes back with a payment deadline', out.duesCount === out.joined, `${out.duesCount} dues for ${out.joined} seats`);
+  ok('each deadline carries an amount and a date', out.duesHaveDeadlines === true, String(out.duesHaveDeadlines));
+  ok('and nothing blocked', out.blocked === null, String(out.blocked));
+  ok('a banned player holds nothing', out.bannedLanded === 0, String(out.bannedLanded));
+  ok('and is told why', out.bannedReason === 'E_ACCOUNT_BANNED_FROM_MATCHES', String(out.bannedReason));
+
+  await page.goto('http://localhost/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const paused = await page.evaluate(async ([player, id]) => {
+    try { await __r(671).joinSeries(id, player); return 'accepted'; } catch (e) { return e.code || e.message; }
+  }, [IDS.admin, out.templateId]);
+  ok('a paused series cannot be joined', paused === 'E_THIS_MATCH_IS_NO_LONGER_OPEN', String(paused));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);
