@@ -307,5 +307,48 @@ await run('re-issuing a payment plan does not re-bill a payer who has paid', asy
   await browser.close();
 });
 
+// The one-off create limit counted every game the organizer owned, and series occurrences are pushed
+// straight into Qt.games with a fresh created_at - so one daily series locked the main create flow.
+await run('a series does not consume the one-off match limit', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer' });
+  const out = await page.evaluate(async ([org]) => {
+    const api = __r(671);
+    const res = {};
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const now = new Date();
+    const oneOff = (k) => api.createMatch(org, {
+      title: 'Limit probe ' + k, sport: 'football', venue_id: venues[k % venues.length].id,
+      starts_at: new Date(Date.now() + (30 + k) * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + (30 + k) * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+
+    const before = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]').length;
+    await api.createSeries(org, {
+      title: 'Daily series', sport: 'football', format: 'football_5v5', skill_level: 'all',
+      venue_id: venues[0].id, max_players: 10, waitlist_capacity: 2, price_kwd: 0,
+      visibility: 'public', approval_mode: 'auto', skill_policy: 'open',
+      start_date: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString(),
+      start_minutes: 600, end_minutes: 690, frequency: 'daily', horizon_weeks: 12, auto_invite: false,
+    });
+    const games = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]');
+    res.generated = games.length - before;
+    res.afterSeries = await code(() => oneOff(0));
+    // the hand-created limit itself must still bite
+    const codes = [];
+    for (let k = 1; k <= 5; k++) codes.push(await code(() => oneOff(k)));
+    res.codes = codes;
+    return res;
+  }, [IDS.organizer]);
+
+  ok('the series generated occurrences', out.generated > 0, String(out.generated));
+  ok('one generation pass is bounded', out.generated <= 60, String(out.generated));
+  ok('a one-off match still succeeds right after', out.afterSeries === 'accepted', String(out.afterSeries));
+  ok('the hand-created limit still bites', out.codes.includes('E_YOU_HAVE_CREATED_TOO_MANY_MATCHES'), JSON.stringify(out.codes));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

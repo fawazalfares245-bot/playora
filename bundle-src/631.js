@@ -3550,9 +3550,17 @@ __d(
       const r = v9.price_kwd,
         o = t.notes ? (0, v.sanitizeText)(t.notes, 500) : null,
         s = Math.max(0, Math.min(20, t.waitlist_capacity ?? Ma(t.max_players)));
+      // Series occurrences are pushed straight into Qt.games by the generator with a fresh
+      // created_at and never pass through here, so one daily series could produce dozens of rows and
+      // lock the organizer out of the main create flow for an hour. Only hand-created matches count;
+      // the series side keeps its own 3-templates-per-hour guard.
       if (
-        Qt.games.filter((t) => t.organizer_id === e && Date.now() - new Date(t.created_at).getTime() < 36e5)
-          .length >= 5
+        Qt.games.filter(
+          (t) =>
+            t.organizer_id === e &&
+            !t.series_id &&
+            Date.now() - new Date(t.created_at).getTime() < 36e5,
+        ).length >= 5
       )
         throw (
           await (0, w.logAudit)("match.create_blocked", (0, w.actorRef)(e), { reason: "rate_limit" }),
@@ -6081,6 +6089,9 @@ __d(
         var d;
         let l = 0;
         for (const a of r) {
+          // horizon_weeks is fixed at 12 and 'daily' is otherwise unbounded, so a single pass could
+          // mint 84 occurrences. Cap it; the next pass picks up where this one stopped.
+          if (l >= 60) break;
           if (o.some((e) => Un(e.starts_at, a))) continue;
           const i = Fn(e, a);
           if (
