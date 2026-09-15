@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "4e191c7e14"
+  buildId: "e7ad6bc820"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -4356,18 +4356,14 @@ __d(
           }),
           new Error("E_YOU_CAN_ONLY_CANCEL_YOUR_OWN")
         );
-      await Xt(a.game_id, async () => {
-        const t = Qt.bookings.find((t) => t.id === e);
-        if (!t || "cancelled" === t.status) return;
-        const a = yi(t, Date.now());
-        ((t.status = "cancelled"),
-          (t.reserved_until = null),
-          (t.updated_at = new Date().toISOString()),
-          await (0, w.logAudit)("match.leave", (0, w.actorRef)(t.user_id), { game: t.game_id.slice(-6) }),
-          await Za(W, Qt.bookings));
-        const i = hi(t.game_id);
-        a && i && (await Di(i), await rd(i));
-      });
+      // This used to flip the status and promote the waitlist without ever settling the payment, so
+      // the /my-bookings button silently kept the money while the Leave button on /game/[id] refunded
+      // it - two ways to give up a seat, one refund. qi (mockLeaveMatch) is the one that does it
+      // properly: refund, lineup cleanup, and a seatCancellations row. It takes its own Xt lock on the
+      // game, so it must not be wrapped in one again here.
+      // The seat settled is the booking's owner, not the caller, so an organizer or admin cancelling
+      // on someone's behalf refunds that player rather than themselves.
+      return qi(a.game_id, a.user_id);
     };
     r.mockGetReviews = async (e) => (
       await ei(),

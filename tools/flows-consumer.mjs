@@ -172,5 +172,60 @@ await run('kick-off picker is Gregorian and 24-hour', async () => {
   await browser.close();
 });
 
+// Two buttons express "give up my spot" and until now only one returned the money: the /my-bookings
+// button (cancelBooking) flipped the status and promoted the waitlist without settling the payment,
+// while the Leave button on /game/[id] (leaveMatch) refunded properly. They are pinned equal here.
+await run('cancelBooking and leaveMatch both refund a paid seat', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/' });
+  const out = await page.evaluate(async ([org, player]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const res = {};
+
+    // Separate days: an organizer cannot hold two matches at the same venue at the same time.
+    const runPath = async (label, viaCancel, dayOffset) => {
+      const g = await api.createMatch(org, {
+        title: 'Refund parity ' + label, sport: 'football', venue_id: venues[0].id,
+        starts_at: new Date(Date.now() + dayOffset * 864e5).toISOString(),
+        ends_at: new Date(Date.now() + dayOffset * 864e5 + 54e5).toISOString(),
+        max_players: 10, price_kwd: 3, visibility: 'public', format: '5v5',
+      });
+      const before = (await api.fetchWallet(player)).available_fils ?? 0;
+      await api.checkoutJoin(player, g.id, 'knet');
+      const paid = await api.fetchMySeatPayment(player, g.id);
+      const cancelsBefore = (await api.fetchMyCancellations(player)).length;
+
+      if (viaCancel) {
+        const bk = (await api.fetchMyBookings(player)).find((b) => b && b.game_id === g.id);
+        await api.cancelBooking(bk.id, player);
+      } else {
+        await api.leaveMatch(g.id, player);
+      }
+
+      const after = await api.fetchMySeatPayment(player, g.id);
+      res[label] = {
+        paidStatus: paid ? paid.status : null,
+        refundStatus: after ? after.status : null,
+        newCancellations: (await api.fetchMyCancellations(player)).length - cancelsBefore,
+        walletRestored: ((await api.fetchWallet(player)).available_fils ?? 0) >= before,
+      };
+    };
+
+    try { await runPath('cancel', true, 7); } catch (e) { res.cancelErr = e.code || e.message; }
+    try { await runPath('leave', false, 9); } catch (e) { res.leaveErr = e.code || e.message; }
+    return res;
+  }, [IDS.organizer, IDS.user]);
+
+  for (const path of ['cancel', 'leave']) {
+    const r = out[path];
+    ok(`${path}: the seat was paid for`, !!r && r.paidStatus === 'paid', JSON.stringify(out[path + 'Err'] ?? r));
+    ok(`${path}: the payment ends up refunded`, !!r && r.refundStatus === 'refunded', String(r && r.refundStatus));
+    ok(`${path}: a cancellation is recorded`, !!r && r.newCancellations === 1, String(r && r.newCancellations));
+    ok(`${path}: the wallet balance is restored`, !!r && r.walletRestored === true, String(r && r.walletRestored));
+  }
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);
