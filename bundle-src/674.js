@@ -68,6 +68,7 @@ __d(
         E_AMOUNT_IS_OUTSIDE_THE_ALLOWED_TOP: "seAmountIsOutsideTheAllowedTop",
         E_AMOUNT_IS_OUTSIDE_THE_ALLOWED_TRANSFER: "seAmountIsOutsideTheAllowedTransfer",
         E_APPLICATION_NOT_FOUND: "seApplicationNotFound",
+        E_A_SEAT_HAS_ALREADY_BEEN_PAID: "seASeatHasAlreadyBeenPaid",
         E_KYC_ALREADY_REVIEWED: "seKycAlreadyReviewed",
         E_ASSIGN_A_PLAYER_FIRST: "seAssignAPlayerFirst",
         E_BLOCK_END_MUST_BE_AFTER_START: "seBlockEndMustBeAfterStart",

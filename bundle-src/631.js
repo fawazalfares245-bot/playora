@@ -6246,7 +6246,49 @@ __d(
       if (i.organizer_id !== t) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE_3");
       await on(t);
       const n = Qt.templates.findIndex((t) => t.id === e);
-      Qt.templates[n] = Object.assign({}, i, a);
+      // The patch was applied verbatim, so the price and duration bounds enforced at creation could be
+      // walked straight past on edit - mockUpdateMatch refuses to touch price at all, and the two
+      // editors disagreed. Allow-list what a series edit may change and validate the result.
+      const EDITABLE9 = [
+          "title",
+          "notes",
+          "skill_level",
+          "start_minutes",
+          "end_minutes",
+          "max_players",
+          "waitlist_capacity",
+          "price_kwd",
+        ],
+        patch9 = {};
+      for (const e of EDITABLE9) e in (a ?? {}) && (patch9[e] = a[e]);
+      // The series screen only offers a start time, so a move has to carry the duration with it.
+      // Without this the end minute stayed put and an edit could produce zero-length sessions, which
+      // is what it did: moving a 18:00-19:30 series to 19:30 left every occurrence starting and
+      // ending at 19:30, and nothing complained.
+      null != patch9.start_minutes &&
+        null == patch9.end_minutes &&
+        (patch9.end_minutes = patch9.start_minutes + (i.end_minutes - i.start_minutes));
+      const merged9 = Object.assign({}, i, patch9);
+      {
+        // validateMatchInput takes a time window, and a template carries minutes; synthesise one for
+        // the same day so the duration bounds apply here too.
+        const d9 = new Date();
+        d9.setHours(0, 0, 0, 0);
+        validateMatchInput(merged9, {
+          starts_at: new Date(d9.getTime() + 6e4 * merged9.start_minutes + 864e5).toISOString(),
+          ends_at: new Date(d9.getTime() + 6e4 * merged9.end_minutes + 864e5).toISOString(),
+        });
+      }
+      // Repricing an occupied seat leaves the money already taken at the old amount with no top-up and
+      // no refund, and nothing downstream reconciles the difference.
+      const repriced9 = Number(merged9.price_kwd) !== Number(i.price_kwd);
+      if (repriced9) {
+        const paidOn9 = Kn(e).some((e) =>
+          Qt.payments.some((t) => "seat" === t.kind && t.game_id === e.id && "paid" === t.status),
+        );
+        if (paidOn9) throw new Error("E_A_SEAT_HAS_ALREADY_BEEN_PAID");
+      }
+      Qt.templates[n] = merged9;
       const r = Qt.templates[n];
       let o = 0;
       for (const t of Kn(e)) {

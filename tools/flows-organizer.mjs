@@ -551,5 +551,56 @@ await run('Need Player Now broadcasts at most once per window', async () => {
   await browser.close();
 });
 
+// mockEditFutureOccurrences applied an arbitrary caller-supplied patch verbatim and never validated
+// the result, so the price and duration bounds enforced at creation could be walked past on edit -
+// and repricing an occurrence whose seat was already paid left that money at the old amount.
+await run('editing a series is validated and cannot reprice a paid seat', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer' });
+  const out = await page.evaluate(async ([org, player]) => {
+    const api = __r(671);
+    const res = {};
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const now = new Date();
+    const { template: tpl } = await api.createSeries(org, {
+      title: 'Editable series', sport: 'football', format: 'football_5v5', skill_level: 'all',
+      venue_id: venues[0].id, max_players: 10, waitlist_capacity: 2, price_kwd: 2,
+      visibility: 'public', approval_mode: 'auto', skill_policy: 'open',
+      start_date: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2).toISOString(),
+      start_minutes: 1080, end_minutes: 1170, frequency: 'weekly',
+      weekdays: [(now.getDay() + 2) % 7], horizon_weeks: 4, auto_invite: false,
+    });
+    res.priceOver = await code(() => api.editFutureOccurrences(tpl.id, org, { price_kwd: 500 }));
+    res.durationOver = await code(() => api.editFutureOccurrences(tpl.id, org, { start_minutes: 0, end_minutes: 1400 }));
+    res.playersOver = await code(() => api.editFutureOccurrences(tpl.id, org, { max_players: 400 }));
+    res.smuggled = await code(() => api.editFutureOccurrences(tpl.id, org, { organizer_id: player, sport: 'cricket' }));
+    const after = JSON.parse(localStorage.getItem('playora.mock.templates.v1') || '[]').find((t) => t.id === tpl.id);
+    res.stillOwned = after.organizer_id === org && after.sport === 'football';
+
+    // a normal move carries the duration with it
+    res.move = await code(() => api.editFutureOccurrences(tpl.id, org, { start_minutes: 1140 }));
+    const moved = JSON.parse(localStorage.getItem('playora.mock.templates.v1') || '[]').find((t) => t.id === tpl.id);
+    res.window = [moved.start_minutes, moved.end_minutes];
+
+    // pay for a seat on the next occurrence, then try to reprice
+    const occ = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]')
+      .filter((g) => g.series_id === tpl.id).sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at))[0];
+    await api.checkoutJoin(player, occ.id, 'knet');
+    res.repriceAfterPaid = await code(() => api.editFutureOccurrences(tpl.id, org, { price_kwd: 5 }));
+    res.timeStillEditable = await code(() => api.editFutureOccurrences(tpl.id, org, { start_minutes: 1020 }));
+    return res;
+  }, [IDS.organizer, IDS.user]);
+
+  ok('a price outside the range is refused', out.priceOver === 'E_PRICE_OUT_OF_RANGE', String(out.priceOver));
+  ok('a duration outside the range is refused', out.durationOver === 'E_DURATION_OUT_OF_RANGE', String(out.durationOver));
+  ok('an impossible player count is refused', out.playersOver === 'E_PLAYERS_REQUIRED_MUST_BE_BETWEEN_2', String(out.playersOver));
+  ok('fields outside the allow-list are ignored', out.smuggled === 'accepted' && out.stillOwned === true, `${out.smuggled} / owned=${out.stillOwned}`);
+  ok('moving the start time carries the duration', out.move === 'accepted' && out.window[1] - out.window[0] === 90, JSON.stringify(out.window));
+  ok('repricing over a paid seat is refused', out.repriceAfterPaid === 'E_A_SEAT_HAS_ALREADY_BEEN_PAID', String(out.repriceAfterPaid));
+  ok('the time is still editable after a seat is paid', out.timeStillEditable === 'accepted', String(out.timeStillEditable));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);
