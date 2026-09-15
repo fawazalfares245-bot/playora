@@ -262,5 +262,27 @@ await run('every region prices in KWD with the fils digit intact', async () => {
   ok('no page errors in any region', seen.every((s) => s.pageErrors === 0), JSON.stringify(seen.map((s) => s.pageErrors)));
 });
 
+// formatPrice returned the word "Free" for every falsy value, and /wallet routed all seven of its
+// money renders through it, so a new user's balances were advertised rather than stated.
+await run('a zero balance reads as money, not as Free', async () => {
+  const { browser, page, errors } = await openApp({ role: 'user', route: '/wallet' });
+  const body = await page.evaluate(() => document.body.innerText);
+  const u = await page.evaluate(() => ({
+    price0: __r(1311).formatPrice(0),
+    priceNull: __r(1311).formatPrice(null),
+    amount0: __r(1311).formatAmount(0),
+    free: __r(675).t('free'),
+  }));
+  ok('the wallet hero states a balance', /0\.000\s*KWD/.test(body), body.slice(0, 120).replace(/\n/g, '|'));
+  ok('no balance reads as Free', !body.includes(u.free), body.slice(0, 200).replace(/\n/g, '|'));
+  ok('formatPrice(0) is no longer the word Free', u.price0 !== u.free, `${u.price0} vs ${u.free}`);
+  ok('formatPrice(0) is a money figure', /^0\.000\s*KWD$/.test(u.price0), String(u.price0));
+  // A listing with no price at all still reads Free - that is what formatPrice is for.
+  ok('formatPrice(null) still reads Free', u.priceNull === u.free, String(u.priceNull));
+  ok('formatAmount(0) is 0.000 KWD', /^0\.000\s*KWD$/.test(u.amount0), String(u.amount0));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

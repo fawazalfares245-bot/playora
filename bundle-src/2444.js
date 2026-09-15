@@ -241,7 +241,7 @@ __d(
                       children: [
                         (0, I.jsx)(i.default, {
                           style: [S.typography.small, { color: D.textMuted, marginTop: S.spacing.md }],
-                          children: W("groupYouOwe", { amt: (0, C.formatPrice)(R.my_due_kwd) }),
+                          children: W("groupYouOwe", { amt: (0, C.formatAmount)(R.my_due_kwd) }),
                         }),
                         (0, I.jsx)(c.default, {
                           style: {
@@ -276,7 +276,7 @@ __d(
                           }),
                         }),
                         (0, I.jsx)(x.Button, {
-                          title: W("payShareBtn", { amt: (0, C.formatPrice)(R.my_due_kwd) }),
+                          title: W("payShareBtn", { amt: (0, C.formatAmount)(R.my_due_kwd) }),
                           onPress: be,
                           loading: ie,
                           style: { marginTop: S.spacing.sm },
