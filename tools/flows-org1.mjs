@@ -240,5 +240,72 @@ await run('a custom venue is governed whichever wizard made it', async () => {
   await browser.close();
 });
 
+// mockCreatePaymentPlan wiped only pending rows and then re-billed every payer, so re-running a plan
+// after anyone had paid issued them a second charge and a second payment_request for the same booking.
+await run('re-issuing a payment plan does not re-bill a payer who has paid', async () => {
+  const { browser, page } = await openApp({ role: 'organizer', route: '/organizer' });
+  const seed = await page.evaluate(async ([org, p1, p2]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Split plan', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 23 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 23 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+    await api.joinMatch(g.id, p1);
+    await api.joinMatch(g.id, p2);
+    // A confirmed court booking for that match. Reserving one needs an active court and a venue
+    // decision; the plan only reads the row, so seed it and let the reload hydrate it.
+    const courts = JSON.parse(localStorage.getItem('playora.mock.courtbookings.v1') || '[]');
+    courts.push({
+      id: 'cb-plan-test', court_id: null, venue_id: venues[0].id, organizer_id: org, game_id: g.id,
+      starts_at: g.starts_at, ends_at: g.ends_at, status: 'confirmed', court_price_kwd: 12,
+      split_mode: 'split_equal', commission_type: 'percentage', commission_value: 10,
+      requires_venue_approval: false, reserved_until: null, cancellation_reason: null,
+      qr_token: 'PLQR-PLANTEST00000000', created_at: new Date().toISOString(),
+      confirmed_at: new Date().toISOString(), released_at: null,
+    });
+    localStorage.setItem('playora.mock.courtbookings.v1', JSON.stringify(courts));
+    return { gameId: g.id, bookingId: 'cb-plan-test' };
+  }, [IDS.organizer, IDS.user, IDS.analyst]);
+
+  await page.goto('http://localhost/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const out = await page.evaluate(async ([org, payer, seed]) => {
+    const api = __r(671);
+    const rowsFor = (who) => JSON.parse(localStorage.getItem('playora.mock.payments.v1') || '[]')
+      .filter((p) => p.booking_id === seed.bookingId && p.payer_id === who);
+    const notesFor = async (who) => (await api.fetchNotifications(who))
+      .filter((n) => n.type === 'payment_request').length;
+
+    await api.createPaymentPlan(org, seed.bookingId, 'split_equal');
+    const mine = rowsFor(payer);
+    const notesAfterFirst = await notesFor(payer);
+    await api.payRequest(payer, mine[0].id, 'knet');
+    const paidStatus = rowsFor(payer).map((p) => p.status);
+
+    await api.createPaymentPlan(org, seed.bookingId, 'split_equal');
+    const after = rowsFor(payer);
+    return {
+      firstCount: mine.length,
+      paidStatus,
+      afterStatuses: after.map((p) => p.status),
+      notesAfterFirst,
+      notesAfterSecond: await notesFor(payer),
+      total: JSON.parse(localStorage.getItem('playora.mock.payments.v1') || '[]')
+        .filter((p) => p.booking_id === seed.bookingId && p.status !== 'waived')
+        .reduce((a, p) => a + Number(p.amount_kwd || 0), 0),
+    };
+  }, [IDS.organizer, IDS.user, seed]);
+
+  ok('the plan billed the payer once', out.firstCount === 1, JSON.stringify(out));
+  ok('their share was paid', out.paidStatus.includes('paid'), JSON.stringify(out.paidStatus));
+  ok('re-issuing leaves them with one row', out.afterStatuses.length === 1 && out.afterStatuses[0] === 'paid', JSON.stringify(out.afterStatuses));
+  ok('they get no second payment request', out.notesAfterSecond === out.notesAfterFirst, `${out.notesAfterFirst} -> ${out.notesAfterSecond}`);
+  ok('the plan still collects the court price once', Math.abs(out.total - 12) < 5e-3, String(out.total));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

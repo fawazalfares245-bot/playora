@@ -7733,14 +7733,29 @@ __d(
               .filter((e) => e.game_id === n.game_id && ("confirmed" === e.status || "pending" === e.status))
               .map((e) => e.user_id)
           : [],
-        o = [...new Set([e, ...r])],
-        s = (0, z.splitAmounts)({
-          mode: a,
-          total: n.court_price_kwd,
-          payerIds: o,
-          organizerId: e,
-          custom: i,
-        });
+        // Re-running a plan used to wipe only the pending rows, so a payer whose share was already
+        // paid - still a confirmed booking, so still in this list - was issued a second charge and a
+        // second payment_request for the same booking. Nothing downstream deduplicates: $r does not
+        // notice, and Ur/Gr dedupe only seat-kind payments, which plan rows are not. Settled payers
+        // drop out of the plan, and what they already paid comes off the total the rest are asked
+        // for, so the plan collects the court price once.
+        paid9 = Qt.payments.filter(
+          (t) => t.booking_id === n.id && ("paid" === t.status || "refunded" === t.status),
+        ),
+        settled9 = new Set(paid9.filter((e) => "paid" === e.status).map((e) => e.payer_id)),
+        collected9 = (0, z.roundKwd)(
+          paid9.filter((e) => "paid" === e.status).reduce((e, t) => e + Number(t.amount_kwd || 0), 0),
+        ),
+        o = [...new Set([e, ...r])].filter((e) => !settled9.has(e)),
+        s = o.length
+          ? (0, z.splitAmounts)({
+              mode: a,
+              total: Math.max(0, (0, z.roundKwd)(Number(n.court_price_kwd) - collected9)),
+              payerIds: o,
+              organizerId: settled9.has(e) ? o[0] : e,
+              custom: i,
+            })
+          : {};
       ((n.split_mode = a),
         (Qt.payments = Qt.payments.filter((e) => !(e.booking_id === n.id && "pending" === e.status))));
       const d = [];
