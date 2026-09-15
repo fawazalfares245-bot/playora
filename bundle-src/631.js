@@ -7244,22 +7244,47 @@ __d(
         null != a.amenities &&
           (i.amenities = a.amenities.slice(0, 12).map((e) => (0, v.sanitizeText)(e, 30))),
         null != a.auto_accept && (i.auto_accept = a.auto_accept),
+        // Where the venue's money lands is the owner's to set, not the reception desk's - Sr admits
+        // staff to everything else on this profile.
         null != a.payout_iban_last4 &&
-          (i.payout_iban_last4 = a.payout_iban_last4.replace(/\D/g, "").slice(-4) || null),
+          (() => {
+            if (i.owner_id !== e && !ro(e)) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE");
+            i.payout_iban_last4 = a.payout_iban_last4.replace(/\D/g, "").slice(-4) || null;
+          })(),
         await Za(ce, Qt.venueProfiles),
         await (0, w.logAudit)("venue.updated", (0, w.actorRef)(e), { venue: t.slice(-6) }),
         i
       );
     };
+    // Staff roles the venue can assign. The role used to be stored verbatim, whatever was typed.
+    const VENUE_STAFF_ROLES9 = ["manager", "reception", "scanner"];
     r.mockAddVenueStaff = async (e, t, a, i) => {
       (await ei(), await Sr(e, t));
-      const n = hr(t),
-        r = (0, v.sanitizeName)(a);
-      if (!r) throw new Error("E_ADD_A_STAFF_NAME");
+      const n = hr(t);
+      // The staff member used to be invented: user_id was `staff-<random>` derived from a typed name,
+      // while vr authorises on a real profile id - so a staff id could never match and every
+      // staff-gated call (venue bookings, the booking decision, courts, blocks, the check-in scanner)
+      // stayed permanently closed to them. The whole feature added rows that did nothing. Resolve a
+      // real account instead, by id or by email.
+      const q9 = String(a ?? "").trim().toLowerCase();
+      if (!q9) throw new Error("E_ADD_A_STAFF_NAME");
+      const u9 =
+        Qt.profiles.find((e) => e.id === q9) ??
+        Qt.profiles.find((e) => (e.email ?? "").toLowerCase() === q9) ??
+        (() => {
+          const t9 = Qt.users.find((e) => (e.email ?? "").toLowerCase() === q9);
+          return t9 ? Qt.profiles.find((e) => e.id === t9.id) : null;
+        })();
+      if (!u9) throw new Error("E_NO_SUCH_PLAYER");
+      // An administrator reviews venues, so they cannot also staff one.
+      if (ro(u9.id)) throw new Error("E_ADMINS_CANNOT_REGISTER_VENUES");
+      if (!VENUE_STAFF_ROLES9.includes(i)) throw new Error("E_INVALID_MATCH_OPTION");
+      if (n.staff.some((e) => e.user_id === u9.id)) throw new Error("E_THAT_PLAYER_IS_ALREADY_IN_THIS");
+      const r = (0, v.sanitizeName)(u9.full_name) || "Staff";
       if (n.staff.length >= 20) throw new Error("E_STAFF_LIMIT_REACHED");
       return (
         n.staff.push({
-          user_id: `staff-${ea().slice(0, 8)}`,
+          user_id: u9.id,
           name: r,
           role: i,
           added_at: new Date().toISOString(),

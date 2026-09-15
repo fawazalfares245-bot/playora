@@ -412,5 +412,48 @@ await run('a second tab cannot overbook the same seat', async () => {
   await browser.close();
 });
 
+// mockAddVenueStaff invented user_id `staff-<random>` from a typed name, while vr authorises on a real
+// profile id - so a staff id could never match and every staff-gated call stayed closed to them.
+await run('venue staff are real accounts that can actually work', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/' });
+  const out = await page.evaluate(async ([admin, owner, staff]) => {
+    const api = __r(671);
+    const res = {};
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    // a reviewed, owned venue to staff
+    const profile = await api.applyVenue(owner, {
+      name: 'Staffed Courts', area: 'Salmiya', sports: ['padel'], lat: 29.33, lng: 48.07,
+    });
+    await api.reviewVenue(admin, profile.venue_id, 'approve', null);
+
+    res.byName = await code(() => api.addVenueStaff(owner, profile.venue_id, 'Some Person', 'reception'));
+    res.badRole = await code(() => api.addVenueStaff(owner, profile.venue_id, staff, 'owner'));
+    res.byId = await code(() => api.addVenueStaff(owner, profile.venue_id, staff, 'scanner'));
+    res.duplicate = await code(() => api.addVenueStaff(owner, profile.venue_id, staff, 'scanner'));
+    res.admin = await code(() => api.addVenueStaff(owner, profile.venue_id, admin, 'manager'));
+
+    const saved = JSON.parse(localStorage.getItem('playora.mock.venueprofiles.v1') || '[]')
+      .find((p) => p.venue_id === profile.venue_id);
+    res.staffIds = (saved ? saved.staff : []).map((x) => x.user_id);
+    // the point of the feature: a staff member can now do staff work
+    res.staffCanRead = await code(() => api.fetchVenueBookings(staff, profile.venue_id));
+    res.staffIban = await code(() => api.updateVenueProfile(staff, profile.venue_id, { payout_iban_last4: '1234' }));
+    res.ownerIban = await code(() => api.updateVenueProfile(owner, profile.venue_id, { payout_iban_last4: '1234' }));
+    return res;
+  }, [IDS.admin, IDS.organizer, IDS.user]);
+
+  ok('a typed name is not a person', out.byName === 'E_NO_SUCH_PLAYER', String(out.byName));
+  ok('an unknown role is refused', out.badRole === 'E_INVALID_MATCH_OPTION', String(out.badRole));
+  ok('a real account is added', out.byId === 'accepted', String(out.byId));
+  ok('and stored under its own id', out.staffIds.includes(IDS.user), JSON.stringify(out.staffIds));
+  ok('adding them twice is refused', out.duplicate === 'E_THAT_PLAYER_IS_ALREADY_IN_THIS', String(out.duplicate));
+  ok('an admin cannot be staff', out.admin === 'E_ADMINS_CANNOT_REGISTER_VENUES', String(out.admin));
+  ok('staff can read the venue bookings', out.staffCanRead === 'accepted', String(out.staffCanRead));
+  ok('staff cannot change where the money goes', out.staffIban === 'E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE', String(out.staffIban));
+  ok('the owner still can', out.ownerIban === 'accepted', String(out.ownerIban));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);
