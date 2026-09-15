@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "d4770a42f6"
+  buildId: "5f827c5da5"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -22491,6 +22491,9 @@ __d(
         hoursShort: "%{n}h ago",
         daysShort: "%{n}d ago",
         justNow: "Just now",
+        minutesShortIn: "in %{n}m",
+        hoursShortIn: "in %{n}h",
+        daysShortIn: "in %{n}d",
         notifReminderTitle: "Match starting soon",
         notifReminderBodyMinutes: "%{sport} at %{venue} starts in %{minutes} minutes.",
         notifReminderBodyHour: "%{sport} at %{venue} starts in 1 hour.",
@@ -22991,7 +22994,6 @@ __d(
         votingOpen: "Voting open",
         votingClosed: "Voting closed",
         awardResults: "Results",
-        voteClosesLabel: "Voting closes %{when}",
         votesLabel: "%{n} votes",
         pickNominee: "Tap a player to vote",
         votedForLabel: "Voted",
@@ -26431,6 +26433,9 @@ __d(
         hoursShort: "\u0645\u0646\u0630 %{n} \u0633",
         daysShort: "\u0645\u0646\u0630 %{n} \u064a\u0648\u0645",
         justNow: "\u0627\u0644\u0622\u0646",
+        minutesShortIn: "\u062e\u0644\u0627\u0644 %{n} \u062f",
+        hoursShortIn: "\u062e\u0644\u0627\u0644 %{n} \u0633",
+        daysShortIn: "\u062e\u0644\u0627\u0644 %{n} \u064a\u0648\u0645",
         notifReminderTitle:
           "\u0645\u0628\u0627\u0631\u0627\u062a\u0643 \u062a\u0628\u062f\u0623 \u0642\u0631\u064a\u0628\u0627\u064b",
         notifReminderBodyMinutes:
@@ -27084,7 +27089,6 @@ __d(
         votingOpen: "\u0627\u0644\u062a\u0635\u0648\u064a\u062a \u0645\u0641\u062a\u0648\u062d",
         votingClosed: "\u0623\u064f\u063a\u0644\u0642 \u0627\u0644\u062a\u0635\u0648\u064a\u062a",
         awardResults: "\u0627\u0644\u0646\u062a\u0627\u0626\u062c",
-        voteClosesLabel: "\u064a\u064f\u063a\u0644\u0642 \u0627\u0644\u062a\u0635\u0648\u064a\u062a %{when}",
         votesLabel: "%{n} \u0635\u0648\u062a",
         pickNominee:
           "\u0627\u0636\u063a\u0637 \u0639\u0644\u0649 \u0644\u0627\u0639\u0628 \u0644\u0644\u062a\u0635\u0648\u064a\u062a",
@@ -29580,6 +29584,7 @@ __d(
   909,
   [],
 );
+
 
 
 
@@ -32740,7 +32745,33 @@ __d(
 __d(function(g,r,i,a,m,e,d){var s=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.Card=void 0;var l=s(r(d[1])),o=s(r(d[2])),t=s(r(d[3])),c=r(d[4]),n=r(d[5]),b=r(d[6]);e.Card=({children:s,onPress:o,accessibilityLabel:f,style:y,padding:h="lg"})=>{const{colors:p}=(0,c.useTheme)(),v=(0,b.jsx)(t.default,{style:[u.base,{backgroundColor:p.surface,borderColor:p.border,padding:n.spacing[h]},y],children:s});return o?(0,b.jsx)(l.default,{onPress:o,accessibilityRole:"button",accessibilityLabel:f,style:({pressed:s})=>({opacity:s?.92:1,transform:[{scale:s?.995:1}]}),children:v}):v};const u=o.default.create({base:{borderRadius:n.radius.lg,borderWidth:o.default.hairlineWidth}})},1623,[33,369,158,273,615,616,13]);
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.Badge=void 0;var c=t(r(d[1])),n=t(r(d[2])),s=t(r(d[3])),l=r(d[4]),u=r(d[5]),o=r(d[6]);e.Badge=({label:t,tone:c="neutral"})=>{const{colors:b}=(0,l.useTheme)(),p={neutral:{bg:b.surfaceAlt,fg:b.textMuted},accent:{bg:b.accentMuted,fg:b.accent},success:{bg:b.surfaceAlt,fg:b.success},warning:{bg:b.surfaceAlt,fg:b.warning},danger:{bg:b.surfaceAlt,fg:b.danger}},{bg:x,fg:y}=p[c];return(0,o.jsx)(s.default,{style:[f.base,{backgroundColor:x}],children:(0,o.jsx)(n.default,{style:[u.typography.caption,{color:y,textTransform:'uppercase'}],children:t})})};const f=c.default.create({base:{paddingHorizontal:u.spacing.sm,paddingVertical:4,borderRadius:u.radius.pill,alignSelf:'flex-start'}})},1624,[33,158,146,273,615,616,13]);
 __d(function(g,_r,i,a,m,_e,d){var e=_r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.CommentsSheet=void 0;var t=_r(d[1]),n=e(_r(d[2])),r=e(_r(d[3])),s=e(_r(d[4])),l=e(_r(d[5])),o=(e(_r(d[6])),e(_r(d[7]))),c=e(_r(d[8])),u=e(_r(d[9])),h=e(_r(d[10])),f=e(_r(d[11])),p=_r(d[12]),y=_r(d[13]),x=_r(d[14]),b=_r(d[15]),j=_r(d[16]),C=_r(d[17]),k=_r(d[18]),v=_r(d[19]),R=_r(d[20]);_e.CommentsSheet=({item:e,userId:c,onClose:T,onChange:w,onOpenAuthor:I})=>{const{colors:_}=(0,y.useTheme)(),L=(0,v.useT)(),M=(0,x.useReducedMotion)(),[E,z]=(0,t.useState)(null),[A,D]=(0,t.useState)(''),[O,P]=(0,t.useState)(!1),V=(0,t.useRef)(null);(0,t.useEffect)(()=>{if(!e)return z(null),void D('');(0,j.fetchComments)(c,e.post.id).then(z).catch(()=>z([]))},[e,c]);const B=(0,t.useRef)(null),H=(0,t.useRef)(T);H.current=T,(0,t.useEffect)(()=>{if(!e)return;if('undefined'==typeof document)return;const t=document.activeElement,n=B.current;n?.setAttribute?.('tabindex','-1'),n?.focus?.();const r=e=>{if('Escape'===e.key)return void H.current();if('Tab'!==e.key||!n)return;const t=n.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');if(0===t.length)return;const r=t[0],s=t[t.length-1];e.shiftKey&&document.activeElement===r?(e.preventDefault(),s.focus()):(e.shiftKey||document.activeElement!==s)&&n.contains(document.activeElement)||(e.preventDefault(),r.focus())};return document.addEventListener('keydown',r,!0),()=>{document.removeEventListener('keydown',r,!0),t?.focus?.()}},[e]);const W=async()=>{if(e&&A.trim()&&!O){P(!0);try{const t=await(0,j.addComment)(c,e.post.id,A);z(e=>[...e??[],t]),D(''),w(),setTimeout(()=>V.current?.scrollToEnd({animated:!0}),50)}finally{P(!1)}}},K=async t=>{if(!e)return;const n=await(0,j.toggleCommentLike)(c,t.id);z(e=>(e??[]).map(e=>e.id===t.id?Object.assign({},e,{liked:n.liked,like_count:n.count}):e))};if(!e)return null;const N=e.post;return(0,R.jsx)(l.default,{visible:!0,transparent:!0,animationType:(0,x.sheetAnimation)(M),onRequestClose:T,children:(0,R.jsx)(o.default,{style:S.scrim,onPress:T,accessibilityRole:"button",accessibilityLabel:L('closeLabel'),children:(0,R.jsxs)(o.default,{ref:B,style:[S.sheet,{backgroundColor:_.surface}],onPress:()=>{},accessibilityViewIsModal:!0,children:[(0,R.jsx)(f.default,{style:[S.handle,{backgroundColor:_.border}]}),(0,R.jsxs)(f.default,{style:S.headerRow,children:[(0,R.jsxs)(u.default,{style:[b.typography.h3,{color:_.text,flex:1}],children:[L('commentsTitle'),E&&E.length>0?` \xb7 ${(0,C.formatNumber)(E.length)}`:'']}),(0,R.jsx)(o.default,{onPress:T,hitSlop:12,accessibilityRole:"button",accessibilityLabel:L('closeLabel'),children:(0,R.jsx)(p.Ionicons,{name:"close",size:24,color:_.text})})]}),(0,R.jsxs)(f.default,{style:[S.preview,{backgroundColor:_.surfaceAlt,borderColor:_.border}],children:[(0,R.jsxs)(f.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,R.jsx)(f.default,{style:[S.avatar,{backgroundColor:_.surface}],children:(0,R.jsx)(u.default,{style:[b.typography.smallStrong,{color:_.text}],children:e.author_name.slice(0,1).toUpperCase()})}),(0,R.jsx)(u.default,{style:[b.typography.smallStrong,{color:_.text,marginStart:b.spacing.sm,flex:1}],numberOfLines:1,children:e.author_name}),(0,R.jsx)(u.default,{style:[b.typography.caption,{color:_.textMuted}],children:(0,k.formatRelative)(N.created_at)})]}),!!N.caption&&(0,R.jsx)(u.default,{style:[b.typography.small,{color:_.text,marginTop:b.spacing.xs}],numberOfLines:3,children:N.caption}),(0,R.jsxs)(f.default,{style:{flexDirection:'row',alignItems:'center',marginTop:b.spacing.xs},children:[(0,R.jsx)(p.Ionicons,{name:"heart",size:13,color:_.textMuted}),(0,R.jsx)(u.default,{style:[b.typography.caption,{color:_.textMuted,marginStart:4}],children:(0,C.formatNumber)(e.like_count)})]})]}),(0,R.jsxs)(s.default,{behavior:void 0,style:{flex:1},keyboardVerticalOffset:80,children:[null===E?(0,R.jsx)(f.default,{style:S.center,children:(0,R.jsx)(n.default,{color:_.accentText})}):0===E.length?(0,R.jsxs)(f.default,{style:S.center,children:[(0,R.jsx)(p.Ionicons,{name:"chatbubble-ellipses-outline",size:34,color:_.textMuted}),(0,R.jsx)(u.default,{style:[b.typography.body,{color:_.textMuted,marginTop:b.spacing.sm}],children:L('noComments')})]}):(0,R.jsx)(r.default,{ref:V,data:E,keyExtractor:e=>e.id,contentContainerStyle:{paddingVertical:b.spacing.sm},renderItem:({item:e})=>(0,R.jsxs)(f.default,{style:{flexDirection:'row',paddingVertical:b.spacing.sm},children:[(0,R.jsx)(o.default,{onPress:()=>I(e.author_id),accessibilityRole:"button",accessibilityLabel:e.author_name,style:[S.avatarSm,{backgroundColor:_.surfaceAlt}],children:(0,R.jsx)(u.default,{style:[b.typography.caption,{color:_.text}],children:e.author_name.slice(0,1).toUpperCase()})}),(0,R.jsxs)(f.default,{style:{flex:1,marginStart:b.spacing.sm},children:[(0,R.jsxs)(f.default,{style:{flexDirection:'row',alignItems:'center',gap:b.spacing.sm},children:[(0,R.jsxs)(u.default,{style:[b.typography.smallStrong,{color:_.text,flexShrink:1}],numberOfLines:1,children:[e.author_name,e.author_username?(0,R.jsxs)(u.default,{style:[b.typography.caption,{color:_.textMuted}],children:[" \xb7 @",e.author_username]}):null]}),(0,R.jsx)(u.default,{style:[b.typography.caption,{color:_.textMuted}],children:(0,k.formatRelative)(e.created_at)})]}),(0,R.jsx)(u.default,{style:[b.typography.small,{color:_.text,marginTop:2}],children:e.text})]}),(0,R.jsxs)(o.default,{onPress:()=>K(e),hitSlop:10,accessibilityRole:"button",accessibilityLabel:L('likeCommentA11y'),style:{alignItems:'center',marginStart:b.spacing.sm},children:[(0,R.jsx)(p.Ionicons,{name:e.liked?'heart':'heart-outline',size:16,color:e.liked?_.danger:_.textMuted}),e.like_count>0&&(0,R.jsx)(u.default,{style:[b.typography.caption,{color:_.textMuted}],children:(0,C.formatNumber)(e.like_count)})]})]})}),(0,R.jsxs)(f.default,{style:[S.composer,{borderTopColor:_.border}],children:[(0,R.jsx)(h.default,{value:A,onChangeText:D,placeholder:L('addCommentLabel'),placeholderTextColor:_.textMuted,autoFocus:!0,onSubmitEditing:W,returnKeyType:"send",style:[b.typography.body,S.input,{color:_.text,backgroundColor:_.surfaceAlt}]}),(0,R.jsx)(o.default,{onPress:W,disabled:!A.trim()||O,accessibilityRole:"button",accessibilityLabel:L('sendBtn'),style:[S.sendBtn,{backgroundColor:_.accent,opacity:!A.trim()||O?.5:1}],children:O?(0,R.jsx)(n.default,{size:"small",color:_.accentInk}):(0,R.jsx)(p.Ionicons,{name:"arrow-up",size:18,color:_.accentInk})})]})]})]})})})};const S=c.default.create({scrim:{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'flex-end'},sheet:{height:'85%',borderTopLeftRadius:b.radius.xl,borderTopRightRadius:b.radius.xl,paddingHorizontal:b.spacing.lg,paddingTop:b.spacing.sm},handle:{alignSelf:'center',width:40,height:4,borderRadius:2,marginBottom:b.spacing.sm},headerRow:{flexDirection:'row',alignItems:'center',paddingVertical:b.spacing.sm},preview:{borderRadius:b.radius.md,borderWidth:c.default.hairlineWidth,padding:b.spacing.md},avatar:{width:32,height:32,borderRadius:16,alignItems:'center',justifyContent:'center'},avatarSm:{width:28,height:28,borderRadius:14,alignItems:'center',justifyContent:'center'},center:{flex:1,alignItems:'center',justifyContent:'center'},composer:{flexDirection:'row',alignItems:'center',gap:b.spacing.sm,paddingVertical:b.spacing.sm,borderTopWidth:c.default.hairlineWidth},input:{flex:1,minHeight:b.touch.minTarget,maxHeight:100,borderRadius:b.radius.md,paddingHorizontal:b.spacing.md,paddingVertical:b.spacing.sm},sendBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center'}})},1625,[33,15,461,271,466,467,137,369,158,146,394,273,1086,615,1621,616,671,1311,1626,675,13]);
-__d(function(g,r,i,a,m,e,_d){Object.defineProperty(e,"__esModule",{value:!0}),e.formatRelative=void 0;var t=r(_d[0]);const n=t=>t.replace(/[0-9]/g,t=>'\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669'[+t]),o=o=>'ar'===(0,t.getLocale)()?n(o):o;e.formatRelative=n=>{const u=Date.now()-new Date(n).getTime(),s=Math.max(0,Math.round(u/6e4));if(s<1)return(0,t.t)('justNow');if(s<60)return o((0,t.t)('minutesShort',{n:s}));const c=Math.round(s/60);if(c<24)return o((0,t.t)('hoursShort',{n:c}));const d=Math.round(c/24);return o((0,t.t)('daysShort',{n:d}))}},1626,[675]);
+__d(
+  function (g, r, i, a, m, e, _d) {
+    (Object.defineProperty(e, "__esModule", { value: !0 }), (e.formatRelative = void 0));
+    var t = r(_d[0]);
+    const n = (t) =>
+        t.replace(/[0-9]/g, (t) => "\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669"[+t]),
+      o = (o) => ("ar" === (0, t.getLocale)() ? n(o) : o);
+    // Every string here reads "ago", so this only ever formatted the past - but it clamped a negative
+    // delta to zero instead of saying so, which turned every future timestamp into "Just now". A
+    // deadline half an hour out and one three days out rendered identically. Format both directions
+    // rather than flattening one of them: a caller that passes a deadline now gets a deadline back.
+    e.formatRelative = (n) => {
+      const u = Date.now() - new Date(n).getTime(),
+        f = u < 0,
+        s = Math.round(Math.abs(u) / 6e4);
+      if (s < 1) return (0, t.t)("justNow");
+      if (s < 60) return o((0, t.t)(f ? "minutesShortIn" : "minutesShort", { n: s }));
+      const c = Math.round(s / 60);
+      if (c < 24) return o((0, t.t)(f ? "hoursShortIn" : "hoursShort", { n: c }));
+      const d = Math.round(c / 24);
+      return o((0, t.t)(f ? "daysShortIn" : "daysShort", { n: d }));
+    };
+  },
+  1626,
+  [675],
+);
+
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.EmptyState=void 0;var n=t(r(d[1])),o=t(r(d[2])),l=t(r(d[3])),s=r(d[4]),c=r(d[5]),p=r(d[6]),y=r(d[7]);e.EmptyState=({icon:t="sparkles-outline",title:n,body:x})=>{const{colors:f}=(0,c.useTheme)();return(0,y.jsxs)(l.default,{style:u.wrap,children:[(0,y.jsx)(s.Ionicons,{name:t,size:36,color:f.textMuted,style:{marginBottom:p.spacing.md}}),(0,y.jsx)(o.default,{style:[p.typography.h3,{color:f.text,textAlign:'center'}],children:n}),x&&(0,y.jsx)(o.default,{style:[p.typography.body,{color:f.textMuted,textAlign:'center',marginTop:p.spacing.xs}],children:x})]})};const u=n.default.create({wrap:{alignItems:'center',justifyContent:'center',padding:p.spacing.xl}})},1627,[33,158,146,273,1086,615,616,13]);
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.FeedMedia=void 0;t(r(d[1]));var o=r(d[2]);e.FeedMedia=({uri:t,type:s,height:l=280,radius:c=12})=>{const n={width:'100%',height:l,objectFit:'cover',borderRadius:c,background:'#000',display:'block'};return'video'===s?(0,o.jsx)("video",{src:t,style:n,controls:!0,playsInline:!0,preload:"metadata"}):(0,o.jsx)("img",{src:t,style:n,alt:""})}},1628,[33,15,13]);
 __d(function(g,_r,_i,a,_m,_e,d){var e=_r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{user:e,profile:q}=(0,R.useAuth)(),{colors:H}=(0,B.useTheme)(),V=(0,p.useRouter)(),Y=(0,W.useT)(),[F,G]=(0,t.useState)([]),[J,$]=(0,t.useState)([]),[Q,U]=(0,t.useState)([]),[K,N]=(0,t.useState)(null),[X,Z]=(0,t.useState)([]),[ee,te]=(0,t.useState)(!0),[ae,re]=(0,t.useState)(!1),[ne,le]=(0,t.useState)(!1),[se,oe]=(0,t.useState)(null),[ie,ce]=(0,t.useState)(null),[de,ue]=(0,t.useState)(!1),[ge,me]=(0,t.useState)(!1),[he,pe]=(0,t.useState)(!1),[fe,xe]=(0,t.useState)(''),[ye,je]=(0,t.useState)(!1),[be,Ce]=(0,t.useState)(null),Se=(0,c.useSharedValue)(0),we=(0,c.useAnimatedScrollHandler)((function(){const e=function(e){Se.value=e.contentOffset.y};return e.__closure={scrollY:Se},e.__workletHash=471574595475,e.__initData=O,e})()),Te=(0,t.useCallback)(async()=>{if(e)try{const[t,r,n,l,s]=await Promise.all([(0,M.fetchMyTeams)(e.id),(0,M.fetchTeamRankings)(void 0,e.id),(0,M.fetchClanBattles)(e.id),(0,M.fetchLeague)(e.id),(0,M.fetchRecentBattleResults)(e.id,6).catch(()=>[])]);G(t),$(r),U(n),N(l),Z(s)}catch(e){oe((0,L.storeErrorText)(e?.message??'')||Y('error'))}finally{te(!1),re(!1)}},[e]);(0,p.useFocusEffect)((0,t.useCallback)(()=>{Te()},[Te])),(0,t.useEffect)(()=>{e&&h.default.setItem(`playora.visitedCompete:${e.id}`,'1').catch(()=>{})},[e]),(0,z.useLiveRefresh)(Te);const ve=(0,t.useMemo)(()=>new Set(F.map(e=>e.id)),[F]),ke=(0,t.useMemo)(()=>{const e=new Set;for(const t of Q)'pending'!==t.view_status&&'accepted'!==t.view_status||(t.my_team_id===t.from_team_id?e.add(t.to_team_id):t.my_team_id===t.to_team_id&&e.add(t.from_team_id));return e},[Q]),Re=(0,t.useMemo)(()=>F.filter(e=>e.viewer_role&&['owner','captain','co_captain'].includes(e.viewer_role)),[F]),Be=J.filter(e=>!ve.has(e.team.id)&&!ke.has(e.team.id)).slice(0,8);return(0,A.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:H.bg},children:[(0,A.jsxs)(i.default,{style:E.header,children:[(0,A.jsx)(o.default,{style:[I.typography.h1,{color:H.text,flexShrink:1}],numberOfLines:1,children:Y('competeTab')}),(0,A.jsxs)(i.default,{style:{flexDirection:'row',alignItems:'center',gap:I.spacing.sm},children:[(0,A.jsxs)(n.default,{onPress:()=>V.push('/'),accessibilityRole:"button",accessibilityLabel:Y('findGame'),style:[E.findChip,{backgroundColor:H.surface,borderColor:H.border}],children:[(0,A.jsx)(m.Ionicons,{name:"search-outline",size:14,color:H.accentText}),(0,A.jsx)(o.default,{style:[I.typography.smallStrong,{color:H.text}],children:Y('findGame')})]}),(0,A.jsx)(n.default,{onPress:()=>V.push('organizer'===q?.role||'admin'===q?.role?'/organizer':'/organizer/apply'),accessibilityRole:"button",accessibilityLabel:Y('createMatch'),style:[E.createBtn,{backgroundColor:H.accent}],children:(0,A.jsx)(m.Ionicons,{name:"add",size:16,color:H.accentInk})}),(0,A.jsx)(j.HeaderActions,{})]})]}),ee?(0,A.jsxs)(i.default,{style:{padding:I.spacing.lg,gap:I.spacing.md},children:[(0,A.jsx)(k.Shimmer,{height:120}),(0,A.jsx)(k.Shimmer,{height:128}),(0,A.jsx)(k.Shimmer,{height:230}),(0,A.jsx)(k.Shimmer,{height:250})]}):(0,A.jsxs)(c.default.ScrollView,{onScroll:we,scrollEventThrottle:16,contentContainerStyle:{padding:I.spacing.lg,paddingTop:I.spacing.sm,paddingBottom:I.spacing.xxxl},refreshControl:(0,A.jsx)(l.default,{refreshing:ae,onRefresh:()=>{re(!0),Te()},tintColor:H.accent,colors:[H.accent]}),children:[se&&(0,A.jsxs)(i.default,{style:[E.errBar,{backgroundColor:'rgba(225,72,125,0.12)',borderColor:'#E1487D'}],children:[(0,A.jsx)(o.default,{style:[I.typography.small,{color:H.text,flex:1}],children:se}),(0,A.jsx)(n.default,{onPress:()=>oe(null),accessibilityRole:"button",accessibilityLabel:Y('dismissLabel'),hitSlop:8,children:(0,A.jsx)(m.Ionicons,{name:"close",size:15,color:H.textMuted})})]}),X.length>0&&(0,A.jsx)(i.default,{style:{marginBottom:I.spacing.md},children:(0,A.jsx)(w.ResultsBanner,{results:X})}),(0,A.jsx)(C.MyClanHero,{mine:F,rankings:J,battles:Q,scrollY:Se,busy:ne,onRespond:async(t,r)=>{if(e&&!ne){le(!0),oe(null);try{await(0,M.respondClanChallenge)(e.id,t,r),await Te()}catch(e){oe((0,L.storeErrorText)(e?.message??'')||Y('error'))}finally{le(!1)}}},onJoinCode:()=>me(!0)}),(0,A.jsx)(D,{label:Y('battlesSection'),children:(0,A.jsx)(_.BattlesRail,{battles:Q,onChallenge:()=>je(!0)})}),(0,A.jsx)(D,{label:Y('ladderSection'),children:(0,A.jsx)(S.LadderSection,{rankings:J,mineIds:ve,seasonStart:K?.matchday_date??null,canChallenge:Re.length>0,engagedIds:ke,onChallenge:e=>Ce({id:e.id,name:e.name,color_primary:e.color_primary,logo_uri:e.logo_uri})})}),K&&(0,A.jsx)(D,{label:Y('leagueSection'),children:(0,A.jsx)(T.LeagueCard,{league:K,onConfirm:async t=>{if(e&&!ne){le(!0),oe(null);try{N(await(0,M.confirmLeagueSquad)(e.id,t))}catch(e){oe((0,L.storeErrorText)(e?.message??'')||Y('error'))}finally{le(!1)}}},busy:ne})}),(0,A.jsx)(i.default,{style:{marginTop:I.spacing.lg},children:(0,A.jsx)(v.QuickActions,{onChallenge:()=>je(!0),onJoinCode:()=>me(!0)})})]}),(0,A.jsx)(r.default,{visible:ge,transparent:!0,animationType:"fade",onRequestClose:()=>{me(!1),pe(!1)},children:(0,A.jsx)(i.default,{style:E.backdrop,children:(0,A.jsx)(i.default,{style:[E.sheet,{backgroundColor:H.surface,borderColor:H.border}],children:he?(0,A.jsxs)(i.default,{style:{alignItems:'center'},children:[(0,A.jsx)(m.Ionicons,{name:"paper-plane-outline",size:40,color:H.accentText}),(0,A.jsx)(o.default,{style:[I.typography.h2,{color:H.text,marginTop:I.spacing.sm,textAlign:'center'}],children:Y('joinRequestSentTitle')}),(0,A.jsx)(o.default,{style:[I.typography.small,{color:H.textMuted,marginTop:I.spacing.xs,textAlign:'center'}],children:Y('joinRequestSentBody')}),(0,A.jsx)(i.default,{style:{height:I.spacing.md}}),(0,A.jsx)(f.Button,{title:Y('gotIt'),fullWidth:!0,onPress:()=>{pe(!1),me(!1),Te()}})]}):(0,A.jsxs)(A.Fragment,{children:[(0,A.jsx)(o.default,{style:[I.typography.h2,{color:H.text,marginBottom:I.spacing.sm}],children:Y('joinWithCode')}),(0,A.jsx)(b.Input,{placeholder:Y('inviteCodePlaceholder'),value:fe,onChangeText:e=>{xe(e),ie&&ce(null)},autoCapitalize:"characters",autoCorrect:!1,error:ie??void 0}),(0,A.jsxs)(i.default,{style:{flexDirection:'row',gap:I.spacing.sm,marginTop:I.spacing.md},children:[(0,A.jsx)(i.default,{style:{flex:1},children:(0,A.jsx)(f.Button,{title:Y('cancel'),variant:"ghost",fullWidth:!0,onPress:()=>me(!1)})}),(0,A.jsx)(i.default,{style:{flex:1},children:(0,A.jsx)(f.Button,{title:Y('joinTeam'),fullWidth:!0,loading:de,onPress:async()=>{if(e&&fe.trim()&&!de){oe(null),ce(null),ue(!0);try{const t=await(0,M.joinTeamByCode)(e.id,fe.trim());if(xe(''),'pending'===t.status)return void pe(!0);me(!1),V.push(`/teams/${t.team_id}`)}catch(e){ce((0,L.storeErrorText)(e?.message??'')||Y('error'))}finally{ue(!1)}}}})})]}),(0,A.jsx)(o.default,{style:[I.typography.caption,{color:H.textMuted,marginTop:I.spacing.sm,textAlign:'center'}],children:Y('manyClansAllowed')})]})})})}),(0,A.jsx)(r.default,{visible:ye,transparent:!0,animationType:"fade",onRequestClose:()=>je(!1),children:(0,A.jsx)(i.default,{style:E.backdrop,children:(0,A.jsxs)(i.default,{style:[E.sheet,{backgroundColor:H.surface,borderColor:H.border}],children:[(0,A.jsx)(o.default,{style:[I.typography.h2,{color:H.text,marginBottom:I.spacing.sm}],children:Y('quickChallenge')}),Be.map((e,t)=>(0,A.jsxs)(n.default,{onPress:()=>{je(!1),Ce({id:e.team.id,name:e.team.name,color_primary:e.team.color_primary,logo_uri:e.team.logo_uri})},accessibilityRole:"button",style:[E.rivalRow,{borderTopColor:H.border,borderTopWidth:0===t?0:s.default.hairlineWidth}],children:[(0,A.jsx)(y.ClanCrest,{name:e.team.name,color:e.team.color_primary,size:28}),(0,A.jsx)(o.default,{style:[I.typography.smallStrong,{color:H.text,flex:1,marginStart:I.spacing.sm}],numberOfLines:1,children:e.team.name}),(0,A.jsx)(m.Ionicons,{name:(0,P.chevronForward)(),size:14,color:H.textMuted})]},e.team.id)),(0,A.jsx)(f.Button,{title:Y('cancel'),variant:"ghost",fullWidth:!0,onPress:()=>je(!1),style:{marginTop:I.spacing.sm}})]})})}),(0,A.jsx)(x.ChallengeSheet,{target:be,fromTeams:Re.map(e=>({id:e.id,name:e.name,color_primary:e.color_primary,logo_uri:e.logo_uri})),onClose:()=>Ce(null),onSent:()=>{Ce(null),Te()}})]})};var t=_r(d[1]),r=e(_r(d[2])),n=e(_r(d[3])),l=e(_r(d[4])),s=e(_r(d[5])),o=e(_r(d[6])),i=e(_r(d[7])),c=(function(e,t){if("function"==typeof WeakMap)var r=new WeakMap,n=new WeakMap;return(function(e,t){if(!t&&e&&e.__esModule)return e;var l,s,o={__proto__:null,default:e};if(null===e||"object"!=typeof e&&"function"!=typeof e)return o;if(l=t?n:r){if(l.has(e))return l.get(e);l.set(e,o)}for(const t in e)"default"!==t&&{}.hasOwnProperty.call(e,t)&&((s=(l=Object.defineProperty)&&Object.getOwnPropertyDescriptor(e,t))&&(s.get||s.set)?l(o,t,s):o[t]=e[t]);return o})(e,t)})(_r(d[8])),u=_r(d[9]),m=_r(d[10]),h=e(_r(d[11])),p=_r(d[12]),f=_r(d[13]),x=_r(d[14]),y=_r(d[15]),j=_r(d[16]),b=_r(d[17]),C=_r(d[18]),_=_r(d[19]),S=_r(d[20]),w=_r(d[21]),T=_r(d[22]),v=_r(d[23]),k=_r(d[24]),R=_r(d[25]),B=_r(d[26]),I=_r(d[27]),M=_r(d[28]),W=_r(d[29]),P=_r(d[30]),z=_r(d[31]),L=_r(d[32]),A=_r(d[33]);const D=({label:e,children:t})=>{const{colors:r}=(0,B.useTheme)();return(0,A.jsxs)(i.default,{style:{marginTop:I.spacing.lg},children:[(0,A.jsx)(o.default,{style:[E.sectionLabel,{color:r.textMuted}],children:e.toUpperCase()}),t]})},O={code:"function gamesTsx1(e){const{scrollY}=this.__closure;scrollY.value=e.contentOffset.y;}"};const E=s.default.create({header:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:I.spacing.lg,paddingVertical:I.spacing.sm},findChip:{flexDirection:'row',alignItems:'center',gap:5,borderWidth:1,borderRadius:I.radius.pill,paddingHorizontal:I.spacing.md,height:34},createBtn:{width:34,height:34,borderRadius:17,alignItems:'center',justifyContent:'center'},sectionLabel:{fontSize:11,fontWeight:'800',letterSpacing:2,marginBottom:I.spacing.sm},errBar:{flexDirection:'row',alignItems:'center',borderWidth:1,borderRadius:I.radius.md,padding:I.spacing.sm,marginBottom:I.spacing.sm},backdrop:{flex:1,backgroundColor:'rgba(0,0,0,0.6)',alignItems:'center',justifyContent:'center',padding:I.spacing.lg},sheet:{width:'100%',maxWidth:420,borderRadius:I.radius.lg,borderWidth:1,padding:I.spacing.lg},rivalRow:{flexDirection:'row',alignItems:'center',paddingVertical:I.spacing.sm}})},1629,[33,15,467,369,280,158,146,273,918,381,1086,618,20,626,1630,1631,1662,625,1666,1670,1672,1673,1674,1675,1618,630,615,616,671,675,1171,1676,674,13]);
@@ -42156,7 +42187,417 @@ __d(
     1311, 675, 1171, 674, 13, 9001,
   ],
 );
-__d(function(g,r,i,_a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{gameId:t}=(0,f.useLocalSearchParams)(),{user:T}=(0,C.useAuth)(),{colors:L}=(0,_.useTheme)(),M=(0,f.useRouter)(),H=(0,A.useT)(),[N,W]=(0,a.useState)(null),[D,O]=(0,a.useState)(null),[V,E]=(0,a.useState)(!1),[F,$]=(0,a.useState)(''),[q,U]=(0,a.useState)(!1),G=(0,a.useCallback)(async()=>{T&&t&&W(await(0,R.fetchAwardBallot)(T.id,t))},[T,t]);(0,f.useFocusEffect)((0,a.useCallback)(()=>{G()},[G]));const J=async a=>{if(!T||!t||!D)return;const s=D.key;O(null),await(0,R.castAwardVote)(T.id,t,s,a),await G()},K=t=>t.custom_label??H(t.label_key);return(0,z.jsxs)(x.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:L.bg},children:[(0,z.jsxs)(y.default,{style:P.header,children:[(0,z.jsx)(l.default,{onPress:()=>M.back(),accessibilityRole:"button",accessibilityLabel:H('back'),style:[P.iconBtn,{backgroundColor:L.surface,borderColor:L.border}],children:(0,z.jsx)(p.Ionicons,{name:(0,I.chevronBack)(),size:22,color:L.text})}),(0,z.jsxs)(y.default,{style:{flex:1,marginHorizontal:k.spacing.md},children:[(0,z.jsx)(u.default,{style:[k.typography.h2,{color:L.text}],children:H('matchAwards')}),N&&'not_completed'!==N.state&&(0,z.jsx)(u.default,{style:[k.typography.small,{color:L.textMuted}],children:'published'===N.state?H('awardResults'):N.closes_at?H('voteClosesLabel',{when:(0,B.formatRelative)(N.closes_at)}):H('votingOpen')})]}),N&&(0,z.jsx)(j.Badge,{label:'published'===N.state?H('votingClosed'):'voting'===N.state?H('votingOpen'):'',tone:'published'===N.state?'neutral':'success'})]}),N?'not_completed'===N.state?(0,z.jsx)(v.EmptyState,{icon:"trophy-outline",title:H('matchAwards'),body:H('matchCompletedSoon')}):(0,z.jsxs)(n.default,{contentContainerStyle:{padding:k.spacing.lg,paddingBottom:k.spacing.xxxl},children:['voting'===N.state&&(0,z.jsx)(u.default,{style:[k.typography.small,{color:L.textMuted,marginBottom:k.spacing.md}],children:N.can_vote?H('matchAwardsSub'):H('noNominees')}),'published'===N.state&&(0===N.winners.length?(0,z.jsx)(v.EmptyState,{icon:"trophy-outline",title:H('awardResults'),body:H('noNominees')}):N.winners.map(t=>(0,z.jsx)(b.Card,{padding:"md",style:{marginBottom:k.spacing.sm},children:(0,z.jsxs)(y.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,z.jsx)(u.default,{style:{fontSize:26},children:t.emoji}),(0,z.jsxs)(y.default,{style:{flex:1,marginHorizontal:k.spacing.md},children:[(0,z.jsx)(u.default,{style:[k.typography.caption,{color:L.textMuted}],children:K(t)}),(0,z.jsx)(l.default,{onPress:()=>M.push(`/player/${t.winner_id}`),accessibilityRole:"button",accessibilityLabel:t.winner_name,children:(0,z.jsxs)(u.default,{style:[k.typography.bodyStrong,{color:L.text}],children:["\ud83c\udfc6 ",t.winner_name]})})]}),(0,z.jsx)(j.Badge,{label:H('votesLabel',{n:(0,S.formatNumber)(t.votes)}),tone:"accent"}),N.is_admin&&(0,z.jsx)(l.default,{onPress:async()=>{T&&(await(0,R.revokeAward)(T.id,t.id),await G())},accessibilityRole:"button",accessibilityLabel:H('revokeBtn'),hitSlop:8,style:{marginStart:k.spacing.sm},children:(0,z.jsx)(p.Ionicons,{name:"trash-outline",size:18,color:L.danger})})]})},t.award_key))),'voting'===N.state&&N.awards.map(t=>{return(0,z.jsx)(b.Card,{padding:"md",style:{marginBottom:k.spacing.sm},children:(0,z.jsxs)(l.default,{onPress:()=>N.can_vote&&O(t),accessibilityRole:"button",disabled:!N.can_vote,style:{flexDirection:'row',alignItems:'center'},children:[(0,z.jsx)(u.default,{style:{fontSize:24},children:t.emoji}),(0,z.jsxs)(y.default,{style:{flex:1,marginHorizontal:k.spacing.md},children:[(0,z.jsx)(u.default,{style:[k.typography.bodyStrong,{color:L.text}],children:K(t)}),(0,z.jsx)(u.default,{style:[k.typography.small,{color:t.my_vote?L.accentText:L.textMuted}],children:t.my_vote?`\u2713 ${H('votedForLabel')}: ${a=t.my_vote,N?.nominees.find(t=>t.id===a)?.name??'\u2014'}`:N.can_vote?H('pickNominee'):H('votesLabel',{n:(0,S.formatNumber)(t.total_votes)})})]}),N.can_vote&&(0,z.jsx)(p.Ionicons,{name:(0,I.chevronForward)(),size:18,color:L.textMuted})]})},t.key);var a}),N.is_manager&&'voting'===N.state&&(0,z.jsxs)(y.default,{style:{marginTop:k.spacing.lg,gap:k.spacing.sm},children:[V?(0,z.jsxs)(y.default,{style:{flexDirection:'row',gap:k.spacing.sm},children:[(0,z.jsx)(y.default,{style:{flex:1},children:(0,z.jsx)(h.default,{value:F,onChangeText:$,placeholder:H('customAwardName'),placeholderTextColor:L.textMuted,style:[k.typography.body,{color:L.text,backgroundColor:L.surface,borderColor:L.border,borderWidth:c.default.hairlineWidth,borderRadius:k.radius.md,paddingHorizontal:k.spacing.md,height:44}]})}),(0,z.jsx)(w.Button,{title:H('addCustomAward'),size:"sm",onPress:async()=>{T&&t&&F.trim()&&(await(0,R.createCustomAward)(T.id,{label:F.trim(),emoji:'\ud83c\udfc5',matchId:t}),$(''),E(!1),await G())},disabled:!F.trim()})]}):(0,z.jsx)(w.Button,{title:H('addCustomAward'),variant:"secondary",onPress:()=>E(!0),leftIcon:(0,z.jsx)(p.Ionicons,{name:"add",size:16,color:L.text})}),(0,z.jsx)(w.Button,{title:H('publishResults'),onPress:async()=>{if(T&&t){U(!0);try{await(0,R.publishAwards)(T.id,t),await G()}finally{U(!1)}}},loading:q,leftIcon:(0,z.jsx)(p.Ionicons,{name:"trophy-outline",size:16,color:"#fff"})})]})]}):(0,z.jsx)(s.default,{color:L.accentText,style:{marginTop:k.spacing.xl}}),(0,z.jsx)(o.default,{visible:!!D,transparent:!0,animationType:"fade",onRequestClose:()=>O(null),children:(0,z.jsx)(l.default,{style:P.scrim,onPress:()=>O(null),children:(0,z.jsxs)(l.default,{style:[P.sheet,{backgroundColor:L.surface}],onPress:()=>{},children:[(0,z.jsx)(u.default,{style:[k.typography.h3,{color:L.text,marginBottom:k.spacing.sm}],children:D?K(D):''}),(0,z.jsx)(n.default,{style:{maxHeight:360},children:0===(N?.nominees??[]).length?(0,z.jsx)(u.default,{style:[k.typography.small,{color:L.textMuted}],children:H('noNominees')}):N.nominees.map(t=>{const a=D?.my_vote===t.id;return(0,z.jsxs)(l.default,{onPress:()=>J(t.id),accessibilityRole:"button",style:[P.nomRow,{borderBottomColor:L.border}],children:[(0,z.jsx)(y.default,{style:[P.nomAvatar,{backgroundColor:L.surfaceAlt}],children:(0,z.jsx)(u.default,{style:[k.typography.bodyStrong,{color:L.text}],children:t.name.slice(0,1).toUpperCase()})}),(0,z.jsx)(u.default,{style:[k.typography.body,{color:L.text,flex:1,marginHorizontal:k.spacing.md}],numberOfLines:1,children:t.name}),a&&(0,z.jsx)(p.Ionicons,{name:"checkmark-circle",size:20,color:L.accentText})]},t.id)})})]})})})]})};var a=r(d[1]),s=t(r(d[2])),o=t(r(d[3])),l=t(r(d[4])),n=t(r(d[5])),c=t(r(d[6])),u=t(r(d[7])),h=t(r(d[8])),y=t(r(d[9])),x=r(d[10]),p=r(d[11]),f=r(d[12]),b=r(d[13]),j=r(d[14]),w=r(d[15]),v=r(d[16]),C=r(d[17]),_=r(d[18]),k=r(d[19]),R=r(d[20]),S=r(d[21]),B=r(d[22]),A=r(d[23]),I=r(d[24]),z=r(d[25]);const P=c.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:k.spacing.lg,paddingVertical:k.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:c.default.hairlineWidth},scrim:{flex:1,backgroundColor:'rgba(0,0,0,0.4)',justifyContent:'flex-end'},sheet:{borderTopLeftRadius:k.radius.xl,borderTopRightRadius:k.radius.xl,padding:k.spacing.lg,paddingBottom:k.spacing.xxxl},nomRow:{flexDirection:'row',alignItems:'center',paddingVertical:k.spacing.sm,borderBottomWidth:c.default.hairlineWidth},nomAvatar:{width:36,height:36,borderRadius:18,alignItems:'center',justifyContent:'center'}})},1835,[33,15,461,467,369,281,158,146,394,273,381,1086,20,1623,1624,626,1627,630,615,616,671,1311,1626,675,1171,13]);
+__d(
+  function (g, r, i, _a, m, e, d) {
+    var t = r(d[0]);
+    (Object.defineProperty(e, "__esModule", { value: !0 }),
+      (e.default = function () {
+        const { gameId: t } = (0, f.useLocalSearchParams)(),
+          { user: T } = (0, C.useAuth)(),
+          { colors: L } = (0, _.useTheme)(),
+          M = (0, f.useRouter)(),
+          H = (0, A.useT)(),
+          [N, W] = (0, a.useState)(null),
+          [D, O] = (0, a.useState)(null),
+          [V, E] = (0, a.useState)(!1),
+          [F, $] = (0, a.useState)(""),
+          [q, U] = (0, a.useState)(!1),
+          G = (0, a.useCallback)(async () => {
+            T && t && W(await (0, R.fetchAwardBallot)(T.id, t));
+          }, [T, t]);
+        (0, f.useFocusEffect)(
+          (0, a.useCallback)(() => {
+            G();
+          }, [G]),
+        );
+        const J = async (a) => {
+            if (!T || !t || !D) return;
+            const s = D.key;
+            (O(null), await (0, R.castAwardVote)(T.id, t, s, a), await G());
+          },
+          K = (t) => t.custom_label ?? H(t.label_key);
+        return (0, z.jsxs)(x.SafeAreaView, {
+          edges: ["top"],
+          style: { flex: 1, backgroundColor: L.bg },
+          children: [
+            (0, z.jsxs)(y.default, {
+              style: P.header,
+              children: [
+                (0, z.jsx)(l.default, {
+                  onPress: () => M.back(),
+                  accessibilityRole: "button",
+                  accessibilityLabel: H("back"),
+                  style: [P.iconBtn, { backgroundColor: L.surface, borderColor: L.border }],
+                  children: (0, z.jsx)(p.Ionicons, { name: (0, I.chevronBack)(), size: 22, color: L.text }),
+                }),
+                (0, z.jsxs)(y.default, {
+                  style: { flex: 1, marginHorizontal: k.spacing.md },
+                  children: [
+                    (0, z.jsx)(u.default, {
+                      style: [k.typography.h2, { color: L.text }],
+                      children: H("matchAwards"),
+                    }),
+                    N &&
+                      "not_completed" !== N.state &&
+                      ("published" !== N.state && N.closes_at
+                        ? // This read "Voting closes Just now" for every deadline, because
+                          // formatRelative clamped the future to zero - and after the deadline it
+                          // flipped to "closes 3h ago" inches from a badge reading "Voting closed".
+                          // CountdownTimer already does this properly: it ticks every second, colours
+                          // at ten minutes and an hour, and fires onExpire, so the ballot refetches
+                          // and the screen corrects itself the moment voting closes.
+                          (0, z.jsx)(Q9.CountdownTimer, { deadlineIso: N.closes_at, onExpire: G })
+                        : (0, z.jsx)(u.default, {
+                            style: [k.typography.small, { color: L.textMuted }],
+                            children: "published" === N.state ? H("awardResults") : H("votingOpen"),
+                          })),
+                  ],
+                }),
+                N &&
+                  (0, z.jsx)(j.Badge, {
+                    label:
+                      "published" === N.state
+                        ? H("votingClosed")
+                        : "voting" === N.state
+                          ? H("votingOpen")
+                          : "",
+                    tone: "published" === N.state ? "neutral" : "success",
+                  }),
+              ],
+            }),
+            N
+              ? "not_completed" === N.state
+                ? (0, z.jsx)(v.EmptyState, {
+                    icon: "trophy-outline",
+                    title: H("matchAwards"),
+                    body: H("matchCompletedSoon"),
+                  })
+                : (0, z.jsxs)(n.default, {
+                    contentContainerStyle: { padding: k.spacing.lg, paddingBottom: k.spacing.xxxl },
+                    children: [
+                      "voting" === N.state &&
+                        (0, z.jsx)(u.default, {
+                          style: [k.typography.small, { color: L.textMuted, marginBottom: k.spacing.md }],
+                          children: N.can_vote ? H("matchAwardsSub") : H("noNominees"),
+                        }),
+                      "published" === N.state &&
+                        (0 === N.winners.length
+                          ? (0, z.jsx)(v.EmptyState, {
+                              icon: "trophy-outline",
+                              title: H("awardResults"),
+                              body: H("noNominees"),
+                            })
+                          : N.winners.map((t) =>
+                              (0, z.jsx)(
+                                b.Card,
+                                {
+                                  padding: "md",
+                                  style: { marginBottom: k.spacing.sm },
+                                  children: (0, z.jsxs)(y.default, {
+                                    style: { flexDirection: "row", alignItems: "center" },
+                                    children: [
+                                      (0, z.jsx)(u.default, { style: { fontSize: 26 }, children: t.emoji }),
+                                      (0, z.jsxs)(y.default, {
+                                        style: { flex: 1, marginHorizontal: k.spacing.md },
+                                        children: [
+                                          (0, z.jsx)(u.default, {
+                                            style: [k.typography.caption, { color: L.textMuted }],
+                                            children: K(t),
+                                          }),
+                                          (0, z.jsx)(l.default, {
+                                            onPress: () => M.push(`/player/${t.winner_id}`),
+                                            accessibilityRole: "button",
+                                            accessibilityLabel: t.winner_name,
+                                            children: (0, z.jsxs)(u.default, {
+                                              style: [k.typography.bodyStrong, { color: L.text }],
+                                              children: ["\ud83c\udfc6 ", t.winner_name],
+                                            }),
+                                          }),
+                                        ],
+                                      }),
+                                      (0, z.jsx)(j.Badge, {
+                                        label: H("votesLabel", { n: (0, S.formatNumber)(t.votes) }),
+                                        tone: "accent",
+                                      }),
+                                      N.is_admin &&
+                                        (0, z.jsx)(l.default, {
+                                          onPress: async () => {
+                                            T && (await (0, R.revokeAward)(T.id, t.id), await G());
+                                          },
+                                          accessibilityRole: "button",
+                                          accessibilityLabel: H("revokeBtn"),
+                                          hitSlop: 8,
+                                          style: { marginStart: k.spacing.sm },
+                                          children: (0, z.jsx)(p.Ionicons, {
+                                            name: "trash-outline",
+                                            size: 18,
+                                            color: L.danger,
+                                          }),
+                                        }),
+                                    ],
+                                  }),
+                                },
+                                t.award_key,
+                              ),
+                            )),
+                      "voting" === N.state &&
+                        N.awards.map((t) => {
+                          return (0, z.jsx)(
+                            b.Card,
+                            {
+                              padding: "md",
+                              style: { marginBottom: k.spacing.sm },
+                              children: (0, z.jsxs)(l.default, {
+                                onPress: () => N.can_vote && O(t),
+                                accessibilityRole: "button",
+                                disabled: !N.can_vote,
+                                style: { flexDirection: "row", alignItems: "center" },
+                                children: [
+                                  (0, z.jsx)(u.default, { style: { fontSize: 24 }, children: t.emoji }),
+                                  (0, z.jsxs)(y.default, {
+                                    style: { flex: 1, marginHorizontal: k.spacing.md },
+                                    children: [
+                                      (0, z.jsx)(u.default, {
+                                        style: [k.typography.bodyStrong, { color: L.text }],
+                                        children: K(t),
+                                      }),
+                                      (0, z.jsx)(u.default, {
+                                        style: [
+                                          k.typography.small,
+                                          { color: t.my_vote ? L.accentText : L.textMuted },
+                                        ],
+                                        children: t.my_vote
+                                          ? `\u2713 ${H("votedForLabel")}: ${((a = t.my_vote), N?.nominees.find((t) => t.id === a)?.name ?? "\u2014")}`
+                                          : N.can_vote
+                                            ? H("pickNominee")
+                                            : H("votesLabel", { n: (0, S.formatNumber)(t.total_votes) }),
+                                      }),
+                                    ],
+                                  }),
+                                  N.can_vote &&
+                                    (0, z.jsx)(p.Ionicons, {
+                                      name: (0, I.chevronForward)(),
+                                      size: 18,
+                                      color: L.textMuted,
+                                    }),
+                                ],
+                              }),
+                            },
+                            t.key,
+                          );
+                          var a;
+                        }),
+                      N.is_manager &&
+                        "voting" === N.state &&
+                        (0, z.jsxs)(y.default, {
+                          style: { marginTop: k.spacing.lg, gap: k.spacing.sm },
+                          children: [
+                            V
+                              ? (0, z.jsxs)(y.default, {
+                                  style: { flexDirection: "row", gap: k.spacing.sm },
+                                  children: [
+                                    (0, z.jsx)(y.default, {
+                                      style: { flex: 1 },
+                                      children: (0, z.jsx)(h.default, {
+                                        value: F,
+                                        onChangeText: $,
+                                        placeholder: H("customAwardName"),
+                                        placeholderTextColor: L.textMuted,
+                                        style: [
+                                          k.typography.body,
+                                          {
+                                            color: L.text,
+                                            backgroundColor: L.surface,
+                                            borderColor: L.border,
+                                            borderWidth: c.default.hairlineWidth,
+                                            borderRadius: k.radius.md,
+                                            paddingHorizontal: k.spacing.md,
+                                            height: 44,
+                                          },
+                                        ],
+                                      }),
+                                    }),
+                                    (0, z.jsx)(w.Button, {
+                                      title: H("addCustomAward"),
+                                      size: "sm",
+                                      onPress: async () => {
+                                        T &&
+                                          t &&
+                                          F.trim() &&
+                                          (await (0, R.createCustomAward)(T.id, {
+                                            label: F.trim(),
+                                            emoji: "\ud83c\udfc5",
+                                            matchId: t,
+                                          }),
+                                          $(""),
+                                          E(!1),
+                                          await G());
+                                      },
+                                      disabled: !F.trim(),
+                                    }),
+                                  ],
+                                })
+                              : (0, z.jsx)(w.Button, {
+                                  title: H("addCustomAward"),
+                                  variant: "secondary",
+                                  onPress: () => E(!0),
+                                  leftIcon: (0, z.jsx)(p.Ionicons, { name: "add", size: 16, color: L.text }),
+                                }),
+                            (0, z.jsx)(w.Button, {
+                              title: H("publishResults"),
+                              onPress: async () => {
+                                if (T && t) {
+                                  U(!0);
+                                  try {
+                                    (await (0, R.publishAwards)(T.id, t), await G());
+                                  } finally {
+                                    U(!1);
+                                  }
+                                }
+                              },
+                              loading: q,
+                              leftIcon: (0, z.jsx)(p.Ionicons, {
+                                name: "trophy-outline",
+                                size: 16,
+                                color: "#fff",
+                              }),
+                            }),
+                          ],
+                        }),
+                    ],
+                  })
+              : (0, z.jsx)(s.default, { color: L.accentText, style: { marginTop: k.spacing.xl } }),
+            (0, z.jsx)(o.default, {
+              visible: !!D,
+              transparent: !0,
+              animationType: "fade",
+              onRequestClose: () => O(null),
+              children: (0, z.jsx)(l.default, {
+                style: P.scrim,
+                onPress: () => O(null),
+                children: (0, z.jsxs)(l.default, {
+                  style: [P.sheet, { backgroundColor: L.surface }],
+                  onPress: () => {},
+                  children: [
+                    (0, z.jsx)(u.default, {
+                      style: [k.typography.h3, { color: L.text, marginBottom: k.spacing.sm }],
+                      children: D ? K(D) : "",
+                    }),
+                    (0, z.jsx)(n.default, {
+                      style: { maxHeight: 360 },
+                      children:
+                        0 === (N?.nominees ?? []).length
+                          ? (0, z.jsx)(u.default, {
+                              style: [k.typography.small, { color: L.textMuted }],
+                              children: H("noNominees"),
+                            })
+                          : N.nominees.map((t) => {
+                              const a = D?.my_vote === t.id;
+                              return (0, z.jsxs)(
+                                l.default,
+                                {
+                                  onPress: () => J(t.id),
+                                  accessibilityRole: "button",
+                                  style: [P.nomRow, { borderBottomColor: L.border }],
+                                  children: [
+                                    (0, z.jsx)(y.default, {
+                                      style: [P.nomAvatar, { backgroundColor: L.surfaceAlt }],
+                                      children: (0, z.jsx)(u.default, {
+                                        style: [k.typography.bodyStrong, { color: L.text }],
+                                        children: t.name.slice(0, 1).toUpperCase(),
+                                      }),
+                                    }),
+                                    (0, z.jsx)(u.default, {
+                                      style: [
+                                        k.typography.body,
+                                        { color: L.text, flex: 1, marginHorizontal: k.spacing.md },
+                                      ],
+                                      numberOfLines: 1,
+                                      children: t.name,
+                                    }),
+                                    a &&
+                                      (0, z.jsx)(p.Ionicons, {
+                                        name: "checkmark-circle",
+                                        size: 20,
+                                        color: L.accentText,
+                                      }),
+                                  ],
+                                },
+                                t.id,
+                              );
+                            }),
+                    }),
+                  ],
+                }),
+              }),
+            }),
+          ],
+        });
+      }));
+    var a = r(d[1]),
+      s = t(r(d[2])),
+      o = t(r(d[3])),
+      l = t(r(d[4])),
+      n = t(r(d[5])),
+      c = t(r(d[6])),
+      u = t(r(d[7])),
+      h = t(r(d[8])),
+      y = t(r(d[9])),
+      x = r(d[10]),
+      p = r(d[11]),
+      f = r(d[12]),
+      b = r(d[13]),
+      j = r(d[14]),
+      w = r(d[15]),
+      v = r(d[16]),
+      C = r(d[17]),
+      _ = r(d[18]),
+      k = r(d[19]),
+      R = r(d[20]),
+      S = r(d[21]),
+      B = r(d[22]),
+      A = r(d[23]),
+      I = r(d[24]),
+      z = r(d[25]),
+      Q9 = r(d[26]);
+    const P = c.default.create({
+      header: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: k.spacing.lg,
+        paddingVertical: k.spacing.md,
+      },
+      iconBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: c.default.hairlineWidth,
+      },
+      scrim: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+      sheet: {
+        borderTopLeftRadius: k.radius.xl,
+        borderTopRightRadius: k.radius.xl,
+        padding: k.spacing.lg,
+        paddingBottom: k.spacing.xxxl,
+      },
+      nomRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: k.spacing.sm,
+        borderBottomWidth: c.default.hairlineWidth,
+      },
+      nomAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+    });
+  },
+  1835,
+  [
+    33, 15, 461, 467, 369, 281, 158, 146, 394, 273, 381, 1086, 20, 1623, 1624, 626, 1627, 630, 615, 616, 671,
+    1311, 1626, 675, 1171, 13, 2384,
+  ],
+);
+
 __d(function(g,_r,_i,a,m,e,d){var t=_r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{colors:t}=(0,x.useTheme)(),s=(0,h.useRouter)(),I=(0,C.useT)(),[H,L]=(0,l.useState)(null),[R,_]=(0,l.useState)(null),[T,W]=(0,l.useState)([]),[E,M]=(0,l.useState)(null);(0,l.useEffect)(()=>{(0,S.fetchAwardSeasons)().then(W)},[]);const N=(0,l.useCallback)(async()=>{M(await(0,S.fetchAwardLeaderboard)({sport:H??void 0,season:R??void 0}))},[H,R]);return(0,l.useEffect)(()=>{N()},[N]),(0,z.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:t.bg},children:[(0,z.jsxs)(c.default,{style:A.header,children:[(0,z.jsx)(r.default,{onPress:()=>s.back(),accessibilityRole:"button",accessibilityLabel:I('back'),style:[A.iconBtn,{backgroundColor:t.surface,borderColor:t.border}],children:(0,z.jsx)(p.Ionicons,{name:(0,v.chevronBack)(),size:22,color:t.text})}),(0,z.jsxs)(c.default,{style:{flex:1,marginHorizontal:j.spacing.md},children:[(0,z.jsx)(i.default,{style:[j.typography.h2,{color:t.text}],children:I('awardsLeaderboard')}),(0,z.jsx)(i.default,{style:[j.typography.small,{color:t.textMuted}],children:I('leaderboardSub')})]})]}),(0,z.jsxs)(n.default,{contentContainerStyle:{padding:j.spacing.lg,paddingBottom:j.spacing.xxxl},children:[(0,z.jsxs)(n.default,{horizontal:!0,showsHorizontalScrollIndicator:!1,contentContainerStyle:{gap:j.spacing.sm,paddingBottom:j.spacing.sm},children:[(0,z.jsx)(B,{label:I('anySport'),on:!H,onPress:()=>L(null),colors:t}),P.map(l=>(0,z.jsx)(B,{label:I(l),on:H===l,onPress:()=>L(H===l?null:l),colors:t},l))]}),(0,z.jsxs)(n.default,{horizontal:!0,showsHorizontalScrollIndicator:!1,contentContainerStyle:{gap:j.spacing.sm,paddingBottom:j.spacing.md},children:[(0,z.jsx)(B,{label:I('allTimeLabel'),on:!R,onPress:()=>_(null),colors:t}),T.map(l=>(0,z.jsx)(B,{label:l,on:R===l,onPress:()=>_(R===l?null:l),colors:t},l))]}),null===E?(0,z.jsx)(o.default,{color:t.accentText}):0===E.length?(0,z.jsx)(b.EmptyState,{icon:"trophy-outline",title:I('noAwardsYet'),body:I('leaderboardSub')}):E.map((l,o)=>(0,z.jsx)(f.Card,{onPress:()=>s.push(`/player/${l.user_id}`),padding:"md",style:{marginBottom:j.spacing.sm},children:(0,z.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,z.jsx)(i.default,{style:[j.typography.h3,{color:t.text,width:34,textAlign:'center'}],children:o<3?k[o]:(0,w.formatNumber)(o+1)}),(0,z.jsx)(c.default,{style:[A.avatar,{backgroundColor:t.surfaceAlt}],children:(0,z.jsx)(i.default,{style:[j.typography.bodyStrong,{color:t.text}],children:l.name.slice(0,1).toUpperCase()})}),(0,z.jsxs)(c.default,{style:{flex:1,marginHorizontal:j.spacing.md},children:[(0,z.jsx)(i.default,{style:[j.typography.bodyStrong,{color:t.text}],numberOfLines:1,children:l.name}),l.mvp>0&&(0,z.jsxs)(i.default,{style:[j.typography.caption,{color:t.textMuted}],children:["\ud83c\udfc6 ",I('mvpAwards')," \xb7 ",(0,w.formatNumber)(l.mvp)]})]}),(0,z.jsx)(y.Badge,{label:`\ud83c\udfc5 ${(0,w.formatNumber)(l.total)}`,tone:"accent"})]})},l.user_id))]})]})};var l=_r(d[1]),o=t(_r(d[2])),r=t(_r(d[3])),n=t(_r(d[4])),s=t(_r(d[5])),i=t(_r(d[6])),c=t(_r(d[7])),u=_r(d[8]),p=_r(d[9]),h=_r(d[10]),f=_r(d[11]),y=_r(d[12]),b=_r(d[13]),x=_r(d[14]),j=_r(d[15]),S=_r(d[16]),w=_r(d[17]),C=_r(d[18]),v=_r(d[19]),z=_r(d[20]);const P=['football','padel','tennis'],k=['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'];const B=({label:t,on:l,onPress:o,colors:n})=>(0,z.jsx)(r.default,{onPress:o,accessibilityRole:"button",accessibilityLabel:t,style:[A.chip,{backgroundColor:l?n.accent:n.surface,borderColor:l?n.accent:n.border}],children:(0,z.jsx)(i.default,{style:[j.typography.small,{color:l?'#fff':n.text}],children:t})}),A=s.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:j.spacing.lg,paddingVertical:j.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:s.default.hairlineWidth},chip:{paddingVertical:j.spacing.sm,paddingHorizontal:j.spacing.md,borderRadius:j.radius.pill,borderWidth:s.default.hairlineWidth},avatar:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center'}})},1836,[33,15,461,369,281,158,146,273,381,1086,20,1623,1624,1627,615,616,671,1311,675,1171,13]);
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{user:t}=(0,k.useAuth)(),{colors:c}=(0,C.useTheme)(),I=(0,b.useRouter)(),H=(0,v.useT)(),[R,_]=(0,n.useState)(null),L=(0,n.useCallback)(async()=>{t&&_(await(0,w.fetchBlockedList)(t.id))},[t]);(0,b.useFocusEffect)((0,n.useCallback)(()=>{L()},[L]));const P=async n=>{t&&(await(0,w.unblockUser)(t.id,n),await L())};return(0,z.jsxs)(f.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:c.bg},children:[(0,z.jsxs)(h.default,{style:A.header,children:[(0,z.jsx)(l.default,{onPress:()=>I.back(),accessibilityRole:"button",accessibilityLabel:H('back'),style:[A.iconBtn,{backgroundColor:c.surface,borderColor:c.border}],children:(0,z.jsx)(y.Ionicons,{name:(0,S.chevronBack)(),size:22,color:c.text})}),(0,z.jsx)(u.default,{style:[B.typography.h2,{color:c.text,marginHorizontal:B.spacing.md}],children:H('blockedAccounts')})]}),(0,z.jsx)(s.default,{contentContainerStyle:{padding:B.spacing.lg,paddingBottom:B.spacing.xxxl},children:null===R?(0,z.jsx)(o.default,{color:c.accentText}):0===R.length?(0,z.jsx)(j.EmptyState,{icon:"ban-outline",title:H('noBlocked'),body:H('blockedAccountsHint')}):R.map(t=>(0,z.jsx)(x.Card,{padding:"md",style:{marginBottom:B.spacing.sm},children:(0,z.jsxs)(h.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,z.jsx)(h.default,{style:[A.avatar,{backgroundColor:c.surfaceAlt}],children:(0,z.jsx)(u.default,{style:[B.typography.bodyStrong,{color:c.text}],children:t.name.slice(0,1).toUpperCase()})}),(0,z.jsx)(u.default,{style:[B.typography.bodyStrong,{color:c.text,flex:1,marginHorizontal:B.spacing.md}],numberOfLines:1,children:t.name}),(0,z.jsx)(p.Button,{title:H('unblockBtn'),size:"sm",variant:"secondary",onPress:()=>P(t.id)})]})},t.id))})]})};var n=r(d[1]),o=t(r(d[2])),l=t(r(d[3])),s=t(r(d[4])),c=t(r(d[5])),u=t(r(d[6])),h=t(r(d[7])),f=r(d[8]),y=r(d[9]),b=r(d[10]),x=r(d[11]),p=r(d[12]),j=r(d[13]),k=r(d[14]),C=r(d[15]),B=r(d[16]),w=r(d[17]),v=r(d[18]),S=r(d[19]),z=r(d[20]);const A=c.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:B.spacing.lg,paddingVertical:B.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:c.default.hairlineWidth},avatar:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center'}})},1837,[33,15,461,369,281,158,146,273,381,1086,20,1623,626,1627,630,615,616,671,675,1171,13]);
 __d(

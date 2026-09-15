@@ -22,6 +22,10 @@ const ended = games.find((g) => g.organizer_id === ORG && g.status !== 'cancelle
 const now = new Date();
 const tpl = { id: 'tpl-test-1', organizer_id: ORG, title: 'Thursday 5-a-side', sport: 'football', format: 'football_5v5', skill_level: 'all', venue_id: upcoming.venue_id, max_players: 10, waitlist_capacity: 4, price_kwd: 2.5, notes: null, visibility: 'public', approval_mode: 'auto', skill_min: null, skill_max: null, skill_policy: 'open', start_date: new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString(), start_minutes: 1080, end_minutes: 1170, frequency: 'weekly', weekdays: [(now.getDay() + 1) % 7], monthly_week: null, monthly_weekday: null, end_date: null, horizon_weeks: 12, auto_invite: false, status: 'active', resume_from: null, generated_until: null, created_at: now.toISOString() };
 st['playora.mock.templates.v1'] = JSON.stringify([tpl]);
+// An open award ballot on the ended match, two hours from closing, for the countdown case below.
+st['playora.mock.award.voting.v1'] = JSON.stringify([
+  { match_id: ended.id, opens_at: ended.ends_at, closes_at: new Date(Date.now() + 72e5).toISOString(), published: false },
+]);
 const tplKey = 'playora.mock.templates.v1';
 const restore = `(() => { const s = ${JSON.stringify(st)}; for (const k of Object.keys(s)) if (k !== 'secure.playora_session') localStorage.setItem(k, s[k]); })();`;
 ok('seed has upcoming game / ended game / series', !!upcoming && !!ended && !!tpl, `up=${!!upcoming} ended=${!!ended} tpl=${!!tpl} key=${tplKey}`);
@@ -295,6 +299,25 @@ await run('a check-in scan respects the attendance window and the live booking',
   ok('the live booking carries the attendance', out.live === 'attended', String(out.live));
   ok('the cancelled row is left alone', out.cancelled == null, String(out.cancelled));
   ok('scanning a player with no live booking is refused', out.stranger === 'E_PLAYER_NOT_IN_THIS_MATCH', String(out.stranger));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// formatRelative clamped every future timestamp to zero minutes, so the awards header read "Voting
+// closes Just now" whether the deadline was half an hour or three days out.
+await run('the awards header counts down instead of saying Just now', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: `/awards/${ended.id}`, initScript: restore });
+  const body = await page.evaluate(() => document.body.innerText);
+  const u = await page.evaluate(() => {
+    const f = __r(1626).formatRelative, tr = __r(675).t;
+    const at = (ms) => f(new Date(Date.now() + ms).toISOString());
+    return { justNow: tr('justNow'), h05: at(18e5), h2: at(72e5), d3: at(3 * 864e5), past: at(-72e5) };
+  });
+  ok('the header shows a time, not Just now', !body.includes(`${t('votingClosesIn').split('%')[0]}${u.justNow}`) && /\d/.test(body.split('\n').find((l) => l.includes(t('votingClosesIn').split('%')[0])) || ''), body.split('\n').filter(Boolean).slice(0, 4).join('|'));
+  ok('a future half hour is not Just now', u.h05 !== u.justNow, u.h05);
+  ok('half an hour and two hours read differently', u.h05 !== u.h2, `${u.h05} / ${u.h2}`);
+  ok('two hours and three days read differently', u.h2 !== u.d3, `${u.h2} / ${u.d3}`);
+  ok('the past still reads as the past', /ago/.test(u.past), u.past);
   ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
   await browser.close();
 });

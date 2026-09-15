@@ -1064,6 +1064,9 @@ __d(
         hoursShort: "%{n}h ago",
         daysShort: "%{n}d ago",
         justNow: "Just now",
+        minutesShortIn: "in %{n}m",
+        hoursShortIn: "in %{n}h",
+        daysShortIn: "in %{n}d",
         notifReminderTitle: "Match starting soon",
         notifReminderBodyMinutes: "%{sport} at %{venue} starts in %{minutes} minutes.",
         notifReminderBodyHour: "%{sport} at %{venue} starts in 1 hour.",
@@ -1564,7 +1567,6 @@ __d(
         votingOpen: "Voting open",
         votingClosed: "Voting closed",
         awardResults: "Results",
-        voteClosesLabel: "Voting closes %{when}",
         votesLabel: "%{n} votes",
         pickNominee: "Tap a player to vote",
         votedForLabel: "Voted",
@@ -5004,6 +5006,9 @@ __d(
         hoursShort: "\u0645\u0646\u0630 %{n} \u0633",
         daysShort: "\u0645\u0646\u0630 %{n} \u064a\u0648\u0645",
         justNow: "\u0627\u0644\u0622\u0646",
+        minutesShortIn: "\u062e\u0644\u0627\u0644 %{n} \u062f",
+        hoursShortIn: "\u062e\u0644\u0627\u0644 %{n} \u0633",
+        daysShortIn: "\u062e\u0644\u0627\u0644 %{n} \u064a\u0648\u0645",
         notifReminderTitle:
           "\u0645\u0628\u0627\u0631\u0627\u062a\u0643 \u062a\u0628\u062f\u0623 \u0642\u0631\u064a\u0628\u0627\u064b",
         notifReminderBodyMinutes:
@@ -5657,7 +5662,6 @@ __d(
         votingOpen: "\u0627\u0644\u062a\u0635\u0648\u064a\u062a \u0645\u0641\u062a\u0648\u062d",
         votingClosed: "\u0623\u064f\u063a\u0644\u0642 \u0627\u0644\u062a\u0635\u0648\u064a\u062a",
         awardResults: "\u0627\u0644\u0646\u062a\u0627\u0626\u062c",
-        voteClosesLabel: "\u064a\u064f\u063a\u0644\u0642 \u0627\u0644\u062a\u0635\u0648\u064a\u062a %{when}",
         votesLabel: "%{n} \u0635\u0648\u062a",
         pickNominee:
           "\u0627\u0636\u063a\u0637 \u0639\u0644\u0649 \u0644\u0627\u0639\u0628 \u0644\u0644\u062a\u0635\u0648\u064a\u062a",
