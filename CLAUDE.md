@@ -30,6 +30,26 @@ edited through the module tooling described below.
   in production.
 - `rpc.ts`, `auth/jwt.ts`, `.env.example` – server-side stubs for a future API; not used by the bundle.
 
+## Deployment, and where the real source lives
+
+Three facts that cost a long diagnosis to establish. Read them before concluding a shipped change is a
+code bug.
+
+- **This repo is not the only thing that deploys.** Builds can also be pushed straight from a laptop with
+  the Vercel CLI, which never touches GitHub. The live site has carried changes that exist in no
+  repository at all (the 16+ age gate arrived that way while this repo still said 13). Before assuming
+  production matches `main`, compare the `buildId` on the profile screen against `index.html` here.
+- **Four Vercel projects are connected to this repo** - `playora`, `playora-app`, `playora-9eza` and
+  `fawazalfares245-bot-playora`. Every push builds all four, and a PR is two pushes, which is how a
+  normal day hit the Hobby plan's 100-builds-per-day cap and pinned every deployment at "rate limited,
+  retry in 24 hours" for a full day. `vercel.json`'s `ignoreCommand` now limits builds to `main`; it
+  exits 1 on `main` (build) and 0 elsewhere (skip), because Vercel treats exit 0 as "skip".
+- **The Expo source that produces `index.html` is not in any repo.** It lives on one laptop, uncommitted.
+  Anything edited in `bundle-src/` is a patch to a build artifact: the next Expo build overwrites it
+  silently and without conflict. That has already happened at least once. Until the Expo project is
+  pushed somewhere, treat every bundle edit as temporary and keep a replay list.
+
+
 ## Key module ids
 
 631 mock backend (all business rules, `Qt` in-memory DB, persistence via localStorage keys `playora.mock.*.v1`),
