@@ -304,5 +304,53 @@ await run('the Play sheet finds games, and finds people separately', async () =>
   await browser.close();
 });
 
+// Paying a seat with cash set the method, left the payment pending and returned. Nothing could ever
+// mark it paid, so seatMayConfirm stayed false and the hold expired the seat - and cash is how
+// organizers in Kuwait actually collect.
+await run('a cash seat can be settled at the venue', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/' });
+  const out = await page.evaluate(async ([org, player, stranger]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Cash seat', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 25 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 25 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 2.5, visibility: 'public', format: '5v5',
+    });
+    await api.joinMatch(g.id, player);
+    const due = await api.fetchMySeatPayment(player, g.id);
+    await api.payRequest(player, due.id, 'cash');
+    const afterSelect = await api.fetchMySeatPayment(player, g.id);
+    const res = {
+      selectedStatus: afterSelect.status,
+      selectedMethod: afterSelect.method,
+      // the hold must carry to kick-off, or the reconciler voids the seat before the player arrives
+      holdReachesKickoff: new Date(afterSelect.reserved_until).getTime() >= new Date(g.starts_at).getTime() - 1e3,
+    };
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    res.stranger = await code(() => api.confirmCashPayment(stranger, due.id));
+    res.organizer = await code(() => api.confirmCashPayment(org, due.id));
+    const settled = await api.fetchMySeatPayment(player, g.id);
+    res.settledStatus = settled.status;
+    res.settledMethod = settled.method;
+    const parts = await api.fetchMatchParticipants(g.id);
+    const row = parts.confirmed.find((b) => b.user_id === player);
+    res.seated = !!row;
+    res.rowPayment = row && row.seat_payment ? row.seat_payment.status : null;
+    return res;
+  }, [IDS.organizer, IDS.user, IDS.analyst]);
+
+  ok('selecting cash leaves the payment pending', out.selectedStatus === 'pending' && out.selectedMethod === 'cash', JSON.stringify(out));
+  ok('the hold now reaches kick-off', out.holdReachesKickoff === true, String(out.holdReachesKickoff));
+  ok('a stranger cannot confirm the cash', out.stranger === 'E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE', String(out.stranger));
+  ok('the organizer can confirm it', out.organizer === 'accepted', String(out.organizer));
+  ok('the payment ends up paid by cash', out.settledStatus === 'paid' && out.settledMethod === 'cash', `${out.settledStatus}/${out.settledMethod}`);
+  ok('the player holds a confirmed seat', out.seated === true, String(out.seated));
+  ok('the participants list carries the payment', out.rowPayment === 'paid', String(out.rowPayment));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

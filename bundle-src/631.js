@@ -4306,11 +4306,20 @@ __d(
     const Qi = async (e) => {
       (await ei(), await Oi(e));
       const t = Qt.bookings.filter((t) => t.game_id === e);
+      // The screen cannot offer to settle a cash seat without a handle on the payment.
+      const p9 = (e) => {
+        const t = Gr(e.game_id, e.user_id);
+        return Object.assign({}, e, {
+          seat_payment: t
+            ? { id: t.id, status: t.status, method: t.method, amount_kwd: t.amount_kwd }
+            : null,
+        });
+      };
       return {
-        confirmed: t.filter((e) => "confirmed" === e.status).sort(xi),
-        reserved: t.filter((e) => "reserved" === e.status).sort(xi),
-        pending: t.filter((e) => "pending" === e.status).sort(xi),
-        waitlist: t.filter((e) => "waitlisted" === e.status).sort(xi),
+        confirmed: t.filter((e) => "confirmed" === e.status).sort(xi).map(p9),
+        reserved: t.filter((e) => "reserved" === e.status).sort(xi).map(p9),
+        pending: t.filter((e) => "pending" === e.status).sort(xi).map(p9),
+        waitlist: t.filter((e) => "waitlisted" === e.status).sort(xi).map(p9),
       };
     };
     r.mockGetMatchParticipants = Qi;
@@ -8009,51 +8018,34 @@ __d(
         return i.game_id ? Xt(i.game_id, () => $r(e, t, a)) : $r(e, t, a);
       };
     r.mockPayRequest = Kr;
-    const $r = async (e, t, a) => {
-        const i = Qt.payments.find((e) => e.id === t);
-        if (!i) throw new Error("E_PAYMENT_NOT_FOUND");
-        if (i.payer_id !== e) throw new Error("E_THIS_PAYMENT_REQUEST_IS_NOT_YOURS");
-        if ("paid" === i.status) return Lr(i);
-        if ("pending" !== i.status) throw new Error("E_THIS_PAYMENT_CAN_NO_LONGER_BE");
-        if (!(0, z.isOnlineMethod)(a))
-          return (
-            (i.method = a),
-            await Za(we, Qt.payments),
-            await (0, w.logAudit)("payment.cash_selected", (0, w.actorRef)(e), { payment: i.id.slice(-6) }),
-            Lr(i)
-          );
-        const n = Ur(i),
-          r = Qt.paymentCharges.find((e) => e.key === n);
-        if (r && "captured" === r.status) i.gateway_ref = r.gateway_ref;
-        else if (r && "in_flight" === r.status) throw new Error("E_PAYMENT_IS_ALREADY_BEING_PROCESSED");
-        if (!r || "failed" === r.status) {
-          const t = {
-            key: n,
-            payment_id: i.id,
-            status: "in_flight",
-            gateway_ref: null,
-            amount_kwd: i.amount_kwd,
-            created_at: new Date().toISOString(),
-            settled_at: null,
-          };
-          let o;
-          (r ? Object.assign(r, t) : Qt.paymentCharges.push(t), await Za(Q, Qt.paymentCharges));
-          try {
-            o = await Yr(e, i.amount_kwd, i.game_id ? "match_payment" : "court_booking", i.id, a);
-          } catch (e) {
-            throw (
-              (Qt.paymentCharges.find((e) => e.key === n).status = "failed"),
-              await Za(Q, Qt.paymentCharges),
-              e
-            );
-          }
-          const s = Qt.paymentCharges.find((e) => e.key === n);
-          ((s.status = "captured"),
-            (s.gateway_ref = o),
-            (s.settled_at = new Date().toISOString()),
-            await Za(Q, Qt.paymentCharges),
-            (i.gateway_ref = o));
-        }
+    // The counterpart to selecting cash: whoever is collecting at the venue confirms it, and the seat
+    // settles through exactly the same path an online payment takes.
+    r.mockConfirmCashPayment = async (e, t) => {
+      await ei();
+      const a = Qt.payments.find((e) => e.id === t);
+      if (!a) throw new Error("E_PAYMENT_NOT_FOUND");
+      if ("paid" === a.status) return Lr(a);
+      if ("pending" !== a.status) throw new Error("E_THIS_PAYMENT_CAN_NO_LONGER_BE");
+      const i = a.game_id ? hi(a.game_id) : null;
+      if (
+        !(i && i.organizer_id === e) &&
+        !(a.payee_venue_id && vr(e, a.payee_venue_id)) &&
+        !ro(e)
+      )
+        throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE");
+      return (
+        await (0, w.logAudit)("payment.cash_confirmed", (0, w.actorRef)(e), {
+          payment: a.id.slice(-6),
+          payer: a.payer_id.slice(-6),
+        }),
+        a.game_id
+          ? Xt(a.game_id, () => settleSeatPayment9(a, a.payer_id, "cash"))
+          : settleSeatPayment9(a, a.payer_id, "cash")
+      );
+    };
+    // Marking a payment paid and turning it into a seat used to live only inside the online path,
+    // so cash had no way to reach it. Both callers share it now.
+    const settleSeatPayment9 = async (i, e, a) => {
         if (
           ((i.status = "paid"),
           (i.method = a),
@@ -8105,6 +8097,63 @@ __d(
           }),
           Lr(i)
         );
+    };
+    const $r = async (e, t, a) => {
+        const i = Qt.payments.find((e) => e.id === t);
+        if (!i) throw new Error("E_PAYMENT_NOT_FOUND");
+        if (i.payer_id !== e) throw new Error("E_THIS_PAYMENT_REQUEST_IS_NOT_YOURS");
+        if ("paid" === i.status) return Lr(i);
+        if ("pending" !== i.status) throw new Error("E_THIS_PAYMENT_CAN_NO_LONGER_BE");
+        if (!(0, z.isOnlineMethod)(a)) {
+          // Cash left the payment pending with a fifteen-minute hold still ticking, so the seat was
+          // swept before the player ever reached the venue - and nothing could ever mark it paid, so
+          // seatMayConfirm stayed false forever. For Kuwait pickup football cash is how organizers
+          // actually collect, so every cash organizer lost every player. Carry the hold to kick-off
+          // instead of clearing it: the reconciler voids a confirmed-but-unpaid seat whose hold has
+          // lapsed, so a null here would void it immediately. The organizer settles it at the venue
+          // through mockConfirmCashPayment.
+          const g9 = i.game_id ? hi(i.game_id) : null;
+          return (
+            (i.method = a),
+            g9 && (i.reserved_until = g9.starts_at),
+            await Za(we, Qt.payments),
+            await (0, w.logAudit)("payment.cash_selected", (0, w.actorRef)(e), { payment: i.id.slice(-6) }),
+            Lr(i)
+          );
+        }
+        const n = Ur(i),
+          r = Qt.paymentCharges.find((e) => e.key === n);
+        if (r && "captured" === r.status) i.gateway_ref = r.gateway_ref;
+        else if (r && "in_flight" === r.status) throw new Error("E_PAYMENT_IS_ALREADY_BEING_PROCESSED");
+        if (!r || "failed" === r.status) {
+          const t = {
+            key: n,
+            payment_id: i.id,
+            status: "in_flight",
+            gateway_ref: null,
+            amount_kwd: i.amount_kwd,
+            created_at: new Date().toISOString(),
+            settled_at: null,
+          };
+          let o;
+          (r ? Object.assign(r, t) : Qt.paymentCharges.push(t), await Za(Q, Qt.paymentCharges));
+          try {
+            o = await Yr(e, i.amount_kwd, i.game_id ? "match_payment" : "court_booking", i.id, a);
+          } catch (e) {
+            throw (
+              (Qt.paymentCharges.find((e) => e.key === n).status = "failed"),
+              await Za(Q, Qt.paymentCharges),
+              e
+            );
+          }
+          const s = Qt.paymentCharges.find((e) => e.key === n);
+          ((s.status = "captured"),
+            (s.gateway_ref = o),
+            (s.settled_at = new Date().toISOString()),
+            await Za(Q, Qt.paymentCharges),
+            (i.gateway_ref = o));
+        }
+        return settleSeatPayment9(i, e, a);
       },
       Vr = async (e, t, a) => u.sandboxProvider.capture(e, Math.round(1e3 * t));
     r.mockCreatePaymentIntent = async (e, t, a) => {

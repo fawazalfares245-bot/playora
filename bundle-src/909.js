@@ -1261,6 +1261,7 @@ __d(
         reject: "Reject",
         attended: "Attended",
         noShow: "No-show",
+        markCashPaid: "Cash received",
         markAttendanceTitle: "Attendance",
         markAttendanceHint: "Mark who showed up. Feeds player reputation.",
         editMatchTitle: "Edit match",
@@ -5266,6 +5267,7 @@ __d(
         reject: "\u0631\u0641\u0636",
         attended: "\u062d\u0636\u0631",
         noShow: "\u0644\u0645 \u064a\u062d\u0636\u0631",
+        markCashPaid: "\u0627\u0633\u062a\u064f\u0644\u0645 \u0646\u0642\u062f\u064b\u0627",
         markAttendanceTitle: "\u0627\u0644\u062d\u0636\u0648\u0631",
         markAttendanceHint:
           "\u0633\u062c\u0651\u0644 \u0645\u0646 \u062d\u0636\u0631. \u064a\u0624\u062b\u0631 \u0641\u064a \u0633\u0645\u0639\u0629 \u0627\u0644\u0644\u0627\u0639\u0628\u064a\u0646.",
