@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "387b2c36c7"
+  buildId: "97f2620bb5"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -9521,21 +9521,45 @@ __d(
       const a = Qt.courts.filter((t) => t.venue_id === e);
       return t && vr(t, e) ? a : a.filter((e) => e.active);
     };
+    // A court whose confirmed bookings would fall outside its new hours, or off a court being
+    // deactivated. mockBlockCourtTime already refuses to blank out a booked slot; these are the other
+    // two ways to make the same slot unavailable, and neither checked.
+    const courtWouldStrand9 = (e, t, a) =>
+      Qt.courtBookings.some((i) => {
+        if (i.court_id !== e || "confirmed" !== i.status) return !1;
+        if (null == t) return !0;
+        const n = new Date(i.starts_at),
+          r = new Date(i.ends_at),
+          o = 60 * n.getHours() + n.getMinutes(),
+          s = 60 * r.getHours() + r.getMinutes();
+        return o < t || s > a;
+      });
     r.mockUpsertCourt = async (e, t, a) => {
       (await ei(), await Sr(e, t));
       const i = (0, v.sanitizeText)(a.name, 60);
       if (!i) throw new Error("E_ADD_A_COURT_NAME");
-      if (a.close_minutes <= a.open_minutes) throw new Error("E_CLOSING_TIME_MUST_BE_AFTER_OPENING");
+      // The sport was written verbatim, and the hours were unbounded - mockGetCourtAvailability feeds
+      // them straight into the slot generator, so a close_minutes of 100000 built thousands of slot
+      // objects and hung the booking screen.
+      if (!MATCH_ENUMS.sport.includes(a.sport)) throw new Error("E_INVALID_MATCH_OPTION");
+      const o9 = Math.round(Number(a.open_minutes)),
+        c9 = Math.round(Number(a.close_minutes));
+      if (!Number.isFinite(o9) || !Number.isFinite(c9)) throw new Error("E_INVALID_MATCH_OPTION");
+      if (o9 < 0 || o9 > 1439) throw new Error("E_INVALID_MATCH_OPTION");
+      if (c9 <= o9) throw new Error("E_CLOSING_TIME_MUST_BE_AFTER_OPENING");
+      if (c9 < o9 + 30 || c9 > 1440) throw new Error("E_INVALID_MATCH_OPTION");
       const n = Math.max(0, Math.min(500, Number(a.price_per_hour_kwd) || 0));
       if (a.id) {
         const r = fr(a.id);
         if (!r || r.venue_id !== t) throw new Error("E_COURT_NOT_FOUND");
+        if ((o9 > r.open_minutes || c9 < r.close_minutes) && courtWouldStrand9(r.id, o9, c9))
+          throw new Error("E_THERE_IS_A_CONFIRMED_BOOKING_IN");
         return (
           (r.name = i),
           (r.sport = a.sport),
           (r.price_per_hour_kwd = n),
-          (r.open_minutes = a.open_minutes),
-          (r.close_minutes = a.close_minutes),
+          (r.open_minutes = o9),
+          (r.close_minutes = c9),
           a.amenities && (r.amenities = a.amenities.slice(0, 12).map((e) => (0, v.sanitizeText)(e, 30))),
           await Za(_e, Qt.courts),
           await (0, w.logAudit)("court.updated", (0, w.actorRef)(e), { court: r.id.slice(-6) }),
@@ -9548,8 +9572,8 @@ __d(
         name: i,
         sport: a.sport,
         price_per_hour_kwd: n,
-        open_minutes: a.open_minutes,
-        close_minutes: a.close_minutes,
+        open_minutes: o9,
+        close_minutes: c9,
         amenities: (a.amenities ?? []).slice(0, 12).map((e) => (0, v.sanitizeText)(e, 30)),
         photos: [],
         active: !0,
@@ -9566,8 +9590,10 @@ __d(
       await ei();
       const i = fr(t);
       if (!i) throw new Error("E_COURT_NOT_FOUND");
-      (await Sr(e, i.venue_id),
-        (i.active = a),
+      await Sr(e, i.venue_id);
+      // A deactivated court vanishes from search while its confirmed bookings still block the slot.
+      if (!a && courtWouldStrand9(t, null)) throw new Error("E_THERE_IS_A_CONFIRMED_BOOKING_IN");
+      (((i.active = a)),
         await Za(_e, Qt.courts),
         await (0, w.logAudit)("court.updated", (0, w.actorRef)(e), { court: t.slice(-6), active: a }));
     };
@@ -19754,6 +19780,7 @@ __d(
     657, 658, 659, 660, 661, 662, 663, 664, 665, 666, 667, 668, 669, 670,
   ],
 );
+
 
 
 

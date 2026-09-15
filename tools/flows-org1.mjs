@@ -1,5 +1,5 @@
 // Interactive flow checks for the organizer onboarding / creation screens. Run: node tools/flows-org1.mjs
-import { openApp, IDS, seedScript } from './smoke.mjs';
+import { openApp, IDS, seedScript, ORIGIN } from './smoke.mjs';
 import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
 import fs from 'node:fs';
 const en = fs.readFileSync(new URL('../bundle-src/909.js', import.meta.url), 'utf8');
@@ -451,6 +451,78 @@ await run('venue staff are real accounts that can actually work', async () => {
   ok('staff can read the venue bookings', out.staffCanRead === 'accepted', String(out.staffCanRead));
   ok('staff cannot change where the money goes', out.staffIban === 'E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE', String(out.staffIban));
   ok('the owner still can', out.ownerIban === 'accepted', String(out.ownerIban));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// mockUpsertCourt validated only the name, the price and close > open. The sport was written verbatim
+// and the hours were unbounded, and mockGetCourtAvailability feeds them straight into the slot
+// generator - a close_minutes of 100000 built thousands of slots and hung the booking screen.
+await run('a court cannot be given a made-up sport or impossible hours', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/' });
+  const out = await page.evaluate(async ([admin, owner]) => {
+    const api = __r(671);
+    const res = {};
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    const profile = await api.applyVenue(owner, {
+      name: 'Court Rules', area: 'Salmiya', sports: ['padel'], lat: 29.33, lng: 48.07,
+    });
+    await api.reviewVenue(admin, profile.venue_id, 'approve', null);
+    const court = (n) => ({ name: 'Court ' + n, sport: 'padel', price_per_hour_kwd: 10, open_minutes: 480, close_minutes: 1320 });
+
+    res.ok = await code(() => api.upsertCourt(owner, profile.venue_id, court(1)));
+    res.badSport = await code(() => api.upsertCourt(owner, profile.venue_id, Object.assign(court(2), { sport: 'cricket' })));
+    res.hugeClose = await code(() => api.upsertCourt(owner, profile.venue_id, Object.assign(court(3), { close_minutes: 100000 })));
+    res.negativeOpen = await code(() => api.upsertCourt(owner, profile.venue_id, Object.assign(court(4), { open_minutes: -60 })));
+    res.tooShort = await code(() => api.upsertCourt(owner, profile.venue_id, Object.assign(court(5), { open_minutes: 600, close_minutes: 610 })));
+
+    // a bounded availability list for the court that was accepted
+    const mine = JSON.parse(localStorage.getItem('playora.mock.courts.v1') || '[]')
+      .filter((c) => c.venue_id === profile.venue_id);
+    const day = new Date(Date.now() + 2 * 864e5).toISOString().slice(0, 10);
+    const avail = await api.fetchCourtAvailability(mine[0].id, day).catch(() => null);
+    res.slots = Array.isArray(avail) ? avail.length : (avail && avail.slots ? avail.slots.length : -1);
+
+    // narrowing the hours over a confirmed booking, and deactivating under one
+    const courts = JSON.parse(localStorage.getItem('playora.mock.courtbookings.v1') || '[]');
+    const start = new Date(Date.now() + 3 * 864e5); start.setHours(20, 0, 0, 0);
+    const end = new Date(start.getTime() + 36e5);
+    courts.push({
+      id: 'cb-court-rules', court_id: mine[0].id, venue_id: profile.venue_id, organizer_id: owner,
+      game_id: null, starts_at: start.toISOString(), ends_at: end.toISOString(), status: 'confirmed',
+      court_price_kwd: 10, split_mode: 'organizer_pays', commission_type: 'percentage',
+      commission_value: 10, requires_venue_approval: false, reserved_until: null,
+      cancellation_reason: null, qr_token: 'PLQR-COURTRULES00000',
+      created_at: new Date().toISOString(), confirmed_at: new Date().toISOString(), released_at: null,
+    });
+    localStorage.setItem('playora.mock.courtbookings.v1', JSON.stringify(courts));
+    res.courtId = mine[0].id;
+    res.venueId = profile.venue_id;
+    return res;
+  }, [IDS.admin, IDS.organizer]);
+
+  ok('a normal court is accepted', out.ok === 'accepted', String(out.ok));
+  ok('a sport that does not exist is refused', out.badSport === 'E_INVALID_MATCH_OPTION', String(out.badSport));
+  ok('a closing time past midnight is refused', out.hugeClose === 'E_INVALID_MATCH_OPTION', String(out.hugeClose));
+  ok('a negative opening time is refused', out.negativeOpen === 'E_INVALID_MATCH_OPTION', String(out.negativeOpen));
+  ok('a ten-minute day is refused', out.tooShort === 'E_INVALID_MATCH_OPTION', String(out.tooShort));
+  ok('availability stays a sane length', out.slots >= 0 && out.slots < 100, String(out.slots));
+
+  await page.goto(ORIGIN + '/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const after = await page.evaluate(async ([owner, seed]) => {
+    const api = __r(671);
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    return {
+      narrow: await code(() => api.upsertCourt(owner, seed.venueId, { id: seed.courtId, name: 'Court 1', sport: 'padel', price_per_hour_kwd: 10, open_minutes: 480, close_minutes: 1080 })),
+      widen: await code(() => api.upsertCourt(owner, seed.venueId, { id: seed.courtId, name: 'Court 1', sport: 'padel', price_per_hour_kwd: 10, open_minutes: 420, close_minutes: 1380 })),
+      deactivate: await code(() => api.setCourtActive(owner, seed.courtId, false)),
+    };
+  }, [IDS.organizer, out]);
+
+  ok('narrowing hours over a confirmed booking is refused', after.narrow === 'E_THERE_IS_A_CONFIRMED_BOOKING_IN', String(after.narrow));
+  ok('widening them is still fine', after.widen === 'accepted', String(after.widen));
+  ok('deactivating a court with a confirmed booking is refused', after.deactivate === 'E_THERE_IS_A_CONFIRMED_BOOKING_IN', String(after.deactivate));
   ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
   await browser.close();
 });
