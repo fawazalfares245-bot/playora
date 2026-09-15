@@ -501,5 +501,55 @@ await run('the replacement shortlist contains only real people', async () => {
   await browser.close();
 });
 
+// The ten-minute broadcast throttle only applied on update, and the timestamp it reads was missing
+// from the defaults block - so activation always broadcast, and the first update after it did too.
+await run('Need Player Now broadcasts at most once per window', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer' });
+  const out = await page.evaluate(async ([org, filler]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    // Need Player Now only opens inside 24 hours of kick-off
+    const starts = new Date(Date.now() + 6 * 36e5);
+    const g = await api.createMatch(org, {
+      title: 'NPN throttle', sport: 'football', venue_id: venues[0].id,
+      starts_at: starts.toISOString(), ends_at: new Date(starts.getTime() + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+    await api.joinMatch(g.id, filler);
+    const sent = () => JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]')
+      .find((x) => x.id === g.id).npn_notifications_sent;
+
+    const a1 = await api.activateNeedPlayer(g.id, org, { radius_km: 25 });
+    const afterActivate = sent();
+    await api.updateNeedPlayer(g.id, org, { radius_km: 30 });
+    const afterUpdate = sent();
+    const stamped = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]')
+      .find((x) => x.id === g.id).npn_last_broadcast_at;
+
+    // wind the clock past the window and broadcast again
+    const games = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]');
+    for (const row of games) if (row.id === g.id) row.npn_last_broadcast_at = new Date(Date.now() - 11 * 6e4).toISOString();
+    localStorage.setItem('playora.mock.games.v1', JSON.stringify(games));
+    return { activated: a1.npn_active, afterActivate, afterUpdate, stamped: !!stamped, gameId: g.id };
+  }, [IDS.organizer, IDS.user]);
+
+  ok('activation turned it on', out.activated === true, String(out.activated));
+  ok('activation broadcast once', out.afterActivate > 0, String(out.afterActivate));
+  ok('activation recorded when it broadcast', out.stamped === true, String(out.stamped));
+  ok('the update straight after did not broadcast again', out.afterUpdate === out.afterActivate, `${out.afterActivate} -> ${out.afterUpdate}`);
+
+  await page.goto(ORIGIN + '/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const later = await page.evaluate(async ([org, gameId, before]) => {
+    const api = __r(671);
+    await api.updateNeedPlayer(gameId, org, { radius_km: 35 });
+    return JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]')
+      .find((x) => x.id === gameId).npn_notifications_sent;
+  }, [IDS.organizer, out.gameId, out.afterUpdate]);
+  ok('once the window has passed it broadcasts again', later > out.afterUpdate, `${out.afterUpdate} -> ${later}`);
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

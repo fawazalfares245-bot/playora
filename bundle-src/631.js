@@ -598,6 +598,9 @@ __d(
         npn_radius_km: 10,
         npn_activated_at: null,
         npn_activation_count: 0,
+        // Absent from these defaults, so it was undefined on every game until the first update - which
+        // meant the first update after any activation always broadcast, whatever the throttle said.
+        npn_last_broadcast_at: null,
         npn_notifications_sent: 0,
         npn_joins: 0,
         npn_filled_at: null,
@@ -5500,9 +5503,18 @@ __d(
           (n.npn_activated_at = new Date().toISOString()),
           (n.npn_activation_count += 1),
           (n.npn_filled_at = null));
-        const o = fi().find((e) => e.id === n.venue_id);
+        const o = fi().find((e) => e.id === n.venue_id),
+          // ORG2 (F-ORG2-15): at most one broadcast per 10 minutes per match. Activation broadcast
+          // unconditionally and never recorded the timestamp, so an activate/update/deactivate cycle
+          // fanned out to every nearby player in the partition with nothing in the way - six waves
+          // inside a few seconds, given the three-activation cap.
+          t9 =
+            n.npn_last_broadcast_at &&
+            Date.now() - new Date(n.npn_last_broadcast_at).getTime() < 6e5;
         return (
-          (n.npn_notifications_sent += await En(n, o)),
+          t9 ||
+            ((n.npn_notifications_sent += await En(n, o)),
+            (n.npn_last_broadcast_at = new Date().toISOString())),
           await Za(te, Qt.games),
           await (0, w.logAudit)("npn.activated", (0, w.actorRef)(t), {
             game: e.slice(-6),
