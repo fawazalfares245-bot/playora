@@ -442,13 +442,24 @@ __d(
     e.confirmSquadSpot = (o, c) => t.store.mockConfirmSquadSpot(o, c);
     e.optOutSquad = (o, c) => t.store.mockOptOutSquad(o, c);
     e.fetchSquadState = (o, c) => t.store.mockGetSquadState(o, c);
-    e.fetchOrganizerMatches = (o, c) => t.store.mockGetOrganizerMatches(o, c);
+        // The caller is not optional. orgSelf used to treat a missing one as the owner, so the
+    // omission has to fail here too rather than reaching the store.
+e.fetchOrganizerMatches = (o, c) => {
+      if (!c) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return t.store.mockGetOrganizerMatches(o, c);
+    };
     e.reconcileSeatPayments = () => t.store.mockReconcileSeatPayments();
     e.auditSeatConsistency = () => t.store.mockAuditSeatConsistency();
     e.fetchMatchParticipants = (o) => t.store.mockGetMatchParticipants(o);
-    e.fetchOrganizerStats = (o, c) => t.store.mockGetOrganizerStats(o, c);
+    e.fetchOrganizerStats = (o, c) => {
+      if (!c) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return t.store.mockGetOrganizerStats(o, c);
+    };
     e.fetchOrganizerReputation = (o) => t.store.mockGetOrganizerReputation(o);
-    e.fetchOrganizerRatings = (o, c) => t.store.mockGetOrganizerRatings(o, c);
+    e.fetchOrganizerRatings = (o, c) => {
+      if (!c) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return t.store.mockGetOrganizerRatings(o, c);
+    };
     e.rateOrganizer = (o) => t.store.mockRateOrganizer(o);
     e.fetchMyOrganizerApplication = (o) => t.store.mockGetMyOrganizerApplication(o);
     e.submitOrganizerApplication = (o, c) => t.store.mockSubmitOrganizerApplication(o, c);
@@ -481,7 +492,10 @@ __d(
     e.endSeries = (o, c) => t.store.mockEndSeries(o, c);
     e.cancelSeries = (o, c, s) => t.store.mockCancelSeries(o, c, s);
     e.joinSeries = (o, c) => t.store.mockJoinSeries(o, c);
-    e.fetchOrganizerSeries = (o, c) => t.store.mockGetOrganizerSeries(o, c);
+    e.fetchOrganizerSeries = (o, c) => {
+      if (!c) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return t.store.mockGetOrganizerSeries(o, c);
+    };
     e.fetchSeries = (o, c) => t.store.mockGetSeries(o, c);
     e.fetchSeriesAnalytics = (o, c) => t.store.mockGetSeriesAnalytics(o, c);
     e.activateNeedPlayer = (o, c, s) => t.store.mockActivateNeedPlayer(o, c, s);
@@ -506,7 +520,10 @@ __d(
     e.resolveInviteCode = (o, c) => t.store.mockResolveInviteCode(o, c);
     e.logShare = (o, c, s) => t.store.mockLogShare(o, c, s);
     e.joinByCode = (o, c) => t.store.mockJoinByCode(o, c);
-    e.fetchOrganizerReferralStats = (o, c) => t.store.mockGetOrganizerReferralStats(o, c);
+    e.fetchOrganizerReferralStats = (o, c) => {
+      if (!c) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return t.store.mockGetOrganizerReferralStats(o, c);
+    };
     e.fetchGrowthAdminStats = (o) => t.store.mockGetGrowthAdminStats(o);
     e.searchBookableVenues = (o) => t.store.mockSearchBookableVenues(o);
     e.fetchVenueBookingDetail = (o) => t.store.mockGetVenueBookingDetail(o);

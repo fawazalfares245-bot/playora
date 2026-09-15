@@ -121,5 +121,35 @@ await run('retired organizer/new redirects to create', async () => {
   ok('no page errors', !errors.some((e) => e.startsWith('pageerror')));
   await browser.close();
 });
+// orgSelf read `if (t && t !== e && !ro(t)) throw; return !t || t === e`, so omitting the caller
+// skipped the throw and returned true - owner access, invite codes included, to anyone who left the
+// argument off. The facade takes the caller as a plain optional second parameter.
+await run('an organizer read without a caller is refused', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer' });
+  const out = await page.evaluate(async ([org, stranger, admin]) => {
+    const api = __r(671);
+    const code = async (fn) => { try { const v = await fn(); return Array.isArray(v) ? `rows:${v.length}` : 'accepted'; } catch (e) { return e.code || e.message; } };
+    return {
+      matchesNoCaller: await code(() => api.fetchOrganizerMatches(org)),
+      statsNoCaller: await code(() => api.fetchOrganizerStats(org)),
+      ratingsNoCaller: await code(() => api.fetchOrganizerRatings(org)),
+      seriesNoCaller: await code(() => api.fetchOrganizerSeries(org)),
+      referralsNoCaller: await code(() => api.fetchOrganizerReferralStats(org)),
+      matchesStranger: await code(() => api.fetchOrganizerMatches(org, stranger)),
+      matchesSelf: await code(() => api.fetchOrganizerMatches(org, org)),
+      matchesAdmin: await code(() => api.fetchOrganizerMatches(org, admin)),
+    };
+  }, [IDS.organizer, IDS.user, IDS.admin]);
+
+  const denied = 'E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW';
+  for (const k of ['matchesNoCaller', 'statsNoCaller', 'ratingsNoCaller', 'seriesNoCaller', 'referralsNoCaller'])
+    ok(`${k} is refused`, out[k] === denied, String(out[k]));
+  ok('a stranger is still refused', out.matchesStranger === denied, String(out.matchesStranger));
+  ok('the organizer still reads their own', /^rows:/.test(out.matchesSelf), String(out.matchesSelf));
+  ok('an admin still reads them', /^rows:/.test(out.matchesAdmin), String(out.matchesAdmin));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

@@ -4259,9 +4259,13 @@ __d(
             : "upcoming";
     // ORG1 (F-ORG1-16): every organizer read takes the caller and only the organizer (or an admin)
     // may read it. Private invite codes are never returned to anyone else.
+    // The caller is mandatory. This used to read `if (t && ...) throw; return !t || t === e`, so an
+    // undefined caller skipped the throw AND returned true - full owner access, invite codes included,
+    // to anyone who simply omitted the argument. The facade exposes the caller as a plain optional
+    // second parameter, so any screen that forgot it silently got owner-level reads. Fail closed.
     const orgSelf = (e, t) => {
-      if (t && t !== e && !ro(t)) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
-      return !t || t === e;
+      if (!t || (t !== e && !ro(t))) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return t === e;
     };
     r.mockGetOrganizerMatches = async (e, t9) => {
       (await ei(), await tn(), await Yn());
