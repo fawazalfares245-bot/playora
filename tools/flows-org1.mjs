@@ -151,5 +151,41 @@ await run('an organizer read without a caller is refused', async () => {
   await browser.close();
 });
 
+// mockApplyVenue built its venue row with no listed and no review_status, and mockGetVenues filters
+// on `!1 !== listed`, so an application went straight into the public directory - while
+// /venue/portal promised an admin reviews every application before you go live.
+await run('a venue application waits for review', async () => {
+  const { browser, page, errors } = await openApp({ role: 'user', route: '/' });
+  const out = await page.evaluate(async ([applicant, admin]) => {
+    const api = __r(671);
+    const res = {};
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    res.venuesBefore = (await api.fetchVenues()).length;
+    res.pendingBefore = (await api.fetchPendingVenues(admin)).length;
+    const apply = (n) => api.applyVenue(applicant, {
+      name: 'Backyard Pitch ' + n, area: 'Salmiya', sports: ['football'],
+      lat: 29.3339, lng: 48.0754,
+    });
+    res.first = await code(() => apply('A'));
+    res.venuesAfter = (await api.fetchVenues()).length;
+    res.pendingAfter = (await api.fetchPendingVenues(admin)).length;
+    res.second = await code(() => apply('B'));
+    res.third = await code(() => apply('C'));
+    // the applicant's own coordinates, not an area centroid plus jitter
+    const mine = (await api.fetchMyVenues(applicant)).map((v) => v.venue || v).filter(Boolean);
+    res.coords = mine.map((v) => [v.lat, v.lng]).slice(0, 1);
+    return res;
+  }, [IDS.user, IDS.admin]);
+
+  ok('the application is accepted', out.first === 'accepted', String(out.first));
+  ok('the public directory does not grow', out.venuesAfter === out.venuesBefore, `${out.venuesBefore} -> ${out.venuesAfter}`);
+  ok('the admin queue grows by one', out.pendingAfter === out.pendingBefore + 1, `${out.pendingBefore} -> ${out.pendingAfter}`);
+  ok('a second application is still allowed', out.second === 'accepted', String(out.second));
+  ok('a third within the hour is refused', out.third === 'E_TOO_MANY_VENUE_APPLICATIONS', String(out.third));
+  ok('the coordinates are the ones supplied', JSON.stringify(out.coords) === JSON.stringify([[29.3339, 48.0754]]), JSON.stringify(out.coords));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

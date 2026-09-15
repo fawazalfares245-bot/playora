@@ -7109,6 +7109,19 @@ __d(
       (await ei(), await Dr());
       // ADM1 (F-ADM1-19): administrators review venues, so they cannot also own one.
       if (ro(e)) throw new Error("E_ADMINS_CANNOT_REGISTER_VENUES");
+      // There was no rate limit either, so one loop could seed the directory. Mirror the velocity
+      // guard mockCreateMatch already applies to matches.
+      if (
+        Qt.venueProfiles.filter(
+          (t) => t.owner_id === e && Date.now() - new Date(t.created_at).getTime() < 36e5,
+        ).length >= 2
+      )
+        throw (
+          await (0, w.logAudit)("venue.application_blocked", (0, w.actorRef)(e), {
+            reason: "rate_limit",
+          }),
+          new Error("E_TOO_MANY_VENUE_APPLICATIONS")
+        );
       let a = t.venue_id;
       if (a) {
         if (hr(a)) throw new Error("E_THIS_VENUE_IS_ALREADY_REGISTERED");
@@ -7119,7 +7132,15 @@ __d(
         const i = (0, v.sanitizeText)(t.area ?? "Kuwait City", 40) || "Kuwait City",
           n = va[i] ?? va["Kuwait City"],
           r = ea(),
-          [o, s] = Ea(r),
+          // The venue used to land in the public directory the moment it was applied for, because
+          // mockGetVenues filters on `!1 !== listed` and this row carried no listed and no
+          // review_status - only mockAdminReviewVenue ever stamps them. /venue/portal meanwhile
+          // promises that an admin reviews every application before you go live. Now it is true.
+          // The coordinates came from the area centroid plus jitter, which made distance_km in
+          // mockSearchBookableVenues fiction; take what the applicant gave, and fall back to the
+          // centroid itself rather than a random point near it.
+          l9 = Number(t.lat),
+          c9 = Number(t.lng),
           d = {
             id: r,
             name: e,
@@ -7131,9 +7152,12 @@ __d(
             rating_count: 0,
             description: null,
             address: `${i}, Kuwait`,
-            lat: n[0] + o,
-            lng: n[1] + s,
+            lat: Number.isFinite(l9) ? l9 : n[0],
+            lng: Number.isFinite(c9) ? c9 : n[1],
             custom: !0,
+            listed: !1,
+            review_status: "pending",
+            created_by: e,
             created_at: new Date().toISOString(),
           };
         (Qt.venues.push(d), await Za(ae, Qt.venues), (a = r));
@@ -7154,6 +7178,9 @@ __d(
         photos: [],
         auto_accept: !1,
         staff: [],
+        // Wi stamps origin on its own profiles; without one here an admin cannot tell a deliberate
+        // venue-partner application from a name typed into the match wizard.
+        origin: "venue_application",
         created_at: new Date().toISOString(),
         reviewed_at: null,
         reviewed_by: null,

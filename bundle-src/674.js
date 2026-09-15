@@ -281,6 +281,7 @@ __d(
         E_INVALID_TRANSITION: "seInvalidTransition",
         E_INVALID_VALUE: "seInvalidValue",
         // ADM1
+        E_TOO_MANY_VENUE_APPLICATIONS: "seTooManyVenueApplications",
         E_ADMINS_CANNOT_REGISTER_VENUES: "seAdminsCannotRegisterVenues",
         E_NO_SKILL_PROFILE: "seNoSkillProfile",
         // ORG2

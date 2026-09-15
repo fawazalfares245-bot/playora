@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "71c5f3e264"
+  buildId: "978d985c55"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -9152,6 +9152,19 @@ __d(
       (await ei(), await Dr());
       // ADM1 (F-ADM1-19): administrators review venues, so they cannot also own one.
       if (ro(e)) throw new Error("E_ADMINS_CANNOT_REGISTER_VENUES");
+      // There was no rate limit either, so one loop could seed the directory. Mirror the velocity
+      // guard mockCreateMatch already applies to matches.
+      if (
+        Qt.venueProfiles.filter(
+          (t) => t.owner_id === e && Date.now() - new Date(t.created_at).getTime() < 36e5,
+        ).length >= 2
+      )
+        throw (
+          await (0, w.logAudit)("venue.application_blocked", (0, w.actorRef)(e), {
+            reason: "rate_limit",
+          }),
+          new Error("E_TOO_MANY_VENUE_APPLICATIONS")
+        );
       let a = t.venue_id;
       if (a) {
         if (hr(a)) throw new Error("E_THIS_VENUE_IS_ALREADY_REGISTERED");
@@ -9162,7 +9175,15 @@ __d(
         const i = (0, v.sanitizeText)(t.area ?? "Kuwait City", 40) || "Kuwait City",
           n = va[i] ?? va["Kuwait City"],
           r = ea(),
-          [o, s] = Ea(r),
+          // The venue used to land in the public directory the moment it was applied for, because
+          // mockGetVenues filters on `!1 !== listed` and this row carried no listed and no
+          // review_status - only mockAdminReviewVenue ever stamps them. /venue/portal meanwhile
+          // promises that an admin reviews every application before you go live. Now it is true.
+          // The coordinates came from the area centroid plus jitter, which made distance_km in
+          // mockSearchBookableVenues fiction; take what the applicant gave, and fall back to the
+          // centroid itself rather than a random point near it.
+          l9 = Number(t.lat),
+          c9 = Number(t.lng),
           d = {
             id: r,
             name: e,
@@ -9174,9 +9195,12 @@ __d(
             rating_count: 0,
             description: null,
             address: `${i}, Kuwait`,
-            lat: n[0] + o,
-            lng: n[1] + s,
+            lat: Number.isFinite(l9) ? l9 : n[0],
+            lng: Number.isFinite(c9) ? c9 : n[1],
             custom: !0,
+            listed: !1,
+            review_status: "pending",
+            created_by: e,
             created_at: new Date().toISOString(),
           };
         (Qt.venues.push(d), await Za(ae, Qt.venues), (a = r));
@@ -9197,6 +9221,9 @@ __d(
         photos: [],
         auto_accept: !1,
         staff: [],
+        // Wi stamps origin on its own profiles; without one here an admin cannot tell a deliberate
+        // venue-partner application from a name typed into the match wizard.
+        origin: "venue_application",
         created_at: new Date().toISOString(),
         reviewed_at: null,
         reviewed_by: null,
@@ -19496,6 +19523,7 @@ __d(
 );
 
 
+
 __d(function(g,_r,_i,_a,m,_e,d){Object.defineProperty(_e,"__esModule",{value:!0}),_e.constantTimeEqual=a,_e.derivePasswordHash=n,_e.generateSalt=async function(e=16){const n=await t.getRandomBytesAsync(e);return Array.from(n).map(t=>t.toString(16).padStart(2,'0')).join('')},_e.hashIdentifier=async function(e){const n=e.replace(/\s+/g,'').toLowerCase();return t.digestStringAsync(t.CryptoDigestAlgorithm.SHA256,`${r}:${n}`)},_e.hashPassword=async function(t,e){if(o)return`scrypt$${i}$${s}$${c}$${await o(t,e,i,s,c)}`;return n(t,e)},_e.randomCode=function(e=6,n="ABCDEFGHJKMNPQRSTUVWXYZ23456789"){const r=t.getRandomBytes(e);let a='';for(let t=0;t<e;t++)a+=n[r[t]%n.length];return a},_e.randomSixDigit=function(){const e=t.getRandomBytes(4),n=((e[0]<<24|e[1]<<16|e[2]<<8|e[3])>>>0)%1e6;return String(n).padStart(6,'0')},_e.randomToken=async function(e=32){const n=await t.getRandomBytesAsync(e);return Array.from(n).map(t=>t.toString(16).padStart(2,'0')).join('')},_e.serverGradeHashing=void 0,_e.verifyPassword=async function(t,e,r){if(r.startsWith('scrypt$')){const[,n,i,s,c]=r.split('$');return!(!o||!c)&&a(await o(t,e,Number(n),Number(i),Number(s)),c)}return a(await n(t,e),r)};var t=(function(t,e){if("function"==typeof WeakMap)var n=new WeakMap,r=new WeakMap;return(function(t,e){if(!e&&t&&t.__esModule)return t;var a,o,i={__proto__:null,default:t};if(null===t||"object"!=typeof t&&"function"!=typeof t)return i;if(a=e?r:n){if(a.has(t))return a.get(t);a.set(t,i)}for(const e in t)"default"!==e&&{}.hasOwnProperty.call(t,e)&&((o=(a=Object.defineProperty)&&Object.getOwnPropertyDescriptor(t,e))&&(o.get||o.set)?a(i,e,o):i[e]=t[e]);return i})(t,e)})(_r(d[0]));const e=12e3;async function n(n,r){let a=`${r}:${n}`;for(let n=0;n<e;n++)a=await t.digestStringAsync(t.CryptoDigestAlgorithm.SHA256,a);return a}const r='playora.v1.identifier.pepper';function a(t,e){if(t.length!==e.length)return!1;let n=0;for(let r=0;r<t.length;r++)n|=t.charCodeAt(r)^e.charCodeAt(r);return 0===n}const o=t.scryptHex,i=(_e.serverGradeHashing=!!o,16384),s=8,c=1},632,[633]);
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0});var n={getRandomBytes:!0,getRandomBytesAsync:!0,digestStringAsync:!0,getRandomValues:!0,randomUUID:!0,digest:!0};e.digest=function(t,n){return new Promise((o,s)=>{try{if('function'==typeof y.default.digestAsync)o(y.default.digestAsync(t,n));else{const s=new Uint8Array(h[t]);y.default.digest(t,s,n),o(s.buffer)}}catch(t){s(t)}})},e.digestStringAsync=async function(t,n,o={encoding:c.CryptoEncoding.HEX}){if(!y.default.digestStringAsync)throw new s.UnavailabilityError('expo-crypto','digestStringAsync');return f(t),p(n),A(o.encoding),await y.default.digestStringAsync(t,n,o)},e.getRandomBytes=function(t){u(t,'getRandomBytes');const n=Math.floor(t);if(y.default.getRandomValues){const t=new Uint8Array(n);return y.default.getRandomValues(t),t}if(y.default.getRandomBase64String){const t=y.default.getRandomBase64String(n);return(0,o.toByteArray)(t)}throw new s.UnavailabilityError('expo-crypto','getRandomBytes')},e.getRandomBytesAsync=async function(t){u(t,'getRandomBytesAsync');const n=Math.floor(t);if(y.default.getRandomValues){const t=new Uint8Array(n);return y.default.getRandomValues(t),t}if(y.default.getRandomBase64StringAsync){const t=await y.default.getRandomBase64StringAsync(n);return(0,o.toByteArray)(t)}throw new s.UnavailabilityError('expo-crypto','getRandomBytesAsync')},e.getRandomValues=function(t){return y.default.getRandomValues(t),t},e.randomUUID=function(){return y.default.randomUUID()};var o=r(d[1]),s=r(d[2]),c=r(d[3]);Object.keys(c).forEach(function(t){"default"!==t&&"__esModule"!==t&&(Object.prototype.hasOwnProperty.call(n,t)||t in e&&e[t]===c[t]||Object.defineProperty(e,t,{enumerable:!0,get:function(){return c[t]}}))});var y=t(r(d[4]));class l extends TypeError{code='ERR_CRYPTO';constructor(t){super(`expo-crypto: ${t}`)}}function u(t,n){if('number'!=typeof t||isNaN(t)||Math.floor(t)<0||Math.floor(t)>1024)throw new TypeError(`expo-crypto: ${n}(${t}) expected a valid number from range 0...1024`)}function f(t){if(!Object.values(c.CryptoDigestAlgorithm).includes(t))throw new l(`Invalid algorithm provided. Expected one of: CryptoDigestAlgorithm.${Object.keys(c.CryptoDigestAlgorithm).join(', AlgCryptoDigestAlgorithmorithm.')}`)}function p(t){if('string'!=typeof t)throw new l("Invalid data provided. Expected a string.")}function A(t){if(!Object.values(c.CryptoEncoding).includes(t))throw new l(`Invalid encoding provided. Expected one of: CryptoEncoding.${Object.keys(c.CryptoEncoding).join(', CryptoEncoding.')}`)}const h={[c.CryptoDigestAlgorithm.SHA1]:20,[c.CryptoDigestAlgorithm.SHA256]:32,[c.CryptoDigestAlgorithm.SHA384]:48,[c.CryptoDigestAlgorithm.SHA512]:64,[c.CryptoDigestAlgorithm.MD2]:16,[c.CryptoDigestAlgorithm.MD4]:16,[c.CryptoDigestAlgorithm.MD5]:16}},633,[33,634,504,635,636]);
 __d(function(g,r,_i,a,m,e,d){'use strict';e.byteLength=function(t){var n=h(t),o=n[0],u=n[1];return 3*(o+u)/4-u},e.toByteArray=function(t){var u,c,f=h(t),A=f[0],C=f[1],y=new o(i(t,A,C)),s=0,v=C>0?A-4:A;for(c=0;c<v;c+=4)u=n[t.charCodeAt(c)]<<18|n[t.charCodeAt(c+1)]<<12|n[t.charCodeAt(c+2)]<<6|n[t.charCodeAt(c+3)],y[s++]=u>>16&255,y[s++]=u>>8&255,y[s++]=255&u;2===C&&(u=n[t.charCodeAt(c)]<<2|n[t.charCodeAt(c+1)]>>4,y[s++]=255&u);1===C&&(u=n[t.charCodeAt(c)]<<10|n[t.charCodeAt(c+1)]<<4|n[t.charCodeAt(c+2)]>>2,y[s++]=u>>8&255,y[s++]=255&u);return y},e.fromByteArray=function(n){for(var o,u=n.length,c=u%3,h=[],i=16383,f=0,C=u-c;f<C;f+=i)h.push(A(n,f,f+i>C?C:f+i));1===c?(o=n[u-1],h.push(t[o>>2]+t[o<<4&63]+'==')):2===c&&(o=(n[u-2]<<8)+n[u-1],h.push(t[o>>10]+t[o>>4&63]+t[o<<2&63]+'='));return h.join('')};for(var t=[],n=[],o='undefined'!=typeof Uint8Array?Uint8Array:Array,u='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',c=0;c<64;++c)t[c]=u[c],n[u.charCodeAt(c)]=c;function h(t){var n=t.length;if(n%4>0)throw new Error('Invalid string. Length must be a multiple of 4');var o=t.indexOf('=');return-1===o&&(o=n),[o,o===n?0:4-o%4]}function i(t,n,o){return 3*(n+o)/4-o}function f(n){return t[n>>18&63]+t[n>>12&63]+t[n>>6&63]+t[63&n]}function A(t,n,o){for(var u,c=[],h=n;h<o;h+=3)u=(t[h]<<16&16711680)+(t[h+1]<<8&65280)+(255&t[h+2]),c.push(f(u));return c.join('')}n['-'.charCodeAt(0)]=62,n['_'.charCodeAt(0)]=63},634,[]);
@@ -21552,6 +21580,7 @@ __d(
         E_INVALID_TRANSITION: "seInvalidTransition",
         E_INVALID_VALUE: "seInvalidValue",
         // ADM1
+        E_TOO_MANY_VENUE_APPLICATIONS: "seTooManyVenueApplications",
         E_ADMINS_CANNOT_REGISTER_VENUES: "seAdminsCannotRegisterVenues",
         E_NO_SKILL_PROFILE: "seNoSkillProfile",
         // ORG2
@@ -21596,6 +21625,7 @@ __d(
   674,
   [675],
 );
+
 __d(function(g,r,i,a,m,e,_d){Object.defineProperty(e,"__esModule",{value:!0}),e.t=e.setLocale=e.getLocale=e.default=void 0,Object.defineProperty(e,"useT",{enumerable:!0,get:function(){return l.useT}});var t=r(_d[0]),n=r(_d[1]),o=r(_d[2]),l=r(_d[3]);const c=new t.I18n(o.translations);c.enableFallback=!0,c.defaultLocale='en';const s='ar'===(0,n.getLocales)()[0]?.languageCode?'ar':'en';c.locale=s;e.setLocale=t=>{c.locale=t};const u=t=>t.replace(/[0-9]/g,t=>"\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669"[+t]);e.t=(t,n)=>{if(n&&'ar'===c.locale){const o={};for(const t of Object.keys(n)){const l=n[t];o[t]='number'==typeof l?u(String(l)):l}return c.t(t,o)}return c.t(t,n)};e.getLocale=()=>c.locale??'en';e.default=c},675,[676,904,909,910]);
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0});var n={I18n:!0,Locales:!0,MissingTranslation:!0,Pluralization:!0,useMakePlural:!0};Object.defineProperty(e,"I18n",{enumerable:!0,get:function(){return t.I18n}}),Object.defineProperty(e,"Locales",{enumerable:!0,get:function(){return u.Locales}}),Object.defineProperty(e,"MissingTranslation",{enumerable:!0,get:function(){return l.MissingTranslation}}),Object.defineProperty(e,"Pluralization",{enumerable:!0,get:function(){return o.Pluralization}}),Object.defineProperty(e,"useMakePlural",{enumerable:!0,get:function(){return o.useMakePlural}});var t=r(d[0]),u=r(d[1]),l=r(d[2]),o=r(d[3]),c=r(d[4]);Object.keys(c).forEach(function(t){"default"!==t&&"__esModule"!==t&&(Object.prototype.hasOwnProperty.call(n,t)||t in e&&e[t]===c[t]||Object.defineProperty(e,t,{enumerable:!0,get:function(){return c[t]}}))})},676,[677,789,808,806,903]);
 __d(function(g,r,i,a,m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.I18n=void 0;var t=e(r(d[1])),s=e(r(d[2])),n=e(r(d[3])),o=r(d[4]),l=r(d[5]),c=r(d[6]),u=r(d[7]),h=this&&this.__awaiter||function(e,t,s,n){return new(s||(s=Promise))(function(o,l){function c(e){try{h(n.next(e))}catch(e){l(e)}}function u(e){try{h(n.throw(e))}catch(e){l(e)}}function h(e){var t;e.done?o(e.value):(t=e.value,t instanceof s?t:new s(function(e){e(t)})).then(c,u)}h((n=n.apply(e,t||[])).next())})};const f={defaultLocale:"en",locale:"en",defaultSeparator:".",placeholder:/(?:\{\{|%\{)(.*?)(?:\}\}?)/gm,enableFallback:!1,missingBehavior:"message",missingTranslationPrefix:"",missingPlaceholder:(e,t)=>`[missing "${t}" value]`,nullPlaceholder:(e,t,s,n)=>e.missingPlaceholder(e,t,s,n),transformKey:e=>e};_e.I18n=class{constructor(e={},t={}){this._locale=f.locale,this._defaultLocale=f.defaultLocale,this._version=0,this.onChangeHandlers=[],this.translations={},this.t=this.translate,this.p=this.pluralize,this.l=this.localize,this.distanceOfTimeInWords=this.timeAgoInWords;const{locale:s,enableFallback:n,missingBehavior:h,missingTranslationPrefix:p,missingPlaceholder:b,nullPlaceholder:y,defaultLocale:j,defaultSeparator:O,placeholder:C,transformKey:T}=Object.assign(Object.assign({},f),t);this.locale=s,this.defaultLocale=j,this.defaultSeparator=O,this.enableFallback=n,this.locale=s,this.missingBehavior=h,this.missingTranslationPrefix=p,this.missingPlaceholder=b,this.nullPlaceholder=y,this.placeholder=C,this.pluralization=new l.Pluralization(this),this.locales=new o.Locales(this),this.missingTranslation=new c.MissingTranslation(this),this.transformKey=T,this.interpolate=u.interpolate,this.store(e)}store(e){(0,n.default)(this.translations,e),this.hasChanged()}get locale(){return this._locale||this.defaultLocale||"en"}set locale(e){if("string"!=typeof e)throw new Error(`Expected newLocale to be a string; got ${(0,u.inferType)(e)}`);const t=this._locale!==e;this._locale=e,t&&this.hasChanged()}get defaultLocale(){return this._defaultLocale||"en"}set defaultLocale(e){if("string"!=typeof e)throw new Error(`Expected newLocale to be a string; got ${(0,u.inferType)(e)}`);const t=this._defaultLocale!==e;this._defaultLocale=e,t&&this.hasChanged()}translate(e,t){t=Object.assign({},t);let s;return(0,u.createTranslationOptions)(this,e,t).some(e=>((0,u.isSet)(e.scope)?s=(0,u.lookup)(this,e.scope,t):(0,u.isSet)(e.message)&&(s=e.message),null!=s))?("string"==typeof s?s=this.interpolate(this,s,t):"object"==typeof s&&s&&(0,u.isSet)(t.count)&&(s=(0,u.pluralize)({i18n:this,count:t.count||0,scope:s,options:t,baseScope:(0,u.getFullScope)(this,e,t)})),t&&s instanceof Array&&(s=s.map(e=>"string"==typeof e?(0,u.interpolate)(this,e,t):e)),s):this.missingTranslation.get(e,t)}pluralize(e,t,s){return(0,u.pluralize)({i18n:this,count:e,scope:t,options:Object.assign({},s),baseScope:(0,u.getFullScope)(this,t,null!=s?s:{})})}localize(e,t,s){if(s=Object.assign({},s),null==t)return"";switch(e){case"currency":return this.numberToCurrency(t);case"number":return(0,u.formatNumber)(t,Object.assign({delimiter:",",precision:3,separator:".",significant:!1,stripInsignificantZeros:!1},(0,u.lookup)(this,"number.format")));case"percentage":return this.numberToPercentage(t);default:{let n;return n=e.match(/^(date|time)/)?this.toTime(e,t):t.toString(),(0,u.interpolate)(this,n,s)}}}toTime(e,t){const s=(0,u.parseDate)(t),n=(0,u.lookup)(this,e);return s.toString().match(/invalid/i)?s.toString():n?this.strftime(s,n):s.toString()}numberToCurrency(e,t={}){return(0,u.formatNumber)(e,Object.assign(Object.assign(Object.assign({delimiter:",",format:"%u%n",precision:2,separator:".",significant:!1,stripInsignificantZeros:!1,unit:"$"},(0,u.camelCaseKeys)(this.get("number.format"))),(0,u.camelCaseKeys)(this.get("number.currency.format"))),t))}numberToPercentage(e,t={}){return(0,u.formatNumber)(e,Object.assign(Object.assign(Object.assign({delimiter:"",format:"%n%",precision:3,stripInsignificantZeros:!1,separator:".",significant:!1},(0,u.camelCaseKeys)(this.get("number.format"))),(0,u.camelCaseKeys)(this.get("number.percentage.format"))),t))}numberToHumanSize(e,t={}){return(0,u.numberToHumanSize)(this,e,Object.assign(Object.assign(Object.assign({delimiter:"",precision:3,significant:!0,stripInsignificantZeros:!0,units:{billion:"Billion",million:"Million",quadrillion:"Quadrillion",thousand:"Thousand",trillion:"Trillion",unit:""}},(0,u.camelCaseKeys)(this.get("number.human.format"))),(0,u.camelCaseKeys)(this.get("number.human.storage_units"))),t))}numberToHuman(e,t={}){return(0,u.numberToHuman)(this,e,Object.assign(Object.assign(Object.assign(Object.assign({delimiter:"",separator:".",precision:3,significant:!0,stripInsignificantZeros:!0,format:"%n %u",roundMode:"default",units:{billion:"Billion",million:"Million",quadrillion:"Quadrillion",thousand:"Thousand",trillion:"Trillion",unit:""}},(0,u.camelCaseKeys)(this.get("number.format"))),(0,u.camelCaseKeys)(this.get("number.human.format"))),(0,u.camelCaseKeys)(this.get("number.human.decimal_units"))),t))}numberToRounded(e,t){return(0,u.formatNumber)(e,Object.assign({unit:"",precision:3,significant:!1,separator:".",delimiter:"",stripInsignificantZeros:!1},t))}numberToDelimited(e,t={}){return(0,u.numberToDelimited)(e,Object.assign({delimiterPattern:/(\d)(?=(\d\d\d)+(?!\d))/g,delimiter:",",separator:"."},t))}withLocale(e,t){return h(this,void 0,void 0,function*(){const s=this.locale;try{this.locale=e,yield t()}finally{this.locale=s}})}strftime(e,t,s={}){return(0,u.strftime)(e,t,Object.assign(Object.assign(Object.assign({},(0,u.camelCaseKeys)((0,u.lookup)(this,"date"))),{meridian:{am:(0,u.lookup)(this,"time.am")||"AM",pm:(0,u.lookup)(this,"time.pm")||"PM"}}),s))}update(e,n,o={strict:!1}){if(o.strict&&!(0,s.default)(this.translations,e))throw new Error(`The path "${e}" is not currently defined`);const l=(0,t.default)(this.translations,e),c=(0,u.inferType)(l),h=(0,u.inferType)(n);if(o.strict&&c!==h)throw new Error(`The current type for "${e}" is "${c}", but you're trying to override it with "${h}"`);let f;f="object"===h?Object.assign(Object.assign({},l),n):n;const p=e.split(this.defaultSeparator),b=p.pop();let y=this.translations;for(const e of p)y[e]||(y[e]={}),y=y[e];y[b]=f,this.hasChanged()}toSentence(e,t={}){const{wordsConnector:s,twoWordsConnector:n,lastWordConnector:o}=Object.assign(Object.assign({wordsConnector:", ",twoWordsConnector:" and ",lastWordConnector:", and "},(0,u.camelCaseKeys)((0,u.lookup)(this,"support.array"))),t),l=e.length;switch(l){case 0:return"";case 1:return`${e[0]}`;case 2:return e.join(n);default:return[e.slice(0,l-1).join(s),o,e[l-1]].join("")}}timeAgoInWords(e,t,s={}){return(0,u.timeAgoInWords)(this,e,t,s)}onChange(e){return this.onChangeHandlers.push(e),()=>{this.onChangeHandlers.splice(this.onChangeHandlers.indexOf(e),1)}}get version(){return this._version}formatNumber(e,t={}){return t=Object.assign(Object.assign({delimiter:",",precision:3,separator:".",unit:"",format:"%u%n",significant:!1,stripInsignificantZeros:!1},(0,u.camelCaseKeys)(this.get("number.format"))),t),(0,u.formatNumber)(e,t)}get(e){return(0,u.lookup)(this,e)}runCallbacks(){this.onChangeHandlers.forEach(e=>e(this))}hasChanged(){this._version+=1,this.runCallbacks()}}},677,[33,678,730,737,789,806,808,809]);
@@ -21903,6 +21933,7 @@ __d(
         sessionExpired: "Your session has expired. Please sign in again.",
         // --- ADM1 keys (fix batch) ---
         seAdminsCannotRegisterVenues: "Administrators review venues and cannot register one.",
+        seTooManyVenueApplications: "You have applied for too many venues in the last hour. Try again later.",
         seNoSkillProfile: "This player has no skill profile for that sport yet.",
         appStatus_info_requested: "Info requested",
         filterInfoRequested: "Info requested",
@@ -25395,6 +25426,7 @@ __d(
         sessionExpired: "\u0627\u0646\u062a\u0647\u062a \u062c\u0644\u0633\u062a\u0643. \u064a\u0631\u062c\u0649 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0645\u062c\u062f\u062f\u064b\u0627.",
         // --- ADM1 keys (fix batch) ---
         seAdminsCannotRegisterVenues: "المشرفون يراجعون الملاعب ولا يمكنهم تسجيل ملعب.",
+        seTooManyVenueApplications: "\u0642\u062f\u0651\u0645\u062a \u0637\u0644\u0628\u0627\u062a \u0645\u0644\u0627\u0639\u0628 \u0643\u062b\u064a\u0631\u0629 \u062e\u0644\u0627\u0644 \u0627\u0644\u0633\u0627\u0639\u0629 \u0627\u0644\u0645\u0627\u0636\u064a\u0629. \u062d\u0627\u0648\u0644 \u0644\u0627\u062d\u0642\u064b\u0627.",
         seNoSkillProfile: "لا يملك هذا اللاعب ملف مهارة لهذه الرياضة بعد.",
         appStatus_info_requested: "مطلوب معلومات",
         filterInfoRequested: "مطلوب معلومات",
@@ -29989,6 +30021,7 @@ __d(
   909,
   [],
 );
+
 
 
 

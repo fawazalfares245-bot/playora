@@ -71,6 +71,7 @@ __d(
         sessionExpired: "Your session has expired. Please sign in again.",
         // --- ADM1 keys (fix batch) ---
         seAdminsCannotRegisterVenues: "Administrators review venues and cannot register one.",
+        seTooManyVenueApplications: "You have applied for too many venues in the last hour. Try again later.",
         seNoSkillProfile: "This player has no skill profile for that sport yet.",
         appStatus_info_requested: "Info requested",
         filterInfoRequested: "Info requested",
@@ -3563,6 +3564,7 @@ __d(
         sessionExpired: "\u0627\u0646\u062a\u0647\u062a \u062c\u0644\u0633\u062a\u0643. \u064a\u0631\u062c\u0649 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0645\u062c\u062f\u062f\u064b\u0627.",
         // --- ADM1 keys (fix batch) ---
         seAdminsCannotRegisterVenues: "المشرفون يراجعون الملاعب ولا يمكنهم تسجيل ملعب.",
+        seTooManyVenueApplications: "\u0642\u062f\u0651\u0645\u062a \u0637\u0644\u0628\u0627\u062a \u0645\u0644\u0627\u0639\u0628 \u0643\u062b\u064a\u0631\u0629 \u062e\u0644\u0627\u0644 \u0627\u0644\u0633\u0627\u0639\u0629 \u0627\u0644\u0645\u0627\u0636\u064a\u0629. \u062d\u0627\u0648\u0644 \u0644\u0627\u062d\u0642\u064b\u0627.",
         seNoSkillProfile: "لا يملك هذا اللاعب ملف مهارة لهذه الرياضة بعد.",
         appStatus_info_requested: "مطلوب معلومات",
         filterInfoRequested: "مطلوب معلومات",
