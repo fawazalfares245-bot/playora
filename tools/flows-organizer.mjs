@@ -87,5 +87,69 @@ await run('series: end confirm, edit future, cancel with reason', async () => {
   ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
   await browser.close();
 });
+// Di used to promote the waitlist of a match that was already over: a stale reserved hold expires,
+// a seat looks free, and the next organizer sweep charges a waitlisted player for a finished game.
+await run('a finished match never promotes its waitlist', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/' });
+  const seed = await page.evaluate(async ([org, players]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Waitlist guard', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 13 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 13 * 864e5 + 54e5).toISOString(),
+      max_players: 2, waitlist_capacity: 4, price_kwd: 3, visibility: 'public', format: '5v5',
+    });
+    const joins = {};
+    for (const u of players) {
+      try { joins[u] = (await api.joinMatch(g.id, u)).status; } catch (e) { joins[u] = 'ERR:' + (e.code || e.message); }
+    }
+    const filler = players.find((u) => joins[u] === 'confirmed');
+    const waiter = players.find((u) => joins[u] === 'waitlisted');
+    if (!filler || !waiter) return { joins, filler, waiter };
+
+    // Fast-forward the match past its end, and turn the filler's seat into a stale reserved hold -
+    // the state the expiry sweep is there to clear, and the only way a finished match shows a free seat.
+    const past = Date.now() - 2 * 36e5;
+    const games = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]');
+    for (const row of games)
+      if (row.id === g.id) { row.starts_at = new Date(past).toISOString(); row.ends_at = new Date(past + 36e5).toISOString(); }
+    localStorage.setItem('playora.mock.games.v1', JSON.stringify(games));
+    const bookings = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]');
+    for (const b of bookings)
+      if (b.game_id === g.id && b.user_id === filler) { b.status = 'reserved'; b.reserved_until = new Date(Date.now() - 6e5).toISOString(); }
+    localStorage.setItem('playora.mock.bookings.v1', JSON.stringify(bookings));
+    return { gameId: g.id, joins, filler, waiter };
+  }, [IDS.organizer, [IDS.admin, IDS.analyst, IDS.user]]);
+
+  ok('the match filled and one player waitlisted', !!seed.gameId, JSON.stringify(seed.joins));
+  if (!seed.gameId) { await browser.close(); return; }
+
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const out = await page.evaluate(async ([org, gameId, waiter, filler]) => {
+    const api = __r(671);
+    await api.fetchOrganizerMatches(org, org);
+    const parts = await api.fetchMatchParticipants(gameId);
+    const notes = await api.fetchNotifications(waiter);
+    const all = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]').filter((b) => b.game_id === gameId);
+    return {
+      waiterStatus: (all.find((b) => b.user_id === waiter) || {}).status ?? null,
+      stillWaitlisted: parts.waitlist.some((b) => b.user_id === waiter),
+      seatPayment: await api.fetchMySeatPayment(waiter, gameId),
+      promotedNotes: notes.filter((n) => n.type === 'waitlist_promoted' && n.game_id === gameId).length,
+      staleHoldStatus: (all.find((b) => b.user_id === filler) || {}).status ?? null,
+    };
+  }, [IDS.organizer, seed.gameId, seed.waiter, seed.filler]);
+
+  ok('the waitlisted booking is still waitlisted', out.waiterStatus === 'waitlisted' && out.stillWaitlisted, String(out.waiterStatus));
+  ok('no seat payment was created for them', out.seatPayment == null, JSON.stringify(out.seatPayment));
+  ok('no waitlist_promoted notification was sent', out.promotedNotes === 0, String(out.promotedNotes));
+  // The other half of Di must stay unconditional, or stale holds never clear on a finished match.
+  ok('the stale reserved hold still expired', out.staleHoldStatus === 'cancelled', String(out.staleHoldStatus));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

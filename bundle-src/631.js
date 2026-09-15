@@ -2634,6 +2634,13 @@ __d(
       Ai = (e) => fi().find((t) => t.id === e)?.name ?? "the venue",
       Di = async (e) => {
         const t = Date.now();
+        // rd already refuses to act on a match that is cancelled or finished; Di did not, so every
+        // sweep that touched a stale match (mockGetOrganizerMatches among them) promoted waitlisted
+        // players into it - taking a seat payment and firing a waitlist_promoted notification for a
+        // game that was already over. The guard covers the promotion loop only: the reserved-hold
+        // sweep below still runs unconditionally so stale holds clear on a finished match, and the
+        // return value still reports whether anything changed so the bookings table is persisted.
+        const n = "cancelled" !== e.status && new Date(e.ends_at).getTime() > t;
         let a = !1;
         for (const i of Qt.bookings)
           i.game_id === e.id &&
@@ -2647,7 +2654,7 @@ __d(
             await (0, w.logAudit)("participant.reservation_expired", (0, w.actorRef)(i.user_id), {
               game: e.id.slice(-6),
             }));
-        for (; ki(e.id, t) < e.max_players; ) {
+        for (; n && ki(e.id, t) < e.max_players; ) {
           const i = vi(e.id)[0];
           if (!i) break;
           ((i.status = "reserved"),
