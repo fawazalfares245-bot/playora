@@ -306,6 +306,15 @@ ok('a custom split over the total is refused', out.splitOver === 'E_SPLIT_EXCEED
 ok('a custom split that matches the total is allowed', typeof out.splitExact === 'object' && Math.abs(sum(out.splitExact) - 12) < 5e-4, JSON.stringify(out.splitExact));
 ok('an under-split still tops the organizer up to the total', typeof out.splitUnder === 'object' && Math.abs(sum(out.splitUnder) - 12) < 5e-4, JSON.stringify(out.splitUnder));
 ok('split_equal over three payers still sums to the total', typeof out.splitEqual === 'object' && Math.abs(sum(out.splitEqual) - 10) < 5e-4, JSON.stringify(out.splitEqual));
+// --- dead weight ---
+// 9002 replaced ./organizer/new.tsx with a redirect, but the third create wizard it replaced was still
+// registered and still shipped. vercel.json sends the whole file with Cache-Control: no-store, so it
+// was re-downloaded on every page load, on mobile data, in Kuwait.
+{
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  ok('the retired create wizard is gone', !/\},\s*2468\s*,\s*\[/.test(html), 'module 2468 still registered');
+  ok('and nothing still requires it', !/\},\s*\d+\s*,\s*\[[\d,\s]*\b2468\b/.test(html), 'a module still depends on 2468');
+}
 ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
 await browser.close();
 
