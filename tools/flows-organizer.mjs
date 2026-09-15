@@ -464,5 +464,42 @@ await run('replacement offers go through the join guards', async () => {
   await browser.close();
 });
 
+// The shipped config has demo on, and the demo world appends synthetic npn-demo-N names to the
+// candidate pool. Offering one reserved a real seat that nobody could ever accept.
+await run('the replacement shortlist contains only real people', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer' });
+  const out = await page.evaluate(async ([org, filler]) => {
+    const api = __r(671);
+    const res = {};
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    res.demoWorld = !!window.__PLAYORA_CONFIG__.demo;
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Shortlist', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 33 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 33 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+    await api.joinMatch(g.id, filler);
+    const state = await api.fetchReplacementState(org, g.id);
+    res.stateKeys = state ? Object.keys(state) : null;
+    const list = (state && (state.shortlist || state.candidates)) || [];
+    res.listed = list.length;
+    res.phantoms = list.filter((c) => String(c.user_id).startsWith('npn-demo-')).map((c) => c.user_id);
+    res.phantomOffer = await code(() => api.manualReplace(org, g.id, 'npn-demo-1'));
+    return res;
+  }, [IDS.organizer, IDS.user]);
+
+  ok('the demo world is on, so the pool would contain phantoms', out.demoWorld === true, String(out.demoWorld));
+  // Without the filter this list is four entries and every one of them is an npn-demo id, so the
+  // organizer's replacement screen offered nobody real. With it, the seeded world has no real
+  // candidate in range - an empty shortlist is the honest answer, a fictional one is not.
+  ok('the shortlist is a list', Array.isArray(out.phantoms), JSON.stringify(out.stateKeys));
+  ok('none of its entries are phantoms', out.phantoms.length === 0, JSON.stringify(out.phantoms));
+  ok('offering a phantom is refused', out.phantomOffer === 'E_NO_SUCH_PLAYER', String(out.phantomOffer));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

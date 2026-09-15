@@ -12358,7 +12358,14 @@ __d(
           { created_at: new Date().toISOString() },
         ),
       ed = async (e, t, a, i) => {
-        const n = Sn(e, t).filter((e) => !i.has(e.user_id)),
+        // The demo world appends synthetic npn-demo-N names to the candidate pool, and the shipped
+        // config has demo on. They surfaced in the replacement shortlist, and offering one reserved a
+        // real seat for the reservation window - nd subtracts outstanding offers from the open slots -
+        // that no one could ever accept, because there is no account behind the id. Replacements move
+        // real seats, so the pool here is real people only.
+        const n = Sn(e, t).filter(
+          (e) => !i.has(e.user_id) && !String(e.user_id).startsWith("npn-demo-"),
+        ),
           r = [];
         for (const t of n) {
           const a = await lr(t.user_id, e),
