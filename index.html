@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "5f827c5da5"
+  buildId: "440136d710"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -991,7 +991,249 @@ __d(function(g,r,i,a,m,e,d){"use strict";function t(t){return t.match(/exps?:\/\
 __d(function(g,r,_i,_a,_m,e,d){"use strict";var t=r(d[0]);const n=["path"];var a=this&&this.__createBinding||(Object.create?function(t,n,a,s){void 0===s&&(s=a);var o=Object.getOwnPropertyDescriptor(n,a);o&&!("get"in o?!n.__esModule:o.writable||o.configurable)||(o={enumerable:!0,get:function(){return n[a]}}),Object.defineProperty(t,s,o)}:function(t,n,a,s){void 0===s&&(s=a),t[s]=n[a]}),s=this&&this.__setModuleDefault||(Object.create?function(t,n){Object.defineProperty(t,"default",{enumerable:!0,value:n})}:function(t,n){t.default=n}),o=this&&this.__importStar||function(t){if(t&&t.__esModule)return t;var n={};if(null!=t)for(var o in t)"default"!==o&&Object.prototype.hasOwnProperty.call(t,o)&&a(n,t,o);return s(n,t),n},i=this&&this.__importDefault||function(t){return t&&t.__esModule?t:{default:t}};Object.defineProperty(e,"__esModule",{value:!0}),e.getStateFromPath=void 0;const c=r(d[1]),u=i(r(d[2])),p=r(d[3]),l=o(r(d[4]));e.getStateFromPath=function(t,n){const{initialRoutes:a,configs:s,configWithRegexes:o}=f(n,this?.routeInfo?.segments),i=n?.screens,c=l.getUrlWithReactNavigationConcessions(t);let u=c.nonstandardPathname.replace(/\/+/g,'/').replace(/^\//,'').replace(/\?.*$/,'');u=u.endsWith('/')?u:`${u}/`;const p=n?.path?.replace(/^\//,'');if(p){const t=p.endsWith('/')?p:`${p}/`;if(!u.startsWith(t))return;u=u.replace(t,'')}if(void 0===i){const t=u.split('/').filter(Boolean).map(t=>({name:decodeURIComponent(t)}));return t.length?$(c,t,a,[],c.url.hash):void 0}if('/'===u){const t=l.matchForEmptyPath(o);return t?$(c,t.routeNames.map(t=>({name:t})),a,s,c.url.hash):void 0}let h,m;const{routes:b,remainingPath:j}=O(u,o);if(void 0!==b&&(m=$(c,b,a,s,c.url.hash),u=j,h=m),null!=m&&null!=h)return h};let h=[void 0,m()];function f(t,n){return h=[t,m(t,n)],h[1]}function m(t,n){t&&(0,c.validatePathConfig)(t);const a=b(t),s=j(a,t?.screens,n);v(s);return{initialRoutes:a,configs:s,configWithRegexes:y(s)}}function b(t){const n=[];return t?.initialRouteName&&n.push({initialRouteName:t.initialRouteName,parentScreens:[]}),n}function j(t,n={},a){return[].concat(...Object.keys(n).map(a=>R(a,n,[],t,[]))).map(l.appendIsInitial(t)).sort(l.getRouteConfigSorter(a))}function v(t){t.reduce((t,n)=>{if(t[n.pattern]){const a=t[n.pattern].routeNames,s=n.routeNames;if(!(a.length>s.length?s.every((t,n)=>a[n]===t):a.every((t,n)=>s[n]===t)))throw new Error(`Found conflicting screens with the same pattern. The pattern '${n.pattern}' resolves to both '${a.join(' > ')}' and '${s.join(' > ')}'. Patterns must be unique and cannot resolve to more than one screen.`)}return Object.assign(t,{[n.pattern]:n})},{})}function y(t){return t.map(t=>Object.assign({},t,{regex:l.configRegExp(t)}))}const P=(...t)=>[].concat(...t.map(t=>t.split('/'))).filter(Boolean).join('/'),O=(t,n)=>{let a,s=t;const o=Object.create(null);for(const t of n){if(!t.regex)continue;const i=s.match(t.regex);if(i){const c=t.pattern?.split('/').reduce((t,n,a)=>{if(!l.isDynamicPart(n))return t;t.pos+=1;const s=l.safelyDecodeURIComponent(i[2*(t.pos+1)].replace(/\/$/,''));return Object.assign(t.matchedParams,{[n]:Object.assign(t.matchedParams[n]||{},{[a]:s})}),t},{pos:-1,matchedParams:{}}),p=c.matchedParams||{};a=t.routeNames.map(a=>{const s=n.find(n=>n.screen===a&&t.pattern.startsWith(n.pattern)),i=s?.path.split('/').filter(Boolean).join('/'),c=s?.pattern.replace(new RegExp(`${(0,u.default)(i)}$`),'')?.split('/').length,h=i?.split('/').reduce((t,n,a)=>{if(!l.isDynamicPart(n))return t;const o=c?c-1:0,i=l.getParamValue(n,p[n]?.[a+o]);if(i){const a=l.replacePart(n);t[a]=s?.parse?.[a]?s.parse[a](i):i}return t},{});return h&&Object.keys(h).length?(Object.assign(o,h),{name:a,params:h}):{name:a}}),s=s.replace(i[1],'');break}}return l.populateParams(a,o),{routes:a,remainingPath:s}},R=(t,n,a=[],s,o,i)=>{const c=[];a.push(t),o.push(t);const u=n[t];if('string'==typeof u){const n=i?P(i,u):u;c.push(_(t,a,n,u))}else if('object'==typeof u){let n;if('string'==typeof u.path){if(u.exact&&void 0===u.path)throw new Error("A 'path' needs to be specified when specifying 'exact: true'. If you don't want this screen in the URL, specify it as empty string, e.g. `path: ''`.");n=!0!==u.exact?P(i||'',u.path||''):u.path||'',c.push(_(t,a,n,u.path,u.parse,u))}u.screens&&(u.initialRouteName&&s.push({initialRouteName:u.initialRouteName,parentScreens:o}),Object.keys(u.screens).forEach(t=>{const p=R(t,u.screens,a,s,[...o],n??i);c.push(...p)}))}return a.pop(),c},_=(t,n,a,s,o=void 0,i={})=>{const c=(a=a.split('/').filter(Boolean).join('/'))?new RegExp(`^(${a.split('/').map(t=>t.startsWith(':')?`(([^/]+\\/)${t.endsWith('?')?'?':''})`:`${'*'===t?'.*':(0,u.default)(t)}\\/`).join('')})`):void 0;return Object.assign({screen:t,regex:c,pattern:a,path:s,routeNames:[...n],parse:o},l.createConfig(t,a,n,i))},N=(t,n)=>{for(const a of n)if(t===a.routeNames[a.routeNames.length-1])return a.parse},x=(t,n,a)=>{for(const s of a)if(n.length===s.parentScreens.length){let a=!0;for(let t=0;t<n.length;t++)if(0!==n[t].localeCompare(s.parentScreens[t])){a=!1;break}if(a)return t!==s.initialRouteName?s.initialRouteName:void 0}},w=(t,n,a)=>a?t?{index:1,routes:[{name:t,params:n.params},n]}:{routes:[n]}:t?{index:1,routes:[{name:t,params:n.params},Object.assign({},n,{state:{routes:[]}})]}:{routes:[Object.assign({},n,{state:{routes:[]}})]},$=(a,s,o,i,c)=>{let{path:u}=a,h=t(a,n),f=s.shift();const m=[];let b=x(f.name,m,o);m.push(f.name);const j=w(b,f,0===s.length);if(s.length>0){let t=j;for(;f=s.shift();){b=x(f.name,m,o);const n=t.index||t.routes.length-1;t.routes[n].state=w(b,f,0===s.length),s.length>0&&(t=t.routes[n].state),m.push(f.name)}}f=(0,p.findFocusedRoute)(j),f.path=h.pathWithoutGroups;const v=l.parseQueryParams(u,f,i?N(f.name,i):void 0,c);return v&&(f.params=Object.assign({},f.params,v)),j}},570,[24,31,92,571,563]);
 __d(function(g,r,i,a,m,e,d){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.findFocusedRoute=void 0,e.findFocusedRoute=function(t){let o=t;for(;null!=o?.routes[o.index??0].state;)o=o.routes[o.index??0].state;const u=o?.routes[o?.index??0];return u}},571,[]);
 __d(function(g,r,i,a,m,e,d){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.getIgnoreList=e.extrapolateGroups=e.generateDynamic=e.getExactRoutes=e.getRoutes=void 0;const t=r(d[0]);function n(n,o={}){return(0,t.getRoutes)(n,Object.assign({getSystemRoute({route:t,type:n}){if(''===t&&'layout'===n)return{type:'layout',loadRoute:()=>({default:r(d[1]).DefaultNavigator}),contextKey:'expo-router/build/views/Navigator.js',route:'',generated:!0,dynamic:null,children:[]};if('_sitemap'===t&&'route'===n)return{loadRoute(){const{Sitemap:t,getNavOptions:n}=r(d[2]);return{default:t,getNavOptions:n}},route:'_sitemap',type:'route',contextKey:'expo-router/build/views/Sitemap.js',generated:!0,internal:!0,dynamic:null,children:[]};if('+not-found'===t&&'route'===n)return{loadRoute:()=>({default:r(d[3]).Unmatched}),type:'route',route:'+not-found',contextKey:'expo-router/build/views/Unmatched.js',generated:!0,internal:!0,dynamic:[{name:'+not-found',deep:!0,notFound:!0}],children:[]};throw new Error(`Unknown system route: ${t} and type: ${n}`)}},o))}e.getRoutes=n,e.getExactRoutes=function(t,o={}){return n(t,Object.assign({},o,{skipGenerated:!0}))};var o=r(d[0]);Object.defineProperty(e,"generateDynamic",{enumerable:!0,get:function(){return o.generateDynamic}}),Object.defineProperty(e,"extrapolateGroups",{enumerable:!0,get:function(){return o.extrapolateGroups}}),Object.defineProperty(e,"getIgnoreList",{enumerable:!0,get:function(){return o.getIgnoreList}})},572,[573,574,575,594]);
-__d(function(g,r,i,a,m,e,d){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.generateDynamic=e.extrapolateGroups=e.getIgnoreList=e.getRoutes=void 0;const t=r(d[0]),o=new Set(['android','ios','native','web']);function n(t,o){o.importMode;const n=[/^\.\/\+(html|native-intent)\.[tj]sx?$/];o.ignore&&n.push(...o.ignore),o.preserveApiRoutes||n.push(/\+api\.[tj]sx?$/);const s={files:new Map,subdirectories:new Map};let c=!1,h=!1;for(const f of t.keys()){if(n.some(t=>t.test(f)))continue;h=!0;const p=u(f,o);if(p.specificity<0)continue;let w={type:p.isApi?'api':p.isLayout?'layout':'route',loadRoute(){let n;if(o.ignoreRequireErrors)try{n=t(f)}catch{n={}}else n=t(f);return n},contextKey:f,route:'',dynamic:null,children:[]};for(const t of l(p.route)){const n=t.split('/').slice(0,-1);let u=s;for(const t of n){let o=u.subdirectories.get(t);o||(o={files:new Map,subdirectories:new Map},u.subdirectories.set(t,o)),u=o}if(w=Object.assign({},w,{route:t}),p.isLayout){u.layout??=[];u.layout[p.specificity]||(w=y(w,o),u.layout[p.specificity]=w)}else if(p.isApi){const o=`${t}+api`;let n=u.files.get(o);n||(n=[],u.files.set(o,n));n[0]||(n[0]=w)}else{let o=u.files.get(t);o||(o=[],u.files.set(t,o));o[p.specificity]||(c||=!0,o[p.specificity]=w)}}}return h?(s.layout||(s.layout=[o.getSystemRoute({type:'layout',route:''})]),o.skipGenerated||(c&&!1!==o.sitemap&&f(s,o),!1!==o.notFound&&p(s,o)),s):null}function s(t,o,n,u=""){if(t.layout){const s=n;n=w(t.layout),s&&s.children.push(n),o.internal_stripLoadRoute&&delete n.loadRoute;const l=n.route.replace(u,'');u=n.route?`${n.route}/`:'',n.route=l,n.dynamic=c(n.contextKey.slice(0))}if(!n)throw new Error('Expo Router Internal Error: No nearest layout');for(const s of t.files.values()){const t=w(s);t.route=t.route.replace(u,''),t.dynamic=c(t.route),o.internal_stripLoadRoute&&delete t.loadRoute,n.children.push(t)}for(const l of t.subdirectories.values())s(l,o,n,u);return n}function u(n,s){const u=(n=n.replace(/^\.\//,'')).split('/');let l=(0,t.removeSupportedExtensions)(n);const c=u[u.length-1],[f,p]=(0,t.removeSupportedExtensions)(c).split('.'),y='_layout'===f,h=c.match(/\+api\.(\w+\.)?[jt]sx?$/);if(f.startsWith('(')&&f.endsWith(')'))throw new Error(`Invalid route ./${n}. Routes cannot end with '(group)' syntax`);if(!h&&c.startsWith('+')&&'+not-found'!==f){const t=[...u.slice(0,-1),c.slice(1)].join('/');throw new Error(`Invalid route ./${n}. Route nodes cannot start with the '+' character. "Please rename to ${t}"`)}let w=0;const R=o.has(p),$=s.platformRoutes??!0;if(R){if($&&s.platform?p===s.platform?w=2:'native'===p&&'web'!==s.platform?w=1:p!==s.platform&&(w=-1):w=-1,h&&0!==w)throw new Error(`Api routes cannot have platform extensions. Please remove '.${p}' from './${n}'`);l=l.replace(new RegExp(`.${p}$`),'')}return{route:l,specificity:w,isLayout:y,isApi:h}}function l(o,n=new Set){const s=(0,t.matchArrayGroupName)(o);if(!s)return n.add(o),n;const u=s.split(',');if(new Set(u).size!==u.length)throw new Error(`Array syntax cannot contain duplicate group name "${u}" in "${o}".`);if(1===u.length)return n.add(o),n;for(const t of u)l(o.replace(s,t.trim()),n);return n}function c(o){const n=o.split('/').map(o=>{if('+not-found'===o)return{name:'+not-found',deep:!0,notFound:!0};const n=(0,t.matchDeepDynamicRouteName)(o),s=n??(0,t.matchDynamicName)(o);return s?{name:s,deep:!!n}:null}).filter(t=>!!t);return 0===n.length?null:n}function f(t,o){!t.files.has('_sitemap')&&o.getSystemRoute&&t.files.set('_sitemap',[o.getSystemRoute({type:'route',route:'_sitemap'})])}function p(t,o){!t.files.has('+not-found')&&o.getSystemRoute&&t.files.set('+not-found',[o.getSystemRoute({type:'route',route:'+not-found'})])}function y(o,n){const s=(0,t.matchLastGroupName)(o.route),u=o.children.find(t=>t.route.replace(/\/index$/,'')===s);let l=u?.route;const c=o.loadRoute();if(c?.unstable_settings){try{l=c.unstable_settings.initialRouteName??l}catch(t){if(t instanceof Error&&!t.message.match(/You cannot dot into a client module/))throw t}if(s){const t=c.unstable_settings?.[s]?.initialRouteName;l=t??l}}return Object.assign({},o,{route:o.route.replace(/\/?_layout$/,''),children:[],initialRouteName:l})}function h(o,n,s=[]){if('route'===o.type)o.entryPoints=[...new Set([...s,o.contextKey])];else if('layout'===o.type){if(!o.children)throw new Error(`Layout "${o.contextKey}" does not contain any child routes`);s=[...s,o.contextKey];const u=(0,t.matchGroupName)(o.route),l=o.children.find(t=>t.route.replace(/\/index$/,'')===u);let c=l?.route;if(!n.internal_stripLoadRoute){const t=o.loadRoute();if(t?.unstable_settings){try{c=t.unstable_settings.initialRouteName??c}catch(t){if(t instanceof Error&&!t.message.match(/You cannot dot into a client module/))throw t}if(u){const o=t.unstable_settings?.[u]?.initialRouteName;c=o??c}}}if(c){const t=o.children.find(t=>t.route===c);if(!t){const t=o.children.filter(t=>!t.generated).map(t=>`'${t.route}'`).join(', ');throw u?new Error(`Layout ${o.contextKey} has invalid initialRouteName '${c}' for group '(${u})'. Valid options are: ${t}`):new Error(`Layout ${o.contextKey} has invalid initialRouteName '${c}'. Valid options are: ${t}`)}o.initialRouteName=c,s.push(t.contextKey)}for(const t of o.children)h(t,n,s)}}function w(t){const o=t[t.length-1];if(!t[0])throw new Error(`The file ${o.contextKey} does not have a fallback sibling file without a platform extension.`);return t[t.length-1]}e.getRoutes=function(t,o){const u=n(t,o);if(!u)return null;const l=s(u,o);return o.ignoreEntryPoints||h(l,o),l},e.getIgnoreList=function(t){const o=[/^\.\/\+html\.[tj]sx?$/,...t?.ignore??[]];return!0!==t?.preserveApiRoutes&&o.push(/\+api\.[tj]sx?$/),o},e.extrapolateGroups=l,e.generateDynamic=c},573,[26]);
+__d(
+  function (g, r, i, a, m, e, d) {
+    "use strict";
+    (Object.defineProperty(e, "__esModule", { value: !0 }),
+      (e.generateDynamic = e.extrapolateGroups = e.getIgnoreList = e.getRoutes = void 0));
+    const t = r(d[0]),
+      o = new Set(["android", "ios", "native", "web"]);
+    function n(t, o) {
+      o.importMode;
+      const n = [/^\.\/\+(html|native-intent)\.[tj]sx?$/];
+      (o.ignore && n.push(...o.ignore), o.preserveApiRoutes || n.push(/\+api\.[tj]sx?$/));
+      const s = { files: new Map(), subdirectories: new Map() };
+      let c = !1,
+        h = !1;
+      for (const f of t.keys()) {
+        if (n.some((t) => t.test(f))) continue;
+        h = !0;
+        const p = u(f, o);
+        if (p.specificity < 0) continue;
+        let w = {
+          type: p.isApi ? "api" : p.isLayout ? "layout" : "route",
+          loadRoute() {
+            let n;
+            if (o.ignoreRequireErrors)
+              try {
+                n = t(f);
+              } catch {
+                n = {};
+              }
+            else n = t(f);
+            return n;
+          },
+          contextKey: f,
+          route: "",
+          dynamic: null,
+          children: [],
+        };
+        for (const t of l(p.route)) {
+          const n = t.split("/").slice(0, -1);
+          let u = s;
+          for (const t of n) {
+            let o = u.subdirectories.get(t);
+            (o || ((o = { files: new Map(), subdirectories: new Map() }), u.subdirectories.set(t, o)),
+              (u = o));
+          }
+          if (((w = Object.assign({}, w, { route: t })), p.isLayout)) {
+            u.layout ??= [];
+            u.layout[p.specificity] || ((w = y(w, o)), (u.layout[p.specificity] = w));
+          } else if (p.isApi) {
+            const o = `${t}+api`;
+            let n = u.files.get(o);
+            n || ((n = []), u.files.set(o, n));
+            n[0] || (n[0] = w);
+          } else {
+            let o = u.files.get(t);
+            o || ((o = []), u.files.set(t, o));
+            o[p.specificity] || ((c ||= !0), (o[p.specificity] = w));
+          }
+        }
+      }
+      return h
+        ? (s.layout || (s.layout = [o.getSystemRoute({ type: "layout", route: "" })]),
+          o.skipGenerated || (c && !1 !== o.sitemap && f(s, o), !1 !== o.notFound && p(s, o)),
+          s)
+        : null;
+    }
+    function s(t, o, n, u = "") {
+      if (t.layout) {
+        const s = n;
+        ((n = w(t.layout)), s && s.children.push(n), o.internal_stripLoadRoute && delete n.loadRoute);
+        const l = n.route.replace(u, "");
+        ((u = n.route ? `${n.route}/` : ""), (n.route = l), (n.dynamic = c(n.contextKey.slice(0))));
+      }
+      if (!n) throw new Error("Expo Router Internal Error: No nearest layout");
+      for (const s of t.files.values()) {
+        const t = w(s);
+        ((t.route = t.route.replace(u, "")),
+          (t.dynamic = c(t.route)),
+          o.internal_stripLoadRoute && delete t.loadRoute,
+          n.children.push(t));
+      }
+      for (const l of t.subdirectories.values()) s(l, o, n, u);
+      return n;
+    }
+    function u(n, s) {
+      const u = (n = n.replace(/^\.\//, "")).split("/");
+      let l = (0, t.removeSupportedExtensions)(n);
+      const c = u[u.length - 1],
+        [f, p] = (0, t.removeSupportedExtensions)(c).split("."),
+        y = "_layout" === f,
+        h = c.match(/\+api\.(\w+\.)?[jt]sx?$/);
+      if (f.startsWith("(") && f.endsWith(")"))
+        throw new Error(`Invalid route ./${n}. Routes cannot end with '(group)' syntax`);
+      if (!h && c.startsWith("+") && "+not-found" !== f) {
+        const t = [...u.slice(0, -1), c.slice(1)].join("/");
+        throw new Error(
+          `Invalid route ./${n}. Route nodes cannot start with the '+' character. "Please rename to ${t}"`,
+        );
+      }
+      let w = 0;
+      const R = o.has(p),
+        $ = s.platformRoutes ?? !0;
+      if (R) {
+        if (
+          ($ && s.platform
+            ? p === s.platform
+              ? (w = 2)
+              : "native" === p && "web" !== s.platform
+                ? (w = 1)
+                : p !== s.platform && (w = -1)
+            : (w = -1),
+          h && 0 !== w)
+        )
+          throw new Error(`Api routes cannot have platform extensions. Please remove '.${p}' from './${n}'`);
+        l = l.replace(new RegExp(`.${p}$`), "");
+      }
+      return { route: l, specificity: w, isLayout: y, isApi: h };
+    }
+    function l(o, n = new Set()) {
+      const s = (0, t.matchArrayGroupName)(o);
+      if (!s) return (n.add(o), n);
+      const u = s.split(",");
+      if (new Set(u).size !== u.length)
+        throw new Error(`Array syntax cannot contain duplicate group name "${u}" in "${o}".`);
+      if (1 === u.length) return (n.add(o), n);
+      for (const t of u) l(o.replace(s, t.trim()), n);
+      return n;
+    }
+    function c(o) {
+      const n = o
+        .split("/")
+        .map((o) => {
+          if ("+not-found" === o) return { name: "+not-found", deep: !0, notFound: !0 };
+          const n = (0, t.matchDeepDynamicRouteName)(o),
+            s = n ?? (0, t.matchDynamicName)(o);
+          return s ? { name: s, deep: !!n } : null;
+        })
+        .filter((t) => !!t);
+      return 0 === n.length ? null : n;
+    }
+    function f(t, o) {
+      // Expo Router's built-in sitemap is not registered. It rendered the whole route table as a plain
+      // list of .tsx filenames - every admin screen, the venue portal and the scanner among them - to
+      // anyone who typed the URL, and vercel.json rewrites every path to index.html so it was live.
+      // Admin authorization in 631 is caller-supplied, so publishing the admin route inventory is
+      // reconnaissance, not untidiness. Nothing in the app links to it except the unmatched-route
+      // screen. vercel.json also redirects /_sitemap, which is the half that survives an Expo build.
+      return;
+    }
+    function p(t, o) {
+      !t.files.has("+not-found") &&
+        o.getSystemRoute &&
+        t.files.set("+not-found", [o.getSystemRoute({ type: "route", route: "+not-found" })]);
+    }
+    function y(o, n) {
+      const s = (0, t.matchLastGroupName)(o.route),
+        u = o.children.find((t) => t.route.replace(/\/index$/, "") === s);
+      let l = u?.route;
+      const c = o.loadRoute();
+      if (c?.unstable_settings) {
+        try {
+          l = c.unstable_settings.initialRouteName ?? l;
+        } catch (t) {
+          if (t instanceof Error && !t.message.match(/You cannot dot into a client module/)) throw t;
+        }
+        if (s) {
+          const t = c.unstable_settings?.[s]?.initialRouteName;
+          l = t ?? l;
+        }
+      }
+      return Object.assign({}, o, {
+        route: o.route.replace(/\/?_layout$/, ""),
+        children: [],
+        initialRouteName: l,
+      });
+    }
+    function h(o, n, s = []) {
+      if ("route" === o.type) o.entryPoints = [...new Set([...s, o.contextKey])];
+      else if ("layout" === o.type) {
+        if (!o.children) throw new Error(`Layout "${o.contextKey}" does not contain any child routes`);
+        s = [...s, o.contextKey];
+        const u = (0, t.matchGroupName)(o.route),
+          l = o.children.find((t) => t.route.replace(/\/index$/, "") === u);
+        let c = l?.route;
+        if (!n.internal_stripLoadRoute) {
+          const t = o.loadRoute();
+          if (t?.unstable_settings) {
+            try {
+              c = t.unstable_settings.initialRouteName ?? c;
+            } catch (t) {
+              if (t instanceof Error && !t.message.match(/You cannot dot into a client module/)) throw t;
+            }
+            if (u) {
+              const o = t.unstable_settings?.[u]?.initialRouteName;
+              c = o ?? c;
+            }
+          }
+        }
+        if (c) {
+          const t = o.children.find((t) => t.route === c);
+          if (!t) {
+            const t = o.children
+              .filter((t) => !t.generated)
+              .map((t) => `'${t.route}'`)
+              .join(", ");
+            throw u
+              ? new Error(
+                  `Layout ${o.contextKey} has invalid initialRouteName '${c}' for group '(${u})'. Valid options are: ${t}`,
+                )
+              : new Error(
+                  `Layout ${o.contextKey} has invalid initialRouteName '${c}'. Valid options are: ${t}`,
+                );
+          }
+          ((o.initialRouteName = c), s.push(t.contextKey));
+        }
+        for (const t of o.children) h(t, n, s);
+      }
+    }
+    function w(t) {
+      const o = t[t.length - 1];
+      if (!t[0])
+        throw new Error(
+          `The file ${o.contextKey} does not have a fallback sibling file without a platform extension.`,
+        );
+      return t[t.length - 1];
+    }
+    ((e.getRoutes = function (t, o) {
+      const u = n(t, o);
+      if (!u) return null;
+      const l = s(u, o);
+      return (o.ignoreEntryPoints || h(l, o), l);
+    }),
+      (e.getIgnoreList = function (t) {
+        const o = [/^\.\/\+html\.[tj]sx?$/, ...(t?.ignore ?? [])];
+        return (!0 !== t?.preserveApiRoutes && o.push(/\+api\.[tj]sx?$/), o);
+      }),
+      (e.extrapolateGroups = l),
+      (e.generateDynamic = c));
+  },
+  573,
+  [26],
+);
+
 __d(function(g,r,i,a,_m,e,d){"use strict";var t=r(d[0]),n=this&&this.__createBinding||(Object.create?function(t,n,o,s){void 0===s&&(s=o);var u=Object.getOwnPropertyDescriptor(n,o);u&&!("get"in u?!n.__esModule:u.writable||u.configurable)||(u={enumerable:!0,get:function(){return n[o]}}),Object.defineProperty(t,s,u)}:function(t,n,o,s){void 0===s&&(s=o),t[s]=n[o]}),o=this&&this.__setModuleDefault||(Object.create?function(t,n){Object.defineProperty(t,"default",{enumerable:!0,value:n})}:function(t,n){t.default=n}),s=this&&this.__importStar||function(t){if(t&&t.__esModule)return t;var s={};if(null!=t)for(var u in t)"default"!==u&&Object.prototype.hasOwnProperty.call(t,u)&&n(s,t,u);return o(s,t),s};Object.defineProperty(e,"__esModule",{value:!0}),e.DefaultNavigator=e.Slot=e.useNavigatorContext=e.Navigator=e.NavigatorContext=void 0;const u=r(d[1]),c=s(r(d[2])),l=r(d[3]),f=r(d[4]),v=r(d[5]),x=r(d[6]),h=r(d[7]);function N({initialRouteName:n,screenOptions:o,children:s,router:c,routerOptions:l}){const N=(0,v.useContextKey)(),{screens:C,children:j}=(0,x.useFilterScreenChildren)(s,{isCustomNavigator:!0,contextKey:N}),b=(0,h.useSortedScreens)(C??[]);c||=u.StackRouter;const y=(0,u.useNavigationBuilder)(c,Object.assign({},l,{id:N,children:b||[t.jsx(f.Screen,{},"default")],screenOptions:o,initialRouteName:n}));return b.length?t.jsx(e.NavigatorContext.Provider,{value:Object.assign({},y,{contextKey:N,router:c}),children:j}):(console.warn(`Navigator at "${N}" has no children.`),null)}function C(){const t=c.useContext(e.NavigatorContext);if(!t)throw new Error('useNavigatorContext must be used within a <Navigator />');return t}function j(n){const o=(0,v.useContextKey)(),{screens:s}=(0,x.useFilterScreenChildren)([],{contextKey:o}),{state:c,descriptors:l,NavigationContent:f}=(0,u.useNavigationBuilder)(u.StackRouter,Object.assign({},n,{id:o,children:(0,h.useSortedScreens)(s??[])}));return t.jsx(f,{children:l[c.routes[c.index].key].render()})}function b(){const t=C(),{state:n,descriptors:o}=t;return o[n.routes[n.index].key]?.render()??null}e.NavigatorContext=c.createContext(null),e.Navigator=N,e.useNavigatorContext=C,e.Slot=function(n){const o=(0,v.useContextKey)(),s=c.useContext(e.NavigatorContext);return s?.contextKey!==o?t.jsx(j,Object.assign({},n)):t.jsx(b,{})},e.DefaultNavigator=function(){return t.jsx(l.SafeAreaView,{style:{flex:1},children:t.jsx(j,{})})},N.Slot=b,N.useContext=C,N.Screen=f.Screen},574,[13,31,15,381,538,25,23,28]);
 __d(function(g,r,i,a,m,e,d){"use strict";var t=r(d[0]),o=this&&this.__importDefault||function(t){return t&&t.__esModule?t:{default:t}};Object.defineProperty(e,"__esModule",{value:!0}),e.Sitemap=e.getNavOptions=void 0;const n=o(r(d[1])),l=r(d[2]),s=r(d[3]),c=r(d[4]),h=r(d[5]),u=r(d[6]),x=r(d[7]),f=r(d[8]),p=r(d[9]);function w(){return(0,h.useExpoRouter)().getSortedRoutes().map(o=>t.jsx(l.View,{style:v.itemContainer,children:t.jsx(j,{route:o})},o.contextKey))}function j({route:o,level:s=0,parents:h=[],isInitial:p=!1}){const w=o.children.length>0,S=n.default.useMemo(()=>[...h,...o.route.split('/')],[h,o.route]),I=n.default.useMemo(()=>'/'+S.map(t=>(0,f.matchDeepDynamicRouteName)(t)?t+'/'+Date.now():'index'===t?'':t).filter(Boolean).join('/'),[S,o.route]),V=n.default.useMemo(()=>{const t=o.contextKey.split('/');if(o.contextKey.match(/_layout\.[jt]sx?$/))return t[t.length-2]+'/'+t[t.length-1];const n=o.route.split('/').length;return t.slice(-n).join('/')},[o]),k=p?'Initial':o.generated?'Virtual':'';return t.jsxs(t.Fragment,{children:[!o.internal&&t.jsx(x.Link,{accessibilityLabel:o.contextKey,href:I,onPress:()=>{'web'!==l.Platform.OS&&u.router.canGoBack()&&u.router.back()},disabled:w,asChild:!0,replace:!0,children:t.jsx(c.Pressable,{children:({pressed:n,hovered:c})=>t.jsxs(l.View,{style:[v.itemPressable,{paddingLeft:20+20*s,backgroundColor:c?'#202425':'transparent'},n&&{backgroundColor:'#26292b'},w&&{opacity:.4}],children:[t.jsxs(l.View,{style:{flexDirection:'row',alignItems:'center'},children:[o.children.length?t.jsx(y,{}):t.jsx(b,{}),t.jsx(l.Text,{style:v.filename,children:V})]}),t.jsxs(l.View,{style:{flexDirection:'row',alignItems:'center'},children:[!!k&&t.jsx(l.Text,{style:[v.virtual,!w&&{marginRight:8}],children:k}),!w&&t.jsx(C,{})]})]})})}),o.children.map(n=>t.jsx(j,{route:n,isInitial:o.initialRouteName===n.route,parents:S,level:s+(o.generated?0:1)},n.contextKey))]})}function b(){return t.jsx(l.Image,{style:v.image,source:r(d[10])})}function y(){return t.jsx(l.Image,{style:v.image,source:r(d[11])})}function C(){return t.jsx(l.Image,{style:v.image,source:r(d[12])})}function S(){return t.jsx(l.Image,{style:v.image,source:r(d[13])})}e.getNavOptions=function(){return{title:'sitemap',presentation:'modal',headerLargeTitle:!1,headerTitleStyle:{color:'white'},headerTintColor:'white',headerLargeTitleStyle:{color:'white'},headerStyle:{backgroundColor:'black',borderBottomColor:'#323232'},header:()=>{const o='android'===l.Platform.OS?s.SafeAreaView:l.View;return t.jsx(o,{style:v.header,children:t.jsxs(l.View,{style:v.headerContent,children:[t.jsx(l.View,{style:v.headerIcon,children:t.jsx(S,{})}),t.jsx(l.Text,{role:"heading","aria-level":1,style:v.title,children:"Sitemap"})]})})}}},e.Sitemap=function(){return t.jsxs(l.View,{style:v.container,children:[p.canOverrideStatusBarBehavior&&t.jsx(l.StatusBar,{barStyle:"light-content"}),t.jsx(l.ScrollView,{contentContainerStyle:v.scroll,children:t.jsx(w,{})})]})};const v=l.StyleSheet.create({container:{backgroundColor:'black',flex:1,alignItems:'stretch'},header:{backgroundColor:'#151718',paddingVertical:16,borderBottomWidth:1,borderColor:'#313538',shadowColor:'#000',shadowOffset:{width:0,height:3},shadowOpacity:.33,shadowRadius:3,elevation:8},headerContent:Object.assign({flexDirection:'row',alignItems:'center',gap:14,paddingHorizontal:'5%'},l.Platform.select({web:{width:'100%',maxWidth:960,marginHorizontal:'auto'}})),title:{color:'white',fontSize:28,fontWeight:'bold'},scroll:Object.assign({paddingHorizontal:'5%',paddingVertical:16},l.Platform.select({ios:{paddingBottom:24},web:{width:'100%',maxWidth:960,marginHorizontal:'auto',paddingBottom:24},default:{paddingBottom:12}})),itemContainer:{borderWidth:1,borderColor:'#313538',backgroundColor:'#151718',borderRadius:12,marginBottom:12,overflow:'hidden'},itemPressable:Object.assign({paddingHorizontal:20,paddingVertical:16,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},l.Platform.select({web:{transitionDuration:'100ms'}})),filename:{color:'white',fontSize:20,marginLeft:12},virtual:{textAlign:'right',color:'white'},image:{width:24,height:24,resizeMode:'contain',opacity:.6},headerIcon:{width:40,height:40,backgroundColor:'#202425',borderRadius:8,flexDirection:'row',alignItems:'center',justifyContent:'center'}})},575,[13,15,439,381,576,540,577,578,26,588,590,591,592,593]);
 __d(function(g,r,i,a,m,e,d){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.Pressable=void 0;const s=r(d[0]);e.Pressable=s.Pressable},576,[439]);
@@ -1012,7 +1254,133 @@ __d(function(g,r,i,a,m,e,d){m.exports={uri:"/assets/node_modules/expo-router/ass
 __d(function(g,r,i,a,m,e,d){m.exports={uri:"/assets/node_modules/expo-router/assets/pkg.ab19f4cbc543357183a20571f68380a3.png",width:48,height:48}},591,[]);
 __d(function(g,r,i,a,m,e,d){m.exports={uri:"/assets/node_modules/expo-router/assets/forward.d8b800c443b8972542883e0b9de2bdc6.png",width:48,height:48}},592,[]);
 __d(function(g,r,i,a,m,e,d){m.exports={uri:"/assets/node_modules/expo-router/assets/sitemap.412dd9275b6b48ad28f5e3d81bb1f626.png",width:48,height:48}},593,[]);
-__d(function(g,r,i,a,m,e,d){"use strict";var t=r(d[0]),n=this&&this.__importDefault||function(t){return t&&t.__esModule?t:{default:t}};Object.defineProperty(e,"__esModule",{value:!0}),e.Unmatched=void 0;const o=r(d[1]),l=n(r(d[2])),s=r(d[3]),c=r(d[4]),u=r(d[5]),h=r(d[6]),f=r(d[7]),x=l.default.useLayoutEffect;function p(){return t.jsx(s.Image,{source:r(d[8]),style:y.image})}e.Unmatched=function(){const[n,b]=l.default.useState(!1),j=(0,c.useRouter)(),k=(0,h.useNavigation)(),P=(0,c.usePathname)(),T=(0,o.createURL)(P);return l.default.useEffect(()=>{b(!0)},[]),x(()=>{k.setOptions({title:'Not Found'})},[k]),t.jsxs(s.View,{style:y.container,children:[t.jsx(p,{}),t.jsx(s.Text,{role:"heading","aria-level":1,style:y.title,children:"Unmatched Route"}),t.jsx(s.Text,{role:"heading","aria-level":2,style:[y.subtitle,y.secondaryText],children:"Page could not be found."}),n?t.jsx(u.Link,Object.assign({href:P,replace:!0},s.Platform.select({native:{asChild:!0}}),{children:t.jsx(f.Pressable,{children:({hovered:n,pressed:o})=>t.jsx(s.Text,{style:[y.pageLink,y.secondaryText,s.Platform.select({web:{transitionDuration:'200ms',opacity:1}}),n&&{opacity:.8,textDecorationLine:'underline'},o&&{opacity:.8}],children:T})})})):t.jsx(s.View,{style:[y.pageLink,y.placeholder]}),t.jsxs(s.View,{style:y.linkContainer,children:[t.jsx(f.Pressable,{children:({hovered:n,pressed:o})=>t.jsx(s.Text,{onPress:()=>{j.canGoBack()?j.back():j.replace('/')},style:[y.link,s.Platform.select({web:{transitionDuration:'200ms',opacity:1}}),n&&{opacity:.8,textDecorationLine:'underline'},o&&{opacity:.8}],children:"Go back"})}),t.jsx(s.Text,{style:[y.linkSeparator,y.secondaryText],children:"\u2022"}),t.jsx(u.Link,Object.assign({href:"/_sitemap",replace:!0},s.Platform.select({native:{asChild:!0}}),{children:t.jsx(f.Pressable,{children:({hovered:n,pressed:o})=>t.jsx(s.Text,{style:[y.link,s.Platform.select({web:{transitionDuration:'200ms',opacity:1}}),n&&{opacity:.8,textDecorationLine:'underline'},o&&{opacity:.8}],children:"Sitemap"})})}))]})]})};const y=s.StyleSheet.create({container:{flex:1,backgroundColor:'black',padding:24,paddingBottom:64,alignItems:'center',justifyContent:'center'},image:{width:270,height:168,resizeMode:'contain',marginBottom:28},title:Object.assign({},s.Platform.select({web:{fontSize:64,lineHeight:64},default:{fontSize:56,lineHeight:56}}),{color:'#fff',fontWeight:'800',textAlign:'center'}),subtitle:{fontSize:34,marginTop:4,marginBottom:12,fontWeight:'200',textAlign:'center'},pageLink:{minHeight:20},secondaryText:{color:'#9ba1a6'},placeholder:{backgroundColor:'#9ba1a644',minWidth:180,borderRadius:5},linkContainer:{marginTop:28,flexDirection:'row',gap:12},link:{fontSize:20,textAlign:'center',color:'#52a9ff'},linkSeparator:{fontSize:20}})},594,[13,549,15,439,580,578,539,576,595]);
+__d(
+  function (g, r, i, a, m, e, d) {
+    "use strict";
+    var t = r(d[0]),
+      n =
+        (this && this.__importDefault) ||
+        function (t) {
+          return t && t.__esModule ? t : { default: t };
+        };
+    (Object.defineProperty(e, "__esModule", { value: !0 }), (e.Unmatched = void 0));
+    const o = r(d[1]),
+      l = n(r(d[2])),
+      s = r(d[3]),
+      c = r(d[4]),
+      u = r(d[5]),
+      h = r(d[6]),
+      f = r(d[7]),
+      x = l.default.useLayoutEffect;
+    function p() {
+      // The 404 illustration resolves to /assets/node_modules/expo-router/assets/unmatched...png, a
+      // path that does not exist in this repo, and the CSP's img-src blocks same-origin images anyway.
+      // Every unmatched route therefore logged a console error for a picture nobody ever saw. It is
+      // decoration on an error page; drop it rather than inline another copy of the bitmap.
+      return null;
+    }
+    e.Unmatched = function () {
+      const [n, b] = l.default.useState(!1),
+        j = (0, c.useRouter)(),
+        k = (0, h.useNavigation)(),
+        P = (0, c.usePathname)(),
+        T = (0, o.createURL)(P);
+      return (
+        l.default.useEffect(() => {
+          b(!0);
+        }, []),
+        x(() => {
+          k.setOptions({ title: "Not Found" });
+        }, [k]),
+        t.jsxs(s.View, {
+          style: y.container,
+          children: [
+            t.jsx(p, {}),
+            t.jsx(s.Text, { role: "heading", "aria-level": 1, style: y.title, children: "Unmatched Route" }),
+            t.jsx(s.Text, {
+              role: "heading",
+              "aria-level": 2,
+              style: [y.subtitle, y.secondaryText],
+              children: "Page could not be found.",
+            }),
+            n
+              ? t.jsx(
+                  u.Link,
+                  Object.assign({ href: P, replace: !0 }, s.Platform.select({ native: { asChild: !0 } }), {
+                    children: t.jsx(f.Pressable, {
+                      children: ({ hovered: n, pressed: o }) =>
+                        t.jsx(s.Text, {
+                          style: [
+                            y.pageLink,
+                            y.secondaryText,
+                            s.Platform.select({ web: { transitionDuration: "200ms", opacity: 1 } }),
+                            n && { opacity: 0.8, textDecorationLine: "underline" },
+                            o && { opacity: 0.8 },
+                          ],
+                          children: T,
+                        }),
+                    }),
+                  }),
+                )
+              : t.jsx(s.View, { style: [y.pageLink, y.placeholder] }),
+            t.jsxs(s.View, {
+              style: y.linkContainer,
+              children: [
+                t.jsx(f.Pressable, {
+                  children: ({ hovered: n, pressed: o }) =>
+                    t.jsx(s.Text, {
+                      onPress: () => {
+                        j.canGoBack() ? j.back() : j.replace("/");
+                      },
+                      style: [
+                        y.link,
+                        s.Platform.select({ web: { transitionDuration: "200ms", opacity: 1 } }),
+                        n && { opacity: 0.8, textDecorationLine: "underline" },
+                        o && { opacity: 0.8 },
+                      ],
+                      children: "Go back",
+                    }),
+                }),
+                // The Sitemap link is gone with the sitemap itself - it published the whole route
+                // table, every admin screen included, to anyone who typed the URL.
+              ],
+            }),
+          ],
+        })
+      );
+    };
+    const y = s.StyleSheet.create({
+      container: {
+        flex: 1,
+        backgroundColor: "black",
+        padding: 24,
+        paddingBottom: 64,
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      image: { width: 270, height: 168, resizeMode: "contain", marginBottom: 28 },
+      title: Object.assign(
+        {},
+        s.Platform.select({
+          web: { fontSize: 64, lineHeight: 64 },
+          default: { fontSize: 56, lineHeight: 56 },
+        }),
+        { color: "#fff", fontWeight: "800", textAlign: "center" },
+      ),
+      subtitle: { fontSize: 34, marginTop: 4, marginBottom: 12, fontWeight: "200", textAlign: "center" },
+      pageLink: { minHeight: 20 },
+      secondaryText: { color: "#9ba1a6" },
+      placeholder: { backgroundColor: "#9ba1a644", minWidth: 180, borderRadius: 5 },
+      linkContainer: { marginTop: 28, flexDirection: "row", gap: 12 },
+      link: { fontSize: 20, textAlign: "center", color: "#52a9ff" },
+      linkSeparator: { fontSize: 20 },
+    });
+  },
+  594,
+  [13, 549, 15, 439, 580, 578, 539, 576, 595],
+);
+
+
 __d(function(g,r,i,a,m,e,d){m.exports={uri:"/assets/node_modules/expo-router/assets/unmatched.20e71bdf79e3a97bf55fd9e164041578.png",width:436,height:266}},595,[]);
 __d(function(g,r,i,a,_m,_e,d){"use strict";var e=r(d[0]),t=r(d[1]);const n=["id","initialRouteName","children","layout","screenListeners","screenOptions","screenLayout","UNSTABLE_getStateForRouteNamesChange"];var o=this&&this.__createBinding||(Object.create?function(e,t,n,o){void 0===o&&(o=n);var s=Object.getOwnPropertyDescriptor(t,n);s&&!("get"in s?!t.__esModule:s.writable||s.configurable)||(s={enumerable:!0,get:function(){return t[n]}}),Object.defineProperty(e,o,s)}:function(e,t,n,o){void 0===o&&(o=n),e[o]=t[n]}),s=this&&this.__setModuleDefault||(Object.create?function(e,t){Object.defineProperty(e,"default",{enumerable:!0,value:t})}:function(e,t){e.default=t}),c=this&&this.__importStar||function(e){if(e&&e.__esModule)return e;var t={};if(null!=e)for(var n in e)"default"!==n&&Object.prototype.hasOwnProperty.call(e,n)&&o(t,e,n);return s(t,e),t};Object.defineProperty(_e,"__esModule",{value:!0}),_e.createNativeStackNavigator=void 0;const u=r(d[2]),l=r(d[3]),f=c(r(d[4]));function v(o){let{id:s,initialRouteName:c,children:v,layout:p,screenListeners:N,screenOptions:_,screenLayout:b,UNSTABLE_getStateForRouteNamesChange:h}=o,y=t(o,n);const{state:O,describe:S,descriptors:j,navigation:m,NavigationContent:L}=(0,u.useNavigationBuilder)(u.StackRouter,{id:s,initialRouteName:c,children:v,layout:p,screenListeners:N,screenOptions:_,screenLayout:b,UNSTABLE_getStateForRouteNamesChange:h});return f.useEffect(()=>m?.addListener?.('tabPress',e=>{const t=m.isFocused();requestAnimationFrame(()=>{O.index>0&&t&&!e.defaultPrevented&&m.dispatch(Object.assign({},u.StackActions.popToTop(),{target:O.key}))})}),[m,O.index,O.key]),e.jsx(L,{children:e.jsx(l.NativeStackView,Object.assign({},y,{state:O,navigation:m,descriptors:j,describe:S}))})}_e.createNativeStackNavigator=function(e){return(0,u.createNavigatorFactory)(v)(e)}},596,[13,24,31,597,15]);
 __d(function(g,r,i,a,m,e,d){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),Object.defineProperty(e,"NativeStackView",{enumerable:!0,get:function(){return n.NativeStackView}}),Object.defineProperty(e,"createNativeStackNavigator",{enumerable:!0,get:function(){return t.createNativeStackNavigator}}),Object.defineProperty(e,"useAnimatedHeaderHeight",{enumerable:!0,get:function(){return c.useAnimatedHeaderHeight}});var t=r(d[0]),n=r(d[1]),c=r(d[2])},597,[598,599,600]);
