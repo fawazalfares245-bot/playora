@@ -46,6 +46,34 @@ Second pass (this branch) — the remaining confirmed findings:
 - F-CSEC-11: Fixed — `auth.otp_requested` records the canonical phone, and `auth.otp_verified` moved
   below the account lookup so it names the existing account; the creation path logs its own new id.
 
+Home screen (module 1677):
+
+- F-CARCH-2: Fixed — the list rendered `G.suggested` and the map rendered `fetchUpcomingGames`, two
+  different sets behind one toggle. The map is now built from the rows the list is showing, so the
+  toggle changes the presentation and never the membership. Driving both from `ce` is what the
+  finding suggests first and would also have closed it, but it would put the viewer's own and
+  already-joined matches into a personalised list that deliberately leaves them out — a product
+  change rather than a fix.
+- F-CQUAL-3: Fixed — the month picker built its availability set from the union of both sources, so
+  a marked day could dead-end on an empty list. It comes from the rows the list renders.
+- F-CQUAL-2: Fixed — the day key was `toISOString().slice(0, 10)`, a UTC key, so in Kuwait (UTC+3)
+  every kick-off between 00:00 and 02:59 sat under the previous day's divider and disagreed with its
+  own card time. The key, the morning/afternoon/evening classifier and the four remaining
+  device-zone labels all go through module 912's region zone now.
+- F-CARCH-3: Fixed — `mockGetUpcomingGames` returned every public future match with no window and no
+  bound, and swept each one's expired holds on the way, on every focus. It takes an optional `days`
+  window and a `limit` applied after the sort, and the per-match sweep now runs over the page it
+  returns rather than the whole future table. The bound is far above what any screen renders: it
+  exists so the query cannot grow without limit as the table does, not to paginate.
+- F-CQUAL-10: Fixed — the 14-day strip was derived from `new Date()` once at mount, on a tab that
+  stays mounted for a 30-day session, so after midnight its first chip was yesterday and always
+  empty. The existing minute tick now carries the current day and the strip rebuilds when it rolls.
+- F-CQUAL-11: Fixed — the first-week "join a game" row was guarded by `next_up` with no fallback, so
+  with no next-up match the tap logged a funnel event and went nowhere. It falls back to /discover,
+  like the row below it.
+- F-CQUAL-12: Fixed — four counts were wrapped in `String()` before module 675 could decide whether
+  to convert them to Arabic-Indic digits, so they rendered Western digits inside Arabic sentences.
+
 Not fixed in this pass — scheduled, not urgent:
 
 - F-CSEC-3: password reset routes the recovery code through the SMS provider addressed to an email

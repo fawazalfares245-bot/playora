@@ -2822,21 +2822,33 @@ __d(
             : null,
         });
       },
+      // F-CARCH-3: this returned every public future match in the partition, with no window and no
+      // bound, and swept each one's expired holds on the way - on every focus of the home screen.
+      // The screen renders 24 rows. Two changes: an optional day window, and a bound applied after
+      // the sort so the soonest matches win. The bound is deliberately far above anything a screen
+      // renders - it exists so the query cannot grow without limit as the table does, not to
+      // paginate - and the per-match sweep now runs over the page that is actually returned rather
+      // than over the whole future table.
       Mi = async (e) => {
         (await ei(), await tn(), await Yn());
         const t = await pi(),
           a = new Map(t.map((e) => [e.id, e])),
           i = Date.now(),
-          n = gi().filter(
-            (e) =>
-              "scheduled" === e.status && "public" === e.visibility && new Date(e.starts_at).getTime() >= i,
-          );
-        return (
-          await Promise.all(n.map((e) => Oi(e.id))),
-          na(n, e?.userId)
+          w9 =
+            Number.isFinite(e?.days) && e.days > 0 ? i + e.days * 864e5 : Number.POSITIVE_INFINITY,
+          lm9 = Number.isFinite(e?.limit) && e.limit > 0 ? Math.floor(e.limit) : 200,
+          n = gi().filter((e) => {
+            if ("scheduled" !== e.status || "public" !== e.visibility) return !1;
+            const t = new Date(e.starts_at).getTime();
+            return t >= i && t <= w9;
+          }),
+          pg9 = na(n, e?.userId)
             .filter((t) => !e?.sport || t.sport === e.sport)
             .sort((e, t) => new Date(e.starts_at).getTime() - new Date(t.starts_at).getTime())
-            .map((t) => Ii(t, a, e?.userId))
+            .slice(0, lm9);
+        return (
+          await Promise.all(pg9.map((e) => Oi(e.id))),
+          pg9.map((t) => Ii(t, a, e?.userId))
         );
       };
     r.mockGetUpcomingGames = Mi;

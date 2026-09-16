@@ -188,6 +188,21 @@ const out = await page.evaluate(async (ids) => {
     // F-CQUAL-7: the commonest auth failure was the one message in the path that is not a code.
     res.signInBadPassword = await code(() => __r(631).mockSignIn('player@rush-x.test', 'wrong-password-here'));
 
+    // F-CARCH-3: mockGetUpcomingGames returned every public future match in the partition, with no
+    // window and no bound, and swept each one's holds on the way - on every focus of the home
+    // screen, which renders 24 rows.
+    const up9 = (o) => api.fetchUpcomingGames(Object.assign({ userId: ids.organizer }, o));
+    const rows9 = await up9({});
+    const win9 = await up9({ days: 3 });
+    const cap9 = await up9({ limit: 5 });
+    const cut9 = Date.now() + 3 * 864e5;
+    res.upAll = rows9.length;
+    res.upWindow = win9.length;
+    res.upWindowRespected = win9.every((g) => new Date(g.starts_at).getTime() <= cut9);
+    res.upCapped = cap9.length;
+    // the bound keeps the soonest, so a capped read is a prefix of the full one
+    res.upCapIsPrefix = cap9.every((g, i) => g.id === rows9[i]?.id);
+
     // ...and a public match is read by anyone, which is the point of the gate having a shape. This
     // takes a seeded match rather than creating one: the organizer has an hourly creation cap and
     // this file already spends two of it above.
@@ -481,6 +496,10 @@ ok('nor can a signed-out visitor', out.chatGuest === 'E_MATCH_NOT_FOUND', String
 ok('an outsider cannot post into it', out.chatWriteOutsider === 'E_MATCH_NOT_FOUND', String(out.chatWriteOutsider));
 ok('a message is signed with the author\u2019s own name', out.chatAuthorName === 'Test Player', String(out.chatAuthorName));
 ok('the search probe found a subject with attributes to hide', out.searchSubject && out.searchSubject.sports > 0, JSON.stringify(out.searchSubject));
+ok('the upcoming query returns rows to bound', out.upAll > 5, String(out.upAll));
+ok('a day window is respected', out.upWindow < out.upAll && out.upWindowRespected === true, `${out.upWindow}/${out.upAll}`);
+ok('a limit is respected', out.upCapped === 5, String(out.upCapped));
+ok('and keeps the soonest matches, not an arbitrary five', out.upCapIsPrefix === true, String(out.upCapIsPrefix));
 ok('a followers-only profile is reduced in search, not detailed', out.searchGated?.limited === true && out.searchGated?.skill_level === 'all' && (out.searchGated?.sports || []).length === 0 && out.searchGated?.area === null, JSON.stringify(out.searchGated));
 ok('and an attribute filter cannot probe what it hides', out.searchProbe === null, JSON.stringify(out.searchProbe));
 ok('a connections-only profile is absent from search', out.searchConnections === null, JSON.stringify(out.searchConnections));

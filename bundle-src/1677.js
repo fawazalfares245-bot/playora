@@ -86,12 +86,18 @@ __d(
         const ke = () => {
             (we(!0), e && r.default.setItem(`playora.firstweek.done:${e.id}`, "1").catch(() => {}));
           },
-          [, Re] = (0, t.useState)(0);
+          [, Re] = (0, t.useState)(0),
+          // F-CQUAL-10: the strip was derived from new Date() once, at mount, on a tab screen that
+          // stays mounted for the life of a 30-day session - so after midnight its first chip was
+          // yesterday, and always empty. The minute tick carries the current day, and the strip
+          // rebuilds when it rolls over.
+          [dk9, sdk9] = (0, t.useState)(() => new Date().toDateString());
         (0, t.useEffect)(() => {
-          if (!G?.next_up) return;
-          const e = setInterval(() => Re((e) => e + 1), 6e4);
+          const e = setInterval(() => {
+            (Re((e) => e + 1), sdk9(new Date().toDateString()));
+          }, 6e4);
           return () => clearInterval(e);
-        }, [G?.next_up]);
+        }, []);
         const De = (t) => {
             (e && (0, k.logFeedSignal)(e.id, "click", t), F.push(`/game/${t}`));
           },
@@ -100,10 +106,11 @@ __d(
           m9 = (gq) => {
             if (!q9) return !0;
             const vn9 = gq && "object" == typeof gq.venue ? gq.venue : null;
-            return [gq?.title, vn9?.name, gq?.venue_name, gq?.area, vn9?.area, gq?.organizer_name].some((s9) =>
-              String(s9 ?? "")
-                .toLowerCase()
-                .includes(q9),
+            return [gq?.title, vn9?.name, gq?.venue_name, gq?.area, vn9?.area, gq?.organizer_name].some(
+              (s9) =>
+                String(s9 ?? "")
+                  .toLowerCase()
+                  .includes(q9),
             );
           },
           ze = (0, t.useMemo)(() => {
@@ -112,9 +119,13 @@ __d(
               { length: P },
               (t, r) => new Date(e.getFullYear(), e.getMonth(), e.getDate() + r, 12),
             );
-          }, []),
-          ve = (G?.suggested ?? []).filter(
-            (e) => !((X && e.sport !== X) || (ee && L(new Date(e.starts_at)) !== ee) || !m9(e)),
+          }, [dk9]),
+          ve = (0, t.useMemo)(
+            () =>
+              (G?.suggested ?? []).filter(
+                (e) => !((X && e.sport !== X) || (ee && L(new Date(e.starts_at)) !== ee) || !m9(e)),
+              ),
+            [G, X, ee, q9],
           ),
           Me = (0, t.useMemo)(() => {
             const e = new Map();
@@ -131,28 +142,37 @@ __d(
               ? E("todayLabel")
               : e === L(new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1, 12))
                 ? E("tomorrowLabel")
-                : new Date(`${e}T12:00:00`).toLocaleDateString(void 0, {
+                : (0, Z9.formatInZone)(new Date(`${e}T12:00:00`), "en", {
                     weekday: "long",
                     day: "numeric",
                     month: "short",
                   });
           },
-          We = (0, t.useMemo)(
-            () => ce.filter((e) => !((X && e.sport !== X) || (ee && L(new Date(e.starts_at)) !== ee) || !m9(e))),
-            [ce, X, ee, q9],
-          ),
+          // F-CARCH-2: the list rendered G.suggested and the map rendered ce - two different sets
+          // behind one toggle - so the same filters could show a game in one view and not the other.
+          // The map is now built from the rows the list is showing, so the toggle changes the
+          // presentation and never the membership. Driving both from ce would also have closed it,
+          // and is what the finding suggests first, but it would put the viewer's own and already-
+          // joined matches into a personalised list that deliberately leaves them out: a product
+          // change rather than a fix.
+          We = (0, t.useMemo)(() => {
+            const e = new Set(ve.map((e) => e.game_id));
+            return ce.filter((t) => e.has(t.id));
+          }, [ce, ve]),
           Pe = (0, t.useMemo)(() => {
             const e = new Map();
             for (const t of We) e.has(t.venue.id) || e.set(t.venue.id, t.venue);
             return [...e.values()];
           }, [We]),
+          // F-CQUAL-3: this advertised availability from the union of ce and G.suggested while the
+          // list can only render G.suggested, so tapping a marked day could land on an empty one.
+          // Marked days come from the rows the list renders.
           Le = (0, t.useMemo)(() => {
             const e = new Set();
-            for (const t of ce) (X && t.sport !== X) || !m9(t) || e.add(L(new Date(t.starts_at)));
             for (const t of G?.suggested ?? [])
               (X && t.sport !== X) || !m9(t) || e.add(L(new Date(t.starts_at)));
             return e;
-          }, [ce, G, X, q9]);
+          }, [G, X, q9]);
         return (0, T.jsxs)(u.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: A.bg },
@@ -299,7 +319,10 @@ __d(
                           {
                             done: (G.games_played ?? 0) > 0 || "booked" === G.next_up?.kind,
                             label: E("fwGoalJoin"),
-                            go: () => G.next_up && De(G.next_up.game_id),
+                            // F-CQUAL-11: guarded by next_up with no fallback, so with no next-up
+                            // game the tap logged a funnel event and went nowhere. The other two
+                            // goals navigate unconditionally.
+                            go: () => (G.next_up ? De(G.next_up.game_id) : F.push("/discover")),
                           },
                           {
                             done: G.following >= 3,
@@ -649,9 +672,7 @@ __d(
                                 children: [
                                   (0, T.jsx)(i.default, {
                                     style: [V.dayDow, { color: r ? A.accentInk : A.textMuted }],
-                                    children: e
-                                      .toLocaleDateString(void 0, { weekday: "short" })
-                                      .toUpperCase(),
+                                    children: (0, Z9.formatInZone)(e, "en", { weekday: "short" }).toUpperCase(),
                                   }),
                                   (0, T.jsx)(i.default, {
                                     style: [S.typography.bodyStrong, { color: r ? A.accentInk : A.text }],
@@ -747,9 +768,12 @@ __d(
                       }),
                       q9.length > 0 &&
                         (0, T.jsx)(i.default, {
-                          style: [S.typography.caption, { color: A.textMuted, marginTop: -6, marginBottom: S.spacing.md }],
+                          style: [
+                            S.typography.caption,
+                            { color: A.textMuted, marginTop: -6, marginBottom: S.spacing.md },
+                          ],
                           accessibilityLiveRegion: "polite",
-                          children: E("homeSearchResults", { n: String(ve.length), q: qq.trim() }),
+                          children: E("homeSearchResults", { n: ve.length, q: qq.trim() }),
                         }),
                       (0, T.jsx)(d.default, {
                         style: V.modeRow,
@@ -798,61 +822,77 @@ __d(
                                 body: E("homeSearchNoneBody"),
                               })
                             : ee
-                            ? (0, T.jsxs)(d.default, {
-                                style: [V.emptyDay, { backgroundColor: A.surface, borderColor: A.border }],
-                                children: [
-                                  (0, T.jsx)(i.default, {
-                                    style: { fontSize: 30 },
-                                    children: "\ud83c\udf19",
-                                  }),
-                                  (0, T.jsx)(i.default, {
-                                    style: [
-                                      S.typography.bodyStrong,
-                                      { color: A.text, marginTop: S.spacing.sm },
-                                    ],
-                                    children: E(
-                                      "female" === B?.audience ? "emptyDayTitleW" : "emptyDayTitle",
-                                    ),
-                                  }),
-                                  (0, T.jsx)(i.default, {
-                                    style: [
-                                      S.typography.small,
-                                      {
-                                        color: A.textMuted,
-                                        textAlign: "center",
-                                        marginTop: 2,
-                                        marginBottom: S.spacing.md,
-                                      },
-                                    ],
-                                    children: E("emptyDayBody"),
-                                  }),
-                                  "organizer" === B?.role || "admin" === B?.role
-                                    ? (0, T.jsx)(g.Button, {
-                                        title: E("emptyDayCta"),
-                                        onPress: () => F.push("/booking/search"),
-                                      })
-                                    : (0, T.jsx)(g.Button, {
-                                        title: E("emptyDayCtaPlayer"),
-                                        onPress: () => F.push("/discover"),
-                                      }),
-                                ],
-                              })
-                            : (0, T.jsx)(h.EmptyState, {
-                                icon: "calendar-outline",
-                                title: E("noGamesMatchTitle"),
-                                body: E("noGamesMatchBody"),
-                              })
+                              ? (0, T.jsxs)(d.default, {
+                                  style: [V.emptyDay, { backgroundColor: A.surface, borderColor: A.border }],
+                                  children: [
+                                    (0, T.jsx)(i.default, {
+                                      style: { fontSize: 30 },
+                                      children: "\ud83c\udf19",
+                                    }),
+                                    (0, T.jsx)(i.default, {
+                                      style: [
+                                        S.typography.bodyStrong,
+                                        { color: A.text, marginTop: S.spacing.sm },
+                                      ],
+                                      children: E(
+                                        "female" === B?.audience ? "emptyDayTitleW" : "emptyDayTitle",
+                                      ),
+                                    }),
+                                    (0, T.jsx)(i.default, {
+                                      style: [
+                                        S.typography.small,
+                                        {
+                                          color: A.textMuted,
+                                          textAlign: "center",
+                                          marginTop: 2,
+                                          marginBottom: S.spacing.md,
+                                        },
+                                      ],
+                                      children: E("emptyDayBody"),
+                                    }),
+                                    "organizer" === B?.role || "admin" === B?.role
+                                      ? (0, T.jsx)(g.Button, {
+                                          title: E("emptyDayCta"),
+                                          onPress: () => F.push("/booking/search"),
+                                        })
+                                      : (0, T.jsx)(g.Button, {
+                                          title: E("emptyDayCtaPlayer"),
+                                          onPress: () => F.push("/discover"),
+                                        }),
+                                  ],
+                                })
+                              : (0, T.jsx)(h.EmptyState, {
+                                  icon: "calendar-outline",
+                                  title: E("noGamesMatchTitle"),
+                                  body: E("noGamesMatchBody"),
+                                })
                           : Me.map(([e, t]) => {
                               // Games are grouped by day (prominent divider) and, inside a day, by time band.
-                              const r = [...t].sort((e, t) => String(e.starts_at).localeCompare(String(t.starts_at))),
+                              const r = [...t].sort((e, t) =>
+                                  String(e.starts_at).localeCompare(String(t.starts_at)),
+                                ),
                                 o = new Date(`${e}T12:00:00`),
                                 n = new Date(),
                                 s = e === L(n),
                                 c = e === L(new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1, 12)),
-                                l = o.toLocaleDateString(void 0, { weekday: "long", day: "numeric", month: "long" }),
+                                l = (0, Z9.formatInZone)(o, "en", {
+                                  weekday: "long",
+                                  day: "numeric",
+                                  month: "long",
+                                }),
                                 u = (e) => {
-                                  const t = new Date(e.starts_at).getHours();
-                                  return t < 12 ? "morning" : t < 17 ? "afternoon" : t < 21 ? "evening" : "night";
+                                  // Same zone as the key above, or a match can sit under an
+                                  // "evening" heading while its card reads 01:00.
+                                  const t = Number(
+                                    (0, Z9.formatInZone)(e.starts_at, "en", { hour: "2-digit", hour12: !1 }).slice(0, 2),
+                                  );
+                                  return t < 12
+                                    ? "morning"
+                                    : t < 17
+                                      ? "afternoon"
+                                      : t < 21
+                                        ? "evening"
+                                        : "night";
                                 },
                                 f = [];
                               for (const e of r) {
@@ -870,7 +910,13 @@ __d(
                                       accessibilityRole: "header",
                                       children: [
                                         (0, T.jsx)(d.default, {
-                                          style: [V.dayDividerIcon, { backgroundColor: s ? A.accent : A.surface, borderColor: A.border }],
+                                          style: [
+                                            V.dayDividerIcon,
+                                            {
+                                              backgroundColor: s ? A.accent : A.surface,
+                                              borderColor: A.border,
+                                            },
+                                          ],
                                           children: (0, T.jsx)(p.Ionicons, {
                                             name: "calendar-outline",
                                             size: 16,
@@ -892,15 +938,20 @@ __d(
                                           ],
                                         }),
                                         (0, T.jsx)(d.default, {
-                                          style: [V.dayCount, { backgroundColor: A.surface, borderColor: A.border }],
+                                          style: [
+                                            V.dayCount,
+                                            { backgroundColor: A.surface, borderColor: A.border },
+                                          ],
                                           children: (0, T.jsx)(i.default, {
                                             style: [V.dayCountText, { color: A.textMuted }],
-                                            children: E("dayGamesCount", { n: String(r.length) }),
+                                            children: E("dayGamesCount", { n: r.length }),
                                           }),
                                         }),
                                       ],
                                     }),
-                                    (0, T.jsx)(d.default, { style: [V.dayRule, { backgroundColor: A.border }] }),
+                                    (0, T.jsx)(d.default, {
+                                      style: [V.dayRule, { backgroundColor: A.border }],
+                                    }),
                                     f.map(([e, t]) =>
                                       (0, T.jsxs)(
                                         d.default,
@@ -1008,10 +1059,27 @@ __d(
       v = _r(_d[31]),
       M = _r(_d[32]),
       T = _r(_d[33]),
-      Q9 = e(_r(_d[34]));
+      Q9 = e(_r(_d[34])),
+      Z9 = _r(_d[35]);
     const W = ["football", "padel", "tennis"],
       P = 14,
-      L = (e) => e.toISOString().slice(0, 10);
+      // F-CQUAL-2: this was `toISOString().slice(0, 10)`, a UTC key. Kuwait is UTC+3, so every
+      // kick-off between 00:00 and 02:59 local landed under the previous day's divider - and the
+      // divider label is rebuilt from the key at local noon, so the heading and the card time
+      // disagreed. The key is the calendar date in the region's own zone, which is the zone the
+      // "next up" card was already using.
+      L = (e) => {
+        try {
+          return new Intl.DateTimeFormat("en-CA", {
+            timeZone: (0, Z9.getRegionSettings)().timeZone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }).format(new Date(e));
+        } catch {
+          return new Date(e).toISOString().slice(0, 10);
+        }
+      };
     const B = (e, t) => {
         const r = new Date(t).getTime() - Date.now();
         if (r <= 0) return e("nextUpNow");
@@ -1192,9 +1260,7 @@ __d(
       },
       U = ({ row: e, colors: t, t: r, onPress: o }) => {
         const n = new Date(e.starts_at),
-          s = n
-            .toLocaleDateString(void 0, { weekday: "short", day: "numeric", month: "short" })
-            .toUpperCase(),
+          s = (0, Z9.formatInZone)(n, "en", { weekday: "short", day: "numeric", month: "short" }).toUpperCase(),
           l = (0, _.formatClock)(n);
         return (0, T.jsxs)(a.default, {
           onPress: o,
@@ -1361,7 +1427,12 @@ __d(
         },
         dayDividerTitle: { fontSize: 17, fontWeight: "800", letterSpacing: 0.2 },
         dayDividerSub: { fontSize: 12, fontWeight: "600", marginTop: 1 },
-        dayCount: { borderRadius: 999, borderWidth: l.default.hairlineWidth, paddingHorizontal: 10, paddingVertical: 4 },
+        dayCount: {
+          borderRadius: 999,
+          borderWidth: l.default.hairlineWidth,
+          paddingHorizontal: 10,
+          paddingVertical: 4,
+        },
         dayCountText: { fontSize: 11, fontWeight: "700" },
         dayRule: { height: 2, borderRadius: 1, marginBottom: S.spacing.sm },
         bandHeader: {
@@ -1534,6 +1605,6 @@ __d(
   1677,
   [
     33, 15, 618, 461, 137, 369, 280, 281, 158, 146, 273, 1632, 381, 1086, 20, 626, 1631, 1627, 1662, 1678,
-    1679, 1680, 1667, 630, 615, 616, 671, 1311, 1626, 675, 1171, 1676, 674, 13, 394,
+    1679, 1680, 1667, 630, 615, 616, 671, 1311, 1626, 675, 1171, 1676, 674, 13, 394, 912,
   ],
 );

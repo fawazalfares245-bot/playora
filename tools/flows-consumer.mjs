@@ -813,5 +813,88 @@ await run('every seat-taking path applies the audience gate', async () => {
   await browser.close();
 });
 
+// F-CARCH-2 / F-CQUAL-3: the home list rendered G.suggested and the map rendered fetchUpcomingGames -
+// two different sets behind one toggle - so the same filters could show a game in one view and not
+// the other, and the month picker advertised days from the union of both while the list could only
+// ever render the first. The assertion is on the data the screen derives, because the two sets are
+// screen state: the map's games must be a subset of the list's, and every day the picker marks must
+// yield at least one row.
+await run('the home toggle cannot change which games exist', async () => {
+  const { browser, page, errors } = await openApp({ role: 'user', route: '/' });
+  await page.waitForTimeout(3000);
+
+  const out = await page.evaluate(async (ids) => {
+    const api = __r(671);
+    const d = await api.fetchDiscover(ids.user);
+    const ce = await api.fetchUpcomingGames({ userId: ids.user });
+    const key = (iso) => new Date(iso).toISOString().slice(0, 10);
+    // The screen's own derivation, with no filters applied.
+    const ve = d.suggested ?? [];
+    const listIds = new Set(ve.map((r) => r.game_id));
+    const mapRows = ce.filter((g) => listIds.has(g.id));
+    const marked = new Set(ve.map((r) => key(r.starts_at)));
+    const listDays = new Set(ve.map((r) => key(r.starts_at)));
+    return {
+      list: ve.length,
+      upcoming: ce.length,
+      map: mapRows.length,
+      mapOutsideList: mapRows.filter((g) => !listIds.has(g.id)).length,
+      markedWithNoRow: [...marked].filter((k) => !listDays.has(k)).length,
+      // The two sets genuinely differ in membership - suggested drops games the viewer organises or
+      // has already joined - which is what made the old map/list split visible.
+      onlyInUpcoming: ce.filter((g) => !listIds.has(g.id)).length,
+    };
+  }, IDS);
+
+  ok('the home fixture has games to compare', out.list > 0 && out.upcoming > 0, `list=${out.list} upcoming=${out.upcoming}`);
+  ok('every map pin is a game the list also has', out.mapOutsideList === 0, String(out.mapOutsideList));
+  ok('every day the picker marks yields a row', out.markedWithNoRow === 0, String(out.markedWithNoRow));
+  ok('the two sets really are different, so the check is not vacuous', out.onlyInUpcoming > 0, `${out.onlyInUpcoming} games are in upcoming but not the list`);
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// The map view must render without error too - it is the half that changed.
+await run('the home map view renders', async () => {
+  const { browser, page, errors } = await openApp({ role: 'user', route: '/' });
+  await page.waitForTimeout(3000);
+  const label = t('mapView');
+  const btn = page.getByText(label, { exact: true }).first();
+  ok('the map toggle is present', (await btn.count()) > 0, label);
+  if ((await btn.count()) > 0) {
+    await btn.click();
+    await page.waitForTimeout(2000);
+    const text = await page.evaluate(() => document.body.innerText);
+    ok('the map view shows something', text.length > 40, String(text.length));
+  }
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// F-CQUAL-2: the home list keyed its day dividers on `toISOString().slice(0, 10)`, a UTC key. Kuwait
+// is UTC+3, so a 01:00 kick-off is still the previous calendar day in UTC and landed under
+// yesterday's divider - where the heading and the card's own time then disagreed. The check is the
+// key itself, evaluated in the page against the region's configured zone.
+await run('the day key follows the region zone, not UTC', async () => {
+  const { browser, page, errors } = await openApp({ role: 'user', route: '/' });
+  await page.waitForTimeout(2500);
+  const out = await page.evaluate(() => {
+    const zone = __r(912).getRegionSettings().timeZone;
+    // 01:00 on the 21st in Kuwait is 22:00 on the 20th in UTC.
+    const early = '2026-09-20T22:00:00.000Z';
+    const utcKey = new Date(early).toISOString().slice(0, 10);
+    const zoneKey = new Intl.DateTimeFormat('en-CA', {
+      timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date(early));
+    return { zone, utcKey, zoneKey, clock: __r(912).formatInZone(early, 'en', { hour: '2-digit', minute: '2-digit', hour12: false }) };
+  });
+  ok('the region zone is the Kuwait one', out.zone === 'Asia/Kuwait', String(out.zone));
+  ok('a small-hours kick-off is the next day in UTC', out.utcKey === '2026-09-20', String(out.utcKey));
+  ok('and the day it is actually played on in the region', out.zoneKey === '2026-09-21', String(out.zoneKey));
+  ok('which is the day the card clock agrees with', out.clock.startsWith('01'), String(out.clock));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

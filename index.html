@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "4d1f71cd94"
+  buildId: "889451f12f"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -4927,21 +4927,33 @@ __d(
             : null,
         });
       },
+      // F-CARCH-3: this returned every public future match in the partition, with no window and no
+      // bound, and swept each one's expired holds on the way - on every focus of the home screen.
+      // The screen renders 24 rows. Two changes: an optional day window, and a bound applied after
+      // the sort so the soonest matches win. The bound is deliberately far above anything a screen
+      // renders - it exists so the query cannot grow without limit as the table does, not to
+      // paginate - and the per-match sweep now runs over the page that is actually returned rather
+      // than over the whole future table.
       Mi = async (e) => {
         (await ei(), await tn(), await Yn());
         const t = await pi(),
           a = new Map(t.map((e) => [e.id, e])),
           i = Date.now(),
-          n = gi().filter(
-            (e) =>
-              "scheduled" === e.status && "public" === e.visibility && new Date(e.starts_at).getTime() >= i,
-          );
-        return (
-          await Promise.all(n.map((e) => Oi(e.id))),
-          na(n, e?.userId)
+          w9 =
+            Number.isFinite(e?.days) && e.days > 0 ? i + e.days * 864e5 : Number.POSITIVE_INFINITY,
+          lm9 = Number.isFinite(e?.limit) && e.limit > 0 ? Math.floor(e.limit) : 200,
+          n = gi().filter((e) => {
+            if ("scheduled" !== e.status || "public" !== e.visibility) return !1;
+            const t = new Date(e.starts_at).getTime();
+            return t >= i && t <= w9;
+          }),
+          pg9 = na(n, e?.userId)
             .filter((t) => !e?.sport || t.sport === e.sport)
             .sort((e, t) => new Date(e.starts_at).getTime() - new Date(t.starts_at).getTime())
-            .map((t) => Ii(t, a, e?.userId))
+            .slice(0, lm9);
+        return (
+          await Promise.all(pg9.map((e) => Oi(e.id))),
+          pg9.map((t) => Ii(t, a, e?.userId))
         );
       };
     r.mockGetUpcomingGames = Mi;
@@ -20295,6 +20307,7 @@ __d(
 
 
 
+
 __d(function(g,_r,_i,_a,m,_e,d){Object.defineProperty(_e,"__esModule",{value:!0}),_e.constantTimeEqual=a,_e.derivePasswordHash=n,_e.generateSalt=async function(e=16){const n=await t.getRandomBytesAsync(e);return Array.from(n).map(t=>t.toString(16).padStart(2,'0')).join('')},_e.hashIdentifier=async function(e){const n=e.replace(/\s+/g,'').toLowerCase();return t.digestStringAsync(t.CryptoDigestAlgorithm.SHA256,`${r}:${n}`)},_e.hashPassword=async function(t,e){if(o)return`scrypt$${i}$${s}$${c}$${await o(t,e,i,s,c)}`;return n(t,e)},_e.randomCode=function(e=6,n="ABCDEFGHJKMNPQRSTUVWXYZ23456789"){const r=t.getRandomBytes(e);let a='';for(let t=0;t<e;t++)a+=n[r[t]%n.length];return a},_e.randomSixDigit=function(){const e=t.getRandomBytes(4),n=((e[0]<<24|e[1]<<16|e[2]<<8|e[3])>>>0)%1e6;return String(n).padStart(6,'0')},_e.randomToken=async function(e=32){const n=await t.getRandomBytesAsync(e);return Array.from(n).map(t=>t.toString(16).padStart(2,'0')).join('')},_e.serverGradeHashing=void 0,_e.verifyPassword=async function(t,e,r){if(r.startsWith('scrypt$')){const[,n,i,s,c]=r.split('$');return!(!o||!c)&&a(await o(t,e,Number(n),Number(i),Number(s)),c)}return a(await n(t,e),r)};var t=(function(t,e){if("function"==typeof WeakMap)var n=new WeakMap,r=new WeakMap;return(function(t,e){if(!e&&t&&t.__esModule)return t;var a,o,i={__proto__:null,default:t};if(null===t||"object"!=typeof t&&"function"!=typeof t)return i;if(a=e?r:n){if(a.has(t))return a.get(t);a.set(t,i)}for(const e in t)"default"!==e&&{}.hasOwnProperty.call(t,e)&&((o=(a=Object.defineProperty)&&Object.getOwnPropertyDescriptor(t,e))&&(o.get||o.set)?a(i,e,o):i[e]=t[e]);return i})(t,e)})(_r(d[0]));const e=12e3;async function n(n,r){let a=`${r}:${n}`;for(let n=0;n<e;n++)a=await t.digestStringAsync(t.CryptoDigestAlgorithm.SHA256,a);return a}const r='playora.v1.identifier.pepper';function a(t,e){if(t.length!==e.length)return!1;let n=0;for(let r=0;r<t.length;r++)n|=t.charCodeAt(r)^e.charCodeAt(r);return 0===n}const o=t.scryptHex,i=(_e.serverGradeHashing=!!o,16384),s=8,c=1},632,[633]);
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0});var n={getRandomBytes:!0,getRandomBytesAsync:!0,digestStringAsync:!0,getRandomValues:!0,randomUUID:!0,digest:!0};e.digest=function(t,n){return new Promise((o,s)=>{try{if('function'==typeof y.default.digestAsync)o(y.default.digestAsync(t,n));else{const s=new Uint8Array(h[t]);y.default.digest(t,s,n),o(s.buffer)}}catch(t){s(t)}})},e.digestStringAsync=async function(t,n,o={encoding:c.CryptoEncoding.HEX}){if(!y.default.digestStringAsync)throw new s.UnavailabilityError('expo-crypto','digestStringAsync');return f(t),p(n),A(o.encoding),await y.default.digestStringAsync(t,n,o)},e.getRandomBytes=function(t){u(t,'getRandomBytes');const n=Math.floor(t);if(y.default.getRandomValues){const t=new Uint8Array(n);return y.default.getRandomValues(t),t}if(y.default.getRandomBase64String){const t=y.default.getRandomBase64String(n);return(0,o.toByteArray)(t)}throw new s.UnavailabilityError('expo-crypto','getRandomBytes')},e.getRandomBytesAsync=async function(t){u(t,'getRandomBytesAsync');const n=Math.floor(t);if(y.default.getRandomValues){const t=new Uint8Array(n);return y.default.getRandomValues(t),t}if(y.default.getRandomBase64StringAsync){const t=await y.default.getRandomBase64StringAsync(n);return(0,o.toByteArray)(t)}throw new s.UnavailabilityError('expo-crypto','getRandomBytesAsync')},e.getRandomValues=function(t){return y.default.getRandomValues(t),t},e.randomUUID=function(){return y.default.randomUUID()};var o=r(d[1]),s=r(d[2]),c=r(d[3]);Object.keys(c).forEach(function(t){"default"!==t&&"__esModule"!==t&&(Object.prototype.hasOwnProperty.call(n,t)||t in e&&e[t]===c[t]||Object.defineProperty(e,t,{enumerable:!0,get:function(){return c[t]}}))});var y=t(r(d[4]));class l extends TypeError{code='ERR_CRYPTO';constructor(t){super(`expo-crypto: ${t}`)}}function u(t,n){if('number'!=typeof t||isNaN(t)||Math.floor(t)<0||Math.floor(t)>1024)throw new TypeError(`expo-crypto: ${n}(${t}) expected a valid number from range 0...1024`)}function f(t){if(!Object.values(c.CryptoDigestAlgorithm).includes(t))throw new l(`Invalid algorithm provided. Expected one of: CryptoDigestAlgorithm.${Object.keys(c.CryptoDigestAlgorithm).join(', AlgCryptoDigestAlgorithmorithm.')}`)}function p(t){if('string'!=typeof t)throw new l("Invalid data provided. Expected a string.")}function A(t){if(!Object.values(c.CryptoEncoding).includes(t))throw new l(`Invalid encoding provided. Expected one of: CryptoEncoding.${Object.keys(c.CryptoEncoding).join(', CryptoEncoding.')}`)}const h={[c.CryptoDigestAlgorithm.SHA1]:20,[c.CryptoDigestAlgorithm.SHA256]:32,[c.CryptoDigestAlgorithm.SHA384]:48,[c.CryptoDigestAlgorithm.SHA512]:64,[c.CryptoDigestAlgorithm.MD2]:16,[c.CryptoDigestAlgorithm.MD4]:16,[c.CryptoDigestAlgorithm.MD5]:16}},633,[33,634,504,635,636]);
 __d(function(g,r,_i,a,m,e,d){'use strict';e.byteLength=function(t){var n=h(t),o=n[0],u=n[1];return 3*(o+u)/4-u},e.toByteArray=function(t){var u,c,f=h(t),A=f[0],C=f[1],y=new o(i(t,A,C)),s=0,v=C>0?A-4:A;for(c=0;c<v;c+=4)u=n[t.charCodeAt(c)]<<18|n[t.charCodeAt(c+1)]<<12|n[t.charCodeAt(c+2)]<<6|n[t.charCodeAt(c+3)],y[s++]=u>>16&255,y[s++]=u>>8&255,y[s++]=255&u;2===C&&(u=n[t.charCodeAt(c)]<<2|n[t.charCodeAt(c+1)]>>4,y[s++]=255&u);1===C&&(u=n[t.charCodeAt(c)]<<10|n[t.charCodeAt(c+1)]<<4|n[t.charCodeAt(c+2)]>>2,y[s++]=u>>8&255,y[s++]=255&u);return y},e.fromByteArray=function(n){for(var o,u=n.length,c=u%3,h=[],i=16383,f=0,C=u-c;f<C;f+=i)h.push(A(n,f,f+i>C?C:f+i));1===c?(o=n[u-1],h.push(t[o>>2]+t[o<<4&63]+'==')):2===c&&(o=(n[u-2]<<8)+n[u-1],h.push(t[o>>10]+t[o>>4&63]+t[o<<2&63]+'='));return h.join('')};for(var t=[],n=[],o='undefined'!=typeof Uint8Array?Uint8Array:Array,u='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',c=0;c<64;++c)t[c]=u[c],n[u.charCodeAt(c)]=c;function h(t){var n=t.length;if(n%4>0)throw new Error('Invalid string. Length must be a multiple of 4');var o=t.indexOf('=');return-1===o&&(o=n),[o,o===n?0:4-o%4]}function i(t,n,o){return 3*(n+o)/4-o}function f(n){return t[n>>18&63]+t[n>>12&63]+t[n>>6&63]+t[63&n]}function A(t,n,o){for(var u,c=[],h=n;h<o;h+=3)u=(t[h]<<16&16711680)+(t[h+1]<<8&65280)+(255&t[h+2]),c.push(f(u));return c.join('')}n['-'.charCodeAt(0)]=62,n['_'.charCodeAt(0)]=63},634,[]);
@@ -34709,12 +34722,18 @@ __d(
         const ke = () => {
             (we(!0), e && r.default.setItem(`playora.firstweek.done:${e.id}`, "1").catch(() => {}));
           },
-          [, Re] = (0, t.useState)(0);
+          [, Re] = (0, t.useState)(0),
+          // F-CQUAL-10: the strip was derived from new Date() once, at mount, on a tab screen that
+          // stays mounted for the life of a 30-day session - so after midnight its first chip was
+          // yesterday, and always empty. The minute tick carries the current day, and the strip
+          // rebuilds when it rolls over.
+          [dk9, sdk9] = (0, t.useState)(() => new Date().toDateString());
         (0, t.useEffect)(() => {
-          if (!G?.next_up) return;
-          const e = setInterval(() => Re((e) => e + 1), 6e4);
+          const e = setInterval(() => {
+            (Re((e) => e + 1), sdk9(new Date().toDateString()));
+          }, 6e4);
           return () => clearInterval(e);
-        }, [G?.next_up]);
+        }, []);
         const De = (t) => {
             (e && (0, k.logFeedSignal)(e.id, "click", t), F.push(`/game/${t}`));
           },
@@ -34723,10 +34742,11 @@ __d(
           m9 = (gq) => {
             if (!q9) return !0;
             const vn9 = gq && "object" == typeof gq.venue ? gq.venue : null;
-            return [gq?.title, vn9?.name, gq?.venue_name, gq?.area, vn9?.area, gq?.organizer_name].some((s9) =>
-              String(s9 ?? "")
-                .toLowerCase()
-                .includes(q9),
+            return [gq?.title, vn9?.name, gq?.venue_name, gq?.area, vn9?.area, gq?.organizer_name].some(
+              (s9) =>
+                String(s9 ?? "")
+                  .toLowerCase()
+                  .includes(q9),
             );
           },
           ze = (0, t.useMemo)(() => {
@@ -34735,9 +34755,13 @@ __d(
               { length: P },
               (t, r) => new Date(e.getFullYear(), e.getMonth(), e.getDate() + r, 12),
             );
-          }, []),
-          ve = (G?.suggested ?? []).filter(
-            (e) => !((X && e.sport !== X) || (ee && L(new Date(e.starts_at)) !== ee) || !m9(e)),
+          }, [dk9]),
+          ve = (0, t.useMemo)(
+            () =>
+              (G?.suggested ?? []).filter(
+                (e) => !((X && e.sport !== X) || (ee && L(new Date(e.starts_at)) !== ee) || !m9(e)),
+              ),
+            [G, X, ee, q9],
           ),
           Me = (0, t.useMemo)(() => {
             const e = new Map();
@@ -34754,28 +34778,37 @@ __d(
               ? E("todayLabel")
               : e === L(new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1, 12))
                 ? E("tomorrowLabel")
-                : new Date(`${e}T12:00:00`).toLocaleDateString(void 0, {
+                : (0, Z9.formatInZone)(new Date(`${e}T12:00:00`), "en", {
                     weekday: "long",
                     day: "numeric",
                     month: "short",
                   });
           },
-          We = (0, t.useMemo)(
-            () => ce.filter((e) => !((X && e.sport !== X) || (ee && L(new Date(e.starts_at)) !== ee) || !m9(e))),
-            [ce, X, ee, q9],
-          ),
+          // F-CARCH-2: the list rendered G.suggested and the map rendered ce - two different sets
+          // behind one toggle - so the same filters could show a game in one view and not the other.
+          // The map is now built from the rows the list is showing, so the toggle changes the
+          // presentation and never the membership. Driving both from ce would also have closed it,
+          // and is what the finding suggests first, but it would put the viewer's own and already-
+          // joined matches into a personalised list that deliberately leaves them out: a product
+          // change rather than a fix.
+          We = (0, t.useMemo)(() => {
+            const e = new Set(ve.map((e) => e.game_id));
+            return ce.filter((t) => e.has(t.id));
+          }, [ce, ve]),
           Pe = (0, t.useMemo)(() => {
             const e = new Map();
             for (const t of We) e.has(t.venue.id) || e.set(t.venue.id, t.venue);
             return [...e.values()];
           }, [We]),
+          // F-CQUAL-3: this advertised availability from the union of ce and G.suggested while the
+          // list can only render G.suggested, so tapping a marked day could land on an empty one.
+          // Marked days come from the rows the list renders.
           Le = (0, t.useMemo)(() => {
             const e = new Set();
-            for (const t of ce) (X && t.sport !== X) || !m9(t) || e.add(L(new Date(t.starts_at)));
             for (const t of G?.suggested ?? [])
               (X && t.sport !== X) || !m9(t) || e.add(L(new Date(t.starts_at)));
             return e;
-          }, [ce, G, X, q9]);
+          }, [G, X, q9]);
         return (0, T.jsxs)(u.SafeAreaView, {
           edges: ["top"],
           style: { flex: 1, backgroundColor: A.bg },
@@ -34922,7 +34955,10 @@ __d(
                           {
                             done: (G.games_played ?? 0) > 0 || "booked" === G.next_up?.kind,
                             label: E("fwGoalJoin"),
-                            go: () => G.next_up && De(G.next_up.game_id),
+                            // F-CQUAL-11: guarded by next_up with no fallback, so with no next-up
+                            // game the tap logged a funnel event and went nowhere. The other two
+                            // goals navigate unconditionally.
+                            go: () => (G.next_up ? De(G.next_up.game_id) : F.push("/discover")),
                           },
                           {
                             done: G.following >= 3,
@@ -35272,9 +35308,7 @@ __d(
                                 children: [
                                   (0, T.jsx)(i.default, {
                                     style: [V.dayDow, { color: r ? A.accentInk : A.textMuted }],
-                                    children: e
-                                      .toLocaleDateString(void 0, { weekday: "short" })
-                                      .toUpperCase(),
+                                    children: (0, Z9.formatInZone)(e, "en", { weekday: "short" }).toUpperCase(),
                                   }),
                                   (0, T.jsx)(i.default, {
                                     style: [S.typography.bodyStrong, { color: r ? A.accentInk : A.text }],
@@ -35370,9 +35404,12 @@ __d(
                       }),
                       q9.length > 0 &&
                         (0, T.jsx)(i.default, {
-                          style: [S.typography.caption, { color: A.textMuted, marginTop: -6, marginBottom: S.spacing.md }],
+                          style: [
+                            S.typography.caption,
+                            { color: A.textMuted, marginTop: -6, marginBottom: S.spacing.md },
+                          ],
                           accessibilityLiveRegion: "polite",
-                          children: E("homeSearchResults", { n: String(ve.length), q: qq.trim() }),
+                          children: E("homeSearchResults", { n: ve.length, q: qq.trim() }),
                         }),
                       (0, T.jsx)(d.default, {
                         style: V.modeRow,
@@ -35421,61 +35458,77 @@ __d(
                                 body: E("homeSearchNoneBody"),
                               })
                             : ee
-                            ? (0, T.jsxs)(d.default, {
-                                style: [V.emptyDay, { backgroundColor: A.surface, borderColor: A.border }],
-                                children: [
-                                  (0, T.jsx)(i.default, {
-                                    style: { fontSize: 30 },
-                                    children: "\ud83c\udf19",
-                                  }),
-                                  (0, T.jsx)(i.default, {
-                                    style: [
-                                      S.typography.bodyStrong,
-                                      { color: A.text, marginTop: S.spacing.sm },
-                                    ],
-                                    children: E(
-                                      "female" === B?.audience ? "emptyDayTitleW" : "emptyDayTitle",
-                                    ),
-                                  }),
-                                  (0, T.jsx)(i.default, {
-                                    style: [
-                                      S.typography.small,
-                                      {
-                                        color: A.textMuted,
-                                        textAlign: "center",
-                                        marginTop: 2,
-                                        marginBottom: S.spacing.md,
-                                      },
-                                    ],
-                                    children: E("emptyDayBody"),
-                                  }),
-                                  "organizer" === B?.role || "admin" === B?.role
-                                    ? (0, T.jsx)(g.Button, {
-                                        title: E("emptyDayCta"),
-                                        onPress: () => F.push("/booking/search"),
-                                      })
-                                    : (0, T.jsx)(g.Button, {
-                                        title: E("emptyDayCtaPlayer"),
-                                        onPress: () => F.push("/discover"),
-                                      }),
-                                ],
-                              })
-                            : (0, T.jsx)(h.EmptyState, {
-                                icon: "calendar-outline",
-                                title: E("noGamesMatchTitle"),
-                                body: E("noGamesMatchBody"),
-                              })
+                              ? (0, T.jsxs)(d.default, {
+                                  style: [V.emptyDay, { backgroundColor: A.surface, borderColor: A.border }],
+                                  children: [
+                                    (0, T.jsx)(i.default, {
+                                      style: { fontSize: 30 },
+                                      children: "\ud83c\udf19",
+                                    }),
+                                    (0, T.jsx)(i.default, {
+                                      style: [
+                                        S.typography.bodyStrong,
+                                        { color: A.text, marginTop: S.spacing.sm },
+                                      ],
+                                      children: E(
+                                        "female" === B?.audience ? "emptyDayTitleW" : "emptyDayTitle",
+                                      ),
+                                    }),
+                                    (0, T.jsx)(i.default, {
+                                      style: [
+                                        S.typography.small,
+                                        {
+                                          color: A.textMuted,
+                                          textAlign: "center",
+                                          marginTop: 2,
+                                          marginBottom: S.spacing.md,
+                                        },
+                                      ],
+                                      children: E("emptyDayBody"),
+                                    }),
+                                    "organizer" === B?.role || "admin" === B?.role
+                                      ? (0, T.jsx)(g.Button, {
+                                          title: E("emptyDayCta"),
+                                          onPress: () => F.push("/booking/search"),
+                                        })
+                                      : (0, T.jsx)(g.Button, {
+                                          title: E("emptyDayCtaPlayer"),
+                                          onPress: () => F.push("/discover"),
+                                        }),
+                                  ],
+                                })
+                              : (0, T.jsx)(h.EmptyState, {
+                                  icon: "calendar-outline",
+                                  title: E("noGamesMatchTitle"),
+                                  body: E("noGamesMatchBody"),
+                                })
                           : Me.map(([e, t]) => {
                               // Games are grouped by day (prominent divider) and, inside a day, by time band.
-                              const r = [...t].sort((e, t) => String(e.starts_at).localeCompare(String(t.starts_at))),
+                              const r = [...t].sort((e, t) =>
+                                  String(e.starts_at).localeCompare(String(t.starts_at)),
+                                ),
                                 o = new Date(`${e}T12:00:00`),
                                 n = new Date(),
                                 s = e === L(n),
                                 c = e === L(new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1, 12)),
-                                l = o.toLocaleDateString(void 0, { weekday: "long", day: "numeric", month: "long" }),
+                                l = (0, Z9.formatInZone)(o, "en", {
+                                  weekday: "long",
+                                  day: "numeric",
+                                  month: "long",
+                                }),
                                 u = (e) => {
-                                  const t = new Date(e.starts_at).getHours();
-                                  return t < 12 ? "morning" : t < 17 ? "afternoon" : t < 21 ? "evening" : "night";
+                                  // Same zone as the key above, or a match can sit under an
+                                  // "evening" heading while its card reads 01:00.
+                                  const t = Number(
+                                    (0, Z9.formatInZone)(e.starts_at, "en", { hour: "2-digit", hour12: !1 }).slice(0, 2),
+                                  );
+                                  return t < 12
+                                    ? "morning"
+                                    : t < 17
+                                      ? "afternoon"
+                                      : t < 21
+                                        ? "evening"
+                                        : "night";
                                 },
                                 f = [];
                               for (const e of r) {
@@ -35493,7 +35546,13 @@ __d(
                                       accessibilityRole: "header",
                                       children: [
                                         (0, T.jsx)(d.default, {
-                                          style: [V.dayDividerIcon, { backgroundColor: s ? A.accent : A.surface, borderColor: A.border }],
+                                          style: [
+                                            V.dayDividerIcon,
+                                            {
+                                              backgroundColor: s ? A.accent : A.surface,
+                                              borderColor: A.border,
+                                            },
+                                          ],
                                           children: (0, T.jsx)(p.Ionicons, {
                                             name: "calendar-outline",
                                             size: 16,
@@ -35515,15 +35574,20 @@ __d(
                                           ],
                                         }),
                                         (0, T.jsx)(d.default, {
-                                          style: [V.dayCount, { backgroundColor: A.surface, borderColor: A.border }],
+                                          style: [
+                                            V.dayCount,
+                                            { backgroundColor: A.surface, borderColor: A.border },
+                                          ],
                                           children: (0, T.jsx)(i.default, {
                                             style: [V.dayCountText, { color: A.textMuted }],
-                                            children: E("dayGamesCount", { n: String(r.length) }),
+                                            children: E("dayGamesCount", { n: r.length }),
                                           }),
                                         }),
                                       ],
                                     }),
-                                    (0, T.jsx)(d.default, { style: [V.dayRule, { backgroundColor: A.border }] }),
+                                    (0, T.jsx)(d.default, {
+                                      style: [V.dayRule, { backgroundColor: A.border }],
+                                    }),
                                     f.map(([e, t]) =>
                                       (0, T.jsxs)(
                                         d.default,
@@ -35631,10 +35695,27 @@ __d(
       v = _r(_d[31]),
       M = _r(_d[32]),
       T = _r(_d[33]),
-      Q9 = e(_r(_d[34]));
+      Q9 = e(_r(_d[34])),
+      Z9 = _r(_d[35]);
     const W = ["football", "padel", "tennis"],
       P = 14,
-      L = (e) => e.toISOString().slice(0, 10);
+      // F-CQUAL-2: this was `toISOString().slice(0, 10)`, a UTC key. Kuwait is UTC+3, so every
+      // kick-off between 00:00 and 02:59 local landed under the previous day's divider - and the
+      // divider label is rebuilt from the key at local noon, so the heading and the card time
+      // disagreed. The key is the calendar date in the region's own zone, which is the zone the
+      // "next up" card was already using.
+      L = (e) => {
+        try {
+          return new Intl.DateTimeFormat("en-CA", {
+            timeZone: (0, Z9.getRegionSettings)().timeZone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }).format(new Date(e));
+        } catch {
+          return new Date(e).toISOString().slice(0, 10);
+        }
+      };
     const B = (e, t) => {
         const r = new Date(t).getTime() - Date.now();
         if (r <= 0) return e("nextUpNow");
@@ -35815,9 +35896,7 @@ __d(
       },
       U = ({ row: e, colors: t, t: r, onPress: o }) => {
         const n = new Date(e.starts_at),
-          s = n
-            .toLocaleDateString(void 0, { weekday: "short", day: "numeric", month: "short" })
-            .toUpperCase(),
+          s = (0, Z9.formatInZone)(n, "en", { weekday: "short", day: "numeric", month: "short" }).toUpperCase(),
           l = (0, _.formatClock)(n);
         return (0, T.jsxs)(a.default, {
           onPress: o,
@@ -35984,7 +36063,12 @@ __d(
         },
         dayDividerTitle: { fontSize: 17, fontWeight: "800", letterSpacing: 0.2 },
         dayDividerSub: { fontSize: 12, fontWeight: "600", marginTop: 1 },
-        dayCount: { borderRadius: 999, borderWidth: l.default.hairlineWidth, paddingHorizontal: 10, paddingVertical: 4 },
+        dayCount: {
+          borderRadius: 999,
+          borderWidth: l.default.hairlineWidth,
+          paddingHorizontal: 10,
+          paddingVertical: 4,
+        },
         dayCountText: { fontSize: 11, fontWeight: "700" },
         dayRule: { height: 2, borderRadius: 1, marginBottom: S.spacing.sm },
         bandHeader: {
@@ -36157,9 +36241,11 @@ __d(
   1677,
   [
     33, 15, 618, 461, 137, 369, 280, 281, 158, 146, 273, 1632, 381, 1086, 20, 626, 1631, 1627, 1662, 1678,
-    1679, 1680, 1667, 630, 615, 616, 671, 1311, 1626, 675, 1171, 1676, 674, 13, 394,
+    1679, 1680, 1667, 630, 615, 616, 671, 1311, 1626, 675, 1171, 1676, 674, 13, 394, 912,
   ],
 );
+
+
 __d(function(g,r,_i,a,_m,_e,_d){var e=r(_d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.MonthDropdown=void 0;var t=r(_d[1]),o=e(r(_d[2])),l=e(r(_d[3])),n=e(r(_d[4])),s=e(r(_d[5])),i=e(r(_d[6])),d=e(r(_d[7])),c=e(r(_d[8])),u=r(_d[9]),h=r(_d[10]),f=r(_d[11]),p=r(_d[12]),b=r(_d[13]),y=r(_d[14]);const m=e=>e.toISOString().slice(0,10),x=e=>{const t=new Date,o=new Date(t.getFullYear(),t.getMonth()+e,1,12),l=o.toLocaleDateString(void 0,{month:'long',year:'numeric'}),n=o.getDay(),s=new Date(o.getFullYear(),o.getMonth()+1,0).getDate(),i=Array.from({length:n},()=>null);for(let e=1;e<=s;e++)i.push(new Date(o.getFullYear(),o.getMonth(),e,12));for(;i.length%7!=0;)i.push(null);return{title:l,cells:i}};_e.MonthDropdown=({visible:e,onClose:j,datesWithGames:D,selected:k,onPick:M})=>{const{colors:v}=(0,h.useTheme)(),R=(0,b.useT)(),{width:S}=(0,c.default)(),C=Math.min(S-2*f.spacing.lg,420),[I,P]=(0,t.useState)(0),T=(0,t.useMemo)(()=>[x(0),x(1)],[e]),F=m(new Date),L=(0,t.useMemo)(()=>{const e=new Date(2026,1,1,12);return Array.from({length:7},(t,o)=>new Date(e.getFullYear(),e.getMonth(),e.getDate()+o,12).toLocaleDateString(void 0,{weekday:'narrow'}))},[]);return(0,y.jsx)(o.default,{visible:e,transparent:!0,animationType:"fade",onRequestClose:j,children:(0,y.jsxs)(d.default,{style:w.backdrop,children:[(0,y.jsx)(l.default,{style:s.default.absoluteFill,onPress:j,accessibilityRole:"button",accessibilityLabel:R('close')}),(0,y.jsxs)(l.default,{style:[w.panel,{width:C,backgroundColor:v.surface,borderColor:v.border}],onPress:()=>{},children:[(0,y.jsx)(n.default,{horizontal:!0,pagingEnabled:!0,showsHorizontalScrollIndicator:!1,onMomentumScrollEnd:e=>P(Math.round(e.nativeEvent.contentOffset.x/C)),style:{width:C},children:T.map((e,t)=>(0,y.jsxs)(d.default,{style:{width:C,padding:f.spacing.md},children:[(0,y.jsx)(i.default,{style:[f.typography.bodyStrong,{color:v.text,textAlign:'center',marginBottom:f.spacing.sm}],children:e.title}),(0,y.jsx)(d.default,{style:w.week,children:L.map((e,t)=>(0,y.jsx)(i.default,{style:[w.weekday,{color:v.textMuted}],children:e},t))}),(0,y.jsx)(d.default,{style:w.grid,children:e.cells.map((e,t)=>{if(!e)return(0,y.jsx)(d.default,{style:w.cell},t);const o=m(e),n=D.has(o),s=k===o,c=o<F;return(0,y.jsxs)(l.default,{disabled:c,onPress:()=>M(o),accessibilityRole:"button",accessibilityState:{selected:s,disabled:c},style:[w.cell,s&&{backgroundColor:v.accent,borderRadius:f.radius.md}],children:[(0,y.jsx)(i.default,{style:[f.typography.small,{color:s?v.accentInk:c?v.border:o===F?v.accentText:v.text,fontWeight:s||o===F?'800':'500',fontVariant:['tabular-nums']}],children:(0,p.formatNumber)(e.getDate())}),(0,y.jsx)(d.default,{style:[w.dot,{backgroundColor:n?v.accent:'transparent'}]})]},t)})})]},t))}),(0,y.jsx)(d.default,{style:w.dots,children:[0,1].map(e=>(0,y.jsx)(d.default,{style:[w.pagerDot,{backgroundColor:I===e?v.accent:v.border}]},e))}),(0,y.jsx)(l.default,{onPress:j,accessibilityRole:"button",accessibilityLabel:R('closeLabel'),hitSlop:8,style:w.closeRow,children:(0,y.jsx)(u.Ionicons,{name:"chevron-up",size:16,color:v.textMuted})})]})]})})};const w=s.default.create({backdrop:{flex:1,backgroundColor:'rgba(0,0,0,0.55)',alignItems:'center',paddingTop:'28%'},panel:{borderRadius:f.radius.lg,borderWidth:1,overflow:'hidden'},week:{flexDirection:'row',marginBottom:2},weekday:{flex:1,textAlign:'center',fontSize:10,fontWeight:'700'},grid:{flexDirection:'row',flexWrap:'wrap'},cell:{width:"14.285714285714286%",aspectRatio:1.15,alignItems:'center',justifyContent:'center'},dot:{width:4,height:4,borderRadius:2,marginTop:2},dots:{flexDirection:'row',justifyContent:'center',gap:5,paddingBottom:f.spacing.xs},pagerDot:{width:6,height:6,borderRadius:3},closeRow:{alignItems:'center',paddingBottom:f.spacing.sm}})},1678,[33,15,467,369,281,158,146,273,493,1086,615,616,1311,675,13]);
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.PlayerAvatar=void 0;var n=t(r(d[1])),l=t(r(d[2])),o=t(r(d[3])),s=r(d[4]),c=r(d[5]),f=r(d[6]),h=r(d[7]);const u=['#FF5A1F','#1FA974','#3F7DD6','#9A4FD6','#D6584F','#D6A11F','#1FBBD6','#D64FA1'],y=t=>u[Math.abs(t)%u.length],p=t=>{const n=t.trim().split(/\s+/).filter(Boolean);return 0===n.length?'?':1===n.length?n[0].slice(0,2).toUpperCase():(n[0][0]+n[n.length-1][0]).toUpperCase()};e.PlayerAvatar=({name:t,seed:n,size:u=44,isSelf:b,uri:A,style:v})=>{const x=b?'#0B0B0F':y(n);return(0,h.jsx)(o.default,{style:[F.base,{width:u,height:u,borderRadius:u/2,backgroundColor:x,overflow:'hidden'},v],accessibilityLabel:t,children:A?(0,h.jsx)(s.AppImage,{uri:A,style:{width:u,height:u},recyclingKey:A}):b?(0,h.jsx)(c.Ionicons,{name:"person",size:.5*u,color:"#fff"}):(0,h.jsx)(l.default,{style:[f.typography.bodyStrong,F.text,{fontSize:.36*u}],maxFontSizeMultiplier:1.1,children:p(t)})})};const F=n.default.create({base:{alignItems:'center',justifyContent:'center'},text:{color:'#fff',fontWeight:'700',letterSpacing:.5}})},1679,[33,158,146,273,1632,1086,616,13]);
 __d(
@@ -44670,7 +44756,500 @@ __d(
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=e.KwdHint=void 0;var s=r(d[1]),n=t(r(d[2])),c=t(r(d[3])),o=t(r(d[4])),l=r(d[5]),u=r(d[6]),f=r(d[7]),y=r(d[8]),p=r(d[9]);const x='playora.kwdHint.v1',b=({style:t})=>{const{colors:b}=(0,u.useTheme)(),h=(0,y.useT)(),[w,H]=(0,s.useState)(!1);if((0,s.useEffect)(()=>{n.default.getItem(x).then(t=>H(!t)).catch(()=>{})},[]),!w)return null;return(0,p.jsxs)(c.default,{onPress:()=>{H(!1),n.default.setItem(x,'1').catch(()=>{})},accessibilityRole:"button",accessibilityLabel:h('kwdHint'),accessibilityHint:h('kwdHintDismiss'),style:[{flexDirection:'row',alignItems:'center',gap:f.spacing.sm,backgroundColor:b.surfaceAlt,borderRadius:10,padding:f.spacing.sm},t],children:[(0,p.jsx)(l.Ionicons,{name:"information-circle",size:16,color:b.accentText}),(0,p.jsx)(o.default,{style:[f.typography.caption,{color:b.text,flex:1}],children:h('kwdHint')}),(0,p.jsx)(l.Ionicons,{name:"close",size:14,color:b.textMuted})]})};e.KwdHint=b;e.default=b},1839,[33,15,618,369,146,1086,615,616,675,13]);
 __d(function(g,r,i,_a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{user:t}=(0,I.useAuth)(),{colors:n}=(0,j.useTheme)(),z=(0,x.useRouter)(),M=(0,P.useT)(),[V,W]=(0,l.useState)(null),[L,D]=(0,l.useState)(null),[O,E]=(0,l.useState)(null),[F,N]=(0,l.useState)(''),[$,q]=(0,l.useState)([]),[G,J]=(0,l.useState)(!0),K=(0,l.useCallback)(async()=>{J(!0);const l=await(0,v.searchBookableVenues)({sport:V??void 0,maxPricePerHour:L??void 0,area:O??void 0,query:F.trim()||void 0,viewerId:t?.id});q(l),J(!1)},[V,L,O,F,t]);return(0,x.useFocusEffect)((0,l.useCallback)(()=>{K()},[K])),(0,B.jsxs)(p.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:n.bg},children:[(0,B.jsxs)(u.default,{style:H.header,children:[(0,B.jsx)(o.default,{onPress:()=>z.back(),accessibilityRole:"button",accessibilityLabel:M('back'),style:[H.iconBtn,{backgroundColor:n.surface,borderColor:n.border}],children:(0,B.jsx)(h.Ionicons,{name:(0,S.chevronBack)(),size:22,color:n.text})}),(0,B.jsx)(c.default,{style:[k.typography.h2,{color:n.text,flex:1,marginHorizontal:k.spacing.md}],children:M('bookACourt')})]}),(0,B.jsxs)(s.default,{contentContainerStyle:{padding:k.spacing.lg,paddingBottom:k.spacing.xxxl},keyboardShouldPersistTaps:"handled",children:[(0,B.jsx)(w.Input,{placeholder:M('searchVenuePlaceholder'),accessibilityLabel:M('searchVenuePlaceholder'),value:F,onChangeText:N,autoCorrect:!1}),(0,B.jsx)(c.default,{style:[k.typography.smallStrong,{color:n.textMuted,marginBottom:k.spacing.xs}],children:M('anySport')}),(0,B.jsxs)(u.default,{style:H.chipRow,children:[(0,B.jsx)(A,{label:M('anySport'),active:null===V,onPress:()=>W(null),colors:n}),R.map(t=>(0,B.jsx)(A,{label:M(t),active:V===t,onPress:()=>W(t),colors:n},t))]}),(0,B.jsx)(c.default,{style:[k.typography.smallStrong,{color:n.textMuted,marginTop:k.spacing.md,marginBottom:k.spacing.xs}],children:M('maxPrice')}),(0,B.jsxs)(u.default,{style:H.chipRow,children:[(0,B.jsx)(A,{label:M('anyArea'),active:null===L,onPress:()=>D(null),colors:n}),T.map(t=>(0,B.jsx)(A,{label:(0,C.formatPrice)(t),active:L===t,onPress:()=>D(t),colors:n},t))]}),(0,B.jsx)(c.default,{style:[k.typography.smallStrong,{color:n.textMuted,marginTop:k.spacing.md,marginBottom:k.spacing.xs}],children:M('areaLabel')}),(0,B.jsx)(_.AreaPicker,{value:O,onChange:E,allowAny:!0,placeholder:M('anyArea')}),(0,B.jsx)(u.default,{style:{height:k.spacing.lg}}),G?(0,B.jsx)(a.default,{color:n.accentText,style:{marginTop:k.spacing.xl}}):0===$.length?(0,B.jsx)(b.EmptyState,{icon:"business-outline",title:M('noVenuesFound')}):$.map(t=>(0,B.jsx)(o.default,{onPress:()=>z.push(`/booking/venue/${t.id}`),accessibilityRole:"button",children:(0,B.jsxs)(f.Card,{style:{marginBottom:k.spacing.md},children:[(0,B.jsxs)(u.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,B.jsx)(u.default,{style:[H.vIcon,{backgroundColor:(0,C.sportColor)(t.sports_bookable[0])}],children:(0,B.jsx)(h.Ionicons,{name:C.sportIcon[t.sports_bookable[0]],size:20,color:"#fff"})}),(0,B.jsxs)(u.default,{style:{flex:1,marginHorizontal:k.spacing.sm},children:[(0,B.jsx)(c.default,{style:[k.typography.h3,{color:n.text}],numberOfLines:1,children:t.name}),(0,B.jsxs)(c.default,{style:[k.typography.small,{color:n.textMuted}],numberOfLines:1,children:[t.area," \xb7 ",M('courtsCount',{n:(0,C.formatNumber)(t.court_count)}),null!=t.distance_km?` \xb7 ${M('kmAway',{n:(0,C.formatNumber)(t.distance_km)})}`:'']})]}),(0,B.jsxs)(u.default,{style:{alignItems:'flex-end'},children:[(0,B.jsx)(c.default,{style:[k.typography.smallStrong,{color:n.text}],children:M('fromPrice',{price:(0,C.formatPrice)(t.min_price_kwd)})}),(0,B.jsx)(c.default,{style:[k.typography.caption,{color:n.textMuted}],children:M('perHour')})]})]}),(0,B.jsxs)(u.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:6,marginTop:k.spacing.sm},children:[t.sports_bookable.map(t=>(0,B.jsx)(y.Badge,{label:M(t),tone:"accent"},t)),t.amenities.slice(0,2).map(t=>(0,B.jsx)(y.Badge,{label:t,tone:"neutral"},t))]})]})},t.id))]})]})};var l=r(d[1]),a=t(r(d[2])),o=t(r(d[3])),s=t(r(d[4])),n=t(r(d[5])),c=t(r(d[6])),u=t(r(d[7])),p=r(d[8]),h=r(d[9]),x=r(d[10]),f=r(d[11]),y=r(d[12]),b=r(d[13]),j=r(d[14]),k=r(d[15]),v=r(d[16]),C=r(d[17]),P=r(d[18]),S=r(d[19]),w=r(d[20]),I=r(d[21]),_=r(d[22]),B=r(d[23]);const R=['padel','tennis','football'],T=[10,15,25,50];const A=({label:t,active:l,onPress:a,colors:s})=>(0,B.jsx)(o.default,{onPress:a,accessibilityRole:"button",accessibilityState:{selected:l},style:{minHeight:36,paddingHorizontal:k.spacing.md,borderRadius:999,borderWidth:n.default.hairlineWidth,alignItems:'center',justifyContent:'center',backgroundColor:l?s.accent:s.surface,borderColor:l?s.accent:s.border},children:(0,B.jsx)(c.default,{style:[k.typography.smallStrong,{color:l?'#fff':s.text}],children:t})}),H=n.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:k.spacing.lg,paddingVertical:k.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:n.default.hairlineWidth},chipRow:{flexDirection:'row',flexWrap:'wrap',gap:k.spacing.sm},vIcon:{width:44,height:44,borderRadius:14,alignItems:'center',justifyContent:'center'}})},1840,[33,15,461,369,281,158,146,273,381,1086,20,1623,1624,1627,615,616,671,1311,675,1171,625,630,1841,13]);
 __d(function(_g,r,i,_a,m,e,d){var a=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.AreaPicker=void 0;var t=r(d[1]),o=a(r(d[2])),l=a(r(d[3])),s=a(r(d[4])),c=a(r(d[5])),n=a(r(d[6])),u=a(r(d[7])),h=a(r(d[8])),g=r(d[9]),p=r(d[10]),b=r(d[11]),x=r(d[12]),y=r(d[13]),f=r(d[14]),j=r(d[15]),k=r(d[16]);e.AreaPicker=({value:a,onChange:c,allowAny:C=!1,placeholder:P})=>{const{colors:R}=(0,p.useTheme)(),{locale:v}=(0,y.useLocale)(),H=(0,x.useT)(),[w,S]=(0,t.useState)(!1),[L,A]=(0,t.useState)(''),I='ar'===v?'ar':'en',z=(0,t.useMemo)(()=>{const a=L.trim().toLowerCase();return f.GOVERNORATES.map(t=>({gov:t,areas:f.KUWAIT_AREAS.filter(o=>o.governorate===t.id&&(!a||o.en.toLowerCase().includes(a)||o.ar.includes(L.trim())))})).filter(a=>a.areas.length>0)},[L]),M=a?(0,f.areaName)(a,I):P??H('areaPickerPlaceholder');return(0,k.jsxs)(k.Fragment,{children:[(0,k.jsxs)(l.default,{onPress:()=>{A(''),S(!0)},accessibilityRole:"button",accessibilityLabel:H('areaLabel'),accessibilityValue:{text:a?(0,f.areaName)(a,I):H('areaPickerPlaceholder')},style:[T.field,{backgroundColor:R.surface,borderColor:R.border,minHeight:b.touch.minTarget}],children:[(0,k.jsx)(n.default,{style:[b.typography.body,{color:a?R.text:R.textMuted,flex:1}],numberOfLines:1,children:M}),(0,k.jsx)(g.Ionicons,{name:"chevron-down",size:18,color:R.textMuted})]}),(0,k.jsx)(o.default,{visible:w,transparent:!0,animationType:"fade",onRequestClose:()=>S(!1),children:(0,k.jsx)(h.default,{style:T.backdrop,children:(0,k.jsxs)(h.default,{style:[T.sheet,{backgroundColor:R.bg,borderColor:R.border}],children:[(0,k.jsxs)(h.default,{style:T.sheetHead,children:[(0,k.jsx)(n.default,{style:[b.typography.h3,{color:R.text,flex:1}],children:H('areaPickerTitle')}),(0,k.jsx)(l.default,{onPress:()=>S(!1),accessibilityRole:"button",accessibilityLabel:H('closeLabel'),hitSlop:10,children:(0,k.jsx)(g.Ionicons,{name:"close",size:22,color:R.text})})]}),(0,k.jsx)(u.default,{value:L,onChangeText:A,placeholder:H('areaPickerSearch'),placeholderTextColor:R.textMuted,accessibilityLabel:H('areaPickerSearch'),autoCorrect:!1,style:[b.typography.body,T.search,{color:R.text,backgroundColor:R.surface,borderColor:R.border}]}),(0,k.jsxs)(s.default,{keyboardShouldPersistTaps:"handled",style:{maxHeight:420},children:[C&&!L.trim()&&(0,k.jsxs)(l.default,{onPress:()=>{c(null),S(!1)},accessibilityRole:"button",accessibilityState:{selected:null===a},style:[T.row,{borderBottomColor:R.border,minHeight:b.touch.minTarget}],children:[(0,k.jsx)(n.default,{style:[b.typography.body,{color:R.text,flex:1}],children:H('anyArea')}),null===a&&(0,k.jsx)(g.Ionicons,{name:"checkmark",size:18,color:R.accentText})]}),0===z.length?(0,k.jsx)(n.default,{style:[b.typography.small,{color:R.textMuted,padding:b.spacing.md}],children:H('areaPickerNoMatch')}):z.map(({gov:t,areas:o})=>(0,k.jsxs)(h.default,{children:[(0,k.jsx)(n.default,{style:[b.typography.caption,T.groupHead,{color:R.textMuted,backgroundColor:R.surfaceAlt}],children:'ar'===I?t.ar:t.en}),o.map(t=>{const o=a===t.id;return(0,k.jsxs)(l.default,{onPress:()=>{c(t.id),S(!1)},accessibilityRole:"button",accessibilityState:{selected:o},style:[T.row,{borderBottomColor:R.border,minHeight:b.touch.minTarget}],children:[(0,k.jsx)(n.default,{style:[b.typography.body,{color:o?R.accentText:R.text,flex:1}],children:'ar'===I?t.ar:t.en}),o?(0,k.jsx)(g.Ionicons,{name:"checkmark",size:18,color:R.accentText}):(0,k.jsx)(g.Ionicons,{name:(0,j.chevronForward)(),size:16,color:R.border})]},t.id)})]},t.id))]})]})})})]})};const T=c.default.create({field:{flexDirection:'row',alignItems:'center',gap:b.spacing.sm,borderWidth:1,borderRadius:b.radius.md,paddingHorizontal:b.spacing.md,paddingVertical:12},backdrop:{flex:1,backgroundColor:'rgba(0,0,0,0.6)',justifyContent:'flex-end'},sheet:{borderTopLeftRadius:b.radius.lg,borderTopRightRadius:b.radius.lg,borderWidth:1,padding:b.spacing.lg,paddingBottom:b.spacing.xxxl,maxHeight:'86%'},sheetHead:{flexDirection:'row',alignItems:'center',marginBottom:b.spacing.md},search:{borderWidth:1,borderRadius:b.radius.md,padding:b.spacing.md,marginBottom:b.spacing.sm},groupHead:{paddingHorizontal:b.spacing.sm,paddingVertical:6,marginTop:b.spacing.sm,letterSpacing:1,textTransform:'uppercase',borderRadius:b.radius.sm},row:{flexDirection:'row',alignItems:'center',paddingVertical:12,paddingHorizontal:b.spacing.sm,borderBottomWidth:c.default.hairlineWidth}})},1841,[33,15,467,369,281,158,146,394,273,1086,615,616,675,911,649,1171,13]);
-__d(function(g,r,_i,a,m,_e,_d){var e=r(_d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{id:e}=(0,y.useLocalSearchParams)(),{user:c,profile:P}=(0,x.useAuth)(),{colors:H}=(0,b.useTheme)(),z=(0,y.useRouter)(),L=(0,T.useT)(),[A,$]=(0,t.useState)(null),[O,E]=(0,t.useState)(null),[U,V]=(0,t.useState)(0),[q,F]=(0,t.useState)(60),[G,N]=(0,t.useState)([]),[K,J]=(0,t.useState)(!0),[Q,X]=(0,t.useState)(!1),[Y,Z]=(0,t.useState)(!1);(0,t.useEffect)(()=>{(async()=>{if(!e)return;const t=await(0,S.fetchVenueBookingDetail)(e);$(t),E(t?.courts[0]??null),J(!1)})()},[e]);const[ee,te]=(0,t.useState)(null),[ae,re]=(0,t.useState)(0);(0,t.useEffect)(()=>{if(!O)return;let e=!1;return(async()=>{X(!0),te(null);try{const t=new Date;t.setDate(t.getDate()+U);const l=await(0,S.fetchCourtAvailability)(O.id,t.toISOString(),q);e||N(l?.slots??[])}catch(t){e||(N([]),te((0,v.storeErrorText)(t?.message??'')||L('error')))}finally{e||X(!1)}})(),()=>{e=!0}},[O,U,q,ae]);const[le,oe]=(0,t.useState)(null),se=async e=>{if(c&&O){oe(null),Z(!0);try{const t=await(0,S.reserveCourt)(c.id,O.id,e.starts_at,e.ends_at,'split_equal');z.replace(`/booking/${t.id}`)}catch(e){o.default.alert(L('error'),(0,v.storeErrorText)(e?.message??'')||L('error')),re(e=>e+1)}finally{Z(!1)}}};if(K||!A)return(0,B.jsx)(p.SafeAreaView,{style:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:H.bg},children:(0,B.jsx)(l.default,{color:H.accentText})});const ne=O?(0,k.formatPrice)(O.price_per_hour_kwd*q/60):'',ie=A?.profile?.cancellation_cutoff_hours??0;return(0,B.jsxs)(p.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:H.bg},children:[(0,B.jsxs)(u.default,{style:I.header,children:[(0,B.jsx)(n.default,{onPress:()=>z.back(),accessibilityRole:"button",accessibilityLabel:L('back'),style:[I.iconBtn,{backgroundColor:H.surface,borderColor:H.border}],children:(0,B.jsx)(f.Ionicons,{name:(0,_.chevronBack)(),size:22,color:H.text})}),(0,B.jsx)(d.default,{style:[j.typography.h2,{color:H.text,flex:1,marginHorizontal:j.spacing.md}],numberOfLines:1,children:A.venue.name})]}),(0,B.jsxs)(i.default,{contentContainerStyle:{padding:j.spacing.lg,paddingBottom:j.spacing.xxxl},children:[(0,B.jsx)(d.default,{style:[j.typography.small,{color:H.textMuted,marginBottom:j.spacing.xs}],children:A.venue.area}),ie>0&&(0,B.jsx)(d.default,{style:[j.typography.small,{color:H.text,marginBottom:j.spacing.md}],children:L('freeCancelUpTo',{h:String(ie)})}),'female'===P?.audience&&(A.venue.ladies_hours?.length??0)>0&&(0,B.jsxs)(u.default,{style:[M.ladies,{borderColor:H.accent,backgroundColor:H.accentMuted}],children:[(0,B.jsx)(d.default,{style:[j.typography.smallStrong,{color:H.text}],children:L('ladiesHoursTitle')}),(0,B.jsx)(d.default,{style:[j.typography.small,{color:H.textMuted,marginTop:2}],children:A.venue.ladies_hours.map(e=>`${L(D[e.day])} ${e.start}\u2013${e.end}`).join(' \xb7 ')}),A.venue.staffing_note&&(0,B.jsx)(d.default,{style:[j.typography.caption,{color:H.textMuted,marginTop:2}],children:A.venue.staffing_note})]}),(0,B.jsx)(d.default,{style:[j.typography.smallStrong,{color:H.textMuted,marginBottom:j.spacing.xs}],children:L('selectCourt')}),(0,B.jsx)(C.KwdHint,{style:{marginBottom:j.spacing.sm}}),(0,B.jsx)(u.default,{style:I.chipRow,children:A.courts.map(e=>{const t=O?.id===e.id;return(0,B.jsxs)(n.default,{onPress:()=>E(e),accessibilityRole:"button",accessibilityState:{selected:t},style:[I.courtChip,{backgroundColor:t?H.accent:H.surface,borderColor:t?H.accent:H.border}],children:[(0,B.jsx)(f.Ionicons,{name:k.sportIcon[e.sport],size:13,color:t?'#fff':(0,k.sportColor)(e.sport)}),(0,B.jsx)(d.default,{style:[j.typography.smallStrong,{color:t?'#fff':H.text,marginStart:4,flexShrink:1,maxWidth:150}],numberOfLines:1,children:e.name}),(0,B.jsxs)(d.default,{style:[j.typography.caption,{color:t?'#fff':H.textMuted,marginStart:6}],children:[(0,k.formatPrice)(e.price_per_hour_kwd),L('perHour')]})]},e.id)})}),(0,B.jsx)(d.default,{style:[j.typography.smallStrong,{color:H.textMuted,marginTop:j.spacing.md,marginBottom:j.spacing.xs}],children:L('pickDate')}),(0,B.jsx)(i.default,{horizontal:!0,showsHorizontalScrollIndicator:!1,contentContainerStyle:{gap:j.spacing.sm},children:Array.from({length:7}).map((e,t)=>{const l=U===t,o=0===t?L('todayLabel'):1===t?L('tomorrowLabel'):R(t);return(0,B.jsx)(n.default,{onPress:()=>V(t),accessibilityRole:"button",accessibilityState:{selected:l},style:[I.dayChip,{backgroundColor:l?H.accent:H.surface,borderColor:l?H.accent:H.border}],children:(0,B.jsx)(d.default,{style:[j.typography.small,{color:l?'#fff':H.text,textAlign:'center'}],children:o})},t)})}),(0,B.jsx)(d.default,{style:[j.typography.smallStrong,{color:H.textMuted,marginTop:j.spacing.md,marginBottom:j.spacing.xs}],children:L('durationLabel')}),(0,B.jsx)(u.default,{style:I.chipRow,children:W.map(e=>{const t=q===e;return(0,B.jsx)(n.default,{onPress:()=>F(e),accessibilityRole:"button",accessibilityState:{selected:t},style:[I.courtChip,{backgroundColor:t?H.accent:H.surface,borderColor:t?H.accent:H.border}],children:(0,B.jsx)(d.default,{style:[j.typography.smallStrong,{color:t?'#fff':H.text}],children:e%60==0?L('hoursUnitShort',{n:(0,k.formatNumber)(e/60)}):L('minUnit',{n:(0,k.formatNumber)(e)})})},e)})}),(0,B.jsxs)(u.default,{style:{flexDirection:'row',alignItems:'center',marginTop:j.spacing.lg,marginBottom:j.spacing.sm},children:[(0,B.jsx)(d.default,{style:[j.typography.h3,{color:H.text,flex:1}],children:L('availableSlots')}),O&&(0,B.jsx)(h.Badge,{label:`${ne} \xb7 ${L('courtFee')}`,tone:"accent"})]}),Q?(0,B.jsx)(l.default,{color:H.accentText,style:{marginTop:j.spacing.lg}}):ee?(0,B.jsxs)(u.default,{style:{padding:j.spacing.md},children:[(0,B.jsx)(d.default,{style:[j.typography.small,{color:H.danger}],children:ee}),(0,B.jsx)(w.Button,{title:L('retry'),size:"sm",variant:"secondary",onPress:()=>re(e=>e+1),style:{marginTop:j.spacing.sm,alignSelf:'flex-start'}})]}):0===G.length?(0,B.jsx)(d.default,{style:[j.typography.small,{color:H.textMuted,padding:j.spacing.md}],children:L('noSlots')}):(0,B.jsx)(u.default,{style:I.slotGrid,children:G.map(e=>{const t=(0,k.formatClock)(e.starts_at);return(0,B.jsxs)(n.default,{disabled:!e.available||Y,onPress:()=>oe(e),accessibilityRole:"button",style:[I.slot,{backgroundColor:e.available?H.surface:H.surfaceAlt,borderColor:e.available?H.accent:H.border,opacity:e.available?1:.5}],children:[(0,B.jsx)(d.default,{style:[j.typography.smallStrong,{color:e.available?H.text:H.textMuted}],children:t}),!e.available&&(0,B.jsx)(d.default,{style:[j.typography.caption,{color:H.textMuted}],children:L('slotTaken')})]},e.starts_at)})}),Y&&(0,B.jsx)(l.default,{color:H.accentText,style:{marginTop:j.spacing.md}})]}),(0,B.jsx)(s.default,{visible:null!=le,transparent:!0,animationType:"fade",onRequestClose:()=>oe(null),children:(0,B.jsx)(u.default,{style:I.backdrop,children:(0,B.jsxs)(u.default,{style:[I.sheet,{backgroundColor:H.surface,borderColor:H.border}],children:[(0,B.jsx)(d.default,{style:[j.typography.h2,{color:H.text}],children:L('confirmBookingTitle')}),le&&O&&(0,B.jsxs)(u.default,{style:{marginTop:j.spacing.sm,gap:4},children:[(0,B.jsxs)(d.default,{style:[j.typography.body,{color:H.text}],children:[A.venue.name," \xb7 ",O.name]}),(0,B.jsxs)(d.default,{style:[j.typography.body,{color:H.textMuted}],children:[(0,k.formatDayLabel)(le.starts_at)," \xb7 ",(0,k.formatClock)(le.starts_at)," \u2013 ",(0,k.formatClock)(le.ends_at)]}),(0,B.jsx)(d.default,{style:[j.typography.bodyStrong,{color:H.text,marginTop:j.spacing.xs}],children:(0,k.formatPrice)(O.price_per_hour_kwd*q/60)}),ie>0&&(0,B.jsx)(d.default,{style:[j.typography.small,{color:H.textMuted,marginTop:j.spacing.xs}],children:L('freeCancelUpTo',{h:String(ie)})})]}),(0,B.jsxs)(u.default,{style:{flexDirection:'row',gap:j.spacing.sm,marginTop:j.spacing.lg},children:[(0,B.jsx)(u.default,{style:{flex:1},children:(0,B.jsx)(w.Button,{title:L('cancel'),variant:"ghost",fullWidth:!0,onPress:()=>oe(null)})}),(0,B.jsx)(u.default,{style:{flex:1},children:(0,B.jsx)(w.Button,{title:L('reserveBtn'),fullWidth:!0,loading:Y,onPress:()=>le&&se(le)})})]})]})})})]})};var t=r(_d[1]),l=e(r(_d[2])),o=e(r(_d[3])),s=e(r(_d[4])),n=e(r(_d[5])),i=e(r(_d[6])),c=e(r(_d[7])),d=e(r(_d[8])),u=e(r(_d[9])),p=r(_d[10]),f=r(_d[11]),y=r(_d[12]),h=r(_d[13]),x=r(_d[14]),b=r(_d[15]),j=r(_d[16]),S=r(_d[17]),C=r(_d[18]),k=r(_d[19]),w=r(_d[20]),T=r(_d[21]),_=r(_d[22]),v=r(_d[23]),B=r(_d[24]);const W=[60,90,120],D=['daySun','dayMon','dayTue','dayWed','dayThu','dayFri','daySat'],R=e=>{const t=new Date;return t.setDate(t.getDate()+e),(0,k.formatDayLabel)(t.toISOString())};const M=c.default.create({ladies:{borderWidth:1,borderRadius:j.radius.md,padding:j.spacing.md,marginBottom:j.spacing.md}}),I=c.default.create({backdrop:{flex:1,backgroundColor:'rgba(0,0,0,0.6)',alignItems:'center',justifyContent:'center',padding:j.spacing.lg},sheet:{width:'100%',maxWidth:420,borderRadius:j.radius.lg,borderWidth:1,padding:j.spacing.lg},header:{flexDirection:'row',alignItems:'center',paddingHorizontal:j.spacing.lg,paddingVertical:j.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:c.default.hairlineWidth},chipRow:{flexDirection:'row',flexWrap:'wrap',gap:j.spacing.sm},courtChip:{flexDirection:'row',alignItems:'center',minHeight:36,paddingHorizontal:j.spacing.md,borderRadius:999,borderWidth:c.default.hairlineWidth},dayChip:{minWidth:84,minHeight:40,paddingHorizontal:j.spacing.sm,borderRadius:j.radius.md,borderWidth:c.default.hairlineWidth,alignItems:'center',justifyContent:'center'},slotGrid:{flexDirection:'row',flexWrap:'wrap',gap:j.spacing.sm},slot:{width:'22%',minHeight:48,borderRadius:j.radius.md,borderWidth:c.default.hairlineWidth,alignItems:'center',justifyContent:'center'}})},1842,[33,15,461,445,467,369,281,158,146,273,381,1086,20,1624,630,615,616,671,1839,1311,626,675,1171,674,13]);
+__d(
+  function (g, r, _i, a, m, _e, _d) {
+    var e = r(_d[0]);
+    (Object.defineProperty(_e, "__esModule", { value: !0 }),
+      (_e.default = function () {
+        const { id: e } = (0, y.useLocalSearchParams)(),
+          { user: c, profile: P } = (0, x.useAuth)(),
+          { colors: H } = (0, b.useTheme)(),
+          z = (0, y.useRouter)(),
+          L = (0, T.useT)(),
+          [A, $] = (0, t.useState)(null),
+          [O, E] = (0, t.useState)(null),
+          [U, V] = (0, t.useState)(0),
+          [q, F] = (0, t.useState)(60),
+          [G, N] = (0, t.useState)([]),
+          [K, J] = (0, t.useState)(!0),
+          [Q, X] = (0, t.useState)(!1),
+          [Y, Z] = (0, t.useState)(!1);
+        (0, t.useEffect)(() => {
+          (async () => {
+            if (!e) return;
+            const t = await (0, S.fetchVenueBookingDetail)(e);
+            ($(t), E(t?.courts[0] ?? null), J(!1));
+          })();
+        }, [e]);
+        const [ee, te] = (0, t.useState)(null),
+          [ae, re] = (0, t.useState)(0);
+        (0, t.useEffect)(() => {
+          if (!O) return;
+          let e = !1;
+          return (
+            (async () => {
+              (X(!0), te(null));
+              try {
+                const t = new Date();
+                t.setDate(t.getDate() + U);
+                const l = await (0, S.fetchCourtAvailability)(O.id, t.toISOString(), q);
+                e || N(l?.slots ?? []);
+              } catch (t) {
+                e || (N([]), te((0, v.storeErrorText)(t?.message ?? "") || L("error")));
+              } finally {
+                e || X(!1);
+              }
+            })(),
+            () => {
+              e = !0;
+            }
+          );
+        }, [O, U, q, ae]);
+        const [le, oe] = (0, t.useState)(null),
+          se = async (e) => {
+            if (c && O) {
+              (oe(null), Z(!0));
+              try {
+                const t = await (0, S.reserveCourt)(c.id, O.id, e.starts_at, e.ends_at, "split_equal");
+                z.replace(`/booking/${t.id}`);
+              } catch (e) {
+                (o.default.alert(L("error"), (0, v.storeErrorText)(e?.message ?? "") || L("error")),
+                  re((e) => e + 1));
+              } finally {
+                Z(!1);
+              }
+            }
+          };
+        if (K || !A)
+          return (0, B.jsx)(p.SafeAreaView, {
+            style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: H.bg },
+            children: (0, B.jsx)(l.default, { color: H.accentText }),
+          });
+        const ne = O ? (0, k.formatPrice)((O.price_per_hour_kwd * q) / 60) : "",
+          ie = A?.profile?.cancellation_cutoff_hours ?? 0;
+        return (0, B.jsxs)(p.SafeAreaView, {
+          edges: ["top"],
+          style: { flex: 1, backgroundColor: H.bg },
+          children: [
+            (0, B.jsxs)(u.default, {
+              style: I.header,
+              children: [
+                (0, B.jsx)(n.default, {
+                  onPress: () => z.back(),
+                  accessibilityRole: "button",
+                  accessibilityLabel: L("back"),
+                  style: [I.iconBtn, { backgroundColor: H.surface, borderColor: H.border }],
+                  children: (0, B.jsx)(f.Ionicons, { name: (0, _.chevronBack)(), size: 22, color: H.text }),
+                }),
+                (0, B.jsx)(d.default, {
+                  style: [j.typography.h2, { color: H.text, flex: 1, marginHorizontal: j.spacing.md }],
+                  numberOfLines: 1,
+                  children: A.venue.name,
+                }),
+              ],
+            }),
+            (0, B.jsxs)(i.default, {
+              contentContainerStyle: { padding: j.spacing.lg, paddingBottom: j.spacing.xxxl },
+              children: [
+                (0, B.jsx)(d.default, {
+                  style: [j.typography.small, { color: H.textMuted, marginBottom: j.spacing.xs }],
+                  children: A.venue.area,
+                }),
+                ie > 0 &&
+                  (0, B.jsx)(d.default, {
+                    style: [j.typography.small, { color: H.text, marginBottom: j.spacing.md }],
+                    children: L("freeCancelUpTo", { h: ie }),
+                  }),
+                "female" === P?.audience &&
+                  (A.venue.ladies_hours?.length ?? 0) > 0 &&
+                  (0, B.jsxs)(u.default, {
+                    style: [M.ladies, { borderColor: H.accent, backgroundColor: H.accentMuted }],
+                    children: [
+                      (0, B.jsx)(d.default, {
+                        style: [j.typography.smallStrong, { color: H.text }],
+                        children: L("ladiesHoursTitle"),
+                      }),
+                      (0, B.jsx)(d.default, {
+                        style: [j.typography.small, { color: H.textMuted, marginTop: 2 }],
+                        children: A.venue.ladies_hours
+                          .map((e) => `${L(D[e.day])} ${e.start}\u2013${e.end}`)
+                          .join(" \xb7 "),
+                      }),
+                      A.venue.staffing_note &&
+                        (0, B.jsx)(d.default, {
+                          style: [j.typography.caption, { color: H.textMuted, marginTop: 2 }],
+                          children: A.venue.staffing_note,
+                        }),
+                    ],
+                  }),
+                (0, B.jsx)(d.default, {
+                  style: [j.typography.smallStrong, { color: H.textMuted, marginBottom: j.spacing.xs }],
+                  children: L("selectCourt"),
+                }),
+                (0, B.jsx)(C.KwdHint, { style: { marginBottom: j.spacing.sm } }),
+                (0, B.jsx)(u.default, {
+                  style: I.chipRow,
+                  children: A.courts.map((e) => {
+                    const t = O?.id === e.id;
+                    return (0, B.jsxs)(
+                      n.default,
+                      {
+                        onPress: () => E(e),
+                        accessibilityRole: "button",
+                        accessibilityState: { selected: t },
+                        style: [
+                          I.courtChip,
+                          { backgroundColor: t ? H.accent : H.surface, borderColor: t ? H.accent : H.border },
+                        ],
+                        children: [
+                          (0, B.jsx)(f.Ionicons, {
+                            name: k.sportIcon[e.sport],
+                            size: 13,
+                            color: t ? "#fff" : (0, k.sportColor)(e.sport),
+                          }),
+                          (0, B.jsx)(d.default, {
+                            style: [
+                              j.typography.smallStrong,
+                              { color: t ? "#fff" : H.text, marginStart: 4, flexShrink: 1, maxWidth: 150 },
+                            ],
+                            numberOfLines: 1,
+                            children: e.name,
+                          }),
+                          (0, B.jsxs)(d.default, {
+                            style: [
+                              j.typography.caption,
+                              { color: t ? "#fff" : H.textMuted, marginStart: 6 },
+                            ],
+                            children: [(0, k.formatPrice)(e.price_per_hour_kwd), L("perHour")],
+                          }),
+                        ],
+                      },
+                      e.id,
+                    );
+                  }),
+                }),
+                (0, B.jsx)(d.default, {
+                  style: [
+                    j.typography.smallStrong,
+                    { color: H.textMuted, marginTop: j.spacing.md, marginBottom: j.spacing.xs },
+                  ],
+                  children: L("pickDate"),
+                }),
+                (0, B.jsx)(i.default, {
+                  horizontal: !0,
+                  showsHorizontalScrollIndicator: !1,
+                  contentContainerStyle: { gap: j.spacing.sm },
+                  children: Array.from({ length: 7 }).map((e, t) => {
+                    const l = U === t,
+                      o = 0 === t ? L("todayLabel") : 1 === t ? L("tomorrowLabel") : R(t);
+                    return (0, B.jsx)(
+                      n.default,
+                      {
+                        onPress: () => V(t),
+                        accessibilityRole: "button",
+                        accessibilityState: { selected: l },
+                        style: [
+                          I.dayChip,
+                          { backgroundColor: l ? H.accent : H.surface, borderColor: l ? H.accent : H.border },
+                        ],
+                        children: (0, B.jsx)(d.default, {
+                          style: [j.typography.small, { color: l ? "#fff" : H.text, textAlign: "center" }],
+                          children: o,
+                        }),
+                      },
+                      t,
+                    );
+                  }),
+                }),
+                (0, B.jsx)(d.default, {
+                  style: [
+                    j.typography.smallStrong,
+                    { color: H.textMuted, marginTop: j.spacing.md, marginBottom: j.spacing.xs },
+                  ],
+                  children: L("durationLabel"),
+                }),
+                (0, B.jsx)(u.default, {
+                  style: I.chipRow,
+                  children: W.map((e) => {
+                    const t = q === e;
+                    return (0, B.jsx)(
+                      n.default,
+                      {
+                        onPress: () => F(e),
+                        accessibilityRole: "button",
+                        accessibilityState: { selected: t },
+                        style: [
+                          I.courtChip,
+                          { backgroundColor: t ? H.accent : H.surface, borderColor: t ? H.accent : H.border },
+                        ],
+                        children: (0, B.jsx)(d.default, {
+                          style: [j.typography.smallStrong, { color: t ? "#fff" : H.text }],
+                          children:
+                            e % 60 == 0
+                              ? L("hoursUnitShort", { n: (0, k.formatNumber)(e / 60) })
+                              : L("minUnit", { n: (0, k.formatNumber)(e) }),
+                        }),
+                      },
+                      e,
+                    );
+                  }),
+                }),
+                (0, B.jsxs)(u.default, {
+                  style: {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginTop: j.spacing.lg,
+                    marginBottom: j.spacing.sm,
+                  },
+                  children: [
+                    (0, B.jsx)(d.default, {
+                      style: [j.typography.h3, { color: H.text, flex: 1 }],
+                      children: L("availableSlots"),
+                    }),
+                    O && (0, B.jsx)(h.Badge, { label: `${ne} \xb7 ${L("courtFee")}`, tone: "accent" }),
+                  ],
+                }),
+                Q
+                  ? (0, B.jsx)(l.default, { color: H.accentText, style: { marginTop: j.spacing.lg } })
+                  : ee
+                    ? (0, B.jsxs)(u.default, {
+                        style: { padding: j.spacing.md },
+                        children: [
+                          (0, B.jsx)(d.default, {
+                            style: [j.typography.small, { color: H.danger }],
+                            children: ee,
+                          }),
+                          (0, B.jsx)(w.Button, {
+                            title: L("retry"),
+                            size: "sm",
+                            variant: "secondary",
+                            onPress: () => re((e) => e + 1),
+                            style: { marginTop: j.spacing.sm, alignSelf: "flex-start" },
+                          }),
+                        ],
+                      })
+                    : 0 === G.length
+                      ? (0, B.jsx)(d.default, {
+                          style: [j.typography.small, { color: H.textMuted, padding: j.spacing.md }],
+                          children: L("noSlots"),
+                        })
+                      : (0, B.jsx)(u.default, {
+                          style: I.slotGrid,
+                          children: G.map((e) => {
+                            const t = (0, k.formatClock)(e.starts_at);
+                            return (0, B.jsxs)(
+                              n.default,
+                              {
+                                disabled: !e.available || Y,
+                                onPress: () => oe(e),
+                                accessibilityRole: "button",
+                                style: [
+                                  I.slot,
+                                  {
+                                    backgroundColor: e.available ? H.surface : H.surfaceAlt,
+                                    borderColor: e.available ? H.accent : H.border,
+                                    opacity: e.available ? 1 : 0.5,
+                                  },
+                                ],
+                                children: [
+                                  (0, B.jsx)(d.default, {
+                                    style: [
+                                      j.typography.smallStrong,
+                                      { color: e.available ? H.text : H.textMuted },
+                                    ],
+                                    children: t,
+                                  }),
+                                  !e.available &&
+                                    (0, B.jsx)(d.default, {
+                                      style: [j.typography.caption, { color: H.textMuted }],
+                                      children: L("slotTaken"),
+                                    }),
+                                ],
+                              },
+                              e.starts_at,
+                            );
+                          }),
+                        }),
+                Y && (0, B.jsx)(l.default, { color: H.accentText, style: { marginTop: j.spacing.md } }),
+              ],
+            }),
+            (0, B.jsx)(s.default, {
+              visible: null != le,
+              transparent: !0,
+              animationType: "fade",
+              onRequestClose: () => oe(null),
+              children: (0, B.jsx)(u.default, {
+                style: I.backdrop,
+                children: (0, B.jsxs)(u.default, {
+                  style: [I.sheet, { backgroundColor: H.surface, borderColor: H.border }],
+                  children: [
+                    (0, B.jsx)(d.default, {
+                      style: [j.typography.h2, { color: H.text }],
+                      children: L("confirmBookingTitle"),
+                    }),
+                    le &&
+                      O &&
+                      (0, B.jsxs)(u.default, {
+                        style: { marginTop: j.spacing.sm, gap: 4 },
+                        children: [
+                          (0, B.jsxs)(d.default, {
+                            style: [j.typography.body, { color: H.text }],
+                            children: [A.venue.name, " \xb7 ", O.name],
+                          }),
+                          (0, B.jsxs)(d.default, {
+                            style: [j.typography.body, { color: H.textMuted }],
+                            children: [
+                              (0, k.formatDayLabel)(le.starts_at),
+                              " \xb7 ",
+                              (0, k.formatClock)(le.starts_at),
+                              " \u2013 ",
+                              (0, k.formatClock)(le.ends_at),
+                            ],
+                          }),
+                          (0, B.jsx)(d.default, {
+                            style: [j.typography.bodyStrong, { color: H.text, marginTop: j.spacing.xs }],
+                            children: (0, k.formatPrice)((O.price_per_hour_kwd * q) / 60),
+                          }),
+                          ie > 0 &&
+                            (0, B.jsx)(d.default, {
+                              style: [j.typography.small, { color: H.textMuted, marginTop: j.spacing.xs }],
+                              children: L("freeCancelUpTo", { h: ie }),
+                            }),
+                        ],
+                      }),
+                    (0, B.jsxs)(u.default, {
+                      style: { flexDirection: "row", gap: j.spacing.sm, marginTop: j.spacing.lg },
+                      children: [
+                        (0, B.jsx)(u.default, {
+                          style: { flex: 1 },
+                          children: (0, B.jsx)(w.Button, {
+                            title: L("cancel"),
+                            variant: "ghost",
+                            fullWidth: !0,
+                            onPress: () => oe(null),
+                          }),
+                        }),
+                        (0, B.jsx)(u.default, {
+                          style: { flex: 1 },
+                          children: (0, B.jsx)(w.Button, {
+                            title: L("reserveBtn"),
+                            fullWidth: !0,
+                            loading: Y,
+                            onPress: () => le && se(le),
+                          }),
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              }),
+            }),
+          ],
+        });
+      }));
+    var t = r(_d[1]),
+      l = e(r(_d[2])),
+      o = e(r(_d[3])),
+      s = e(r(_d[4])),
+      n = e(r(_d[5])),
+      i = e(r(_d[6])),
+      c = e(r(_d[7])),
+      d = e(r(_d[8])),
+      u = e(r(_d[9])),
+      p = r(_d[10]),
+      f = r(_d[11]),
+      y = r(_d[12]),
+      h = r(_d[13]),
+      x = r(_d[14]),
+      b = r(_d[15]),
+      j = r(_d[16]),
+      S = r(_d[17]),
+      C = r(_d[18]),
+      k = r(_d[19]),
+      w = r(_d[20]),
+      T = r(_d[21]),
+      _ = r(_d[22]),
+      v = r(_d[23]),
+      B = r(_d[24]);
+    const W = [60, 90, 120],
+      D = ["daySun", "dayMon", "dayTue", "dayWed", "dayThu", "dayFri", "daySat"],
+      R = (e) => {
+        const t = new Date();
+        return (t.setDate(t.getDate() + e), (0, k.formatDayLabel)(t.toISOString()));
+      };
+    const M = c.default.create({
+        ladies: {
+          borderWidth: 1,
+          borderRadius: j.radius.md,
+          padding: j.spacing.md,
+          marginBottom: j.spacing.md,
+        },
+      }),
+      I = c.default.create({
+        backdrop: {
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.6)",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: j.spacing.lg,
+        },
+        sheet: {
+          width: "100%",
+          maxWidth: 420,
+          borderRadius: j.radius.lg,
+          borderWidth: 1,
+          padding: j.spacing.lg,
+        },
+        header: {
+          flexDirection: "row",
+          alignItems: "center",
+          paddingHorizontal: j.spacing.lg,
+          paddingVertical: j.spacing.md,
+        },
+        iconBtn: {
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          alignItems: "center",
+          justifyContent: "center",
+          borderWidth: c.default.hairlineWidth,
+        },
+        chipRow: { flexDirection: "row", flexWrap: "wrap", gap: j.spacing.sm },
+        courtChip: {
+          flexDirection: "row",
+          alignItems: "center",
+          minHeight: 36,
+          paddingHorizontal: j.spacing.md,
+          borderRadius: 999,
+          borderWidth: c.default.hairlineWidth,
+        },
+        dayChip: {
+          minWidth: 84,
+          minHeight: 40,
+          paddingHorizontal: j.spacing.sm,
+          borderRadius: j.radius.md,
+          borderWidth: c.default.hairlineWidth,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        slotGrid: { flexDirection: "row", flexWrap: "wrap", gap: j.spacing.sm },
+        slot: {
+          width: "22%",
+          minHeight: 48,
+          borderRadius: j.radius.md,
+          borderWidth: c.default.hairlineWidth,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+      });
+  },
+  1842,
+  [
+    33, 15, 461, 445, 467, 369, 281, 158, 146, 273, 381, 1086, 20, 1624, 630, 615, 616, 671, 1839, 1311, 626,
+    675, 1171, 674, 13,
+  ],
+);
+
 __d(
   function (g, _r, _i, a, _m, _e, d) {
     var e = _r(d[0]);
