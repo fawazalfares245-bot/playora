@@ -417,5 +417,91 @@ await run('joining a paid series reports the seats it actually held', async () =
   await browser.close();
 });
 
+// ji pushed a fresh booking row on every join, so a player who cancelled and rejoined owned two or
+// three rows for the same game. That ambiguity is what broke the check-in scanner and the payment
+// forfeit lookup, both of which take the first match.
+await run('rejoining revives the booking rather than adding another', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/' });
+  const out = await page.evaluate(async ([org, player]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Rejoin', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 37 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 37 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+    const rows = () => JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+      .filter((b) => b.game_id === g.id && b.user_id === player);
+
+    await api.joinMatch(g.id, player);
+    const first = rows()[0];
+    await api.leaveMatch(g.id, player);
+    await new Promise((r) => setTimeout(r, 50));
+    await api.joinMatch(g.id, player);
+    const afterOne = rows();
+    await api.leaveMatch(g.id, player);
+    await new Promise((r) => setTimeout(r, 50));
+    await api.joinMatch(g.id, player);
+    const afterTwo = rows();
+    return {
+      firstId: first.id,
+      countAfterOne: afterOne.length,
+      countAfterTwo: afterTwo.length,
+      sameId: afterTwo.length === 1 && afterTwo[0].id === first.id,
+      status: afterTwo.length === 1 ? afterTwo[0].status : null,
+      attendance: afterTwo.length === 1 ? afterTwo[0].attendance : null,
+    };
+  }, [IDS.organizer, IDS.user]);
+
+  ok('one rejoin leaves one row', out.countAfterOne === 1, String(out.countAfterOne));
+  ok('two rejoins still leave one row', out.countAfterTwo === 1, String(out.countAfterTwo));
+  ok('and it is the original row', out.sameId === true, `${out.firstId}`);
+  ok('revived live', out.status === 'confirmed', String(out.status));
+  ok('with no stale attendance', out.attendance == null, String(out.attendance));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// Rows written before that change: the hydrate pass collapses them to one per (game, user).
+await run('existing duplicate bookings are collapsed on load', async () => {
+  const boot = await openApp({ role: 'organizer', route: '/organizer' });
+  const seed = await boot.page.evaluate(async ([org, player]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Legacy duplicates', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 39 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 39 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+    const all = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]');
+    const at = (n) => new Date(Date.now() - n * 6e4).toISOString();
+    const row = (id, status, created) => ({
+      id, game_id: g.id, user_id: player, display_name: 'Test Player', status,
+      attendance: null, reserved_until: null, created_at: created, updated_at: created,
+    });
+    // the shape the old join machine left behind: cancel, rejoin, cancel, rejoin
+    all.push(row('bk-dup-1', 'cancelled', at(30)), row('bk-dup-2', 'cancelled', at(20)), row('bk-dup-3', 'confirmed', at(10)));
+    localStorage.setItem('playora.mock.bookings.v1', JSON.stringify(all));
+    const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); o[k] = localStorage.getItem(k); }
+    return { gameId: g.id, state: o };
+  }, [IDS.organizer, IDS.user]);
+  await boot.browser.close();
+
+  const restore = `(() => { const s = ${JSON.stringify(seed.state)}; for (const k of Object.keys(s)) if (k !== 'secure.playora_session') localStorage.setItem(k, s[k]); })();`;
+  const { browser, page, errors } = await openApp({ role: 'user', route: '/', initScript: restore });
+  const out = await page.evaluate(([gameId, player]) => {
+    const rows = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+      .filter((b) => b.game_id === gameId && b.user_id === player);
+    return { count: rows.length, id: rows[0] ? rows[0].id : null, status: rows[0] ? rows[0].status : null };
+  }, [seed.gameId, IDS.user]);
+
+  ok('three rows collapse to one', out.count === 1, String(out.count));
+  ok('and the live one survives', out.id === 'bk-dup-3' && out.status === 'confirmed', `${out.id}/${out.status}`);
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

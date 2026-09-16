@@ -2127,6 +2127,30 @@ __d(
           )),
             t && (await Za(Y, Qt.profiles)));
         }
+        {
+          // Rows written before ji learned to revive: a player who cancelled and rejoined owns two or
+          // three for the same game. Keep the newest live one, or the newest row if none is live, and
+          // drop the rest - an unfiltered lookup on (game, user) has to have one answer.
+          const seen9 = new Map();
+          for (const e of Qt.bookings) {
+            const t = `${e.game_id}|${e.user_id}`,
+              a = seen9.get(t);
+            if (!a) {
+              seen9.set(t, e);
+              continue;
+            }
+            const i = (e) => ("cancelled" !== e.status && "rejected" !== e.status ? 1 : 0),
+              n =
+                i(e) - i(a) ||
+                (e.created_at ?? "").localeCompare(a.created_at ?? "") ||
+                (e.id ?? "").localeCompare(a.id ?? "");
+            n > 0 && seen9.set(t, e);
+          }
+          seen9.size !== Qt.bookings.length &&
+            ((Qt.bookings = Qt.bookings.filter((e) => seen9.get(`${e.game_id}|${e.user_id}`) === e)),
+            await Za(W, Qt.bookings),
+            await (0, w.logAudit)("booking.duplicates_collapsed", null, {}));
+        }
         ((Qt.hydrated = !0), $a());
       },
       ai = [
@@ -3119,6 +3143,37 @@ __d(
               created_at: n,
               updated_at: n,
             };
+            // A player who cancels and rejoins used to end up owning two or three rows for the same
+            // game, because this pushed a fresh one every time. That ambiguity is what broke the
+            // check-in scanner and the payment-forfeit lookup, both of which took the first match.
+            // Wr already demonstrates the right shape: find the cancelled or rejected row and revive
+            // it in place, keeping its id. Only push when there is genuinely nothing to revive.
+            const dead9 = Qt.bookings
+              .filter(
+                (a) =>
+                  a.game_id === e &&
+                  a.user_id === t &&
+                  ("cancelled" === a.status || "rejected" === a.status),
+              )
+              .sort(xi)
+              .pop();
+            const seat9 = (a9) => {
+              if (!dead9) return (Qt.bookings.push(Object.assign({}, l, { status: a9 })), dead9);
+              return (
+                Object.assign(dead9, {
+                  status: a9,
+                  display_name: o,
+                  attendance: null,
+                  reserved_until: null,
+                  rejection_reason: null,
+                  squad_opted_out_at: null,
+                  squad_dropped_at: null,
+                  squad_confirmed_at: null,
+                  updated_at: n,
+                }),
+                dead9
+              );
+            };
             // A manual-approval join became a pending request with no capacity test at all, so
             // requests piled up against seats that did not exist while Di kept handing those seats
             // to waitlisters who joined later. Reject rather than waitlist: Di promotes a
@@ -3128,7 +3183,7 @@ __d(
               throw new Error("E_THIS_MATCH_IS_ALREADY_FULL");
             if ("manual" === a.approval_mode || d)
               return (
-                Qt.bookings.push(Object.assign({}, l, { status: "pending" })),
+                seat9("pending"),
                 await Za(W, Qt.bookings),
                 await (0, w.logAudit)("match.join", (0, w.actorRef)(t), {
                   game: e.slice(-6),
@@ -3148,7 +3203,7 @@ __d(
                 { status: "pending" }
               );
             if (ki(e, i) < a.max_players) {
-              (Qt.bookings.push(Object.assign({}, l, { status: "confirmed" })),
+              (seat9("confirmed"),
                 await Za(W, Qt.bookings),
                 await (0, w.logAudit)("match.join", (0, w.actorRef)(t), { game: e.slice(-6) }),
                 await Ti(a, o, [t]),
@@ -3160,7 +3215,7 @@ __d(
             const c = vi(e);
             if (c.length < a.waitlist_capacity)
               return (
-                Qt.bookings.push(Object.assign({}, l, { status: "waitlisted" })),
+                seat9("waitlisted"),
                 await Za(W, Qt.bookings),
                 await (0, w.logAudit)("participant.waitlisted", (0, w.actorRef)(t), { game: e.slice(-6) }),
                 { status: "waitlisted", waitlistPosition: c.length + 1 }

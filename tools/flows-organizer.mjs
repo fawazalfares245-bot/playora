@@ -231,14 +231,18 @@ await run('a check-in scan respects the attendance window and the live booking',
       ends_at: new Date(Date.now() + 17 * 864e5 + 54e5).toISOString(),
       max_players: 6, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
     });
-    // Cancel then rejoin: ji appends a second row rather than reviving the first, which is what the
-    // unfiltered lookup used to trip over.
+    // ji revives the cancelled row now, so a stale one has to be planted: rows written before that
+    // change still exist, and the scanner must pick the live one out of them.
     await api.joinMatch(g.id, player);
-    await api.leaveMatch(g.id, player);
-    await new Promise((r) => setTimeout(r, 50));
-    await api.joinMatch(g.id, player);
-    const rows = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
-      .filter((b) => b.game_id === g.id && b.user_id === player);
+    const all = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]');
+    const live = all.find((b) => b.game_id === g.id && b.user_id === player);
+    all.unshift(Object.assign({}, live, {
+      id: 'bk-stale-cancelled', status: 'cancelled',
+      created_at: new Date(Date.now() - 6e5).toISOString(),
+      updated_at: new Date(Date.now() - 6e5).toISOString(),
+    }));
+    localStorage.setItem('playora.mock.bookings.v1', JSON.stringify(all));
+    const rows = all.filter((b) => b.game_id === g.id && b.user_id === player);
     const token = 'PLQR-SCANTEST0000000';
     const courts = JSON.parse(localStorage.getItem('playora.mock.courtbookings.v1') || '[]');
     courts.push({
@@ -258,7 +262,7 @@ await run('a check-in scan respects the attendance window and the live booking',
     };
   }, [IDS.organizer, IDS.user]);
 
-  ok('the rejoin left a cancelled row and a live row', !!seed.cancelledId && !!seed.liveId, JSON.stringify(seed.rows));
+  ok('a stale cancelled row sits alongside the live one', !!seed.cancelledId && !!seed.liveId, JSON.stringify(seed.rows));
   if (!seed.cancelledId || !seed.liveId) { await browser.close(); return; }
 
   // Case 2: the match has not finished, so the scan must be refused.
