@@ -306,6 +306,17 @@ ok('a custom split over the total is refused', out.splitOver === 'E_SPLIT_EXCEED
 ok('a custom split that matches the total is allowed', typeof out.splitExact === 'object' && Math.abs(sum(out.splitExact) - 12) < 5e-4, JSON.stringify(out.splitExact));
 ok('an under-split still tops the organizer up to the total', typeof out.splitUnder === 'object' && Math.abs(sum(out.splitUnder) - 12) < 5e-4, JSON.stringify(out.splitUnder));
 ok('split_equal over three payers still sums to the total', typeof out.splitEqual === 'object' && Math.abs(sum(out.splitEqual) - 10) < 5e-4, JSON.stringify(out.splitEqual));
+// --- one definition of "was in this match" ---
+// The test appeared fourteen times in two shapes and eight of them left out the status guard, so a
+// cancelled booking counted the moment anyone wrote an attendance mark onto it.
+{
+  const src = fs.readFileSync(new URL('../bundle-src/631.js', import.meta.url), 'utf8');
+  const loose = src.match(/\("confirmed" === \w+\.status \|\| null != \w+\.attendance\)/g) || [];
+  const looseNeg = src.match(/\("confirmed" !== \w+\.status && null == \w+\.attendance\)/g) || [];
+  ok('no unguarded participant predicate survives', loose.length === 0 && looseNeg.length === 0, `${loose.length} positive, ${looseNeg.length} negated`);
+  ok('they all go through one helper', (src.match(/countsAsParticipant9/g) || []).length >= 14, String((src.match(/countsAsParticipant9/g) || []).length));
+}
+
 // --- dead weight ---
 // 9002 replaced ./organizer/new.tsx with a redirect, but the third create wizard it replaced was still
 // registered and still shipped. vercel.json sends the whole file with Cache-Control: no-store, so it

@@ -602,5 +602,65 @@ await run('editing a series is validated and cannot reprice a paid seat', async 
   await browser.close();
 });
 
+// mockSetAttendance looked the booking up by id with no status filter, so an organizer could mark
+// no_show on a seat the player had cancelled a week early - and the unguarded participant predicate
+// then counted that row in fill rate, returning players, attendance rate and the reliability score.
+await run('a cancelled booking cannot be marked, and does not count', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer' });
+  const seed = await page.evaluate(async ([org, player]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Attendance guard', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 35 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 35 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+    await api.joinMatch(g.id, player);
+    const rows = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+      .filter((b) => b.game_id === g.id);
+    const left = rows.find((b) => b.user_id === player);
+    const own = rows.find((b) => b.user_id === org);
+    await api.leaveMatch(g.id, player);
+    // attendance can only be set once the match is over, so age it
+    const games = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]');
+    for (const row of games) if (row.id === g.id) {
+      row.starts_at = new Date(Date.now() - 2 * 36e5).toISOString();
+      row.ends_at = new Date(Date.now() - 36e5).toISOString();
+    }
+    localStorage.setItem('playora.mock.games.v1', JSON.stringify(games));
+    return { gameId: g.id, cancelledId: left.id, ownId: own.id };
+  }, [IDS.organizer, IDS.user]);
+
+  await page.goto(ORIGIN + '/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const out = await page.evaluate(async ([org, seed]) => {
+    const api = __r(671);
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    const before = await api.fetchOrganizerStats(org, org);
+    const marked = await code(() => api.setAttendance(seed.gameId, org, seed.cancelledId, 'no_show'));
+    const after = await api.fetchOrganizerStats(org, org);
+    const live = await code(() => api.setAttendance(seed.gameId, org, seed.ownId, 'attended'));
+    return {
+      marked,
+      live,
+      fillBefore: before.avgFillRate,
+      fillAfter: after.avgFillRate,
+      returningBefore: before.returningPlayers,
+      returningAfter: after.returningPlayers,
+      rowAttendance: JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+        .find((b) => b.id === seed.cancelledId).attendance,
+    };
+  }, [IDS.organizer, seed]);
+
+  ok('marking a cancelled booking is refused', out.marked === 'E_PLAYER_NOT_IN_THIS_MATCH', String(out.marked));
+  ok('the row keeps no attendance', out.rowAttendance == null, String(out.rowAttendance));
+  ok('the fill rate is unchanged', out.fillBefore === out.fillAfter, `${out.fillBefore} -> ${out.fillAfter}`);
+  ok('the returning-player count is unchanged', out.returningBefore === out.returningAfter, `${out.returningBefore} -> ${out.returningAfter}`);
+  ok('a live booking can still be marked', out.live === 'accepted', String(out.live));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

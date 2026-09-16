@@ -2529,6 +2529,14 @@ __d(
         "confirmed" === e.status ||
         ("reserved" === e.status && !!e.reserved_until && new Date(e.reserved_until).getTime() > t),
       ki = (e, t = Date.now()) => Qt.bookings.filter((a) => a.game_id === e && yi(a, t)).length,
+      // "Was in this match". This test appeared fourteen times in two shapes, and eight of them left
+      // out the status guard the other six applied - so a booking a player cancelled a week early
+      // still counted the moment anyone wrote an attendance mark onto it, in fill rate, returning
+      // players, attendance rate and the reliability score. One definition, used everywhere.
+      countsAsParticipant9 = (e) =>
+        "confirmed" === e.status ||
+        ("cancelled" !== e.status && "rejected" !== e.status && null != e.attendance),
+
       vi = (e) =>
         Qt.bookings
           .filter((t) => t.game_id === e && "waitlisted" === t.status)
@@ -3969,6 +3977,10 @@ __d(
       if (n.score_submitted_at && Date.now() - new Date(n.score_submitted_at).getTime() > 1728e5)
         throw new Error("E_ATTENDANCE_LOCKED");
       const r = Qt.bookings.find((t) => t.id === a && t.game_id === e);
+      // Looked up by id with no status filter, so an organizer could mark no_show on a booking the
+      // player had cancelled a week early - and that row then counted as a participant everywhere.
+      if (r && ("cancelled" === r.status || "rejected" === r.status))
+        throw new Error("E_PLAYER_NOT_IN_THIS_MATCH");
       r &&
         ((r.attendance = i),
         (r.updated_at = new Date().toISOString()),
@@ -4342,7 +4354,7 @@ __d(
         i = t.filter((e) => "completed" === Ji(e)).length,
         n = t.filter((e) => "cancelled" === e.status).length,
         r = (e) =>
-          Qt.bookings.filter((t) => t.game_id === e && ("confirmed" === t.status || null != t.attendance)),
+          Qt.bookings.filter((t) => t.game_id === e && countsAsParticipant9(t)),
         o = t.filter((e) => "cancelled" !== e.status),
         s = o.map((e) => Math.min(1, r(e.id).length / e.max_players)),
         d = s.length ? s.reduce((e, t) => e + t, 0) / s.length : 0,
@@ -4359,7 +4371,7 @@ __d(
         _ = new Map();
       for (const e of Qt.bookings)
         !t.some((t) => t.id === e.game_id) ||
-          ("confirmed" !== e.status && null == e.attendance) ||
+          (!countsAsParticipant9(e)) ||
           _.set(e.user_id, (_.get(e.user_id) ?? 0) + 1);
       return {
         matchesCreated: a,
@@ -4382,7 +4394,7 @@ __d(
         d = 0;
       for (const e of t.filter((e) => "completed" === Ji(e))) {
         const t = Qt.bookings.filter(
-          (t) => t.game_id === e.id && ("confirmed" === t.status || null != t.attendance),
+          (t) => t.game_id === e.id && countsAsParticipant9(t),
         );
         ((d += t.length), (s += t.filter((e) => null != e.attendance).length));
       }
@@ -5663,7 +5675,7 @@ __d(
           n = 0;
         for (const r of Qt.bookings) {
           if (r.user_id !== e) continue;
-          if ("confirmed" !== r.status && null == r.attendance) continue;
+          if (!countsAsParticipant9(r)) continue;
           const o = hi(r.game_id);
           !o ||
             "cancelled" === o.status ||
@@ -5745,7 +5757,7 @@ __d(
         throw new Error("E_SKILL_EVALUATIONS_OPEN_AFTER_THE_MATCH");
       const s = (e) =>
         Qt.bookings.some(
-          (t) => t.game_id === a && t.user_id === e && ("confirmed" === t.status || null != t.attendance),
+          (t) => t.game_id === a && t.user_id === e && countsAsParticipant9(t),
         );
       if (!s(r) || !s(i))
         throw (
@@ -5781,7 +5793,7 @@ __d(
       if (!a || "cancelled" === a.status) return [];
       if (new Date(a.ends_at).getTime() > Date.now()) return [];
       const i = Qt.bookings.filter(
-        (t) => t.game_id === e && ("confirmed" === t.status || null != t.attendance),
+        (t) => t.game_id === e && countsAsParticipant9(t),
       );
       return i.some((e) => e.user_id === t)
         ? i
@@ -6110,7 +6122,7 @@ __d(
                   Qt.bookings
                     .filter((e) => {
                       const t = hi(e.game_id);
-                      return t?.series_id === d && ("confirmed" === e.status || null != e.attendance);
+                      return t?.series_id === d && countsAsParticipant9(e);
                     })
                     .map((e) => e.user_id),
                 ),
@@ -6471,7 +6483,7 @@ __d(
       for (const e of t)
         for (const t of Qt.bookings)
           t.game_id === e.id &&
-            (("confirmed" !== t.status && null == t.attendance) ||
+            ((!countsAsParticipant9(t)) ||
               ((s += 1), o.set(t.user_id, (o.get(t.user_id) ?? 0) + 1)),
             null != t.attendance && ((d += 1), "attended" === t.attendance && (l += 1)));
       const c = o.size,
@@ -6479,7 +6491,7 @@ __d(
         u = t.filter((e) => "cancelled" !== e.status),
         m = u.map((e) => {
           const t = Qt.bookings.filter(
-            (t) => t.game_id === e.id && ("confirmed" === t.status || null != t.attendance),
+            (t) => t.game_id === e.id && countsAsParticipant9(t),
           ).length;
           return Math.min(1, t / e.max_players);
         });
@@ -6648,7 +6660,7 @@ __d(
           a = [];
         for (const i of Qt.bookings) {
           if (i.user_id !== e) continue;
-          if ("confirmed" !== i.status && null == i.attendance) continue;
+          if (!countsAsParticipant9(i)) continue;
           const n = hi(i.game_id);
           !n ||
             "cancelled" === n.status ||
@@ -6990,7 +7002,7 @@ __d(
       ur = async (e) => {
         if (Qt.compat.some((t) => t.game_id === e.id)) return;
         const t = Qt.bookings
-          .filter((t) => t.game_id === e.id && ("confirmed" === t.status || null != t.attendance))
+          .filter((t) => t.game_id === e.id && countsAsParticipant9(t))
           .map((e) => e.user_id);
         if (!(t.length < 2)) {
           for (let a = 0; a < t.length; a++) {
@@ -14847,7 +14859,7 @@ __d(
         l = "female" === d,
         c = new Set(
           Qt.bookings
-            .filter((t) => t.user_id === e && ("confirmed" === t.status || null != t.attendance))
+            .filter((t) => t.user_id === e && countsAsParticipant9(t))
             .map((e) => e.game_id),
         ),
         _ = (t) => {
@@ -14886,7 +14898,7 @@ __d(
         const y = new Set();
         for (const e of Qt.bookings)
           e.user_id !== u.id ||
-            ("confirmed" !== e.status && null == e.attendance) ||
+            (!countsAsParticipant9(e)) ||
             !c.has(e.game_id) ||
             y.add(e.game_id);
         const v = Qt.dmConversations.find((t) => t.id === _l(e, u.id)),
@@ -15607,7 +15619,7 @@ __d(
           a = new Set();
         t && a.add(t.organizer_id);
         for (const t of Qt.bookings)
-          t.game_id !== e || ("confirmed" !== t.status && null == t.attendance) || a.add(t.user_id);
+          t.game_id !== e || (!countsAsParticipant9(t)) || a.add(t.user_id);
         return [...a];
       },
       El = (e, t) => !!t && (t.organizer_id === e || vl(e)),
