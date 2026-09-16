@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "97a5f249de"
+  buildId: "f2bd8bb988"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -17031,6 +17031,21 @@ __d(
       al = (e) =>
         Qt.privacySettings.find((t) => t.user_id === e) ??
         Object.assign({ user_id: e }, "female" === aa(e) ? _t : ct),
+      // "Only people you've played with or follow" - the promise /privacy-controls makes for its
+      // most restrictive setting. privacy_visibility was written to the profile by that screen and
+      // read by nothing, so choosing it changed nothing at all: a stranger still got the bio, the
+      // favourite sports and the stats. Its middle setting, same_audience, needed no wiring - oa
+      // already blocks every cross-audience profile read, for everyone, whatever they choose - but
+      // connections did. Note this is a second privacy model living beside profile_visibility in
+      // privacySettings, which is enforced and is set from a different screen.
+      playedTogether9 = (e, t) => {
+        const a = new Set(
+          Qt.bookings.filter((a) => a.user_id === e && countsAsParticipant9(a)).map((e) => e.game_id),
+        );
+        return Qt.bookings.some((i) => i.user_id === t && a.has(i.game_id) && countsAsParticipant9(i));
+      },
+      isConnection9 = (e, t) =>
+        e === t || Vd(e, t) || Vd(t, e) || Qd(e).has(t) || playedTogether9(e, t),
       il = (e) => Qt.presence.find((t) => t.user_id === e)?.last_active ?? null,
       nl = (e) => {
         if (!al(e).show_online) return !1;
@@ -17280,7 +17295,9 @@ __d(
         r = !n && Qd(e).has(t),
         o = !n && Vd(e, t),
         s = al(t).profile_visibility,
-        d = n || (!i && ("private" === s || ("followers" === s && !o && !r))),
+        pv9 = Qt.profiles.find((e) => e.id === t)?.privacy_visibility ?? "everyone",
+        con9 = !i && "connections" === pv9 && !isConnection9(e, t),
+        d = n || (!i && ("private" === s || ("followers" === s && !o && !r) || con9)),
         l = al(t).allow_messages,
         c = !i && !Xd(e, t) && ("everyone" === l || ("followers" === l && (o || r))),
         _ = {
@@ -17317,7 +17334,10 @@ __d(
           mutual_teams: [],
           looking_for_game: !1,
           limited: !0,
-          limited_reason: n || "private" !== s ? "followers" : "private",
+          limited_reason: n ? "followers" : "private" === s ? "private" : con9 ? "connections" : "followers",
+          // The screen previews this setting as "Name visible to connections only", so the name goes
+          // too - the limited branch had always kept it.
+          display_name: con9 && !n && "private" !== s ? "Player" : _.display_name,
         });
       const u = await dr(t, e),
         m = Zd(e),
@@ -20166,6 +20186,7 @@ __d(
     657, 658, 659, 660, 661, 662, 663, 664, 665, 666, 667, 668, 669, 670,
   ],
 );
+
 
 
 
@@ -57984,7 +58005,305 @@ __d(
 
 __d(function(g,r,_i,_a,_m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{id:e}=(0,p.useLocalSearchParams)(),{user:i}=(0,b.useAuth)(),{colors:W}=(0,j.useTheme)(),D=(0,p.useRouter)(),A=(0,B.useT)(),[F,M]=(0,t.useState)(null),[$,H]=(0,t.useState)([]),[q,V]=(0,t.useState)(!1),[N,U]=(0,t.useState)(!1),[O,E]=(0,t.useState)(!1),[G,Y]=(0,t.useState)(null),J=e=>{Y(e),setTimeout(()=>Y(null),2e3)},K=(0,t.useCallback)(async()=>{if(i&&e)try{const t=await(0,_.fetchPlayerProfile)(i.id,e);M(t),E(!1),H(t.limited?[]:await(0,_.fetchHighlightCollections)(e))}catch{E(!0)}},[i,e]);(0,p.useFocusEffect)((0,t.useCallback)(()=>{K()},[K]));const Q=async()=>{i&&F&&(U(!1),F.is_blocked?(await(0,_.unblockUser)(i.id,F.user_id),J(A('unblockedToast'))):(await(0,_.blockUser)(i.id,F.user_id),J(A('blockedToast'))),await K())},X=async e=>{if(i&&F){V(!0);try{await(0,_.respondFollowRequest)(i.id,F.user_id,e),await K()}finally{V(!1)}}};if(O)return(0,S.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:W.bg},children:[(0,S.jsx)(c.default,{style:L.header,children:(0,S.jsx)(a.default,{onPress:()=>D.back(),accessibilityRole:"button",accessibilityLabel:A('back'),style:[L.iconBtn,{backgroundColor:W.surface,borderColor:W.border}],children:(0,S.jsx)(h.Ionicons,{name:(0,R.chevronBack)(),size:22,color:W.text})})}),(0,S.jsxs)(c.default,{style:[L.center,{paddingHorizontal:w.spacing.xl}],children:[(0,S.jsx)(h.Ionicons,{name:"lock-closed-outline",size:36,color:W.textMuted,style:{marginBottom:w.spacing.md}}),(0,S.jsx)(n.default,{style:[w.typography.h3,{color:W.text,textAlign:'center'}],children:A('privateAccount')}),(0,S.jsx)(n.default,{style:[w.typography.body,{color:W.textMuted,textAlign:'center',marginTop:w.spacing.xs}],children:A('privateAccountBody')})]})]});return F?(0,S.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:W.bg},children:[(0,S.jsxs)(o.default,{contentContainerStyle:{paddingBottom:w.spacing.xxxl},children:[(0,S.jsxs)(c.default,{style:[L.cover,{backgroundColor:W.accentMuted}],children:[(0,S.jsx)(a.default,{onPress:()=>D.back(),accessibilityRole:"button",accessibilityLabel:A('back'),style:[L.iconBtn,{backgroundColor:W.surface,borderColor:W.border}],children:(0,S.jsx)(h.Ionicons,{name:(0,R.chevronBack)(),size:22,color:W.text})}),!F.is_self&&(0,S.jsx)(a.default,{onPress:()=>U(!0),accessibilityRole:"button",accessibilityLabel:A('moreActions'),style:[L.iconBtn,{backgroundColor:W.surface,borderColor:W.border,position:'absolute',top:w.spacing.md},(0,R.inlineEnd)(w.spacing.lg)],children:(0,S.jsx)(h.Ionicons,{name:"ellipsis-horizontal",size:20,color:W.text})})]}),(0,S.jsxs)(c.default,{style:{paddingHorizontal:w.spacing.lg,marginTop:-34},children:[F.avatar_url?(0,S.jsx)(c.default,{style:[L.avatar,{borderColor:W.bg,overflow:'hidden'}],children:(0,S.jsx)(C.PlayerAvatar,{name:F.display_name||'P',seed:0,uri:F.avatar_url,size:70})}):(0,S.jsx)(c.default,{style:[L.avatar,{backgroundColor:W.surface,borderColor:W.bg}],children:(0,S.jsx)(n.default,{style:[w.typography.h1,{color:W.accentText}],children:(F.display_name||'?').slice(0,1).toUpperCase()})}),(0,S.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',marginTop:w.spacing.sm},children:[(0,S.jsxs)(c.default,{style:{flex:1},children:[(0,S.jsx)(n.default,{style:[w.typography.h2,{color:W.text}],numberOfLines:1,children:F.display_name}),!!F.username&&(0,S.jsxs)(n.default,{style:[w.typography.caption,{color:W.textMuted}],children:["@",F.username]}),F.online?(0,S.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',marginTop:2},children:[(0,S.jsx)(c.default,{style:[L.dot,{backgroundColor:W.success}]}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.success,marginStart:5}],children:A('activeNow')})]}):F.last_active?(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.textMuted,marginTop:2}],children:(0,T.formatRelative)(F.last_active)}):null]}),!F.is_self&&(0,S.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',gap:w.spacing.sm},children:[F.can_message&&(0,S.jsx)(a.default,{onPress:async()=>{if(!i||!F)return;try{const e=await(0,_.startConversation)(i.id,F.user_id);D.push(`/messages/${e.id}`)}catch(e){const t=String(e.message);J(A('messages_followers_only'===t?'msgFollowersToast':'messages_disabled'===t?'msgDisabledToast':'cannotMessageBlocked'))}},accessibilityRole:"button",accessibilityLabel:A('messageBtn'),style:[L.msgBtn,{backgroundColor:W.surface,borderColor:W.border}],children:(0,S.jsx)(h.Ionicons,{name:"chatbubble-ellipses-outline",size:18,color:W.text})}),F.is_blocked?(0,S.jsx)(y.Button,{title:A('unblockBtn'),size:"sm",variant:"secondary",onPress:Q}):(0,S.jsx)(k.FollowButton,{viewerId:i.id,targetId:F.user_id,targetName:F.display_name,isFollowing:F.is_following,isRequested:F.is_requested,onChanged:K})]})]}),(0,S.jsxs)(c.default,{style:{flexDirection:'row',gap:w.spacing.sm,marginTop:w.spacing.xs,flexWrap:'wrap'},children:[F.is_friend&&(0,S.jsx)(m.Badge,{label:A('friendLabel'),tone:"success"}),F.looking_for_game&&(0,S.jsx)(m.Badge,{label:A('lookingForGame'),tone:"accent"}),F.is_muted&&(0,S.jsx)(m.Badge,{label:A('muteBtn'),tone:"warning"})]}),F.requested_me&&(0,S.jsxs)(x.Card,{padding:"lg",style:{marginTop:w.spacing.lg},children:[(0,S.jsx)(n.default,{style:[w.typography.bodyStrong,{color:W.text}],children:A('followRequestFrom',{name:F.display_name})}),(0,S.jsxs)(c.default,{style:{flexDirection:'row',gap:w.spacing.sm,marginTop:w.spacing.md},children:[(0,S.jsx)(c.default,{style:{flex:1},children:(0,S.jsx)(y.Button,{title:A('approve'),size:"sm",fullWidth:!0,loading:q,onPress:()=>X(!0)})}),(0,S.jsx)(c.default,{style:{flex:1},children:(0,S.jsx)(y.Button,{title:A('declineBtn'),size:"sm",fullWidth:!0,variant:"secondary",loading:q,onPress:()=>X(!1)})})]})]}),F.limited&&(0,S.jsxs)(S.Fragment,{children:[(0,S.jsxs)(c.default,{style:[L.statsRow,{borderColor:W.border}],children:[(0,S.jsx)(P,{n:F.followers,label:A('followersLabel'),colors:W}),(0,S.jsx)(P,{n:F.following,label:A('followingLabel'),colors:W}),(0,S.jsx)(P,{n:'\u2014',label:A('matchesPlayedLabel'),colors:W}),(0,S.jsx)(P,{n:'\u2014',label:A('hostedLabel'),colors:W})]}),(0,S.jsxs)(x.Card,{padding:"lg",style:{marginTop:w.spacing.lg,alignItems:'center'},children:[(0,S.jsx)(h.Ionicons,{name:"lock-closed-outline",size:32,color:W.accentText}),(0,S.jsx)(n.default,{style:[w.typography.bodyStrong,{color:W.text,marginTop:w.spacing.sm,textAlign:'center'}],children:'private'===F.limited_reason?A('privateAccount'):A('limitedFollowHint',{name:F.display_name})}),(0,S.jsx)(n.default,{style:[w.typography.small,{color:W.textMuted,textAlign:'center',marginTop:2}],children:'private'===F.limited_reason?A('privateAccountStrict'):A('limitedProfileSub')}),'private'!==F.limited_reason&&!F.is_blocked&&(0,S.jsx)(c.default,{style:{alignSelf:'stretch',marginTop:w.spacing.lg},children:(0,S.jsx)(k.FollowButton,{viewerId:i.id,targetId:F.user_id,targetName:F.display_name,isFollowing:F.is_following,isRequested:F.is_requested,onChanged:K,fullWidth:!0,size:"md"})})]})]}),!F.limited&&(0,S.jsxs)(S.Fragment,{children:[(0,S.jsxs)(c.default,{style:[L.statsRow,{borderColor:W.border}],children:[(0,S.jsx)(P,{n:F.followers,label:A('followersLabel'),colors:W,onPress:()=>D.push(`/follows/${F.user_id}?kind=followers`)}),(0,S.jsx)(P,{n:F.following,label:A('followingLabel'),colors:W,onPress:()=>D.push(`/follows/${F.user_id}?kind=following`)}),(0,S.jsx)(P,{n:F.matches_played,label:A('matchesPlayedLabel'),colors:W}),null!=F.matches_hosted&&(0,S.jsx)(P,{n:F.matches_hosted,label:A('hostedLabel'),colors:W})]}),(0,S.jsx)(z,{title:A('aboutLabel'),colors:W,children:(0,S.jsx)(n.default,{style:[w.typography.body,{color:F.bio?W.text:W.textMuted}],children:F.bio||A('noBioYet')})}),(0,S.jsx)(z,{title:A('favoriteSports'),colors:W,children:(0,S.jsxs)(c.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:w.spacing.sm},children:[F.favorite_sports.map(e=>(0,S.jsx)(m.Badge,{label:A(I[e]),tone:"neutral"},e)),(0,S.jsx)(f.Explainer,{k:"classification",children:(0,S.jsx)(m.Badge,{label:A(F.skill_level),tone:"accent"})}),(0,S.jsx)(m.Badge,{label:`${F.attendance.emoji??''} ${A(F.attendance.key)}`.trim(),tone:F.attendance.tone})]})}),(F.achievements.length>0||F.badges.length>0)&&(0,S.jsx)(z,{title:A('achievementsTitle'),colors:W,children:(0,S.jsx)(c.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:w.spacing.sm},children:[...F.achievements,...F.badges].slice(0,12).map(e=>(0,S.jsxs)(c.default,{style:[L.badgeChip,{backgroundColor:W.surface,borderColor:W.border}],children:[(0,S.jsx)(n.default,{style:{fontSize:16},children:e.emoji}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.text,marginStart:4}],children:A(e.key)})]},e.id))})}),$.length>0&&(0,S.jsx)(z,{title:A('highlightsTitle'),colors:W,children:(0,S.jsx)(c.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:w.spacing.sm},children:$.map(e=>(0,S.jsxs)(c.default,{style:[L.badgeChip,{backgroundColor:W.surface,borderColor:W.border}],children:[(0,S.jsx)(h.Ionicons,{name:"film-outline",size:15,color:W.accentText}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.text,marginHorizontal:4}],children:A(e.label_key)}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.textMuted}],children:A('collectionCount',{n:(0,v.formatNumber)(e.count)})})]},e.cover_clip_id))})}),F.teams.length>0&&(0,S.jsx)(z,{title:A('teamsLabel'),colors:W,children:(0,S.jsx)(c.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:w.spacing.sm},children:F.teams.map(e=>{const t=(e.win_streak??0)>=2,l=(e.loss_streak??0)>=2;return(0,S.jsxs)(a.default,{onPress:()=>D.push(`/teams/${e.id}`),style:[L.badgeChip,{backgroundColor:W.surface,borderColor:W.border}],children:[(0,S.jsx)(n.default,{style:{fontSize:15},children:e.emoji}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.text,marginStart:4,flexShrink:1,maxWidth:150}],numberOfLines:1,children:e.name}),t&&(0,S.jsxs)(n.default,{style:[w.typography.caption,{marginStart:3}],children:["\ud83d\udd25",e.win_streak]}),l&&(0,S.jsxs)(n.default,{style:[w.typography.caption,{marginStart:3}],children:["\ud83e\uddca",e.loss_streak]})]},e.id)})})}),F.mutual_friends.length>0&&(0,S.jsx)(z,{title:`${A('mutualFriends')} \xb7 ${F.mutual_friends.length}`,colors:W,children:(0,S.jsx)(c.default,{style:{flexDirection:'row',flexWrap:'wrap'},children:F.mutual_friends.map((e,t)=>(0,S.jsx)(a.default,{onPress:()=>D.push(`/player/${e.id}`),accessibilityRole:"button",accessibilityLabel:e.name,children:(0,S.jsxs)(n.default,{style:[w.typography.small,{color:W.accentText}],children:[e.name,t<F.mutual_friends.length-1?', ':'']})},e.id))})}),F.mutual_teams.length>0&&(0,S.jsx)(z,{title:`${A('mutualTeams')} \xb7 ${F.mutual_teams.length}`,colors:W,children:(0,S.jsx)(n.default,{style:[w.typography.small,{color:W.textMuted}],numberOfLines:2,children:F.mutual_teams.map(e=>e.name).join(', ')})})]})]})]}),(0,S.jsx)(s.default,{visible:N,transparent:!0,animationType:"fade",onRequestClose:()=>U(!1),children:(0,S.jsx)(a.default,{style:L.scrim,onPress:()=>U(!1),children:(0,S.jsxs)(a.default,{style:[L.sheet,{backgroundColor:W.surface}],onPress:()=>{},children:[(0,S.jsxs)(a.default,{onPress:async()=>{if(!i||!F)return;U(!1),F.is_muted?(await(0,_.unmuteUser)(i.id,F.user_id),J(A('unmutedToast'))):(await(0,_.muteUser)(i.id,F.user_id),J(A('mutedToast')));await K()},accessibilityRole:"button",style:L.sheetRow,children:[(0,S.jsx)(h.Ionicons,{name:F.is_muted?'volume-high-outline':'volume-mute-outline',size:20,color:W.text}),(0,S.jsx)(n.default,{style:[w.typography.body,{color:W.text,marginStart:w.spacing.md}],children:F.is_muted?A('unmuteBtn'):A('muteBtn')})]}),(0,S.jsx)(c.default,{style:[L.sheetDivider,{backgroundColor:W.border}]}),(0,S.jsxs)(a.default,{onPress:Q,accessibilityRole:"button",style:L.sheetRow,children:[(0,S.jsx)(h.Ionicons,{name:"ban-outline",size:20,color:W.danger}),(0,S.jsx)(n.default,{style:[w.typography.body,{color:W.danger,marginStart:w.spacing.md}],children:F.is_blocked?A('unblockBtn'):A('blockBtn')})]})]})})}),G&&(0,S.jsx)(c.default,{style:[L.toast,{backgroundColor:W.text}],children:(0,S.jsx)(n.default,{style:[w.typography.smallStrong,{color:W.bg,textAlign:'center'}],children:G})})]}):(0,S.jsx)(u.SafeAreaView,{style:[L.center,{backgroundColor:W.bg}],children:(0,S.jsx)(l.default,{color:W.accentText})})};var t=r(d[1]),l=e(r(d[2])),s=e(r(d[3])),a=e(r(d[4])),o=e(r(d[5])),i=e(r(d[6])),n=e(r(d[7])),c=e(r(d[8])),u=r(d[9]),h=r(d[10]),p=r(d[11]),x=r(d[12]),m=r(d[13]),f=r(d[14]),y=r(d[15]),b=r(d[16]),j=r(d[17]),w=r(d[18]),_=r(d[19]),k=r(d[20]),C=r(d[21]),v=r(d[22]),T=r(d[23]),B=r(d[24]),R=r(d[25]),S=r(d[26]);const I={football:'football',padel:'padel',tennis:'tennis'};const P=({n:e,label:t,colors:l,onPress:s})=>{const o=(0,S.jsxs)(S.Fragment,{children:[(0,S.jsx)(n.default,{style:[w.typography.h3,{color:l.text}],children:'number'==typeof e?(0,v.formatNumber)(e):e}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:l.textMuted}],children:t})]});return s?(0,S.jsx)(a.default,{onPress:s,accessibilityRole:"button",accessibilityLabel:t,style:{alignItems:'center',flex:1},children:o}):(0,S.jsx)(c.default,{style:{alignItems:'center',flex:1},children:o})},z=({title:e,colors:t,children:l})=>(0,S.jsxs)(c.default,{style:{marginTop:w.spacing.lg},children:[(0,S.jsx)(n.default,{style:[w.typography.smallStrong,{color:t.textMuted,marginBottom:w.spacing.sm}],children:e}),l]}),L=i.default.create({center:{flex:1,alignItems:'center',justifyContent:'center'},cover:{height:120,paddingTop:w.spacing.md,paddingHorizontal:w.spacing.lg},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:i.default.hairlineWidth},avatar:{width:76,height:76,borderRadius:38,alignItems:'center',justifyContent:'center',borderWidth:3},statsRow:{flexDirection:'row',marginTop:w.spacing.lg,paddingVertical:w.spacing.md,borderTopWidth:i.default.hairlineWidth,borderBottomWidth:i.default.hairlineWidth},badgeChip:{flexDirection:'row',alignItems:'center',paddingHorizontal:w.spacing.md,paddingVertical:6,borderRadius:w.radius.pill,borderWidth:i.default.hairlineWidth},msgBtn:{width:36,height:36,borderRadius:18,alignItems:'center',justifyContent:'center',borderWidth:i.default.hairlineWidth},header:{flexDirection:'row',alignItems:'center',paddingHorizontal:w.spacing.lg,paddingVertical:w.spacing.md},dot:{width:8,height:8,borderRadius:4},scrim:{flex:1,backgroundColor:'rgba(0,0,0,0.4)',justifyContent:'flex-end'},sheet:{borderTopLeftRadius:w.radius.xl,borderTopRightRadius:w.radius.xl,padding:w.spacing.sm,paddingBottom:w.spacing.xxxl},sheetRow:{flexDirection:'row',alignItems:'center',padding:w.spacing.lg},sheetDivider:{height:i.default.hairlineWidth,marginHorizontal:w.spacing.lg},toast:{position:'absolute',bottom:28,left:w.spacing.lg,right:w.spacing.lg,padding:w.spacing.md,borderRadius:w.radius.md}})},2475,[33,15,461,467,369,281,158,146,273,381,1086,20,1623,1624,1668,626,630,615,616,671,2377,1679,1311,1626,675,1171,13]);
 __d(function(g,r,i,a,m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{user:e,profile:o,refreshProfile:T}=(0,y.useAuth)(),{colors:I}=(0,x.useTheme)(),M=(0,h.useRouter)(),R=(0,k.useT)(),[z,L]=(0,t.useState)([]),[A,W]=(0,t.useState)(null),[D,E]=(0,t.useState)(null),[H,V]=(0,t.useState)(!1);(0,h.useFocusEffect)((0,t.useCallback)(()=>{o&&(L(o.preferred_sports??[]),W(o.skill_level&&'all'!==o.skill_level?o.skill_level:null),E(o.home_area??null))},[o]));const F=({on:e,label:t,onPress:l})=>(0,P.jsxs)(s.default,{onPress:l,accessibilityRole:"button",accessibilityState:{selected:e},style:[C.chip,{backgroundColor:e?I.accent:I.surface,borderColor:e?I.accent:I.border}],children:[e&&(0,P.jsx)(p.Ionicons,{name:"checkmark",size:14,color:I.accentInk,style:{marginEnd:4}}),(0,P.jsx)(n.default,{style:[b.typography.small,{color:e?I.accentInk:I.text}],children:t})]});return(0,P.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:I.bg},children:[(0,P.jsxs)(c.default,{style:C.header,children:[(0,P.jsx)(s.default,{onPress:()=>M.back(),accessibilityRole:"button",accessibilityLabel:R('back'),hitSlop:10,style:[C.iconBtn,{backgroundColor:I.surface,borderColor:I.border}],children:(0,P.jsx)(p.Ionicons,{name:(0,w.chevronBack)(),size:22,color:I.text})}),(0,P.jsx)(n.default,{style:[b.typography.h2,{color:I.text,flex:1,textAlign:'center'}],children:R('prefsTitle')}),(0,P.jsx)(c.default,{style:{width:40}})]}),(0,P.jsxs)(c.default,{style:{padding:b.spacing.lg},children:[(0,P.jsx)(n.default,{style:[b.typography.body,{color:I.textMuted,marginBottom:b.spacing.lg}],children:R('prefsBody')}),(0,P.jsx)(n.default,{style:[b.typography.smallStrong,{color:I.textMuted,marginBottom:b.spacing.xs}],children:R('sportsLabel')}),(0,P.jsx)(c.default,{style:C.row,children:S.map(e=>(0,P.jsx)(F,{on:z.includes(e),label:R(e),onPress:()=>L(t=>t.includes(e)?t.filter(t=>t!==e):[...t,e])},e))}),(0,P.jsx)(n.default,{style:[b.typography.smallStrong,{color:I.textMuted,marginTop:b.spacing.lg,marginBottom:b.spacing.xs}],children:R('levelLabel')}),(0,P.jsx)(c.default,{style:C.row,children:B.map(e=>(0,P.jsx)(F,{on:A===e,label:R(e),onPress:()=>W(t=>t===e?null:e)},e))}),(0,P.jsx)(n.default,{style:[b.typography.smallStrong,{color:I.textMuted,marginTop:b.spacing.lg,marginBottom:b.spacing.xs}],children:R('areaLabel')}),(0,P.jsx)(_.AreaPicker,{value:D,onChange:E}),(0,P.jsx)(f.Button,{title:R('saveLabel'),size:"lg",fullWidth:!0,loading:H,onPress:async()=>{if(e){V(!0);try{await(0,j.updateProfile)(e.id,Object.assign({},z.length?{preferred_sports:z}:{},A?{skill_level:A}:{},D?{home_area:D}:{})),await T(),M.back()}catch(e){l.default.alert(R('error'),(0,v.storeErrorText)(e?.message??'')||R('error'))}finally{V(!1)}}},style:{marginTop:b.spacing.xl}}),(0,P.jsx)(s.default,{onPress:()=>M.back(),accessibilityRole:"button",hitSlop:12,style:{alignItems:'center',marginTop:b.spacing.md,minHeight:b.touch.minTarget,justifyContent:'center'},children:(0,P.jsx)(n.default,{style:[b.typography.small,{color:I.textMuted}],children:R('skipForNow')})})]})]})};var t=r(d[1]),l=e(r(d[2])),s=e(r(d[3])),o=e(r(d[4])),n=e(r(d[5])),c=e(r(d[6])),u=r(d[7]),p=r(d[8]),h=r(d[9]),f=r(d[10]),y=r(d[11]),x=r(d[12]),b=r(d[13]),j=r(d[14]),k=r(d[15]),w=r(d[16]),v=r(d[17]),_=r(d[18]),P=r(d[19]);const S=['football','padel','tennis'],B=['beginner','intermediate','advanced'];const C=o.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:b.spacing.lg,paddingVertical:b.spacing.sm},iconBtn:{width:40,height:40,borderRadius:20,borderWidth:1,alignItems:'center',justifyContent:'center'},row:{flexDirection:'row',flexWrap:'wrap',gap:b.spacing.sm},chip:{flexDirection:'row',alignItems:'center',borderRadius:b.radius.pill,borderWidth:1,paddingHorizontal:b.spacing.md,paddingVertical:13}})},2476,[33,15,445,369,158,146,273,381,1086,20,626,630,615,616,671,675,1171,674,1841,13]);
-__d(function(g,r,i,_a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{user:t,profile:M}=(0,x.useAuth)(),{colors:T}=(0,v.useTheme)(),I=(0,f.useRouter)(),A=(0,S.useT)(),[P,R]=(0,a.useState)(null),[B,W]=(0,a.useState)(!1);(0,f.useFocusEffect)((0,a.useCallback)(()=>{t&&(0,C.fetchPrivacy)(t.id).then(R).catch(()=>R(null))},[t]));const z=async a=>{if(t&&!B){W(!0);try{R(await(0,C.updatePrivacy)(t.id,a))}finally{W(!1)}}};if(!P)return(0,w.jsx)(p.SafeAreaView,{style:{flex:1,backgroundColor:T.bg,alignItems:'center',justifyContent:'center'},children:(0,w.jsx)(o.default,{color:T.accentText})});const V=M?.full_name??'Player',D=V.split(' ').map(t=>t[0]).slice(0,2).join('').toUpperCase(),E=[{key:'everyone',label:A('visEveryone'),sub:A('visEveryoneSub')},{key:'same_audience',label:A('visSameAudience'),sub:A('visSameAudienceSub')},{key:'connections',label:A('visConnections'),sub:A('visConnectionsSub')}],L=[{key:'photo',label:A('avatarPhoto')},{key:'initials',label:A('avatarInitials')}];return(0,w.jsxs)(p.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:T.bg},children:[(0,w.jsxs)(y.default,{style:_.header,children:[(0,w.jsx)(l.default,{onPress:()=>I.back(),accessibilityRole:"button",accessibilityLabel:A('back'),style:[_.iconBtn,{backgroundColor:T.surface,borderColor:T.border}],children:(0,w.jsx)(b.Ionicons,{name:(0,k.chevronBack)(),size:22,color:T.text})}),(0,w.jsx)(u.default,{style:[j.typography.h2,{color:T.text,flex:1,textAlign:'center'}],children:A('privacyTitle')}),(0,w.jsx)(y.default,{style:{width:40}})]}),(0,w.jsxs)(n.default,{contentContainerStyle:{padding:j.spacing.lg,paddingBottom:j.spacing.xxxl},children:[(0,w.jsxs)(y.default,{style:[_.preview,{backgroundColor:T.surface,borderColor:T.border}],children:[(0,w.jsx)(u.default,{style:[_.caption,{color:T.textMuted}],children:A('howOthersSeeMe').toUpperCase()}),(0,w.jsxs)(y.default,{style:{flexDirection:'row',alignItems:'center',marginTop:j.spacing.md},children:['initials'===P.avatar_mode?(0,w.jsx)(y.default,{style:[_.initialsAvatar,{backgroundColor:T.accent}],children:(0,w.jsx)(u.default,{style:[j.typography.bodyStrong,{color:T.accentInk}],children:D})}):(0,w.jsx)(h.PlayerAvatar,{name:V,seed:3,size:44,uri:M?.avatar_url??void 0}),(0,w.jsxs)(y.default,{style:{flex:1,marginStart:j.spacing.md},children:[(0,w.jsx)(u.default,{style:[j.typography.bodyStrong,{color:T.text}],children:'connections'===P.privacy_visibility?A('previewNameHidden'):V}),(0,w.jsx)(u.default,{style:[j.typography.caption,{color:T.textMuted,marginTop:2}],children:'everyone'===P.privacy_visibility?A('visEveryoneSub'):'same_audience'===P.privacy_visibility?A('visSameAudienceSub'):A('visConnectionsSub')})]})]}),(0,w.jsx)(u.default,{style:[j.typography.caption,{color:T.textMuted,marginTop:j.spacing.md}],children:A('privacyNeverShown')})]}),(0,w.jsx)(u.default,{style:[_.caption,{color:T.textMuted,marginTop:j.spacing.lg,marginBottom:j.spacing.sm}],children:A('visibilityLabel').toUpperCase()}),E.map(t=>{const a=P.privacy_visibility===t.key;return(0,w.jsxs)(l.default,{onPress:()=>z({privacy_visibility:t.key}),accessibilityRole:"button",accessibilityState:{selected:a},style:[_.row,{backgroundColor:T.surface,borderColor:a?T.accent:T.border,borderWidth:a?1.5:s.default.hairlineWidth}],children:[(0,w.jsxs)(y.default,{style:{flex:1},children:[(0,w.jsx)(u.default,{style:[j.typography.bodyStrong,{color:T.text}],children:t.label}),(0,w.jsx)(u.default,{style:[j.typography.caption,{color:T.textMuted,marginTop:2}],children:t.sub})]}),(0,w.jsx)(b.Ionicons,{name:a?'radio-button-on':'radio-button-off',size:20,color:a?T.accent:T.textMuted})]},t.key)}),(0,w.jsx)(u.default,{style:[_.caption,{color:T.textMuted,marginTop:j.spacing.lg,marginBottom:j.spacing.sm}],children:A('avatarModeLabel').toUpperCase()}),(0,w.jsx)(y.default,{style:{flexDirection:'row',gap:j.spacing.sm},children:L.map(t=>{const a=P.avatar_mode===t.key;return(0,w.jsx)(l.default,{onPress:()=>z({avatar_mode:t.key}),accessibilityRole:"button",accessibilityState:{selected:a},style:[_.avatarOpt,{backgroundColor:a?T.accent:T.surface,borderColor:a?T.accent:T.border}],children:(0,w.jsx)(u.default,{style:[j.typography.smallStrong,{color:a?T.accentInk:T.text}],children:t.label})},t.key)})}),(0,w.jsx)(u.default,{style:[j.typography.caption,{color:T.textMuted,marginTop:j.spacing.xs}],children:A('avatarModeSub')}),(0,w.jsxs)(y.default,{style:[_.row,{backgroundColor:T.surface,borderColor:T.border,marginTop:j.spacing.lg}],children:[(0,w.jsxs)(y.default,{style:{flex:1},children:[(0,w.jsx)(u.default,{style:[j.typography.bodyStrong,{color:T.text}],children:A('mediaConsentLabel')}),(0,w.jsx)(u.default,{style:[j.typography.caption,{color:T.textMuted,marginTop:2}],children:A('mediaConsentSub')})]}),(0,w.jsx)(c.default,{value:P.media_consent,onValueChange:t=>z({media_consent:t}),trackColor:{true:T.accent,false:T.surfaceAlt},thumbColor:"#fff"})]})]})]})};var a=r(d[1]),o=t(r(d[2])),l=t(r(d[3])),n=t(r(d[4])),s=t(r(d[5])),c=t(r(d[6])),u=t(r(d[7])),y=t(r(d[8])),p=r(d[9]),b=r(d[10]),f=r(d[11]),h=r(d[12]),x=r(d[13]),v=r(d[14]),j=r(d[15]),C=r(d[16]),S=r(d[17]),k=r(d[18]),w=r(d[19]);const _=s.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:j.spacing.lg,paddingVertical:j.spacing.sm},iconBtn:{width:40,height:40,borderRadius:20,borderWidth:1,alignItems:'center',justifyContent:'center'},caption:{fontSize:10.5,fontWeight:'800',letterSpacing:1.5},preview:{borderRadius:j.radius.lg,borderWidth:1,padding:j.spacing.md},initialsAvatar:{width:44,height:44,borderRadius:22,alignItems:'center',justifyContent:'center'},row:{flexDirection:'row',alignItems:'center',borderRadius:j.radius.lg,padding:j.spacing.md,marginBottom:j.spacing.sm},avatarOpt:{flex:1,alignItems:'center',borderRadius:j.radius.pill,borderWidth:1,paddingVertical:12}})},2477,[33,15,461,369,281,158,477,146,273,381,1086,20,1679,630,615,616,671,675,1171,13]);
+__d(
+  function (g, r, i, _a, m, e, d) {
+    var t = r(d[0]);
+    (Object.defineProperty(e, "__esModule", { value: !0 }),
+      (e.default = function () {
+        const { user: t, profile: M } = (0, x.useAuth)(),
+          { colors: T } = (0, v.useTheme)(),
+          I = (0, f.useRouter)(),
+          A = (0, S.useT)(),
+          [P, R] = (0, a.useState)(null),
+          [B, W] = (0, a.useState)(!1);
+        (0, f.useFocusEffect)(
+          (0, a.useCallback)(() => {
+            t &&
+              (0, C.fetchPrivacy)(t.id)
+                .then(R)
+                .catch(() => R(null));
+          }, [t]),
+        );
+        const z = async (a) => {
+          if (t && !B) {
+            W(!0);
+            try {
+              R(await (0, C.updatePrivacy)(t.id, a));
+            } finally {
+              W(!1);
+            }
+          }
+        };
+        if (!P)
+          return (0, w.jsx)(p.SafeAreaView, {
+            style: { flex: 1, backgroundColor: T.bg, alignItems: "center", justifyContent: "center" },
+            children: (0, w.jsx)(o.default, { color: T.accentText }),
+          });
+        const V = M?.full_name ?? "Player",
+          D = V.split(" ")
+            .map((t) => t[0])
+            .slice(0, 2)
+            .join("")
+            .toUpperCase(),
+          E = [
+            { key: "everyone", label: A("visEveryone"), sub: A("visEveryoneSub") },
+            { key: "same_audience", label: A("visSameAudience"), sub: A("visSameAudienceSub") },
+            { key: "connections", label: A("visConnections"), sub: A("visConnectionsSub") },
+          ],
+          L = [
+            { key: "photo", label: A("avatarPhoto") },
+            { key: "initials", label: A("avatarInitials") },
+          ];
+        return (0, w.jsxs)(p.SafeAreaView, {
+          edges: ["top"],
+          style: { flex: 1, backgroundColor: T.bg },
+          children: [
+            (0, w.jsxs)(y.default, {
+              style: _.header,
+              children: [
+                (0, w.jsx)(l.default, {
+                  onPress: () => I.back(),
+                  accessibilityRole: "button",
+                  accessibilityLabel: A("back"),
+                  style: [_.iconBtn, { backgroundColor: T.surface, borderColor: T.border }],
+                  children: (0, w.jsx)(b.Ionicons, { name: (0, k.chevronBack)(), size: 22, color: T.text }),
+                }),
+                (0, w.jsx)(u.default, {
+                  style: [j.typography.h2, { color: T.text, flex: 1, textAlign: "center" }],
+                  children: A("privacyTitle"),
+                }),
+                (0, w.jsx)(y.default, { style: { width: 40 } }),
+              ],
+            }),
+            (0, w.jsxs)(n.default, {
+              contentContainerStyle: { padding: j.spacing.lg, paddingBottom: j.spacing.xxxl },
+              children: [
+                (0, w.jsxs)(y.default, {
+                  style: [_.preview, { backgroundColor: T.surface, borderColor: T.border }],
+                  children: [
+                    (0, w.jsx)(u.default, {
+                      style: [_.caption, { color: T.textMuted }],
+                      children: A("howOthersSeeMe").toUpperCase(),
+                    }),
+                    (0, w.jsxs)(y.default, {
+                      style: { flexDirection: "row", alignItems: "center", marginTop: j.spacing.md },
+                      children: [
+                        "initials" === P.avatar_mode
+                          ? (0, w.jsx)(y.default, {
+                              style: [_.initialsAvatar, { backgroundColor: T.accent }],
+                              children: (0, w.jsx)(u.default, {
+                                style: [j.typography.bodyStrong, { color: T.accentInk }],
+                                children: D,
+                              }),
+                            })
+                          : (0, w.jsx)(h.PlayerAvatar, {
+                              name: V,
+                              seed: 3,
+                              size: 44,
+                              uri: M?.avatar_url ?? void 0,
+                            }),
+                        (0, w.jsxs)(y.default, {
+                          style: { flex: 1, marginStart: j.spacing.md },
+                          children: [
+                            (0, w.jsx)(u.default, {
+                              style: [j.typography.bodyStrong, { color: T.text }],
+                              children: "connections" === P.privacy_visibility ? A("previewNameHidden") : V,
+                            }),
+                            (0, w.jsx)(u.default, {
+                              style: [j.typography.caption, { color: T.textMuted, marginTop: 2 }],
+                              children:
+                                "everyone" === P.privacy_visibility
+                                  ? A("visEveryoneSub")
+                                  : "same_audience" === P.privacy_visibility
+                                    ? A("visSameAudienceSub")
+                                    : A("visConnectionsSub"),
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                    (0, w.jsx)(u.default, {
+                      style: [j.typography.caption, { color: T.textMuted, marginTop: j.spacing.md }],
+                      children: A("privacyNeverShown"),
+                    }),
+                  ],
+                }),
+                (0, w.jsx)(u.default, {
+                  style: [
+                    _.caption,
+                    { color: T.textMuted, marginTop: j.spacing.lg, marginBottom: j.spacing.sm },
+                  ],
+                  children: A("visibilityLabel").toUpperCase(),
+                }),
+                E.map((t) => {
+                  const a = P.privacy_visibility === t.key;
+                  return (0, w.jsxs)(
+                    l.default,
+                    {
+                      onPress: () => z({ privacy_visibility: t.key }),
+                      accessibilityRole: "button",
+                      accessibilityState: { selected: a },
+                      style: [
+                        _.row,
+                        {
+                          backgroundColor: T.surface,
+                          borderColor: a ? T.accent : T.border,
+                          borderWidth: a ? 1.5 : s.default.hairlineWidth,
+                        },
+                      ],
+                      children: [
+                        (0, w.jsxs)(y.default, {
+                          style: { flex: 1 },
+                          children: [
+                            (0, w.jsx)(u.default, {
+                              style: [j.typography.bodyStrong, { color: T.text }],
+                              children: t.label,
+                            }),
+                            (0, w.jsx)(u.default, {
+                              style: [j.typography.caption, { color: T.textMuted, marginTop: 2 }],
+                              children: t.sub,
+                            }),
+                          ],
+                        }),
+                        (0, w.jsx)(b.Ionicons, {
+                          name: a ? "radio-button-on" : "radio-button-off",
+                          size: 20,
+                          color: a ? T.accent : T.textMuted,
+                        }),
+                      ],
+                    },
+                    t.key,
+                  );
+                }),
+                (0, w.jsx)(u.default, {
+                  style: [
+                    _.caption,
+                    { color: T.textMuted, marginTop: j.spacing.lg, marginBottom: j.spacing.sm },
+                  ],
+                  children: A("avatarModeLabel").toUpperCase(),
+                }),
+                (0, w.jsx)(y.default, {
+                  style: { flexDirection: "row", gap: j.spacing.sm },
+                  children: L.map((t) => {
+                    const a = P.avatar_mode === t.key;
+                    return (0, w.jsx)(
+                      l.default,
+                      {
+                        onPress: () => z({ avatar_mode: t.key }),
+                        accessibilityRole: "button",
+                        accessibilityState: { selected: a },
+                        style: [
+                          _.avatarOpt,
+                          { backgroundColor: a ? T.accent : T.surface, borderColor: a ? T.accent : T.border },
+                        ],
+                        children: (0, w.jsx)(u.default, {
+                          style: [j.typography.smallStrong, { color: a ? T.accentInk : T.text }],
+                          children: t.label,
+                        }),
+                      },
+                      t.key,
+                    );
+                  }),
+                }),
+                (0, w.jsx)(u.default, {
+                  style: [j.typography.caption, { color: T.textMuted, marginTop: j.spacing.xs }],
+                  children: A("avatarModeSub"),
+                }),
+                (0, w.jsxs)(y.default, {
+                  style: [
+                    _.row,
+                    { backgroundColor: T.surface, borderColor: T.border, marginTop: j.spacing.lg },
+                  ],
+                  children: [
+                    (0, w.jsxs)(y.default, {
+                      style: { flex: 1 },
+                      children: [
+                        (0, w.jsx)(u.default, {
+                          style: [j.typography.bodyStrong, { color: T.text }],
+                          children: A("mediaConsentLabel"),
+                        }),
+                        (0, w.jsx)(u.default, {
+                          style: [j.typography.caption, { color: T.textMuted, marginTop: 2 }],
+                          children: A("mediaConsentSub"),
+                        }),
+                      ],
+                    }),
+                    (0, w.jsx)(c.default, {
+                      value: P.media_consent,
+                      onValueChange: (t) => z({ media_consent: t }),
+                      trackColor: { true: T.accent, false: T.surfaceAlt },
+                      thumbColor: "#fff",
+                    }),
+                  ],
+                }),
+              ],
+            }),
+          ],
+        });
+      }));
+    var a = r(d[1]),
+      o = t(r(d[2])),
+      l = t(r(d[3])),
+      n = t(r(d[4])),
+      s = t(r(d[5])),
+      c = t(r(d[6])),
+      u = t(r(d[7])),
+      y = t(r(d[8])),
+      p = r(d[9]),
+      b = r(d[10]),
+      f = r(d[11]),
+      h = r(d[12]),
+      x = r(d[13]),
+      v = r(d[14]),
+      j = r(d[15]),
+      C = r(d[16]),
+      S = r(d[17]),
+      k = r(d[18]),
+      w = r(d[19]);
+    const _ = s.default.create({
+      header: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: j.spacing.lg,
+        paddingVertical: j.spacing.sm,
+      },
+      iconBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        borderWidth: 1,
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      caption: { fontSize: 10.5, fontWeight: "800", letterSpacing: 1.5 },
+      preview: { borderRadius: j.radius.lg, borderWidth: 1, padding: j.spacing.md },
+      initialsAvatar: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      row: {
+        flexDirection: "row",
+        alignItems: "center",
+        borderRadius: j.radius.lg,
+        padding: j.spacing.md,
+        marginBottom: j.spacing.sm,
+      },
+      avatarOpt: {
+        flex: 1,
+        alignItems: "center",
+        borderRadius: j.radius.pill,
+        borderWidth: 1,
+        paddingVertical: 12,
+      },
+    });
+  },
+  2477,
+  [33, 15, 461, 369, 281, 158, 477, 146, 273, 381, 1086, 20, 1679, 630, 615, 616, 671, 675, 1171, 13],
+);
+
 __d(
   function (g, r, i, a, m, e, d) {
     var t = r(d[0]);

@@ -122,6 +122,33 @@ const out = await page.evaluate(async (ids) => {
     const posted = await api.sendChatMessage({ game_id: pg.id, channel: 'general', user_id: ids.user, user_name: 'Someone Else Entirely', body: 'signed by me' });
     res.chatAuthorName = posted.author_name;
 
+    // /privacy-controls offers three visibility settings, previews what each one hides, and writes
+    // privacy_visibility to the profile. Nothing read it. same_audience needed no wiring - oa blocks
+    // every cross-audience profile read already - but connections, the restrictive one, did nothing:
+    // a stranger still got the bio, the favourite sports and the stats, and the preview promises the
+    // name is hidden too. Note the enforced model beside it, privacySettings.profile_visibility, is
+    // set from a different screen and is a separate control.
+    const prof9 = async (viewer, target) => {
+      try {
+        const p = await api.fetchPlayerProfile(viewer, target);
+        return { name: p.display_name, bio: p.bio ?? null, limited: !!p.limited, reason: p.limited_reason ?? null };
+      } catch (e) { return { err: e.code || e.message }; }
+    };
+    const me9 = ids.admin; // this file runs as admin, and admin is male like the stranger below
+    await api.updateProfile(me9, { bio: 'I play at Salmiya on Tuesdays' }).catch(() => {});
+    await api.updatePrivacy(me9, { privacy_visibility: 'connections' });
+    res.privStranger = await prof9(ids.analyst, me9);
+    res.privSelf = await prof9(me9, me9);
+    // A follower is a connection; so is anyone who has played in the same match. ids.user holds a
+    // booking on pg and so does the organizer, so they are connections of each other.
+    await api.updatePrivacy(ids.organizer, { privacy_visibility: 'connections' });
+    await api.updateProfile(ids.organizer, { bio: 'Host since 2019' }).catch(() => {});
+    res.privPlayedWith = await prof9(ids.user, ids.organizer);
+    res.privNotPlayedWith = await prof9(ids.analyst, ids.organizer);
+    // and the setting off again is the control in the other direction
+    await api.updatePrivacy(me9, { privacy_visibility: 'everyone' });
+    res.privOpen = await prof9(ids.analyst, me9);
+
     // ...and a public match is read by anyone, which is the point of the gate having a shape. This
     // takes a seeded match rather than creating one: the organizer has an hourly creation cap and
     // this file already spends two of it above.
@@ -414,6 +441,12 @@ ok('an outsider cannot read the match chat', out.chatOutsider === 'E_MATCH_NOT_F
 ok('nor can a signed-out visitor', out.chatGuest === 'E_MATCH_NOT_FOUND', String(out.chatGuest));
 ok('an outsider cannot post into it', out.chatWriteOutsider === 'E_MATCH_NOT_FOUND', String(out.chatWriteOutsider));
 ok('a message is signed with the author\u2019s own name', out.chatAuthorName === 'Test Player', String(out.chatAuthorName));
+ok('the connections setting hides the profile from a stranger', out.privStranger?.limited === true && out.privStranger?.reason === 'connections', JSON.stringify(out.privStranger));
+ok('and hides the name, as the screen previews', out.privStranger?.name === 'Player', String(out.privStranger?.name));
+ok('the owner still sees their own profile', out.privSelf?.limited === false, JSON.stringify(out.privSelf));
+ok('someone they played with still sees it', out.privPlayedWith?.limited === false && !!out.privPlayedWith?.bio, JSON.stringify(out.privPlayedWith));
+ok('someone they have not still does not', out.privNotPlayedWith?.limited === true, JSON.stringify(out.privNotPlayedWith));
+ok('and turning the setting off opens it again (the control)', out.privOpen?.limited === false && !!out.privOpen?.bio, JSON.stringify(out.privOpen));
 ok('a stranger cannot reserve a group on a private match', out.groupOnPrivateByStranger === 'E_MATCH_NOT_FOUND', String(out.groupOnPrivateByStranger));
 ok('an admin still can (the control)', out.groupOnPrivateByAdmin === 'created', String(out.groupOnPrivateByAdmin));
 for (const [name, r] of Object.entries(out.readers || {})) {

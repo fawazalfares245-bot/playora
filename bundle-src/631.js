@@ -14938,6 +14938,21 @@ __d(
       al = (e) =>
         Qt.privacySettings.find((t) => t.user_id === e) ??
         Object.assign({ user_id: e }, "female" === aa(e) ? _t : ct),
+      // "Only people you've played with or follow" - the promise /privacy-controls makes for its
+      // most restrictive setting. privacy_visibility was written to the profile by that screen and
+      // read by nothing, so choosing it changed nothing at all: a stranger still got the bio, the
+      // favourite sports and the stats. Its middle setting, same_audience, needed no wiring - oa
+      // already blocks every cross-audience profile read, for everyone, whatever they choose - but
+      // connections did. Note this is a second privacy model living beside profile_visibility in
+      // privacySettings, which is enforced and is set from a different screen.
+      playedTogether9 = (e, t) => {
+        const a = new Set(
+          Qt.bookings.filter((a) => a.user_id === e && countsAsParticipant9(a)).map((e) => e.game_id),
+        );
+        return Qt.bookings.some((i) => i.user_id === t && a.has(i.game_id) && countsAsParticipant9(i));
+      },
+      isConnection9 = (e, t) =>
+        e === t || Vd(e, t) || Vd(t, e) || Qd(e).has(t) || playedTogether9(e, t),
       il = (e) => Qt.presence.find((t) => t.user_id === e)?.last_active ?? null,
       nl = (e) => {
         if (!al(e).show_online) return !1;
@@ -15187,7 +15202,9 @@ __d(
         r = !n && Qd(e).has(t),
         o = !n && Vd(e, t),
         s = al(t).profile_visibility,
-        d = n || (!i && ("private" === s || ("followers" === s && !o && !r))),
+        pv9 = Qt.profiles.find((e) => e.id === t)?.privacy_visibility ?? "everyone",
+        con9 = !i && "connections" === pv9 && !isConnection9(e, t),
+        d = n || (!i && ("private" === s || ("followers" === s && !o && !r) || con9)),
         l = al(t).allow_messages,
         c = !i && !Xd(e, t) && ("everyone" === l || ("followers" === l && (o || r))),
         _ = {
@@ -15224,7 +15241,10 @@ __d(
           mutual_teams: [],
           looking_for_game: !1,
           limited: !0,
-          limited_reason: n || "private" !== s ? "followers" : "private",
+          limited_reason: n ? "followers" : "private" === s ? "private" : con9 ? "connections" : "followers",
+          // The screen previews this setting as "Name visible to connections only", so the name goes
+          // too - the limited branch had always kept it.
+          display_name: con9 && !n && "private" !== s ? "Player" : _.display_name,
         });
       const u = await dr(t, e),
         m = Zd(e),

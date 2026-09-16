@@ -183,6 +183,36 @@ Anything new that reads or seats against a match by id belongs behind the same c
 a private and a public match. Test the organizer too: a reader with no data refuses everyone and
 looks gated when it is not, and two of these were "verified" that way before the control was added.
 
+## Profile privacy: two models, one of them was decorative
+
+There are two, side by side, set from different screens:
+
+- `privacySettings.profile_visibility` - `public` / `followers` / `private`. Enforced by
+  `mockGetPlayerProfile`, `mockGetFollowList` and the discovery lists.
+- `profiles.privacy_visibility` - `everyone` / `same_audience` / `connections`, set from
+  `/privacy-controls` (module 2477), which previews what each option hides. It was written and read
+  by nothing. `same_audience` needed no wiring: `oa` blocks every cross-audience profile read for
+  everyone, whatever they choose - so it is already the floor, and `everyone` is the option that does
+  not do what it says. `connections` did nothing at all, so the restrictive choice left the bio, the
+  favourite sports and the stats readable by a stranger. It now feeds the same limited branch, with
+  `limited_reason: 'connections'`, and takes the display name with it because that is what the
+  screen's own preview promises.
+
+`isConnection9(a, b)` is the test: self, either follows the other, friends, or they have played in
+the same match (`countsAsParticipant9` on both sides of one game).
+
+**Not changed, and a product decision rather than a bug:** `everyone` cannot open a profile across
+audiences, because `oa` is the stronger rule and relaxing it would weaken a safety boundary.
+
+## A trap in the smoke harness
+
+`seedScript` is installed with `page.addInitScript`, so it runs on **every navigation and reload**,
+and it rewrites `playora.mock.profiles.v1` wholesale with `privacy_visibility: 'everyone'`. Any
+fixture that changes a profile and then navigates is silently reset - the assertion afterwards
+measures the seed, not the change. Games, bookings and the other collections are not re-seeded, which
+is why the `goto`-then-assert pattern works for them. To set up profile state across a navigation,
+pass `initScript` to `openApp`: it runs after the seed and can patch it.
+
 ## Scheduled work
 
 `mockRunScheduledWork` (631) drives nine sweeps plus the reminder pass. There is no server and no cron,
