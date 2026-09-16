@@ -16,7 +16,11 @@ edited through the module tooling described below.
 - `tools/bundle.py` – `split <id...>` extracts modules from index.html into bundle-src; `build` rebuilds.
 - `tools/flows-admin.mjs`, `tools/flows-organizer.mjs`, `tools/flows-org1.mjs`, `tools/flows-search.mjs`,
   `tools/flows-xcut.mjs`, `tools/flows-kids.mjs`, `tools/flows-consumer.mjs`, `tools/flows-lifecycle.mjs`,
-  `tools/rules.mjs` – the regression suites. Run all nine after any bundle change.
+  `tools/flows-cancel.mjs`, `tools/rules.mjs` – the regression suites. Run all ten after any bundle change.
+  `flows-cancel.mjs` runs one fixture - a paid, seated, boarded player - out through all five exits
+  (`mockLeaveMatch`, `mockCancelBooking`, `mockKickPlayer`, `cancelGameLocked`, the squad sweep) and
+  diffs the same five-part answer from each: booking status, payment status, wallet delta,
+  cancellation reason and lineup slot. Only the reason is allowed to differ.
   `flows-lifecycle.mjs` is the odd one out: instead of testing a screen it drives one world through
   the whole booking sequence (reserve a court, create a paid match, join, waitlist, pay, leave,
   refund, promote, check in, mark attendance, submit a score), checking the money at each step. Most

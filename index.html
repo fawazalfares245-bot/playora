@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "0fbb9fd0a6"
+  buildId: "333c227c7a"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -5150,21 +5150,32 @@ __d(
           ((e.user_id = ni(e.display_name)),
           ri(e.user_id, e.display_name, a?.sport ?? "football") && (r = !0),
           (n = !0));
-      if ((n && (await Za(X, Qt.gamePlayers)), r && (await Za(Y, Qt.profiles)), t)) {
-        const a = Qt.bookings.some((a) => a.game_id === e && a.user_id === t && "confirmed" === a.status),
-          n = i.some((e) => e.id === `self-${t}`);
-        if (a && !n) {
-          const a = Qt.profiles.find((e) => e.id === t);
-          i.push({
-            id: `self-${t}`,
-            game_id: e,
-            display_name: a?.full_name || "You",
-            avatar_seed: 99,
-            team: null,
-            is_self: !0,
-            user_id: t,
-          });
-        }
+      (n && (await Za(X, Qt.gamePlayers)), r && (await Za(Y, Qt.profiles)));
+      // The roster was the gamePlayers rows plus a self-entry for whoever happened to be asking, and
+      // joining a match creates no gamePlayers row - those are the guests an organizer types in by
+      // name. So on any real match the organizer's bench held exactly one player, themselves, and
+      // mockAssignLineupSlot refused every actual joiner with E_PLAYER_IS_NOT_IN_THIS_MATCH: nobody
+      // could be put on the board at all. Only the demo matches, which ship with gamePlayers rows,
+      // ever worked, which is why the board looked fine. Build the roster from the seats as well,
+      // keeping the `self-<user id>` key that the slot references and the cancellation cleanup in
+      // qi, mockKickPlayer and the squad sweep already write and clear.
+      for (const b9 of Qt.bookings) {
+        if (b9.game_id !== e || "confirmed" !== b9.status) continue;
+        const k9 = `self-${b9.user_id}`;
+        if (i.some((e) => e.id === k9 || e.user_id === b9.user_id)) continue;
+        // or() is the one name resolver: profile, then the name the booking was made under. The
+        // demo players' profiles live in the module rather than in storage, so a direct profile
+        // lookup renders a bench of "Player".
+        const nm9 = or(b9.user_id);
+        i.push({
+          id: k9,
+          game_id: e,
+          display_name: "Player" === nm9 && b9.user_id === t ? "You" : nm9,
+          avatar_seed: 99,
+          team: null,
+          is_self: b9.user_id === t,
+          user_id: b9.user_id,
+        });
       }
       const o = new Map(Qt.profiles.map((e) => [e.id, e.avatar_url ?? null]));
       return i.map((e) =>
@@ -20077,6 +20088,8 @@ __d(
     657, 658, 659, 660, 661, 662, 663, 664, 665, 666, 667, 668, 669, 670,
   ],
 );
+
+
 
 
 
