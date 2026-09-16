@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "d9c562d852"
+  buildId: "a7f4e3ef0d"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -16579,6 +16579,7 @@ __d(
       await ei();
       const a = hi(t);
       if (!a) throw new Error("not_found");
+      (ra(e, a.audience), maySeeMatch9(a, e) || err9());
       await Xt(t, async () => {
         (await Di(a), await Bd(a));
       });
@@ -16598,9 +16599,17 @@ __d(
       if (!i) throw new Error("not_found");
       if ("scheduled" !== i.status) throw new Error("match_closed");
       if (new Date(i.starts_at).getTime() < Date.now()) throw new Error("match_started");
+      // This is a seat-taking path that never went through ji: it pushes booking rows straight into
+      // Qt.bookings with status "reserved", and it checked only that the leader was not banned or
+      // sanctioned. So a stranger could reserve seats on a private match they had never been shown,
+      // and a man could take seats - his own and his friends' - on a women-only one. Capacity and
+      // double-booking were the only rules it kept. Every seat here is a seat, so every seat here
+      // goes through the same gate joining does, for the friends as well as for the leader; a guest
+      // has no account to check and rides on the leader's.
+      maySeeMatch9(i, e) || err9();
+      await assertMayHoldSeat9(i, e);
+      for (const f9 of new Set(a.friendIds ?? [])) await assertMayHoldSeat9(i, f9);
       return (
-        md(e),
-        await wd(e),
         Xt(t, async () => {
           (await Di(i), await Bd(i));
           const n = Fd(i);
@@ -18031,6 +18040,8 @@ __d(
       await ei();
       const a = hi(t);
       if (!a) throw new Error("not_found");
+      // The ballot carries the nominee list, which is the participant list. Same gate as the match.
+      (ra(e, a.audience), maySeeMatch9(a, e) || err9());
       const i = await Il(a),
         n = Sl(t),
         r = n.includes(e),
@@ -18182,9 +18193,11 @@ __d(
         i
       );
     };
-    r.mockGetMatchAwards = async (e) => {
+    r.mockGetMatchAwards = async (e, cr9) => {
       await ei();
       const t = hi(e);
+      // Award winners are named players. On a private match that is the roster under another name.
+      t && (ra(cr9, t.audience), maySeeMatch9(t, cr9) || err9());
       return (
         t && (await Il(t)),
         Qt.awardWins
@@ -20173,6 +20186,8 @@ __d(
 
 
 
+
+
 __d(function(g,_r,_i,_a,m,_e,d){Object.defineProperty(_e,"__esModule",{value:!0}),_e.constantTimeEqual=a,_e.derivePasswordHash=n,_e.generateSalt=async function(e=16){const n=await t.getRandomBytesAsync(e);return Array.from(n).map(t=>t.toString(16).padStart(2,'0')).join('')},_e.hashIdentifier=async function(e){const n=e.replace(/\s+/g,'').toLowerCase();return t.digestStringAsync(t.CryptoDigestAlgorithm.SHA256,`${r}:${n}`)},_e.hashPassword=async function(t,e){if(o)return`scrypt$${i}$${s}$${c}$${await o(t,e,i,s,c)}`;return n(t,e)},_e.randomCode=function(e=6,n="ABCDEFGHJKMNPQRSTUVWXYZ23456789"){const r=t.getRandomBytes(e);let a='';for(let t=0;t<e;t++)a+=n[r[t]%n.length];return a},_e.randomSixDigit=function(){const e=t.getRandomBytes(4),n=((e[0]<<24|e[1]<<16|e[2]<<8|e[3])>>>0)%1e6;return String(n).padStart(6,'0')},_e.randomToken=async function(e=32){const n=await t.getRandomBytesAsync(e);return Array.from(n).map(t=>t.toString(16).padStart(2,'0')).join('')},_e.serverGradeHashing=void 0,_e.verifyPassword=async function(t,e,r){if(r.startsWith('scrypt$')){const[,n,i,s,c]=r.split('$');return!(!o||!c)&&a(await o(t,e,Number(n),Number(i),Number(s)),c)}return a(await n(t,e),r)};var t=(function(t,e){if("function"==typeof WeakMap)var n=new WeakMap,r=new WeakMap;return(function(t,e){if(!e&&t&&t.__esModule)return t;var a,o,i={__proto__:null,default:t};if(null===t||"object"!=typeof t&&"function"!=typeof t)return i;if(a=e?r:n){if(a.has(t))return a.get(t);a.set(t,i)}for(const e in t)"default"!==e&&{}.hasOwnProperty.call(t,e)&&((o=(a=Object.defineProperty)&&Object.getOwnPropertyDescriptor(t,e))&&(o.get||o.set)?a(i,e,o):i[e]=t[e]);return i})(t,e)})(_r(d[0]));const e=12e3;async function n(n,r){let a=`${r}:${n}`;for(let n=0;n<e;n++)a=await t.digestStringAsync(t.CryptoDigestAlgorithm.SHA256,a);return a}const r='playora.v1.identifier.pepper';function a(t,e){if(t.length!==e.length)return!1;let n=0;for(let r=0;r<t.length;r++)n|=t.charCodeAt(r)^e.charCodeAt(r);return 0===n}const o=t.scryptHex,i=(_e.serverGradeHashing=!!o,16384),s=8,c=1},632,[633]);
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0});var n={getRandomBytes:!0,getRandomBytesAsync:!0,digestStringAsync:!0,getRandomValues:!0,randomUUID:!0,digest:!0};e.digest=function(t,n){return new Promise((o,s)=>{try{if('function'==typeof y.default.digestAsync)o(y.default.digestAsync(t,n));else{const s=new Uint8Array(h[t]);y.default.digest(t,s,n),o(s.buffer)}}catch(t){s(t)}})},e.digestStringAsync=async function(t,n,o={encoding:c.CryptoEncoding.HEX}){if(!y.default.digestStringAsync)throw new s.UnavailabilityError('expo-crypto','digestStringAsync');return f(t),p(n),A(o.encoding),await y.default.digestStringAsync(t,n,o)},e.getRandomBytes=function(t){u(t,'getRandomBytes');const n=Math.floor(t);if(y.default.getRandomValues){const t=new Uint8Array(n);return y.default.getRandomValues(t),t}if(y.default.getRandomBase64String){const t=y.default.getRandomBase64String(n);return(0,o.toByteArray)(t)}throw new s.UnavailabilityError('expo-crypto','getRandomBytes')},e.getRandomBytesAsync=async function(t){u(t,'getRandomBytesAsync');const n=Math.floor(t);if(y.default.getRandomValues){const t=new Uint8Array(n);return y.default.getRandomValues(t),t}if(y.default.getRandomBase64StringAsync){const t=await y.default.getRandomBase64StringAsync(n);return(0,o.toByteArray)(t)}throw new s.UnavailabilityError('expo-crypto','getRandomBytesAsync')},e.getRandomValues=function(t){return y.default.getRandomValues(t),t},e.randomUUID=function(){return y.default.randomUUID()};var o=r(d[1]),s=r(d[2]),c=r(d[3]);Object.keys(c).forEach(function(t){"default"!==t&&"__esModule"!==t&&(Object.prototype.hasOwnProperty.call(n,t)||t in e&&e[t]===c[t]||Object.defineProperty(e,t,{enumerable:!0,get:function(){return c[t]}}))});var y=t(r(d[4]));class l extends TypeError{code='ERR_CRYPTO';constructor(t){super(`expo-crypto: ${t}`)}}function u(t,n){if('number'!=typeof t||isNaN(t)||Math.floor(t)<0||Math.floor(t)>1024)throw new TypeError(`expo-crypto: ${n}(${t}) expected a valid number from range 0...1024`)}function f(t){if(!Object.values(c.CryptoDigestAlgorithm).includes(t))throw new l(`Invalid algorithm provided. Expected one of: CryptoDigestAlgorithm.${Object.keys(c.CryptoDigestAlgorithm).join(', AlgCryptoDigestAlgorithmorithm.')}`)}function p(t){if('string'!=typeof t)throw new l("Invalid data provided. Expected a string.")}function A(t){if(!Object.values(c.CryptoEncoding).includes(t))throw new l(`Invalid encoding provided. Expected one of: CryptoEncoding.${Object.keys(c.CryptoEncoding).join(', CryptoEncoding.')}`)}const h={[c.CryptoDigestAlgorithm.SHA1]:20,[c.CryptoDigestAlgorithm.SHA256]:32,[c.CryptoDigestAlgorithm.SHA384]:48,[c.CryptoDigestAlgorithm.SHA512]:64,[c.CryptoDigestAlgorithm.MD2]:16,[c.CryptoDigestAlgorithm.MD4]:16,[c.CryptoDigestAlgorithm.MD5]:16}},633,[33,634,504,635,636]);
 __d(function(g,r,_i,a,m,e,d){'use strict';e.byteLength=function(t){var n=h(t),o=n[0],u=n[1];return 3*(o+u)/4-u},e.toByteArray=function(t){var u,c,f=h(t),A=f[0],C=f[1],y=new o(i(t,A,C)),s=0,v=C>0?A-4:A;for(c=0;c<v;c+=4)u=n[t.charCodeAt(c)]<<18|n[t.charCodeAt(c+1)]<<12|n[t.charCodeAt(c+2)]<<6|n[t.charCodeAt(c+3)],y[s++]=u>>16&255,y[s++]=u>>8&255,y[s++]=255&u;2===C&&(u=n[t.charCodeAt(c)]<<2|n[t.charCodeAt(c+1)]>>4,y[s++]=255&u);1===C&&(u=n[t.charCodeAt(c)]<<10|n[t.charCodeAt(c+1)]<<4|n[t.charCodeAt(c+2)]>>2,y[s++]=u>>8&255,y[s++]=255&u);return y},e.fromByteArray=function(n){for(var o,u=n.length,c=u%3,h=[],i=16383,f=0,C=u-c;f<C;f+=i)h.push(A(n,f,f+i>C?C:f+i));1===c?(o=n[u-1],h.push(t[o>>2]+t[o<<4&63]+'==')):2===c&&(o=(n[u-2]<<8)+n[u-1],h.push(t[o>>10]+t[o>>4&63]+t[o<<2&63]+'='));return h.join('')};for(var t=[],n=[],o='undefined'!=typeof Uint8Array?Uint8Array:Array,u='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',c=0;c<64;++c)t[c]=u[c],n[u.charCodeAt(c)]=c;function h(t){var n=t.length;if(n%4>0)throw new Error('Invalid string. Length must be a multiple of 4');var o=t.indexOf('=');return-1===o&&(o=n),[o,o===n?0:4-o%4]}function i(t,n,o){return 3*(n+o)/4-o}function f(n){return t[n>>18&63]+t[n>>12&63]+t[n>>6&63]+t[63&n]}function A(t,n,o){for(var u,c=[],h=n;h<o;h+=3)u=(t[h]<<16&16711680)+(t[h+1]<<8&65280)+(255&t[h+2]),c.push(f(u));return c.join('')}n['-'.charCodeAt(0)]=62,n['_'.charCodeAt(0)]=63},634,[]);
@@ -21934,7 +21949,7 @@ e.fetchOrganizerMatches = (o, c) => {
     e.openAwardVoting = (o, c) => t.store.mockOpenAwardVoting(o, c);
     e.publishAwards = (o, c) => t.store.mockPublishAwards(o, c);
     e.createCustomAward = (o, c) => t.store.mockCreateCustomAward(o, c);
-    e.fetchMatchAwards = (o) => t.store.mockGetMatchAwards(o);
+    e.fetchMatchAwards = (o, c) => t.store.mockGetMatchAwards(o, c);
     e.fetchPlayerAwards = (o) => t.store.mockGetPlayerAwards(o);
     e.fetchAwardLeaderboard = (o) => t.store.mockGetAwardLeaderboard(o);
     e.fetchAwardSeasons = () => t.store.mockGetAwardSeasons();
@@ -22009,6 +22024,7 @@ e.fetchOrganizerMatches = (o, c) => {
   671,
   [672, 631],
 );
+
 
 
 

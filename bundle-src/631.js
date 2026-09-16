@@ -14486,6 +14486,7 @@ __d(
       await ei();
       const a = hi(t);
       if (!a) throw new Error("not_found");
+      (ra(e, a.audience), maySeeMatch9(a, e) || err9());
       await Xt(t, async () => {
         (await Di(a), await Bd(a));
       });
@@ -14505,9 +14506,17 @@ __d(
       if (!i) throw new Error("not_found");
       if ("scheduled" !== i.status) throw new Error("match_closed");
       if (new Date(i.starts_at).getTime() < Date.now()) throw new Error("match_started");
+      // This is a seat-taking path that never went through ji: it pushes booking rows straight into
+      // Qt.bookings with status "reserved", and it checked only that the leader was not banned or
+      // sanctioned. So a stranger could reserve seats on a private match they had never been shown,
+      // and a man could take seats - his own and his friends' - on a women-only one. Capacity and
+      // double-booking were the only rules it kept. Every seat here is a seat, so every seat here
+      // goes through the same gate joining does, for the friends as well as for the leader; a guest
+      // has no account to check and rides on the leader's.
+      maySeeMatch9(i, e) || err9();
+      await assertMayHoldSeat9(i, e);
+      for (const f9 of new Set(a.friendIds ?? [])) await assertMayHoldSeat9(i, f9);
       return (
-        md(e),
-        await wd(e),
         Xt(t, async () => {
           (await Di(i), await Bd(i));
           const n = Fd(i);
@@ -15938,6 +15947,8 @@ __d(
       await ei();
       const a = hi(t);
       if (!a) throw new Error("not_found");
+      // The ballot carries the nominee list, which is the participant list. Same gate as the match.
+      (ra(e, a.audience), maySeeMatch9(a, e) || err9());
       const i = await Il(a),
         n = Sl(t),
         r = n.includes(e),
@@ -16089,9 +16100,11 @@ __d(
         i
       );
     };
-    r.mockGetMatchAwards = async (e) => {
+    r.mockGetMatchAwards = async (e, cr9) => {
       await ei();
       const t = hi(e);
+      // Award winners are named players. On a private match that is the roster under another name.
+      t && (ra(cr9, t.audience), maySeeMatch9(t, cr9) || err9());
       return (
         t && (await Il(t)),
         Qt.awardWins

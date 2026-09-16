@@ -72,6 +72,40 @@ const out = await page.evaluate(async (ids) => {
     const oms9 = await api.fetchOrganizerMatchScreen(ids.analyst, pg.id).catch((e) => ({ error: e.code || e.message }));
     res.omsOutsider = oms9.error ?? `confirmed:${oms9.participants.confirmed.length}`;
 
+    // Every other reader that takes a match id. Checked three ways, because a reader with no data
+    // refuses everyone and looks gated when it is not: the organizer is the control, and a line only
+    // means anything when the organizer gets through and the outsider does not.
+    const gate9 = async (fn) => { try { const v = await fn(); return null == v ? 'null' : 'served'; } catch (e) { return e.code || e.message; } };
+    const readers9 = {
+      awardBallot: (c) => api.fetchAwardBallot(c, pg.id),
+      groupConfig: (c) => api.fetchGroupConfig(c, pg.id),
+      matchAwards: (c) => api.fetchMatchAwards(pg.id, c),
+      squadState: (c) => api.fetchSquadState(c, pg.id),
+      gameGroups: (c) => api.fetchGameGroups(c, pg.id),
+      matchActivity: (c) => api.fetchMatchActivity(c, pg.id),
+    };
+    res.readers = {};
+    for (const [name, fn] of Object.entries(readers9))
+      res.readers[name] = {
+        organizer: await gate9(() => fn(ids.organizer)),
+        outsider: await gate9(() => fn(ids.analyst)),
+      };
+
+    // The group reservation is a seat-taking path that never goes through ji - it pushes booking
+    // rows straight in - and it used to check only that the leader was not banned or sanctioned. A
+    // stranger could reserve seats on a private match, and a man on a women-only one, for himself
+    // and for friends.
+    const grp9 = async (caller, gameId, friendIds = []) => {
+      try {
+        const r = await api.createGroupBooking(caller, gameId, { friendIds, guestNames: ['Probe Guest'], paymentMode: 'split_equal' });
+        return r && r.id ? 'created' : 'ok';
+      } catch (e) { return e.code || e.message; }
+    };
+    res.groupOnPrivateByStranger = await grp9(ids.analyst, pg.id);
+    // The organizer already holds a seat here, so the admin is the control: they may see the match
+    // and have no booking on it, which is what a caller who should get through looks like.
+    res.groupOnPrivateByAdmin = await grp9(ids.admin, pg.id);
+
     // ...and a public match is read by anyone, which is the point of the gate having a shape. This
     // takes a seeded match rather than creating one: the organizer has an hourly creation cap and
     // this file already spends two of it above.
@@ -358,6 +392,12 @@ ok('nor can a player who is only in the match', out.partsParticipant === 'E_YOU_
 ok('the organizer reads their own participant roster', /confirmed:[1-9]/.test(String(out.partsOrganizer)), String(out.partsOrganizer));
 ok('an admin reads it too', /confirmed:[1-9]/.test(String(out.partsAdmin)), String(out.partsAdmin));
 ok('the organizer match screen stays empty rather than erroring', out.omsOutsider === 'confirmed:0', String(out.omsOutsider));
+ok('a stranger cannot reserve a group on a private match', out.groupOnPrivateByStranger === 'E_MATCH_NOT_FOUND', String(out.groupOnPrivateByStranger));
+ok('an admin still can (the control)', out.groupOnPrivateByAdmin === 'created', String(out.groupOnPrivateByAdmin));
+for (const [name, r] of Object.entries(out.readers || {})) {
+  ok(`${name}: the organizer gets through (the control)`, r.organizer === 'served', String(r.organizer));
+  ok(`${name}: an outsider does not`, r.outsider !== 'served', String(r.outsider));
+}
 ok('the open-match probe found a match to read', out.pubFound === true, String(out.pubFound));
 ok('a public match roster is open', /^rows:\d/.test(String(out.pubPlayersOutsider)), String(out.pubPlayersOutsider));
 ok('a public match lineup is open', out.pubLineupOutsider === 'ok', String(out.pubLineupOutsider));

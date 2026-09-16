@@ -719,7 +719,7 @@ e.fetchOrganizerMatches = (o, c) => {
     e.openAwardVoting = (o, c) => t.store.mockOpenAwardVoting(o, c);
     e.publishAwards = (o, c) => t.store.mockPublishAwards(o, c);
     e.createCustomAward = (o, c) => t.store.mockCreateCustomAward(o, c);
-    e.fetchMatchAwards = (o) => t.store.mockGetMatchAwards(o);
+    e.fetchMatchAwards = (o, c) => t.store.mockGetMatchAwards(o, c);
     e.fetchPlayerAwards = (o) => t.store.mockGetPlayerAwards(o);
     e.fetchAwardLeaderboard = (o) => t.store.mockGetAwardLeaderboard(o);
     e.fetchAwardSeasons = () => t.store.mockGetAwardSeasons();

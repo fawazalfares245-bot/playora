@@ -158,9 +158,15 @@ returned, so a stranger got `game: null` alongside every player's name and id. I
 empty payload the moment `Ni` refuses. `Qi` (`mockGetMatchParticipants`) is organizer-or-admin: it
 carries seat-payment ids, methods and amounts, so a participant does not get it either.
 
-Anything new that reads a match by id belongs behind the same two calls. `tools/rules.mjs` asserts
-the whole matrix - outsider, guest, participant, organizer, admin, against both a private and a
-public match - for all four readers.
+The same gate applies to `mockGetAwardBallot` (its nominee list is the roster), `mockGetGroupConfig`
+and `mockGetMatchAwards`. `mockCreateGroupBooking` is a **write** that never went through `ji` - it
+pushes `reserved` booking rows straight into `Qt.bookings` - so it takes `maySeeMatch9` and
+`assertMayHoldSeat9`, for every friend on the reservation as well as the leader.
+
+Anything new that reads or seats against a match by id belongs behind the same calls.
+`tools/rules.mjs` asserts the matrix - outsider, guest, participant, organizer, admin, against both
+a private and a public match. Test the organizer too: a reader with no data refuses everyone and
+looks gated when it is not, and two of these were "verified" that way before the control was added.
 
 ## Scheduled work
 

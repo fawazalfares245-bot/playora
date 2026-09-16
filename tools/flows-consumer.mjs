@@ -20,10 +20,21 @@ await run('group booking reaches its payment view', async () => {
 
   const setup = await page.evaluate(async (ids) => {
     const api = __r(671);
-    const games = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]');
-    const now = Date.now();
-    const game = games.find((g) => g.status === 'scheduled' && new Date(g.starts_at).getTime() > now);
-    if (!game) return { error: 'no scheduled game in the seed' };
+    // The seed's matches all carry audience: 'female' and this player is male, so taking the first
+    // scheduled one meant reserving seats on a match the player could never join. Nothing checked,
+    // so the fixture passed and the gap stayed invisible; the group path applies the same gate as
+    // joining now, so the fixture builds a match this player can actually take a seat in.
+    await api.acceptCoC(ids.user).catch(() => {});
+    const venue = (await api.fetchVenues()).find((v) => (v.sports || []).includes('football'));
+    const game = await api
+      .createMatch(ids.organizer, {
+        title: 'Group probe', sport: 'football', venue_id: venue.id, format: '5v5',
+        starts_at: new Date(Date.now() + 51 * 864e5).toISOString(),
+        ends_at: new Date(Date.now() + 51 * 864e5 + 54e5).toISOString(),
+        max_players: 10, price_kwd: 2, visibility: 'public',
+      })
+      .catch((e) => ({ error: e.message }));
+    if (game.error) return { error: 'match: ' + game.error };
     const cfg = await api.fetchGroupConfig(ids.user, game.id).catch((e) => ({ error: e.message }));
     if (cfg?.error) return { error: 'config: ' + cfg.error };
     const made = await api
