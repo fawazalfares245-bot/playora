@@ -36,6 +36,36 @@ const out = await page.evaluate(async (ids) => {
     const joined = await read(ids.user);
     res.privParticipantSees = !!joined && joined.id === pg.id;
     res.privParticipantCode = !!(joined && joined.invite_code);
+
+    // The gate lived inside mockGetGame and nowhere else, so every sibling reader of the same match
+    // answered a stranger in full. mockGetGameScreen fetched the roster, the lineup, the fit score
+    // and the evaluation targets before it looked at what the gate had returned: game came back null
+    // and, next to it, every player's name and id and the board they were standing on. Asked
+    // directly, mockGetGamePlayers and mockGetLineup did the same. One gate, applied by all three.
+    const shape = async (fn) => { try { const v = await fn(); return Array.isArray(v) ? `rows:${v.length}` : 'ok'; } catch (e) { return e.code || e.message; } };
+    const screen = await api.fetchGameScreen(ids.analyst, pg.id);
+    res.privScreenGame = screen.game;
+    res.privScreenPlayers = screen.players.length;
+    res.privScreenLineup = screen.lineup;
+    res.privScreenFit = screen.fit;
+    res.privPlayersOutsider = await shape(() => api.fetchGamePlayers(pg.id, ids.analyst));
+    res.privLineupOutsider = await shape(() => api.fetchLineup(pg.id, ids.analyst));
+    res.privPlayersGuest = await shape(() => api.fetchGamePlayers(pg.id, undefined));
+    res.privPlayersOrganizer = await shape(() => api.fetchGamePlayers(pg.id, ids.organizer));
+    res.privPlayersParticipant = await shape(() => api.fetchGamePlayers(pg.id, ids.user));
+    res.privLineupParticipant = await shape(() => api.fetchLineup(pg.id, ids.user));
+    res.privPlayersAdmin = await shape(() => api.fetchGamePlayers(pg.id, ids.admin));
+
+    // ...and a public match is read by anyone, which is the point of the gate having a shape. This
+    // takes a seeded match rather than creating one: the organizer has an hourly creation cap and
+    // this file already spends two of it above.
+    const open9 = (await api.fetchUpcomingGames({ userId: ids.analyst })).find((g) => 'private' !== g.visibility);
+    res.pubFound = !!open9;
+    if (open9) {
+      res.pubPlayersOutsider = await shape(() => api.fetchGamePlayers(open9.id, ids.analyst));
+      res.pubLineupOutsider = await shape(() => api.fetchLineup(open9.id, ids.analyst));
+      res.pubScreenOutsider = (await api.fetchGameScreen(ids.analyst, open9.id)).game !== null;
+    }
   } catch (e) { res.privError = e.code || e.message; }
 
   // mockGetMatchInvite took no caller at all, and Xn mints a code on demand - so any session could
@@ -157,6 +187,7 @@ const out = await page.evaluate(async (ids) => {
     })
     .catch((e) => ({ error: e.message }));
   res.customVenueCreated = !customGame?.error;
+  res.customVenueError = customGame?.error ?? '';
   const venueRow = JSON.parse(localStorage.getItem('playora.mock.venues.v1') || '[]').find((v) => v.name === customName);
   res.customVenueId = venueRow?.id ?? null;
   res.customVenueListed = venueRow ? venueRow.listed : 'no-row';
@@ -265,7 +296,7 @@ ok('the weighted model has something to score', out.riskEvaluated > 0, String(ou
 ok('the weighted risk figure moves with the weights', out.riskLow !== null && out.riskHigh !== null && out.riskLow !== out.riskHigh, `${out.riskLow} -> ${out.riskHigh}`);
 ok('the baseline fill tiles are labelled as baseline', out.fillModelLabel === 'baseline', String(out.fillModelLabel));
 ok('the baseline fill accuracy does not move with the weights', out.fillUnchanged === true, String(out.fillUnchanged));
-ok('a match with a typed-in venue is created', out.customVenueCreated === true, String(out.customVenueCreated));
+ok('a match with a typed-in venue is created', out.customVenueCreated === true, out.customVenueError || String(out.customVenueCreated));
 ok('the typed-in venue records the organizer, not its own name', out.customVenueCreatedBy === IDS.organizer, String(out.customVenueCreatedBy));
 ok('the typed-in venue is withheld from the directory', out.customVenueListed === false, String(out.customVenueListed));
 ok('the typed-in venue is absent from the public venue list', out.customVenueInDirectory === false, String(out.customVenueInDirectory));
@@ -297,6 +328,18 @@ ok('an admin can read a private match', out.privAdminSees === true, String(out.p
 ok('the invite code is withheld from an admin', out.privAdminCode === false, String(out.privAdminCode));
 ok('a participant can read the match they joined', out.privParticipantSees === true, String(out.privParticipantSees));
 ok('the invite code is withheld from a participant', out.privParticipantCode === false, String(out.privParticipantCode));
+ok('a withheld match yields no screen payload at all', out.privScreenGame === null && out.privScreenPlayers === 0 && out.privScreenLineup === null && out.privScreenFit === null, `players=${out.privScreenPlayers} lineup=${out.privScreenLineup !== null} fit=${out.privScreenFit !== null}`);
+ok('an outsider cannot read a private match roster', out.privPlayersOutsider === 'E_MATCH_NOT_FOUND', String(out.privPlayersOutsider));
+ok('an outsider cannot read a private match lineup', out.privLineupOutsider === 'E_MATCH_NOT_FOUND', String(out.privLineupOutsider));
+ok('nor can a signed-out visitor', out.privPlayersGuest === 'E_MATCH_NOT_FOUND', String(out.privPlayersGuest));
+ok('the organizer still reads their own roster', /^rows:[1-9]/.test(String(out.privPlayersOrganizer)), String(out.privPlayersOrganizer));
+ok('a participant still reads the roster', /^rows:[1-9]/.test(String(out.privPlayersParticipant)), String(out.privPlayersParticipant));
+ok('a participant still reads the lineup', out.privLineupParticipant === 'ok', String(out.privLineupParticipant));
+ok('an admin still reads the roster', /^rows:[1-9]/.test(String(out.privPlayersAdmin)), String(out.privPlayersAdmin));
+ok('the open-match probe found a match to read', out.pubFound === true, String(out.pubFound));
+ok('a public match roster is open', /^rows:\d/.test(String(out.pubPlayersOutsider)), String(out.pubPlayersOutsider));
+ok('a public match lineup is open', out.pubLineupOutsider === 'ok', String(out.pubLineupOutsider));
+ok('a public match screen is open', out.pubScreenOutsider === true, String(out.pubScreenOutsider));
 ok('a match invite without a caller is refused', out.inviteNoCaller === 'E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE', String(out.inviteNoCaller));
 ok('a stranger cannot read a match invite', out.inviteStranger === 'E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE', String(out.inviteStranger));
 ok('the organizer still gets the invite code', out.inviteOwner === true, String(out.inviteOwner));

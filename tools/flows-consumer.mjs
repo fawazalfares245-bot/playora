@@ -101,22 +101,41 @@ await run('lineup draws the right court per sport', async () => {
   ok('tennis doubles offers the australian formation',
      shapes['tennis-2'].keys.includes('tennis-australian'), shapes['tennis-2'].keys.join(','));
 
-  // and the payload a screen receives must carry the sport so the board can draw it
+  // and the payload a screen receives must carry the sport so the board can draw it.
+  //
+  // This used to read the first seeded match of each sport. Every seeded match carries
+  // audience: 'female' and the harness player is male, so it was reading matches mockGetGame had
+  // always refused this user with AUDIENCE_MISMATCH - the raw lineup door simply had no such check
+  // and answered anyway. The lineup now applies the same gate as the match, so the fixture has to be
+  // a match this player can actually open: one of their own, per sport.
   const lu = await page.evaluate(async () => {
     const api = __r(671);
     const sess = await __r(631).loadSession();
-    const games = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]');
+    const me = sess.user.id;
+    await api.acceptCoC(me).catch(() => {});
+    const venues = await api.fetchVenues();
     const out = {};
+    let day = 44;
     for (const sport of ['football', 'padel', 'tennis']) {
-      const g = games.find((x) => x.sport === sport && x.status === 'scheduled');
-      if (!g) continue;
-      const l = await api.fetchLineup(g.id, sess.user.id).catch(() => null);
-      out[sport] = { sport: l?.sport, roles: (l?.a?.slots || []).map((s) => s.role) };
+      const venue = venues.find((v) => (v.sports || []).includes(sport));
+      if (!venue) continue;
+      day += 1;
+      const g = await api
+        .createMatch(me, {
+          title: `Board ${sport}`, sport, venue_id: venue.id, format: 'football' === sport ? '5v5' : 'doubles',
+          starts_at: new Date(Date.now() + day * 864e5).toISOString(),
+          ends_at: new Date(Date.now() + day * 864e5 + 54e5).toISOString(),
+          max_players: 'football' === sport ? 10 : 4, price_kwd: 0, visibility: 'public',
+        })
+        .catch((e) => ({ error: e.message }));
+      if (g.error) { out[sport] = { error: g.error }; continue; }
+      const l = await api.fetchLineup(g.id, me).catch((e) => ({ error: e.code || e.message }));
+      out[sport] = { sport: l?.sport, roles: (l?.a?.slots || []).map((s) => s.role), error: l?.error };
     }
     return out;
   });
   for (const sport of Object.keys(lu)) {
-    ok(`the ${sport} lineup payload names its sport`, lu[sport].sport === sport, String(lu[sport].sport));
+    ok(`the ${sport} lineup payload names its sport`, lu[sport].sport === sport, lu[sport].error || String(lu[sport].sport));
   }
   if (lu.padel) ok('a padel lineup has no goalkeeper end to end', !lu.padel.roles.includes('GK'), lu.padel.roles.join(','));
   if (lu.tennis) ok('a tennis lineup has no goalkeeper end to end', !lu.tennis.roles.includes('GK'), lu.tennis.roles.join(','));

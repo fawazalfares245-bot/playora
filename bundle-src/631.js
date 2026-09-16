@@ -2753,6 +2753,22 @@ __d(
         );
         return a?.checkin_token ?? null;
       },
+      // "May this caller see this match at all". `visibility` was decorative: join never read it and
+      // the getter returned the whole row, so anyone holding the id could read a private match and
+      // its invite code. Mirrors the team rule in mockGetTeams - "private" !== privacy || member ||
+      // admin - with a live booking standing in for membership. An invite holder reaches the match
+      // through mockResolveInviteCode, not here.
+      //
+      // It lived inside Ni, and only inside Ni. Every sibling reader of the same match answered in
+      // full: mockGetGameScreen fetched the roster, the lineup, the fit score and the evaluation
+      // targets before it ever looked at what Ni had returned, so a stranger asking for a private
+      // match got game: null and, next to it, every player's name and id and the board they were
+      // standing on. mockGetGamePlayers and mockGetLineup answered the same way when asked directly.
+      err9 = () => {
+        throw new Error("E_MATCH_NOT_FOUND");
+      },
+      maySeeMatch9 = (e, t) =>
+        "private" !== e.visibility || e.organizer_id === t || null != Ri(e.id, t) || !!(t && ro(t)),
       Ri = (e, t) => {
         if (!t) return null;
         const a = Qt.bookings.find(
@@ -2823,12 +2839,7 @@ __d(
       const a = hi(e);
       if (!a) return null;
       ra(t, a.audience);
-      // `visibility` was decorative: join never read it and this getter returned the whole row, so
-      // anyone holding the id could read a private match and its invite code. Mirrors the team rule in
-      // mockGetTeams - "private" !== privacy || member || admin - with a live booking standing in for
-      // membership. Note an invite holder reaches the match through mockResolveInviteCode, not here.
-      if ("private" === a.visibility && a.organizer_id !== t && null == Ri(e, t) && !(t && ro(t)))
-        return null;
+      if (!maySeeMatch9(a, t)) return null;
       const i = new Map((await pi()).map((e) => [e.id, e]));
       return Ii(a, i, t);
     };
@@ -3046,6 +3057,11 @@ __d(
     r.mockSendChatMessage = Gi;
     const Ui = async (e, t) => {
       await ei();
+      const gm9 = hi(e);
+      if (gm9) {
+        // A caller who may not see the match is told it does not exist, which is what Ni's null says.
+        (ra(t, gm9.audience), maySeeMatch9(gm9, t) || err9());
+      }
       const a = La.find((t) => t.id === e);
       a && (await oi(a));
       const i = Qt.gamePlayers.filter((t) => t.game_id === e);
@@ -17363,6 +17379,7 @@ __d(
         await ei();
         const a = hi(e);
         if (!a) throw new Error("E_MATCH_NOT_FOUND");
+        (ra(t, a.audience), maySeeMatch9(a, t) || err9());
         const i = await oc(e, t),
           n = await Ui(e, t),
           r = new Map(n.map((e) => [e.id, e])),
@@ -17917,6 +17934,17 @@ __d(
       await ei();
       const a = await Ni(t, e);
       await Vi();
+      // Ni is the gate and null is its refusal. Everything below used to be fetched regardless.
+      if (!a)
+        return {
+          game: null,
+          players: [],
+          fit: null,
+          eval_targets: [],
+          lineup: null,
+          seat_payment: null,
+          squad_status: null,
+        };
       const [i, n, r, o, s] = await Promise.all([
         Ui(t, e),
         Mn(t, e).catch(() => null),
