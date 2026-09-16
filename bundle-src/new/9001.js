@@ -6,7 +6,13 @@ __d(
     //   GateScreen props    -> { kind: "denied" | "error", title?, body?, onRetry?, onBack? }
     var t = _r(d[0]);
     (Object.defineProperty(e, "__esModule", { value: !0 }),
-      (e.useRoleGate = e.classifyError = e.GateScreen = e.RetryButton = e.AUTH_CODES = void 0));
+      (e.useRoleGate =
+        e.classifyError =
+        e.GateScreen =
+        e.RetryButton =
+        e.safeBack =
+        e.AUTH_CODES =
+          void 0));
     var n = _r(d[1]),
       s = _r(d[2]),
       o = _r(d[3]),
@@ -51,6 +57,13 @@ __d(
         { ready: !r && (a || !!e), allowed: !!e && t.includes(e.role), role: e?.role ?? null, isGuest: !!i?.id?.startsWith("guest:") }
       );
     };
+    // F-CQUAL-6 / F-CQUAL-16: every card-presented screen exits through router.back(), which does
+    // nothing when there is no history beneath it - a deep link, a shared URL, a bookmark or a plain
+    // reload. GateScreen already had the fallback inline; this is the same thing, exported, so the
+    // screens that are not gates can use it too.
+    e.safeBack = (t, n = "/(tabs)") => {
+      t?.canGoBack?.() ? t.back() : t?.replace?.(n);
+    };
     e.classifyError = (e) => {
       const t = e && "object" == typeof e ? (e.code ?? e.message ?? String(e)) : String(e ?? ""),
         r = "string" == typeof t ? t.split(":")[0] : "";
@@ -69,7 +82,7 @@ __d(
         E = (0, u.useT)(),
         T = (0, f.useRouter)(),
         z = "denied" === t,
-        A = I ?? (() => (T.canGoBack?.() ? T.back() : T.replace("/(tabs)")));
+        A = I ?? (() => e.safeBack(T));
       return (0, k.jsxs)(l.SafeAreaView, {
         edges: ["top"],
         style: { flex: 1, backgroundColor: _.bg },

@@ -14,10 +14,19 @@ __d(
           [O, H] = (0, t.useState)(0),
           [N, F] = (0, t.useState)(""),
           [Y, q] = (0, t.useState)(!1),
+          [er9, se9] = (0, t.useState)(null),
+          // F-CQUAL-15: no catch, so a rejected load left the spinner up and rejected unhandled.
           G = (0, t.useCallback)(async () => {
             if (!e) return;
-            const [t, r] = await Promise.all([(0, v.fetchVenue)(e), (0, v.fetchReviews)(e)]);
-            (M(t), D(r), W(!1));
+            se9(null);
+            try {
+              const [t, r] = await Promise.all([(0, v.fetchVenue)(e), (0, v.fetchReviews)(e)]);
+              (M(t), D(r));
+            } catch (t) {
+              se9((0, G9.classifyError)(t).message || V("error"));
+            } finally {
+              W(!1);
+            }
           }, [e]);
         (0, t.useEffect)(() => {
           G();
@@ -27,10 +36,27 @@ __d(
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: _.bg },
             children: (0, I.jsx)(r.default, { color: _.accentText }),
           });
-        if (!L)
+        if (er9)
           return (0, I.jsx)(x.SafeAreaView, {
             style: { flex: 1, backgroundColor: _.bg },
-            children: (0, I.jsx)(j.EmptyState, { title: V("venueNotFound") }),
+            children: (0, I.jsx)(G9.GateScreen, {
+              kind: "error",
+              body: er9,
+              onRetry: G,
+              onBack: () => (0, G9.safeBack)(A),
+            }),
+          });
+        if (!L)
+          // This returned before the header, so a venue id that does not resolve - which is usually
+          // reached by a link from outside the app - was a screen with no way off it.
+          return (0, I.jsx)(x.SafeAreaView, {
+            edges: ["top"],
+            style: { flex: 1, backgroundColor: _.bg },
+            children: (0, I.jsx)(G9.GateScreen, {
+              kind: "error",
+              title: V("venueNotFound"),
+              onBack: () => (0, G9.safeBack)(A),
+            }),
           });
         return (0, I.jsx)(x.SafeAreaView, {
           edges: ["top"],
@@ -39,7 +65,7 @@ __d(
             contentContainerStyle: { padding: C.spacing.lg, paddingBottom: C.spacing.xxxl },
             children: [
               (0, I.jsx)(s.default, {
-                onPress: () => A.back(),
+                onPress: () => (0, G9.safeBack)(A),
                 style: [P.back, { backgroundColor: _.surface, borderColor: _.border }],
                 accessibilityRole: "button",
                 accessibilityLabel: V("back"),
@@ -232,7 +258,8 @@ __d(
       k = _r(d[22]),
       B = _r(d[23]),
       R = _r(d[24]),
-      I = _r(d[25]);
+      I = _r(d[25]),
+      G9 = _r(d[26]);
     const P = l.default.create({
       back: {
         width: 40,
@@ -246,7 +273,6 @@ __d(
   },
   2502,
   [
-    33, 15, 461, 445, 369, 281, 158, 146, 273, 20, 381, 1086, 1623, 625, 626, 1624, 1627, 630, 615, 616, 671,
-    1311, 675, 1171, 674, 13,
+    33, 15, 461, 445, 369, 281, 158, 146, 273, 20, 381, 1086, 1623, 625, 626, 1624, 1627, 630, 615, 616, 671, 1311, 675, 1171, 674, 13, 9001,
   ],
 );

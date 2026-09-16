@@ -16,7 +16,12 @@ edited through the module tooling described below.
 - `tools/bundle.py` – `split <id...>` extracts modules from index.html into bundle-src; `build` rebuilds.
 - `tools/flows-admin.mjs`, `tools/flows-organizer.mjs`, `tools/flows-org1.mjs`, `tools/flows-search.mjs`,
   `tools/flows-xcut.mjs`, `tools/flows-kids.mjs`, `tools/flows-consumer.mjs`, `tools/flows-lifecycle.mjs`,
-  `tools/flows-cancel.mjs`, `tools/rules.mjs` – the regression suites. Run all ten after any bundle change.
+  `tools/flows-cancel.mjs`, `tools/flows-discovery.mjs`, `tools/rules.mjs` – the regression suites.
+  Run all eleven after any bundle change. `flows-discovery.mjs` covers the routes the consumer audit
+  found had no end-to-end coverage at all (`/discover`, `/map`, `/venue/[id]`, `/booking/search`,
+  `/booking/venue/[id]`, `/blocked`, `/how-it-works`): each must reach a titled state rather than a
+  bare spinner, raise no page error, and - for the two id-parameter screens - offer a way out when
+  the id does not resolve, because a bad id is usually reached by a link from outside the app.
   `flows-cancel.mjs` runs one fixture - a paid, seated, boarded player - out through all five exits
   (`mockLeaveMatch`, `mockCancelBooking`, `mockKickPlayer`, `cancelGameLocked`, the squad sweep) and
   diffs the same five-part answer from each: booking status, payment status, wallet delta,

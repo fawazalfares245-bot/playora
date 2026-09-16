@@ -74,6 +74,27 @@ Home screen (module 1677):
 - F-CQUAL-12: Fixed — four counts were wrapped in `String()` before module 675 could decide whether
   to convert them to Arabic-Indic digits, so they rendered Western digits inside Arabic sentences.
 
+Screen robustness (modules 2450, 2502, 1840, 1842, 2374, 2445, 1837, 9001):
+
+- F-CQUAL-6 / F-CQUAL-16: Fixed — `safeBack(router)` is exported from module 9001 (the fallback was
+  already written inline in `GateScreen`) and replaces the unguarded `router.back()` on all seven
+  card-presented screens. On a deep link, a shared URL or a reload there is no history to pop, so the
+  only exit did nothing. `tools/flows-discovery.mjs` opens one of them directly and asserts the back
+  control actually leaves.
+- F-CQUAL-15: Fixed — the four discovery loaders (`/map`, `/booking/search`, `/venue/[id]`,
+  `/discover`) had no `catch`, so a rejected fetch left the spinner up for ever, or cleared it with
+  an empty dataset that read as "nothing here". Each now sets a localized error state and renders
+  `GateScreen`/retry.
+- F-CQUAL-5: Fixed — `/booking/venue/[id]` conflated "still loading" with "no such venue" into one
+  branch that rendered a bare spinner, and a rejected fetch never cleared the flag at all. The two
+  are separate states now, and the not-found one has a header, a message and a way out. `/venue/[id]`
+  had the same dead end in its own not-found branch, which returned before its header; it does not.
+- F-CQUAL-13: Fixed — `/blocked` had no error handling on either the load or the unblock, so a
+  failed unblock silently left the row in place. Both are wrapped, with a retry.
+- F-CTEST-1: Fixed — `tools/flows-discovery.mjs` covers all five routes named in the finding plus
+  `/blocked` and `/how-it-works`, for both roles, asserting a titled state rather than a spinner, no
+  page errors, and a way out of both id-parameter screens when the id does not resolve.
+
 Not fixed in this pass — scheduled, not urgent:
 
 - F-CSEC-3: password reset routes the recovery code through the SMS provider addressed to an email

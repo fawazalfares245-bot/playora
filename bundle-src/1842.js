@@ -16,13 +16,26 @@ __d(
           [K, J] = (0, t.useState)(!0),
           [Q, X] = (0, t.useState)(!1),
           [Y, Z] = (0, t.useState)(!1);
-        (0, t.useEffect)(() => {
-          (async () => {
+        // F-CQUAL-5: "still loading" and "no such venue" were one branch that rendered a bare
+        // spinner - no header, no back control, no message. And a rejected fetch never cleared the
+        // loading flag at all, so the spinner was permanent and the rejection unhandled. The other
+        // venue screen already renders an EmptyState for the same case.
+        const [er9, se9] = (0, t.useState)(null),
+          ld9 = (0, t.useCallback)(async () => {
             if (!e) return;
-            const t = await (0, S.fetchVenueBookingDetail)(e);
-            ($(t), E(t?.courts[0] ?? null), J(!1));
-          })();
-        }, [e]);
+            (J(!0), se9(null));
+            try {
+              const t = await (0, S.fetchVenueBookingDetail)(e);
+              ($(t), E(t?.courts[0] ?? null));
+            } catch (t) {
+              se9((0, G9.classifyError)(t).message || L("error"));
+            } finally {
+              J(!1);
+            }
+          }, [e]);
+        (0, t.useEffect)(() => {
+          ld9();
+        }, [ld9]);
         const [ee, te] = (0, t.useState)(null),
           [ae, re] = (0, t.useState)(0);
         (0, t.useEffect)(() => {
@@ -62,10 +75,24 @@ __d(
               }
             }
           };
-        if (K || !A)
+        if (K)
           return (0, B.jsx)(p.SafeAreaView, {
             style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: H.bg },
             children: (0, B.jsx)(l.default, { color: H.accentText }),
+          });
+        if (er9 || !A)
+          return (0, B.jsx)(p.SafeAreaView, {
+            edges: ["top"],
+            style: { flex: 1, backgroundColor: H.bg },
+            children: (0, B.jsx)(G9.GateScreen, {
+              kind: "error",
+              // A load that failed keeps the generic title and carries the reason in the body; a
+              // venue that simply is not there says so once, as the other venue screen does.
+              title: er9 ? void 0 : L("venueNotFound"),
+              body: er9 ?? void 0,
+              onRetry: ld9,
+              onBack: () => (0, G9.safeBack)(z),
+            }),
           });
         const ne = O ? (0, k.formatPrice)((O.price_per_hour_kwd * q) / 60) : "",
           ie = A?.profile?.cancellation_cutoff_hours ?? 0;
@@ -77,7 +104,7 @@ __d(
               style: I.header,
               children: [
                 (0, B.jsx)(n.default, {
-                  onPress: () => z.back(),
+                  onPress: () => (0, G9.safeBack)(z),
                   accessibilityRole: "button",
                   accessibilityLabel: L("back"),
                   style: [I.iconBtn, { backgroundColor: H.surface, borderColor: H.border }],
@@ -412,7 +439,8 @@ __d(
       T = r(_d[21]),
       _ = r(_d[22]),
       v = r(_d[23]),
-      B = r(_d[24]);
+      B = r(_d[24]),
+      G9 = r(_d[25]);
     const W = [60, 90, 120],
       D = ["daySun", "dayMon", "dayTue", "dayWed", "dayThu", "dayFri", "daySat"],
       R = (e) => {
@@ -487,7 +515,6 @@ __d(
   },
   1842,
   [
-    33, 15, 461, 445, 467, 369, 281, 158, 146, 273, 381, 1086, 20, 1624, 630, 615, 616, 671, 1839, 1311, 626,
-    675, 1171, 674, 13,
+    33, 15, 461, 445, 467, 369, 281, 158, 146, 273, 381, 1086, 20, 1624, 630, 615, 616, 671, 1839, 1311, 626, 675, 1171, 674, 13, 9001,
   ],
 );
