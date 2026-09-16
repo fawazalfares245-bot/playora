@@ -503,5 +503,67 @@ await run('existing duplicate bookings are collapsed on load', async () => {
   await browser.close();
 });
 
+// Di holds a promoted seat for fifteen minutes and the notification says so, but the match DTO
+// returned only the status - so the reserved CTA had no countdown and the seat just vanished. And
+// the cancel sheet on /my-bookings asked for confirmation without saying what it costs.
+await run('a held seat shows its deadline, and cancelling shows the refund', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/' });
+  const out = await page.evaluate(async ([org, player]) => {
+    const api = __r(671);
+    const res = {};
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+
+    // a seat held by a promotion: the DTO has to carry the deadline the CTA counts down to
+    const held = await api.createMatch(org, {
+      title: 'Held seat', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 53 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 53 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+    await api.joinMatch(held.id, player);
+    res.heldGameId = held.id;
+
+    // a paid seat well before the cutoff, and one inside it
+    const mk = async (day) => {
+      const g = await api.createMatch(org, {
+        title: 'Refund quote ' + day, sport: 'football', venue_id: venues[day % venues.length].id,
+        starts_at: new Date(Date.now() + day * 36e5).toISOString(),
+        ends_at: new Date(Date.now() + day * 36e5 + 54e5).toISOString(),
+        max_players: 10, waitlist_capacity: 2, price_kwd: 3, visibility: 'public', format: '5v5',
+      });
+      await api.checkoutJoin(player, g.id, 'knet');
+      return g;
+    };
+    const far = await mk(48);
+    const near = await mk(1);
+    res.farQuote = await api.fetchSeatRefundQuote(player, far.id);
+    res.nearQuote = await api.fetchSeatRefundQuote(player, near.id);
+    // last, or the API writes above persist the in-memory rows straight back over it
+    const rows = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]');
+    for (const b of rows) if (b.game_id === held.id && b.user_id === player) {
+      b.status = 'reserved';
+      b.reserved_until = new Date(Date.now() + 9e5).toISOString();
+    }
+    localStorage.setItem('playora.mock.bookings.v1', JSON.stringify(rows));
+    return res;
+  }, [IDS.organizer, IDS.user]);
+
+  await page.goto('http://localhost/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const dto = await page.evaluate(async ([player, gameId]) => {
+    // fetchGame takes the match first, then whoever is asking
+    const g = await __r(671).fetchGame(gameId, player);
+    return { status: g.user_status, until: g.user_reserved_until };
+  }, [IDS.user, out.heldGameId]);
+
+  ok('the match reports the seat as held', dto.status === 'reserved', String(dto.status));
+  ok('and returns the deadline it is held to', !!dto.until && new Date(dto.until).getTime() > Date.now(), String(dto.until));
+  ok('a seat cancelled early is refunded in full', out.farQuote.eligible === true && out.farQuote.refund_kwd === 3, JSON.stringify(out.farQuote));
+  ok('a seat cancelled inside the cutoff is not', out.nearQuote.eligible === false && out.nearQuote.refund_kwd === 0, JSON.stringify(out.nearQuote));
+  ok('and the quote still reports what was paid', out.nearQuote.paid_kwd === 3, String(out.nearQuote.paid_kwd));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

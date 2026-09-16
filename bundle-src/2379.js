@@ -832,8 +832,11 @@ __d(
                           })
                       : "reserved" === De
                         ? (0, E.jsxs)(c.default, {
-                            style: { flexDirection: "row", gap: _.spacing.sm },
+                            style: { gap: _.spacing.xs },
                             children: [
+                              (0, E.jsxs)(c.default, {
+                                style: { flexDirection: "row", gap: _.spacing.sm },
+                                children: [
                               (0, E.jsx)(x.Button, {
                                 title: F("leaveGame"),
                                 variant: "secondary",
@@ -852,6 +855,17 @@ __d(
                                 onPress: () => (Ne && "paid" !== me?.status ? je({}) : Ge()),
                                 style: { flex: 2 },
                               }),
+                                ],
+                              }),
+                              // The promotion holds this seat for fifteen minutes and said so only in
+                              // the notification. Show the clock the player is racing.
+                              !!H.user_reserved_until &&
+                                (0, E.jsx)(d.default, {
+                                  style: [_.typography.caption, { color: q.warning, textAlign: "center" }],
+                                  children: F("heldUntil", {
+                                    time: (0, P.formatClock)(H.user_reserved_until),
+                                  }),
+                                }),
                             ],
                           })
                         : "pending" === De

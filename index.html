@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "91ffbddf12"
+  buildId: "5f61502d44"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -4834,6 +4834,18 @@ __d(
           pending_count: Qt.bookings.filter((t) => t.game_id === e.id && "pending" === t.status).length,
           user_booked: "confirmed" === n,
           user_status: n,
+          // Di gives a promoted waitlister fifteen minutes, and the notification it sends says so -
+          // but the DTO returned the status and not the deadline, so the reserved CTA had no
+          // countdown to show and the seat simply vanished. The confirmed-with-payment branch right
+          // above it already renders one off the payment's own deadline.
+          user_reserved_until:
+            Qt.bookings.find(
+              (t) =>
+                t.game_id === e.id &&
+                t.user_id === a &&
+                "cancelled" !== t.status &&
+                "rejected" !== t.status,
+            )?.reserved_until ?? null,
           organizer_name: e.organizer_id === Aa ? void 0 : or(e.organizer_id),
           series_frequency: e.series_id
             ? (Qt.templates.find((t) => t.id === e.series_id)?.frequency ?? null)
@@ -19973,6 +19985,7 @@ __d(
     657, 658, 659, 660, 661, 662, 663, 664, 665, 666, 667, 668, 669, 670,
   ],
 );
+
 
 
 
@@ -45710,8 +45723,11 @@ __d(
                           })
                       : "reserved" === De
                         ? (0, E.jsxs)(c.default, {
-                            style: { flexDirection: "row", gap: _.spacing.sm },
+                            style: { gap: _.spacing.xs },
                             children: [
+                              (0, E.jsxs)(c.default, {
+                                style: { flexDirection: "row", gap: _.spacing.sm },
+                                children: [
                               (0, E.jsx)(x.Button, {
                                 title: F("leaveGame"),
                                 variant: "secondary",
@@ -45730,6 +45746,17 @@ __d(
                                 onPress: () => (Ne && "paid" !== me?.status ? je({}) : Ge()),
                                 style: { flex: 2 },
                               }),
+                                ],
+                              }),
+                              // The promotion holds this seat for fifteen minutes and said so only in
+                              // the notification. Show the clock the player is racing.
+                              !!H.user_reserved_until &&
+                                (0, E.jsx)(d.default, {
+                                  style: [_.typography.caption, { color: q.warning, textAlign: "center" }],
+                                  children: F("heldUntil", {
+                                    time: (0, P.formatClock)(H.user_reserved_until),
+                                  }),
+                                }),
                             ],
                           })
                         : "pending" === De
@@ -46416,6 +46443,7 @@ __d(
     671, 2380, 2381, 668, 2382, 1311, 675, 1171, 2383, 1676, 2385, 2386, 1679, 2387, 2389, 623, 1803, 674, 13,
   ],
 );
+
 
 
 
@@ -49479,7 +49507,425 @@ __d(
   [33, 15, 461, 271, 466, 137, 369, 158, 146, 394, 273, 381, 1086, 20, 626, 1627, 630, 615, 616, 671, 1626, 674, 675, 1171, 13, 1311],
 );
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{user:t}=(0,j.useAuth)(),{colors:c}=(0,_.useTheme)(),x=(0,f.useRouter)(),v=(0,I.useT)(),[z,M]=(0,s.useState)(null),L=(0,s.useCallback)(async()=>{t&&M(await(0,S.fetchConversations)(t.id))},[t]);(0,f.useFocusEffect)((0,s.useCallback)(()=>{L()},[L]));const T=z?.filter(t=>t.is_request)??[],q=z?.filter(t=>t.declined&&!t.initiated_by_me)??[],D=z?.filter(t=>!(t.is_request||t.declined&&!t.initiated_by_me))??[];return(0,w.jsxs)(y.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:c.bg},children:[(0,w.jsxs)(h.default,{style:R.header,children:[(0,w.jsx)(n.default,{onPress:()=>x.back(),accessibilityRole:"button",accessibilityLabel:v('back'),style:[R.iconBtn,{backgroundColor:c.surface,borderColor:c.border}],children:(0,w.jsx)(p.Ionicons,{name:(0,P.chevronBack)(),size:22,color:c.text})}),(0,w.jsxs)(h.default,{style:{flex:1,marginHorizontal:C.spacing.md},children:[(0,w.jsx)(u.default,{style:[C.typography.h2,{color:c.text}],children:v('messagesTitle')}),(0,w.jsx)(u.default,{style:[C.typography.small,{color:c.textMuted}],children:v('messagesSub')})]}),(0,w.jsx)(n.default,{onPress:()=>x.push('/friends'),accessibilityRole:"button",accessibilityLabel:v('friendsEntry'),style:[R.iconBtn,{backgroundColor:c.surface,borderColor:c.border}],children:(0,w.jsx)(p.Ionicons,{name:"people-outline",size:20,color:c.text})})]}),(0,w.jsx)(o.default,{contentContainerStyle:{padding:C.spacing.lg,paddingBottom:C.spacing.xxxl},children:null===z?(0,w.jsx)(l.default,{color:c.accentText}):0===z.length?(0,w.jsx)(b.EmptyState,{icon:"chatbubbles-outline",title:v('noConversations'),body:v('noConversationsSub')}):(0,w.jsxs)(w.Fragment,{children:[T.length+q.length>0&&(0,w.jsxs)(w.Fragment,{children:[(0,w.jsxs)(u.default,{style:[C.typography.smallStrong,{color:c.textMuted,marginBottom:C.spacing.sm}],children:[v('requestsSection'),T.length>0?` \xb7 ${(0,k.formatNumber)(T.length)}`:'']}),T.map(t=>(0,w.jsx)(B,{c:t,colors:c,t:v,onPress:()=>x.push(`/messages/${t.id}`)},t.id)),q.map(t=>(0,w.jsx)(B,{c:t,colors:c,t:v,onPress:()=>x.push(`/messages/${t.id}`)},t.id)),(0,w.jsx)(h.default,{style:{height:C.spacing.md}})]}),D.length>0&&(0,w.jsxs)(w.Fragment,{children:[(0,w.jsx)(u.default,{style:[C.typography.smallStrong,{color:c.textMuted,marginBottom:C.spacing.sm}],children:v('primarySection')}),D.map(t=>(0,w.jsx)(B,{c:t,colors:c,t:v,onPress:()=>x.push(`/messages/${t.id}`)},t.id))]})]})})]})};var s=r(d[1]),l=t(r(d[2])),n=t(r(d[3])),o=t(r(d[4])),c=t(r(d[5])),u=t(r(d[6])),h=t(r(d[7])),y=r(d[8]),p=r(d[9]),f=r(d[10]),x=r(d[11]),b=r(d[12]),j=r(d[13]),_=r(d[14]),C=r(d[15]),S=r(d[16]),k=r(d[17]),v=r(d[18]),I=r(d[19]),P=r(d[20]),w=r(d[21]);const B=(0,s.memo)(({c:t,colors:s,t:l,onPress:n})=>(0,w.jsx)(x.Card,{onPress:()=>n(),padding:"md",style:{marginBottom:C.spacing.sm},children:(0,w.jsxs)(h.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,w.jsx)(h.default,{style:[R.avatar,{backgroundColor:s.surfaceAlt}],children:(0,w.jsx)(u.default,{style:[C.typography.bodyStrong,{color:s.text}],children:t.other_name.slice(0,1).toUpperCase()})}),(0,w.jsxs)(h.default,{style:{flex:1,marginHorizontal:C.spacing.md},children:[(0,w.jsxs)(h.default,{style:{flexDirection:'row',alignItems:'center',gap:C.spacing.sm},children:[(0,w.jsx)(u.default,{style:[C.typography.bodyStrong,{color:s.text,flex:1}],numberOfLines:1,children:t.other_name}),t.declined&&(0,w.jsx)(u.default,{style:[C.typography.caption,{color:s.danger}],children:l('declinedPill')}),(0,w.jsx)(u.default,{style:[C.typography.caption,{color:s.textMuted}],children:(0,v.formatRelative)(t.last_at)})]}),(0,w.jsx)(u.default,{style:[t.unread>0&&!t.last_deleted?C.typography.smallStrong:C.typography.small,{color:t.unread>0&&!t.last_deleted?s.text:s.textMuted,marginTop:2},t.last_deleted&&!t.pending_sent?{fontStyle:'italic'}:null],numberOfLines:1,children:t.pending_sent?l('requestSentLabel'):t.last_deleted?l('messageDeleted'):t.last_body})]}),t.unread>0&&(0,w.jsx)(h.default,{style:[R.badge,{backgroundColor:s.accent}],children:(0,w.jsx)(u.default,{style:[C.typography.caption,{color:s.accentInk}],children:(0,k.formatNumber)(t.unread)})})]})}));B.displayName='ConversationRow';const R=c.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:C.spacing.lg,paddingVertical:C.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:c.default.hairlineWidth},avatar:{width:44,height:44,borderRadius:22,alignItems:'center',justifyContent:'center'},badge:{minWidth:20,height:20,borderRadius:10,paddingHorizontal:6,alignItems:'center',justifyContent:'center'}})},2456,[33,15,461,369,281,158,146,273,381,1086,20,1623,1627,630,615,616,671,1311,1626,675,1171,13]);
-__d(function(g,_r,i,a,m,_e,d){var e=_r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{user:e}=(0,C.useAuth)(),{colors:c}=(0,w.useTheme)(),R=(0,h.useRouter)(),S=(0,I.useT)(),[z,W]=(0,t.useState)([]),[E,D]=(0,t.useState)([]),[A,H]=(0,t.useState)(!0),[$,G]=(0,t.useState)(null),O=(0,t.useCallback)(async()=>{if(e)try{const[t,s]=await Promise.all([(0,T.fetchMyBookings)(e.id),(0,T.fetchMyCourtBookings)(e.id).catch(()=>[])]);W(t),D(s)}finally{H(!1)}},[e]);(0,h.useFocusEffect)((0,t.useCallback)(()=>{O()},[O]));return(0,L.jsxs)(p.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:c.bg},children:[(0,L.jsxs)(y.default,{style:M.header,children:[(0,L.jsx)(l.default,{onPress:()=>R.back(),accessibilityRole:"button",accessibilityLabel:S('back'),style:[M.iconBtn,{backgroundColor:c.surface,borderColor:c.border}],children:(0,L.jsx)(f.Ionicons,{name:(0,v.chevronBack)(),size:22,color:c.text})}),(0,L.jsx)(u.default,{style:[B.typography.h2,{color:c.text,flex:1,textAlign:'center'}],children:S('myBookings')}),(0,L.jsx)(y.default,{style:{width:40}})]}),A?(0,L.jsx)(y.default,{style:{flex:1,alignItems:'center',justifyContent:'center'},children:(0,L.jsx)(s.default,{color:c.accentText})}):(0,L.jsx)(o.default,{data:z,keyExtractor:e=>e.id,contentContainerStyle:{padding:B.spacing.lg,paddingBottom:B.spacing.xxxl},ListEmptyComponent:E.length?null:(0,L.jsx)(k.EmptyState,{icon:"bookmark-outline",title:S('noBookingsTitle'),body:S('noBookingsBody')}),ListFooterComponent:(0,L.jsxs)(l.default,{onPress:()=>R.push('/refunds'),accessibilityRole:"button",accessibilityLabel:S('refundsTitle'),style:[M.refundsLink,{backgroundColor:c.surface,borderColor:c.border}],children:[(0,L.jsx)(f.Ionicons,{name:"receipt-outline",size:18,color:c.accentText}),(0,L.jsxs)(y.default,{style:{flex:1},children:[(0,L.jsx)(u.default,{style:[B.typography.bodyStrong,{color:c.text}],children:S('refundsTitle')}),(0,L.jsx)(u.default,{style:[B.typography.caption,{color:c.textMuted}],children:S('refundsEmptyBody')})]}),(0,L.jsx)(f.Ionicons,{name:'chevron-back'===(0,v.chevronBack)()?'chevron-forward':'chevron-back',size:16,color:c.textMuted})]}),ListHeaderComponent:E.length?(0,L.jsxs)(y.default,{style:{marginBottom:B.spacing.lg},children:[(0,L.jsx)(u.default,{style:[B.typography.smallStrong,{color:c.textMuted,marginBottom:B.spacing.sm}],children:S('myCourtsTitle')}),E.map(e=>(0,L.jsx)(j.Card,{style:{marginBottom:B.spacing.sm},children:(0,L.jsxs)(l.default,{onPress:()=>R.push(`/booking/${e.id}`),accessibilityRole:"button",accessibilityLabel:e.venue_name,style:M.row,children:[(0,L.jsx)(y.default,{style:[M.sportIcon,{backgroundColor:c.accentMuted}],children:(0,L.jsx)(f.Ionicons,{name:"calendar-outline",size:18,color:c.accentText})}),(0,L.jsxs)(y.default,{style:{flex:1,marginHorizontal:B.spacing.sm},children:[(0,L.jsxs)(u.default,{style:[B.typography.bodyStrong,{color:c.text}],numberOfLines:1,children:[e.venue_name,e.court_name?` \xb7 ${e.court_name}`:'']}),(0,L.jsxs)(u.default,{style:[B.typography.small,{color:c.textMuted}],children:[(0,_.formatGameTime)(e.starts_at)," \xb7 ",(0,_.formatPrice)(Number(e.court_price_kwd))]})]}),(0,L.jsx)(x.Badge,{label:S(`cbstatus_${e.status}`),tone:'confirmed'===e.status?'success':'neutral'})]})},e.id))]}):null,renderItem:({item:e})=>(0,L.jsxs)(j.Card,{style:{marginBottom:B.spacing.md},children:[(0,L.jsxs)(l.default,{onPress:()=>R.push(`/game/${e.game.id}`),accessibilityRole:"button",accessibilityLabel:e.game.venue.name,style:M.row,children:[(0,L.jsx)(y.default,{style:[M.sportIcon,{backgroundColor:c.accentMuted}],children:(0,L.jsx)(f.Ionicons,{name:_.sportIcon[e.game.sport],size:18,color:c.accentText})}),(0,L.jsxs)(y.default,{style:{flex:1,marginHorizontal:B.spacing.sm},children:[(0,L.jsx)(u.default,{style:[B.typography.bodyStrong,{color:c.text}],numberOfLines:1,children:e.game.venue.name}),(0,L.jsx)(u.default,{style:[B.typography.small,{color:c.textMuted}],children:(0,_.formatGameTime)(e.game.starts_at)})]}),(0,L.jsx)(x.Badge,{label:'confirmed'===e.status?S('confirmed'):S('cancelled'),tone:'confirmed'===e.status?'success':'danger'})]}),(0,L.jsxs)(y.default,{style:[M.metaRow,{borderTopColor:c.border}],children:['paid'===e.seat_payment?.status?(0,L.jsxs)(u.default,{style:[B.typography.small,{color:c.success}],children:["\u2713 ",S('paidLine',{amount:(0,_.formatPrice)(e.seat_payment.amount_kwd),method:e.seat_payment.method??''})]}):'pending'===e.seat_payment?.status&&'cancelled'!==e.status?(0,L.jsx)(u.default,{style:[B.typography.small,{color:c.warning}],children:S('payToKeepSpot',{amount:(0,_.formatPrice)(e.seat_payment.amount_kwd)})}):(0,L.jsx)(u.default,{style:[B.typography.small,{color:c.textMuted}],children:(0,_.formatPrice)(Number(e.game.price_kwd))}),'confirmed'===e.status&&(0,L.jsx)(b.Button,{title:S('cancel'),variant:"ghost",size:"sm",onPress:()=>G(e)})]})]})}),(0,L.jsx)(r.default,{visible:null!=$,transparent:!0,animationType:"fade",onRequestClose:()=>G(null),children:(0,L.jsx)(y.default,{style:M.backdrop,children:(0,L.jsxs)(y.default,{style:[M.sheet,{backgroundColor:c.surface,borderColor:c.border}],children:[(0,L.jsx)(u.default,{style:[B.typography.h2,{color:c.text}],children:S('cancelBookingTitle')}),$&&(0,L.jsxs)(u.default,{style:[B.typography.body,{color:c.textMuted,marginTop:B.spacing.xs}],children:[$.game.venue.name," \xb7 ",(0,_.formatGameTime)($.game.starts_at)]}),(0,L.jsxs)(y.default,{style:{flexDirection:'row',gap:B.spacing.sm,marginTop:B.spacing.lg},children:[(0,L.jsx)(y.default,{style:{flex:1},children:(0,L.jsx)(b.Button,{title:S('keep'),variant:"ghost",fullWidth:!0,onPress:()=>G(null)})}),(0,L.jsx)(y.default,{style:{flex:1},children:(0,L.jsx)(b.Button,{title:S('cancelBookingAction'),variant:"danger",fullWidth:!0,onPress:async()=>{if($&&e)try{await(0,T.cancelBooking)($.id,e.id),G(null),O()}catch(e){G(null),n.default.alert(S('error'),(0,P.storeErrorText)(e?.message??'')||S('error'))}}})})]})]})})})]})};var t=_r(d[1]),s=e(_r(d[2])),n=e(_r(d[3])),o=e(_r(d[4])),r=e(_r(d[5])),l=e(_r(d[6])),c=e(_r(d[7])),u=e(_r(d[8])),y=e(_r(d[9])),p=_r(d[10]),f=_r(d[11]),h=_r(d[12]),x=_r(d[13]),b=_r(d[14]),j=_r(d[15]),k=_r(d[16]),C=_r(d[17]),w=_r(d[18]),B=_r(d[19]),T=_r(d[20]),_=_r(d[21]),I=_r(d[22]),v=_r(d[23]),P=_r(d[24]),L=_r(d[25]);const M=c.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:B.spacing.lg,paddingVertical:B.spacing.sm},iconBtn:{width:40,height:40,borderRadius:20,borderWidth:1,alignItems:'center',justifyContent:'center'},refundsLink:{flexDirection:'row',alignItems:'center',gap:B.spacing.sm,borderWidth:1,borderRadius:B.radius.lg,padding:B.spacing.md,marginTop:B.spacing.md},row:{flexDirection:'row',alignItems:'center'},sportIcon:{width:36,height:36,borderRadius:12,alignItems:'center',justifyContent:'center'},metaRow:{marginTop:B.spacing.md,paddingTop:B.spacing.md,borderTopWidth:c.default.hairlineWidth,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},backdrop:{flex:1,backgroundColor:'rgba(0,0,0,0.6)',alignItems:'center',justifyContent:'center',padding:B.spacing.lg},sheet:{width:'100%',maxWidth:420,borderRadius:B.radius.lg,borderWidth:1,padding:B.spacing.lg}})},2457,[33,15,461,445,271,467,369,158,146,273,381,1086,20,1624,626,1623,1627,630,615,616,671,1311,675,1171,674,13]);
+__d(
+  function (g, _r, i, a, m, _e, d) {
+    var e = _r(d[0]);
+    (Object.defineProperty(_e, "__esModule", { value: !0 }),
+      (_e.default = function () {
+        const { user: e } = (0, C.useAuth)(),
+          { colors: c } = (0, w.useTheme)(),
+          R = (0, h.useRouter)(),
+          S = (0, I.useT)(),
+          [z, W] = (0, t.useState)([]),
+          [E, D] = (0, t.useState)([]),
+          [A, H] = (0, t.useState)(!0),
+          [$, G] = (0, t.useState)(null),
+          // The cancel sheet asked for a confirmation without saying what it costs. The refund rules
+          // are already computed by fetchSeatRefundQuote, which the leave sheet on /game/[id] uses -
+          // this sheet just never asked, so a player past the cutoff lost their money with no warning.
+          [quote9, setQuote9] = (0, t.useState)(null),
+          O = (0, t.useCallback)(async () => {
+            if (e)
+              try {
+                const [t, s] = await Promise.all([
+                  (0, T.fetchMyBookings)(e.id),
+                  (0, T.fetchMyCourtBookings)(e.id).catch(() => []),
+                ]);
+                (W(t), D(s));
+              } finally {
+                H(!1);
+              }
+          }, [e]);
+        ((0, t.useEffect)(() => {
+          if (!$ || !e) return void setQuote9(null);
+          let live9 = !0;
+          return (
+            (0, T.fetchSeatRefundQuote)(e.id, $.game.id)
+              .then((q9) => {
+                live9 && setQuote9(q9);
+              })
+              .catch(() => {
+                live9 && setQuote9(null);
+              }),
+            () => {
+              live9 = !1;
+            }
+          );
+        }, [$, e]),
+          (0, h.useFocusEffect)(
+            (0, t.useCallback)(() => {
+              O();
+            }, [O]),
+          ));
+        return (0, L.jsxs)(p.SafeAreaView, {
+          edges: ["top"],
+          style: { flex: 1, backgroundColor: c.bg },
+          children: [
+            (0, L.jsxs)(y.default, {
+              style: M.header,
+              children: [
+                (0, L.jsx)(l.default, {
+                  onPress: () => R.back(),
+                  accessibilityRole: "button",
+                  accessibilityLabel: S("back"),
+                  style: [M.iconBtn, { backgroundColor: c.surface, borderColor: c.border }],
+                  children: (0, L.jsx)(f.Ionicons, { name: (0, v.chevronBack)(), size: 22, color: c.text }),
+                }),
+                (0, L.jsx)(u.default, {
+                  style: [B.typography.h2, { color: c.text, flex: 1, textAlign: "center" }],
+                  children: S("myBookings"),
+                }),
+                (0, L.jsx)(y.default, { style: { width: 40 } }),
+              ],
+            }),
+            A
+              ? (0, L.jsx)(y.default, {
+                  style: { flex: 1, alignItems: "center", justifyContent: "center" },
+                  children: (0, L.jsx)(s.default, { color: c.accentText }),
+                })
+              : (0, L.jsx)(o.default, {
+                  data: z,
+                  keyExtractor: (e) => e.id,
+                  contentContainerStyle: { padding: B.spacing.lg, paddingBottom: B.spacing.xxxl },
+                  ListEmptyComponent: E.length
+                    ? null
+                    : (0, L.jsx)(k.EmptyState, {
+                        icon: "bookmark-outline",
+                        title: S("noBookingsTitle"),
+                        body: S("noBookingsBody"),
+                      }),
+                  ListFooterComponent: (0, L.jsxs)(l.default, {
+                    onPress: () => R.push("/refunds"),
+                    accessibilityRole: "button",
+                    accessibilityLabel: S("refundsTitle"),
+                    style: [M.refundsLink, { backgroundColor: c.surface, borderColor: c.border }],
+                    children: [
+                      (0, L.jsx)(f.Ionicons, { name: "receipt-outline", size: 18, color: c.accentText }),
+                      (0, L.jsxs)(y.default, {
+                        style: { flex: 1 },
+                        children: [
+                          (0, L.jsx)(u.default, {
+                            style: [B.typography.bodyStrong, { color: c.text }],
+                            children: S("refundsTitle"),
+                          }),
+                          (0, L.jsx)(u.default, {
+                            style: [B.typography.caption, { color: c.textMuted }],
+                            children: S("refundsEmptyBody"),
+                          }),
+                        ],
+                      }),
+                      (0, L.jsx)(f.Ionicons, {
+                        name: "chevron-back" === (0, v.chevronBack)() ? "chevron-forward" : "chevron-back",
+                        size: 16,
+                        color: c.textMuted,
+                      }),
+                    ],
+                  }),
+                  ListHeaderComponent: E.length
+                    ? (0, L.jsxs)(y.default, {
+                        style: { marginBottom: B.spacing.lg },
+                        children: [
+                          (0, L.jsx)(u.default, {
+                            style: [
+                              B.typography.smallStrong,
+                              { color: c.textMuted, marginBottom: B.spacing.sm },
+                            ],
+                            children: S("myCourtsTitle"),
+                          }),
+                          E.map((e) =>
+                            (0, L.jsx)(
+                              j.Card,
+                              {
+                                style: { marginBottom: B.spacing.sm },
+                                children: (0, L.jsxs)(l.default, {
+                                  onPress: () => R.push(`/booking/${e.id}`),
+                                  accessibilityRole: "button",
+                                  accessibilityLabel: e.venue_name,
+                                  style: M.row,
+                                  children: [
+                                    (0, L.jsx)(y.default, {
+                                      style: [M.sportIcon, { backgroundColor: c.accentMuted }],
+                                      children: (0, L.jsx)(f.Ionicons, {
+                                        name: "calendar-outline",
+                                        size: 18,
+                                        color: c.accentText,
+                                      }),
+                                    }),
+                                    (0, L.jsxs)(y.default, {
+                                      style: { flex: 1, marginHorizontal: B.spacing.sm },
+                                      children: [
+                                        (0, L.jsxs)(u.default, {
+                                          style: [B.typography.bodyStrong, { color: c.text }],
+                                          numberOfLines: 1,
+                                          children: [
+                                            e.venue_name,
+                                            e.court_name ? ` \xb7 ${e.court_name}` : "",
+                                          ],
+                                        }),
+                                        (0, L.jsxs)(u.default, {
+                                          style: [B.typography.small, { color: c.textMuted }],
+                                          children: [
+                                            (0, _.formatGameTime)(e.starts_at),
+                                            " \xb7 ",
+                                            (0, _.formatPrice)(Number(e.court_price_kwd)),
+                                          ],
+                                        }),
+                                      ],
+                                    }),
+                                    (0, L.jsx)(x.Badge, {
+                                      label: S(`cbstatus_${e.status}`),
+                                      tone: "confirmed" === e.status ? "success" : "neutral",
+                                    }),
+                                  ],
+                                }),
+                              },
+                              e.id,
+                            ),
+                          ),
+                        ],
+                      })
+                    : null,
+                  renderItem: ({ item: e }) =>
+                    (0, L.jsxs)(j.Card, {
+                      style: { marginBottom: B.spacing.md },
+                      children: [
+                        (0, L.jsxs)(l.default, {
+                          onPress: () => R.push(`/game/${e.game.id}`),
+                          accessibilityRole: "button",
+                          accessibilityLabel: e.game.venue.name,
+                          style: M.row,
+                          children: [
+                            (0, L.jsx)(y.default, {
+                              style: [M.sportIcon, { backgroundColor: c.accentMuted }],
+                              children: (0, L.jsx)(f.Ionicons, {
+                                name: _.sportIcon[e.game.sport],
+                                size: 18,
+                                color: c.accentText,
+                              }),
+                            }),
+                            (0, L.jsxs)(y.default, {
+                              style: { flex: 1, marginHorizontal: B.spacing.sm },
+                              children: [
+                                (0, L.jsx)(u.default, {
+                                  style: [B.typography.bodyStrong, { color: c.text }],
+                                  numberOfLines: 1,
+                                  children: e.game.venue.name,
+                                }),
+                                (0, L.jsx)(u.default, {
+                                  style: [B.typography.small, { color: c.textMuted }],
+                                  children: (0, _.formatGameTime)(e.game.starts_at),
+                                }),
+                              ],
+                            }),
+                            (0, L.jsx)(x.Badge, {
+                              label: "confirmed" === e.status ? S("confirmed") : S("cancelled"),
+                              tone: "confirmed" === e.status ? "success" : "danger",
+                            }),
+                          ],
+                        }),
+                        (0, L.jsxs)(y.default, {
+                          style: [M.metaRow, { borderTopColor: c.border }],
+                          children: [
+                            "paid" === e.seat_payment?.status
+                              ? (0, L.jsxs)(u.default, {
+                                  style: [B.typography.small, { color: c.success }],
+                                  children: [
+                                    "\u2713 ",
+                                    S("paidLine", {
+                                      amount: (0, _.formatPrice)(e.seat_payment.amount_kwd),
+                                      method: e.seat_payment.method ?? "",
+                                    }),
+                                  ],
+                                })
+                              : "pending" === e.seat_payment?.status && "cancelled" !== e.status
+                                ? (0, L.jsx)(u.default, {
+                                    style: [B.typography.small, { color: c.warning }],
+                                    children: S("payToKeepSpot", {
+                                      amount: (0, _.formatPrice)(e.seat_payment.amount_kwd),
+                                    }),
+                                  })
+                                : (0, L.jsx)(u.default, {
+                                    style: [B.typography.small, { color: c.textMuted }],
+                                    children: (0, _.formatPrice)(Number(e.game.price_kwd)),
+                                  }),
+                            "confirmed" === e.status &&
+                              (0, L.jsx)(b.Button, {
+                                title: S("cancel"),
+                                variant: "ghost",
+                                size: "sm",
+                                onPress: () => G(e),
+                              }),
+                          ],
+                        }),
+                      ],
+                    }),
+                }),
+            (0, L.jsx)(r.default, {
+              visible: null != $,
+              transparent: !0,
+              animationType: "fade",
+              onRequestClose: () => G(null),
+              children: (0, L.jsx)(y.default, {
+                style: M.backdrop,
+                children: (0, L.jsxs)(y.default, {
+                  style: [M.sheet, { backgroundColor: c.surface, borderColor: c.border }],
+                  children: [
+                    (0, L.jsx)(u.default, {
+                      style: [B.typography.h2, { color: c.text }],
+                      children: S("cancelBookingTitle"),
+                    }),
+                    $ &&
+                      (0, L.jsxs)(u.default, {
+                        style: [B.typography.body, { color: c.textMuted, marginTop: B.spacing.xs }],
+                        children: [$.game.venue.name, " \xb7 ", (0, _.formatGameTime)($.game.starts_at)],
+                      }),
+                    quote9 && quote9.paid_kwd > 0
+                      ? (0, L.jsx)(u.default, {
+                          style: [
+                            B.typography.body,
+                            {
+                              color: quote9.eligible ? c.success : c.danger,
+                              marginTop: B.spacing.sm,
+                              fontWeight: "700",
+                            },
+                          ],
+                          children: quote9.eligible
+                            ? S("refundFullTitle")
+                            : S(
+                                2 === quote9.cutoff_hours ? "refundNoneWhyTwo" : "refundNoneWhy",
+                                { hours: quote9.cutoff_hours },
+                              ),
+                        })
+                      : null,
+                    quote9 && quote9.paid_kwd > 0 && quote9.eligible
+                      ? (0, L.jsx)(u.default, {
+                          style: [B.typography.caption, { color: c.textMuted, marginTop: 2 }],
+                          children: S("refundRow") + ": " + (0, _.formatAmount)(quote9.refund_kwd),
+                        })
+                      : null,
+                    (0, L.jsxs)(y.default, {
+                      style: { flexDirection: "row", gap: B.spacing.sm, marginTop: B.spacing.lg },
+                      children: [
+                        (0, L.jsx)(y.default, {
+                          style: { flex: 1 },
+                          children: (0, L.jsx)(b.Button, {
+                            title: S("keep"),
+                            variant: "ghost",
+                            fullWidth: !0,
+                            onPress: () => G(null),
+                          }),
+                        }),
+                        (0, L.jsx)(y.default, {
+                          style: { flex: 1 },
+                          children: (0, L.jsx)(b.Button, {
+                            title: S("cancelBookingAction"),
+                            variant: "danger",
+                            fullWidth: !0,
+                            onPress: async () => {
+                              if ($ && e)
+                                try {
+                                  (await (0, T.cancelBooking)($.id, e.id), G(null), O());
+                                } catch (e) {
+                                  (G(null),
+                                    n.default.alert(
+                                      S("error"),
+                                      (0, P.storeErrorText)(e?.message ?? "") || S("error"),
+                                    ));
+                                }
+                            },
+                          }),
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              }),
+            }),
+          ],
+        });
+      }));
+    var t = _r(d[1]),
+      s = e(_r(d[2])),
+      n = e(_r(d[3])),
+      o = e(_r(d[4])),
+      r = e(_r(d[5])),
+      l = e(_r(d[6])),
+      c = e(_r(d[7])),
+      u = e(_r(d[8])),
+      y = e(_r(d[9])),
+      p = _r(d[10]),
+      f = _r(d[11]),
+      h = _r(d[12]),
+      x = _r(d[13]),
+      b = _r(d[14]),
+      j = _r(d[15]),
+      k = _r(d[16]),
+      C = _r(d[17]),
+      w = _r(d[18]),
+      B = _r(d[19]),
+      T = _r(d[20]),
+      _ = _r(d[21]),
+      I = _r(d[22]),
+      v = _r(d[23]),
+      P = _r(d[24]),
+      L = _r(d[25]);
+    const M = c.default.create({
+      header: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: B.spacing.lg,
+        paddingVertical: B.spacing.sm,
+      },
+      iconBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        borderWidth: 1,
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      refundsLink: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: B.spacing.sm,
+        borderWidth: 1,
+        borderRadius: B.radius.lg,
+        padding: B.spacing.md,
+        marginTop: B.spacing.md,
+      },
+      row: { flexDirection: "row", alignItems: "center" },
+      sportIcon: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+      metaRow: {
+        marginTop: B.spacing.md,
+        paddingTop: B.spacing.md,
+        borderTopWidth: c.default.hairlineWidth,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+      },
+      backdrop: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.6)",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: B.spacing.lg,
+      },
+      sheet: {
+        width: "100%",
+        maxWidth: 420,
+        borderRadius: B.radius.lg,
+        borderWidth: 1,
+        padding: B.spacing.lg,
+      },
+    });
+  },
+  2457,
+  [
+    33, 15, 461, 445, 271, 467, 369, 158, 146, 273, 381, 1086, 20, 1624, 626, 1623, 1627, 630, 615, 616, 671,
+    1311, 675, 1171, 674, 13,
+  ],
+);
+
 __d(function(g,r,_i,a,m,e,_d){var t=r(_d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{user:t}=(0,h.useAuth)(),{colors:c}=(0,b.useTheme)(),B=(0,f.useRouter)(),P=(0,k.useT)(),[$,z]=(0,n.useState)([]),[I,D]=(0,n.useState)(!0),[F,N]=(0,n.useState)(!1),W=(0,n.useCallback)(async()=>{if(t)try{z(await(0,T.fetchNotifications)(t.id))}finally{D(!1),N(!1)}},[t]);(0,n.useEffect)(()=>{W()},[W]);const V=(0,n.useRef)(!1);(0,n.useEffect)(()=>{I||V.current||!t||$.some(t=>!t.read)&&(V.current=!0,(0,T.markAllNotificationsRead)(t.id).catch(()=>{}))},[I,$,t]);const H=async n=>{!n.read&&t&&(await(0,T.markNotificationRead)(t.id,n.id),z(t=>t.map(t=>t.id===n.id?Object.assign({},t,{read:!0}):t))),'squad_confirm_needed'!==n.type&&'squad_dropped'!==n.type&&'squad_window_closed'!==n.type?'challenge_received'!==n.type&&'challenge_accepted'!==n.type?'new_follower'!==n.type&&'follow_request'!==n.type&&'follow_accepted'!==n.type?'team_badge_unlocked'!==n.type?'payment_received'!==n.type?'organizer_application'===n.type?B.push('/admin/organizers'):'organizer_decision'===n.type?B.push('/organizer/apply'):'achievement'===n.type?t&&B.push(`/passport/${t.id}`):'payment_request'===n.type?B.push(`/pay/${n.payment_id}`):'booking_decision'===n.type?B.push(`/booking/${n.booking_id}`):'venue_application'===n.type?B.push('/admin/venues'):'venue_decision'===n.type?B.push('/venue/portal'):'team_join_request'===n.type||'team_request_decision'===n.type||'team_invite'===n.type||'team_announcement'===n.type?B.push(`/teams/${n.team_id}`):'replacement_offer'===n.type?B.push(`/replacement/${n.offer_id}`):'sanction_issued'===n.type||'sanction_reviewed'===n.type?t&&B.push(`/passport/${t.id}`):'coc_update'===n.type?B.push('/conduct'):'refund_issued'===n.type||'payment_forfeited'===n.type?B.push('/refunds'):'wallet_activity'===n.type?B.push('/wallet'):'award_voting_open'===n.type||'award_voting_closing'===n.type||'award_results'===n.type?B.push(`/awards/${n.game_id}`):'game_id'in n&&n.game_id&&B.push(`/game/${n.game_id}`):B.push(`/organizer/match/${n.game_id}`):B.push(`/teams/${n.team_id}`):B.push(`/player/${n.follower_id}`):B.push(`/teams/battle/${n.battle_id}`):B.push(`/squad/${n.game_id}`)},M=$.filter(t=>!t.read).length,O=(0,n.useMemo)(()=>{const t=new Date;t.setHours(0,0,0,0);const n=n=>{const i=new Date(n);i.setHours(0,0,0,0);const o=Math.floor((t.getTime()-i.getTime())/864e5);return o<=0?0:1===o?1:o<=6?2:3},i=['groupToday','groupYesterday','groupThisWeek','groupEarlier'],o=[[],[],[],[]];return $.forEach(t=>o[n(t.created_at)].push(t)),o.map((t,n)=>({key:i[n],data:t})).filter(t=>t.data.length>0)},[$]);return(0,q.jsxs)(p.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:c.bg},children:[(0,q.jsxs)(u.default,{style:S.header,children:[(0,q.jsx)(o.default,{onPress:()=>B.back(),accessibilityRole:"button",accessibilityLabel:P('back'),style:[S.back,{backgroundColor:c.surface,borderColor:c.border}],children:(0,q.jsx)(y.Ionicons,{name:(0,R.chevronBack)(),size:22,color:c.text})}),(0,q.jsx)(s.default,{style:[w.typography.h1,{color:c.text,flex:1,marginHorizontal:w.spacing.md}],children:P('notifications')}),M>0&&(0,q.jsx)(u.default,{style:[S.newChip,{backgroundColor:c.accent}],children:(0,q.jsx)(s.default,{style:[w.typography.smallStrong,{color:c.accentInk}],children:P('notifNewCount',{n:M})})})]}),I?(0,q.jsx)(u.default,{style:{flex:1,alignItems:'center',justifyContent:'center'},children:(0,q.jsx)(i.default,{color:c.accentText})}):(0,q.jsx)(l.default,{sections:O,keyExtractor:t=>t.id,stickySectionHeadersEnabled:!1,renderSectionHeader:({section:t})=>(0,q.jsx)(s.default,{style:[w.typography.caption,{color:c.textMuted,letterSpacing:1.5,textTransform:'uppercase',marginTop:w.spacing.md,marginBottom:w.spacing.xs}],children:P(t.key)}),contentContainerStyle:{padding:w.spacing.lg,paddingTop:0,paddingBottom:w.spacing.xxxl},refreshControl:(0,q.jsx)(d.default,{refreshing:F,onRefresh:()=>{N(!0),W()},tintColor:c.accent}),ListEmptyComponent:(0,q.jsx)(v.EmptyState,{icon:"notifications-outline",title:P('noNotificationsTitle'),body:P('noNotificationsBody')}),renderItem:({item:t})=>{const{title:n,body:i}=x(t,P),o=A(t),d='danger'===o?c.danger:'success'===o?c.success:c.accent;return(0,q.jsx)(_.Card,{onPress:()=>H(t),style:{marginBottom:w.spacing.sm},padding:"md",children:(0,q.jsxs)(u.default,{style:S.row,children:[(0,q.jsx)(u.default,{style:[S.iconWrap,{backgroundColor:c.surfaceAlt}],children:(0,q.jsx)(y.Ionicons,{name:C(t),size:20,color:d})}),(0,q.jsxs)(u.default,{style:{flex:1,marginHorizontal:w.spacing.md},children:[(0,q.jsxs)(u.default,{style:S.titleRow,children:[(0,q.jsx)(s.default,{style:[w.typography.bodyStrong,{color:c.text,flex:1}],numberOfLines:2,children:n}),!t.read&&(0,q.jsx)(u.default,{style:[S.dot,{backgroundColor:c.accent}]})]}),(0,q.jsx)(s.default,{style:[w.typography.body,{color:c.textMuted,marginTop:2}],numberOfLines:3,children:i}),(0,q.jsx)(s.default,{style:[w.typography.small,{color:c.textMuted,marginTop:w.spacing.xs}],children:(0,j.formatRelative)(t.created_at)})]})]})})}})]})};var n=r(_d[1]),i=t(r(_d[2])),o=t(r(_d[3])),d=t(r(_d[4])),l=t(r(_d[5])),c=t(r(_d[6])),s=t(r(_d[7])),u=t(r(_d[8])),p=r(_d[9]),y=r(_d[10]),f=r(_d[11]),_=r(_d[12]),v=r(_d[13]),h=r(_d[14]),b=r(_d[15]),w=r(_d[16]),T=r(_d[17]),B=r(_d[18]),j=r(_d[19]),k=r(_d[20]),R=r(_d[21]),q=r(_d[22]);const x=(t,n)=>{if('match_reminder'===t.type){const i={sport:n(t.sport),venue:t.venue_name},o=t.minutes_until;let d;if(o<60)d=n('notifReminderBodyMinutes',Object.assign({},i,{minutes:o}));else if(o<1440){const t=Math.round(o/60);d=1===t?n('notifReminderBodyHour',i):n('notifReminderBodyHours',Object.assign({},i,{hours:t}))}else{const t=Math.round(o/1440);d=1===t?n('notifReminderBodyDay',i):n('notifReminderBodyDays',Object.assign({},i,{days:t}))}return{title:n('notifReminderTitle'),body:d}}if('friend_activity'===t.type)return{title:n('notifFriendTitle'),body:n('notifFriendBody',{name:t.friend_name,sport:n(t.sport),venue:t.venue_name})};if('payment_confirmation'===t.type)return{title:n('notifPaymentTitle'),body:n('notifPaymentBody',{amount:(0,B.formatPrice)(t.amount_kwd),venue:t.venue_name})};if('match_update'===t.type)return{title:n('notifUpdateTitle'),body:n('notifUpdateBody',{venue:t.venue_name,summary:t.summary})};if('match_cancelled'===t.type)return{title:n('notifCancelledTitle'),body:n('notifCancelledBody',{venue:t.venue_name,reason:t.reason})};if('join_request'===t.type)return{title:n('notifJoinRequestTitle'),body:n('notifJoinRequestBody',{name:t.player_name,venue:t.venue_name})};if('squad_confirm_needed'===t.type)return{title:n('notifSquadConfirmTitle'),body:n('notifSquadConfirmBody',{venue:t.venue_name})};if('squad_dropped'===t.type)return{title:n('notifSquadDroppedTitle'),body:n('notifSquadDroppedBody',{venue:t.venue_name})};if('squad_window_closed'===t.type)return{title:n('notifSquadClosedTitle'),body:n('notifSquadClosedBody',{venue:t.venue_name,confirmed:t.confirmed_count,dropped:t.dropped_count})};if('challenge_received'===t.type)return{title:n('notifChallengeReceivedTitle',{clan:t.other_clan_name}),body:n('notifChallengeReceivedBody',{pts:t.stake_pts})};if('challenge_accepted'===t.type)return{title:n('notifChallengeAcceptedTitle',{clan:t.other_clan_name}),body:n('notifChallengeAcceptedBody')};if('new_follower'===t.type)return{title:n('notifNewFollowerTitle',{name:t.follower_name}),body:n('notifNewFollowerBody')};if('team_badge_unlocked'===t.type)return{title:n('notifTeamBadgeTitle',{team:t.team_name}),body:n(`teamAch_${t.badge_key}`)};if('follow_request'===t.type)return{title:n('notifFollowRequestTitle',{name:t.follower_name}),body:n('notifFollowRequestBody')};if('follow_accepted'===t.type)return{title:n('notifFollowAcceptedTitle',{name:t.follower_name}),body:n('notifFollowAcceptedBody')};if('payment_received'===t.type)return{title:n('notifPaymentReceivedTitle',{name:t.payer_name,amount:(0,B.formatPrice)(t.amount_kwd)}),body:n('notifPaymentReceivedBody')};if('player_joined'===t.type)return{title:n('notifPlayerJoinedTitle'),body:n('notifPlayerJoinedBody',{name:t.player_name,venue:t.venue_name})};if('request_approved'===t.type)return{title:n('notifApprovedTitle'),body:n('notifApprovedBody',{venue:t.venue_name})};if('request_rejected'===t.type)return{title:n('notifRejectedTitle'),body:n('notifRejectedBody',{venue:t.venue_name})};if('removed_from_match'===t.type)return{title:n('notifRemovedTitle'),body:n('removedFromMatchNotif',{venue:t.venue_name})};if('match_score'===t.type)return{title:n('finalScoreTitle'),body:n('matchScoreNotif',{venue:t.venue_name,score:`${t.score_home}\u2013${t.score_away}`})};if('waitlist_promoted'===t.type)return{title:n('notifPromotedTitle'),body:n('notifPromotedBody',{venue:t.venue_name,minutes:t.minutes})};if('organizer_application'===t.type)return{title:n('notifAppReceivedTitle'),body:n('notifAppReceivedBody',{name:t.applicant_name})};if('need_player'===t.type)return{title:n('notifNeedPlayerTitle',{sport:n(t.sport),slots:t.slots}),body:n('notifNeedPlayerBody',{time:(0,B.formatGameTime)(t.starts_at),distance:t.distance_km,level:'all'===t.skill_level?n('openToAll'):n(t.skill_level)})};if('series_invite'===t.type)return{title:n('notifSeriesInviteTitle',{title:t.title}),body:n('notifSeriesInviteBody',{venue:t.venue_name,time:(0,B.formatGameTime)(t.starts_at)})};if('achievement'===t.type)return{title:n('notifAchievementTitle'),body:`${t.emoji} ${n(t.achievement_key)}`};if('payment_request'===t.type)return{title:n('notifPaymentRequestTitle'),body:n('notifPaymentRequestBody',{amount:(0,B.formatPrice)(t.amount_kwd),venue:t.venue_name})};if('booking_decision'===t.type)return t.approved?{title:n('notifBookingConfirmedTitle'),body:n('notifBookingConfirmedBody',{venue:t.venue_name})}:{title:n('notifBookingRejectedTitle'),body:n('notifBookingRejectedBody',{venue:t.venue_name})};if('payment_forfeited'===t.type)return{title:n('notifForfeitTitle'),body:n('notifForfeitBody',{amount:(0,B.formatPrice)(t.amount_kwd),venue:t.venue_name})};if('refund_issued'===t.type)return{title:n('notifRefundTitle'),body:n('notifRefundBody',{amount:(0,B.formatPrice)(t.amount_kwd),venue:t.venue_name})};if('venue_application'===t.type)return{title:n('notifVenueApplicationTitle'),body:n('notifVenueApplicationBody',{venue:t.venue_name})};if('venue_decision'===t.type)return t.approved?{title:n('notifVenueApprovedTitle'),body:n('notifVenueApprovedBody',{venue:t.venue_name})}:{title:n('notifVenueRejectedTitle'),body:n('notifVenueRejectedBody',{venue:t.venue_name})};if('team_join_request'===t.type)return{title:n('notifTeamJoinRequestTitle'),body:n('notifTeamJoinRequestBody',{name:t.requester_name,team:t.team_name})};if('team_request_decision'===t.type)return t.approved?{title:n('notifTeamApprovedTitle'),body:n('notifTeamApprovedBody',{team:t.team_name})}:{title:n('notifTeamRejectedTitle'),body:n('notifTeamRejectedBody',{team:t.team_name})};if('team_invite'===t.type)return{title:n('notifTeamInviteTitle'),body:n('notifTeamInviteBody',{team:t.team_name})};if('team_announcement'===t.type)return{title:n('notifTeamAnnouncementTitle',{team:t.team_name}),body:t.summary};if('replacement_offer'===t.type)return{title:n('notifReplacementTitle'),body:n('notifReplacementBody',{venue:t.venue_name,minutes:t.minutes})};if('sanction_issued'===t.type)return{title:n('notifSanctionTitle',{type:n(`sanction_${t.sanction_type}`)}),body:t.reason};if('sanction_reviewed'===t.type)return t.upheld?{title:n('notifSanctionUpheldTitle'),body:n('notifSanctionUpheldBody')}:{title:n('notifSanctionLiftedTitle'),body:n('notifSanctionLiftedBody')};if('coc_update'===t.type)return{title:n('notifCocUpdateTitle'),body:n('notifCocUpdateBody')};if('award_voting_open'===t.type)return{title:n('notifAwardVotingTitle'),body:n('notifAwardVotingBody',{venue:t.venue_name})};if('award_voting_closing'===t.type)return{title:n('notifAwardClosingTitle'),body:n('notifAwardClosingBody',{venue:t.venue_name})};if('award_results'===t.type)return t.won_label?{title:n('notifAwardWonTitle'),body:n('notifAwardWonBody',{award:n(t.won_label),venue:t.venue_name})}:{title:n('notifAwardResultsTitle'),body:n('notifAwardResultsBody',{venue:t.venue_name})};if('wallet_activity'===t.type){const i=n(t.kind_key),o=(t.amount_fils/1e3).toFixed(3);if('walletKind_request_payment'===t.kind_key&&'out'===t.direction&&t.counterparty_name)return{title:i,body:n('notifWalletRequested',{name:t.counterparty_name,amount:o})};return{title:i,body:'in'===t.direction?t.counterparty_name?n('notifWalletInFrom',{amount:o,name:t.counterparty_name}):n('notifWalletIn',{amount:o}):t.counterparty_name?n('notifWalletOutTo',{amount:o,name:t.counterparty_name}):n('notifWalletOut',{amount:o})}}return'organizer_decision'===t.type?'approved'===t.decision?{title:n('notifDecisionApprovedTitle'),body:n('notifDecisionApprovedBody')}:'rejected'===t.decision?{title:n('notifDecisionRejectedTitle'),body:n('notifDecisionRejectedBody',{note:t.note})}:'suspended'===t.decision?{title:n('notifDecisionSuspendedTitle'),body:n('notifDecisionSuspendedBody',{note:t.note})}:{title:n('notifDecisionInfoTitle'),body:n('notifDecisionInfoBody',{note:t.note})}:{title:n('appName'),body:''}},C=t=>{switch(t.type){case'match_reminder':return'alarm-outline';case'friend_activity':case'player_joined':return'people-outline';case'payment_confirmation':case'payment_request':return'card-outline';case'match_update':return'create-outline';case'match_cancelled':case'request_rejected':return'close-circle-outline';case'join_request':case'new_follower':case'team_join_request':return'person-add-outline';case'request_approved':case'follow_accepted':return'checkmark-circle-outline';case'waitlist_promoted':return'arrow-up-circle-outline';case'removed_from_match':case'squad_dropped':return'person-remove-outline';case'match_score':case'award_voting_open':case'award_voting_closing':return'trophy-outline';case'squad_confirm_needed':return'hand-right-outline';case'squad_window_closed':return'lock-closed-outline';case'challenge_received':return'shield-outline';case'challenge_accepted':case'organizer_application':case'sanction_reviewed':return'shield-checkmark-outline';case'follow_request':return'person-circle-outline';case'team_badge_unlocked':return'medal-outline';case'payment_received':case'refund_issued':return'cash-outline';case'need_player':return'flash';case'series_invite':return'repeat';case'achievement':case'award_results':return'trophy';case'booking_decision':return t.approved?'checkmark-circle-outline':'close-circle-outline';case'payment_forfeited':return'alert-circle-outline';case'venue_application':return'business-outline';case'venue_decision':return t.approved?'business':'close-circle-outline';case'team_request_decision':return t.approved?'people':'close-circle-outline';case'team_invite':return'people-circle-outline';case'team_announcement':return'megaphone-outline';case'replacement_offer':return'swap-horizontal-outline';case'sanction_issued':return'warning-outline';case'coc_update':return'document-text-outline';case'wallet_activity':return'wallet-outline';case'organizer_decision':return'approved'===t.decision?'ribbon-outline':'rejected'===t.decision||'suspended'===t.decision?'close-circle-outline':'information-circle-outline';default:return'notifications-outline'}},A=t=>'match_cancelled'===t.type||'request_rejected'===t.type||'removed_from_match'===t.type||'challenge_received'===t.type||'squad_dropped'===t.type?'danger':'squad_window_closed'===t.type||'challenge_accepted'===t.type||'new_follower'===t.type||'follow_accepted'===t.type||'payment_received'===t.type||'team_badge_unlocked'===t.type?'success':'organizer_decision'!==t.type||'rejected'!==t.decision&&'suspended'!==t.decision?'request_approved'===t.type||'waitlist_promoted'===t.type||'organizer_decision'===t.type&&'approved'===t.decision?'success':'accent':'danger';const S=c.default.create({newChip:{borderRadius:w.radius.pill,paddingHorizontal:w.spacing.sm,paddingVertical:4},header:{flexDirection:'row',alignItems:'center',paddingHorizontal:w.spacing.lg,paddingVertical:w.spacing.lg},back:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:c.default.hairlineWidth},row:{flexDirection:'row',alignItems:'flex-start'},iconWrap:{width:40,height:40,borderRadius:w.radius.md,alignItems:'center',justifyContent:'center'},titleRow:{flexDirection:'row',alignItems:'center'},dot:{width:8,height:8,borderRadius:4,marginStart:w.spacing.sm}})},2458,[33,15,461,369,280,337,158,146,273,381,1086,20,1623,1627,630,615,616,671,1311,1626,675,1171,13]);
 __d(
   function (g, r, i, a, m, _e, _d) {

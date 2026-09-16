@@ -2741,6 +2741,18 @@ __d(
           pending_count: Qt.bookings.filter((t) => t.game_id === e.id && "pending" === t.status).length,
           user_booked: "confirmed" === n,
           user_status: n,
+          // Di gives a promoted waitlister fifteen minutes, and the notification it sends says so -
+          // but the DTO returned the status and not the deadline, so the reserved CTA had no
+          // countdown to show and the seat simply vanished. The confirmed-with-payment branch right
+          // above it already renders one off the payment's own deadline.
+          user_reserved_until:
+            Qt.bookings.find(
+              (t) =>
+                t.game_id === e.id &&
+                t.user_id === a &&
+                "cancelled" !== t.status &&
+                "rejected" !== t.status,
+            )?.reserved_until ?? null,
           organizer_name: e.organizer_id === Aa ? void 0 : or(e.organizer_id),
           series_frequency: e.series_id
             ? (Qt.templates.find((t) => t.id === e.series_id)?.frequency ?? null)
