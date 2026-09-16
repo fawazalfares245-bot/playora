@@ -134,7 +134,7 @@ await run('a finished match never promotes its waitlist', async () => {
   const out = await page.evaluate(async ([org, gameId, waiter, filler]) => {
     const api = __r(671);
     await api.fetchOrganizerMatches(org, org);
-    const parts = await api.fetchMatchParticipants(gameId);
+    const parts = await api.fetchMatchParticipants(gameId, org);
     const notes = await api.fetchNotifications(waiter);
     const all = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]').filter((b) => b.game_id === gameId);
     return {

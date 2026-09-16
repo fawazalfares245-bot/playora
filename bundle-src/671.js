@@ -450,7 +450,7 @@ e.fetchOrganizerMatches = (o, c) => {
     };
     e.reconcileSeatPayments = () => t.store.mockReconcileSeatPayments();
     e.auditSeatConsistency = () => t.store.mockAuditSeatConsistency();
-    e.fetchMatchParticipants = (o) => t.store.mockGetMatchParticipants(o);
+    e.fetchMatchParticipants = (o, c) => t.store.mockGetMatchParticipants(o, c);
     e.fetchOrganizerStats = (o, c) => {
       if (!c) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
       return t.store.mockGetOrganizerStats(o, c);

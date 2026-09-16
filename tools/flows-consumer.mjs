@@ -353,7 +353,7 @@ await run('a cash seat can be settled at the venue', async () => {
     const settled = await api.fetchMySeatPayment(player, g.id);
     res.settledStatus = settled.status;
     res.settledMethod = settled.method;
-    const parts = await api.fetchMatchParticipants(g.id);
+    const parts = await api.fetchMatchParticipants(g.id, org);
     const row = parts.confirmed.find((b) => b.user_id === player);
     res.seated = !!row;
     res.rowPayment = row && row.seat_payment ? row.seat_payment.status : null;

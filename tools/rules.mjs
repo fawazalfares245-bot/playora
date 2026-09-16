@@ -56,6 +56,22 @@ const out = await page.evaluate(async (ids) => {
     res.privLineupParticipant = await shape(() => api.fetchLineup(pg.id, ids.user));
     res.privPlayersAdmin = await shape(() => api.fetchGamePlayers(pg.id, ids.admin));
 
+    // mockGetMatchParticipants took no caller at all and the facade exported it that way, so anyone
+    // holding a match id could read the whole roster - every booking row with its status, and the
+    // seat payment's id, method and amount. Its only caller inside 631 is the organizer match
+    // screen, which already checked the caller was the organizer: the guard existed in one place
+    // and was missing from the door beside it.
+    const keys9 = async (fn) => { try { const v = await fn(); return Object.keys(v).map((k) => `${k}:${v[k].length}`).join(','); } catch (e) { return e.code || e.message; } };
+    res.partsNoCaller = await keys9(() => api.fetchMatchParticipants(pg.id));
+    res.partsOutsider = await keys9(() => api.fetchMatchParticipants(pg.id, ids.analyst));
+    res.partsParticipant = await keys9(() => api.fetchMatchParticipants(pg.id, ids.user));
+    res.partsOrganizer = await keys9(() => api.fetchMatchParticipants(pg.id, ids.organizer));
+    res.partsAdmin = await keys9(() => api.fetchMatchParticipants(pg.id, ids.admin));
+    // ...and the organizer screen keeps its graceful empty state for anyone else, rather than
+    // surfacing that refusal as an error banner.
+    const oms9 = await api.fetchOrganizerMatchScreen(ids.analyst, pg.id).catch((e) => ({ error: e.code || e.message }));
+    res.omsOutsider = oms9.error ?? `confirmed:${oms9.participants.confirmed.length}`;
+
     // ...and a public match is read by anyone, which is the point of the gate having a shape. This
     // takes a seeded match rather than creating one: the organizer has an hourly creation cap and
     // this file already spends two of it above.
@@ -336,6 +352,12 @@ ok('the organizer still reads their own roster', /^rows:[1-9]/.test(String(out.p
 ok('a participant still reads the roster', /^rows:[1-9]/.test(String(out.privPlayersParticipant)), String(out.privPlayersParticipant));
 ok('a participant still reads the lineup', out.privLineupParticipant === 'ok', String(out.privLineupParticipant));
 ok('an admin still reads the roster', /^rows:[1-9]/.test(String(out.privPlayersAdmin)), String(out.privPlayersAdmin));
+ok('the participant roster needs a caller', out.partsNoCaller === 'E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW', String(out.partsNoCaller));
+ok('a stranger cannot read the participant roster', out.partsOutsider === 'E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW', String(out.partsOutsider));
+ok('nor can a player who is only in the match', out.partsParticipant === 'E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW', String(out.partsParticipant));
+ok('the organizer reads their own participant roster', /confirmed:[1-9]/.test(String(out.partsOrganizer)), String(out.partsOrganizer));
+ok('an admin reads it too', /confirmed:[1-9]/.test(String(out.partsAdmin)), String(out.partsAdmin));
+ok('the organizer match screen stays empty rather than erroring', out.omsOutsider === 'confirmed:0', String(out.omsOutsider));
 ok('the open-match probe found a match to read', out.pubFound === true, String(out.pubFound));
 ok('a public match roster is open', /^rows:\d/.test(String(out.pubPlayersOutsider)), String(out.pubPlayersOutsider));
 ok('a public match lineup is open', out.pubLineupOutsider === 'ok', String(out.pubLineupOutsider));

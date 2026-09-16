@@ -4498,8 +4498,17 @@ __d(
           return own9 ? row9 : Object.assign(row9, { invite_code: null });
         });
     };
-    const Qi = async (e) => {
+    // This took no caller at all and the facade exported it that way, so anyone holding a match id
+    // could read its whole roster - every booking row, its status, and the seat payment's id, method
+    // and amount - for a private match as readily as a public one. Its only caller inside 631 is the
+    // organizer match screen, which already checks that the caller is the organizer, so the guard
+    // was there in one place and absent from the door next to it.
+    const Qi = async (e, cr9) => {
       (await ei(), await Oi(e));
+      const gm9 = hi(e);
+      if (!gm9) throw new Error("E_MATCH_NOT_FOUND");
+      if (!cr9 || (gm9.organizer_id !== cr9 && !ro(cr9)))
+        throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
       const t = Qt.bookings.filter((t) => t.game_id === e);
       // The screen cannot offer to settle a cash seat without a handle on the payment.
       const p9 = (e) => {
@@ -17961,10 +17970,12 @@ __d(
     };
     r.mockGetOrganizerMatchScreen = async (e, t) => {
       await ei();
-      const a = await Ni(t, e),
-        i = await Qi(t);
+      const a = await Ni(t, e);
+      // The roster is read after this check, not before it, so a caller who is not the organizer
+      // still gets the graceful empty screen rather than the refusal Qi now throws.
       if (!(!!a && !!e && a.organizer_id === e))
         return { game: a, participants: { confirmed: [], reserved: [], pending: [], waitlist: [] }, candidates: [], intel: [] };
+      const i = await Qi(t, e);
       const [n, r] = await Promise.all([
         bn(t, e).catch(() => []),
         i.pending.length > 0 ? Pn(e, t).catch(() => []) : Promise.resolve([]),

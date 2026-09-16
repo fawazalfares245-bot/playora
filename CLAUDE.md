@@ -143,6 +143,25 @@ Three rules cut across all of it:
 - **Expiry and promotion are lazy.** Nothing runs on a clock; both halves of `Di` run when the match
   is next read. A test that asserts a hold has lapsed must read the match first.
 
+## Who may read a match
+
+`maySeeMatch9(game, callerId)` (631) is the single visibility gate: a private match is readable by its
+organizer, by anyone holding a live booking on it, and by an admin. `ra(callerId, game.audience)` is
+the second gate and throws `AUDIENCE_MISMATCH`. Both are applied together by `Ni` (`mockGetGame`),
+`Ui` (`mockGetGamePlayers`) and `uc` (`mockGetLineup`), and a caller who fails either is told the
+match does not exist.
+
+The gate used to live inside `Ni` alone, which is the shape this class of bug takes: the screen
+assembles its payload from several readers and only one of them checks. `mockGetGameScreen` fetched
+the roster, the lineup, the fit score and the evaluation targets before it looked at what `Ni` had
+returned, so a stranger got `game: null` alongside every player's name and id. It now returns an
+empty payload the moment `Ni` refuses. `Qi` (`mockGetMatchParticipants`) is organizer-or-admin: it
+carries seat-payment ids, methods and amounts, so a participant does not get it either.
+
+Anything new that reads a match by id belongs behind the same two calls. `tools/rules.mjs` asserts
+the whole matrix - outsider, guest, participant, organizer, admin, against both a private and a
+public match - for all four readers.
+
 ## Scheduled work
 
 `mockRunScheduledWork` (631) drives nine sweeps plus the reminder pass. There is no server and no cron,
