@@ -122,8 +122,17 @@ __d(
         birth_date: s,
         accepted_terms: c,
       });
-    _e.remoteSignUp = (e, t, o, n = "male") =>
-      h("/auth/signup", { email: e, password: t, full_name: o, audience: n });
+    // The OTP signup above posts birth_date and accepted_terms; email signup posted neither, so an
+    // account created by email against a real server would carry no date of birth and no record of
+    // the terms being accepted. Optional, so existing four-argument callers are unchanged.
+    _e.remoteSignUp = (e, t, o, n = "male", s) =>
+      h(
+        "/auth/signup",
+        Object.assign(
+          { email: e, password: t, full_name: o, audience: n },
+          s ? { birth_date: s, accepted_terms: !0 } : {},
+        ),
+      );
   },
   913,
   [33, 137, 673, 637],

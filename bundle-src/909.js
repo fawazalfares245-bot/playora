@@ -3418,6 +3418,11 @@ __d(
         notifAwardClosingBody: "MVP voting for %{venue} closes in a few hours.",
         forkPreferred: "Your earlier pick \u2014 tap to confirm",
         phoneStepTitle: "Your number",
+        emailStepTitle: "Your email",
+        emailStepBody: "Pick a password and you\u2019re in \u2014 no code to wait for.",
+        emailPwHint: "At least 12 characters, with an uppercase letter, a number and a symbol.",
+        useEmailInstead: "Sign up with email instead",
+        usePhoneInstead: "Use my phone number instead",
         phoneStepBody: "We\u2019ll text you a six-digit code.",
         sendCode: "Send code",
         haveAccount: "I already have an account",
@@ -8063,6 +8068,11 @@ __d(
         forkPreferred:
           "\u0627\u062e\u062a\u064a\u0627\u0631\u0643 \u0627\u0644\u0633\u0627\u0628\u0642 \u2014 \u0627\u0636\u063a\u0637 \u0644\u0644\u062a\u0623\u0643\u064a\u062f",
         phoneStepTitle: "\u0631\u0642\u0645\u0643",
+        emailStepTitle: "\u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a",
+        emailStepBody: "\u0627\u062e\u062a\u0631 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631 \u0648\u062a\u0643\u0648\u0646 \u062c\u0627\u0647\u0632\u064b\u0627 \u2014 \u0628\u0644\u0627 \u0627\u0646\u062a\u0638\u0627\u0631 \u0631\u0645\u0632.",
+        emailPwHint: "\u0644\u0627 \u062a\u0642\u0644 \u0639\u0646 \u0661\u0662 \u062e\u0627\u0646\u0629\u060c \u0645\u0639 \u062d\u0631\u0641 \u0643\u0628\u064a\u0631 \u0648\u0631\u0642\u0645 \u0648\u0631\u0645\u0632.",
+        useEmailInstead: "\u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0628\u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0628\u062f\u0644\u0627\u064b \u0645\u0646 \u0630\u0644\u0643",
+        usePhoneInstead: "\u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0631\u0642\u0645 \u0647\u0627\u062a\u0641\u064a \u0628\u062f\u0644\u0627\u064b \u0645\u0646 \u0630\u0644\u0643",
         phoneStepBody:
           "\u0633\u0646\u0631\u0633\u0644 \u0644\u0643 \u0631\u0645\u0632\u064b\u0627 \u0645\u0646 \u0633\u062a \u062e\u0627\u0646\u0627\u062a.",
         sendCode: "\u0623\u0631\u0633\u0644 \u0627\u0644\u0631\u0645\u0632",
