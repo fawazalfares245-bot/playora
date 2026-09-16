@@ -341,5 +341,60 @@ await run('withdrawal follows the money, and identity waits for a human', async 
   await browser.close();
 });
 
+// mockCancelBooking admits three actors - the owner, the organizer and an admin - but delegates to
+// the leave path, which records the booking's owner as the actor. So every organizer and admin
+// removal through it was logged as the player having left of their own accord.
+await run('an admin removing a booking is not logged as the player leaving', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/' });
+  const out = await page.evaluate(async ([org, player, admin]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const mk = async (day) => {
+      const g = await api.createMatch(org, {
+        title: 'Audit actor ' + day, sport: 'football', venue_id: venues[day % venues.length].id,
+        starts_at: new Date(Date.now() + day * 864e5).toISOString(),
+        ends_at: new Date(Date.now() + day * 864e5 + 54e5).toISOString(),
+        max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+      });
+      await api.joinMatch(g.id, player);
+      return g;
+    };
+    // the log is newest-first, and rows carry type / actorRef / meta
+    const entries = () => JSON.parse(localStorage.getItem('playora.audit.v1') || '[]');
+    const since = (n) => entries().slice(0, Math.max(0, entries().length - n));
+
+    const a = await mk(49);
+    const bkA = (await api.fetchMyBookings(player)).find((x) => x && x.game_id === a.id);
+    const markA = entries().length;
+    await api.cancelBooking(bkA.id, player);
+    const ownRows = since(markA);
+
+    const b = await mk(51);
+    const bkB = (await api.fetchMyBookings(player)).find((x) => x && x.game_id === b.id);
+    const markB = entries().length;
+    await api.cancelBooking(bkB.id, admin);
+    const adminRows = since(markB);
+
+    const pick = (rows, type) => rows.find((r) => r.type === type) || null;
+    return {
+      ownLeave: !!pick(ownRows, 'match.leave'),
+      ownRemoved: !!pick(ownRows, 'participant.removed'),
+      adminRemoved: pick(adminRows, 'participant.removed'),
+      adminActor: (pick(adminRows, 'participant.removed') || {}).actorRef ?? null,
+      adminMeta: (pick(adminRows, 'participant.removed') || {}).meta ?? null,
+      playerRef: __r(643).actorRef(player),
+      adminRef: __r(643).actorRef(admin),
+    };
+  }, [IDS.organizer, IDS.user, IDS.admin]);
+
+  ok('a player cancelling their own seat is still a leave', out.ownLeave === true, String(out.ownLeave));
+  ok('and is not recorded as a removal', out.ownRemoved === false, String(out.ownRemoved));
+  ok('an admin doing it is recorded as a removal', !!out.adminRemoved, JSON.stringify(out.adminRemoved));
+  ok('with the admin as the actor', out.adminActor === out.adminRef, `${out.adminActor} vs admin ${out.adminRef}`);
+  ok('and the player named in the entry', out.adminMeta && out.adminMeta.player === out.playerRef, JSON.stringify(out.adminMeta));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

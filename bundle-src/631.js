@@ -2850,7 +2850,21 @@ __d(
       // game, so it must not be wrapped in one again here.
       // The seat settled is the booking's owner, not the caller, so an organizer or admin cancelling
       // on someone's behalf refunds that player rather than themselves.
-      return qi(a.game_id, a.user_id);
+      //
+      // qi logs match.leave with the booking's owner as the actor, which is right when the player
+      // cancelled their own seat and wrong for the other two actors this function admits: every
+      // organizer and admin removal through here was recorded in the audit log as the player having
+      // left of their own accord, with no way to tell the two apart afterwards. Record the removal
+      // against the caller before delegating. participant.removed already exists with this shape.
+      return (
+        n ||
+          (await (0, w.logAudit)("participant.removed", (0, w.actorRef)(t), {
+            game: a.game_id.slice(-6),
+            player: (0, w.actorRef)(a.user_id) ?? "unknown",
+            via: "cancel_booking",
+          })),
+        qi(a.game_id, a.user_id)
+      );
     };
     r.mockGetReviews = async (e) => (
       await ei(),
