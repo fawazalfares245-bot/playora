@@ -117,6 +117,32 @@ shapes with no keeper, their own court markings, surface colour and aspect ratio
   phone-created account, the `playora.app/t/` invite links already sent out, `__PLAYORA_CONFIG__`,
   and the Expo `slug`/`scheme`. Renaming those logs every user out or orphans their account.
 
+## The booking state machine
+
+A booking has six statuses. Every one of them is written from more than one place, and almost every
+defect the audit found was one of those places applying a guard the others applied too, or not
+applying one they did. This is what owns each transition and what it has to check first.
+
+| status | who writes it | what it must check |
+| --- | --- | --- |
+| `pending` | `ji` on a `approval_mode: 'manual'` match | a seat must still exist (`ki(game) < max_players`), or the request queues or is refused - not a pending row against a seat that is gone |
+| `waitlisted` | `ji` when `ki(game) >= max_players` | the waitlist has its own capacity (`waitlist_capacity`) |
+| `reserved` | `Di`, promoting the head of the waitlist | a future `reserved_until`; `Di` promotes only while the match is neither cancelled nor finished |
+| `confirmed` | `ji` (free or immediately payable), `mockApproveParticipant`, `settleSeatPayment9`, `Wr` (a late payment with no row left), `mockGatewayWebhook`, `mockPayGroup` | `assertMayHoldSeat9` - audience, ban, active sanction, Code of Conduct - and `ki(game) < max_players`, inside `Xt(gameId, ...)` |
+| `cancelled` | `qi` (`mockLeaveMatch`, and `mockCancelBooking` delegates to it), `mockKickPlayer`, `cancelGameLocked`, `Vi` (squad sweep), `mockExpireSeatHold`, `Zr` (hold sweep), `Jr` (reconciler), `Di` (expiry half), `mockAcceptReplacement`, `mockCancelGroupMember` | settle the payment, write a `seatCancellations` row with a reason, free the lineup slot, then `Di` to backfill. `tools/flows-cancel.mjs` holds the five paths to the same answer |
+| `rejected` | `mockRejectParticipant` | terminal, like `cancelled`: neither may ever carry an `attendance` mark |
+
+Three rules cut across all of it:
+
+- **A seat is `yi`, a participant is `countsAsParticipant9`.** `yi` is confirmed-or-live-hold and is what
+  `ki` counts against `max_players`. `countsAsParticipant9` is "was in this match" and is what the
+  stats read. They are not interchangeable and both have one definition.
+- **Attendance is written by two functions** - `mockSetAttendance` and `mockScanCheckin` - and both
+  apply the same three guards: the booking is neither cancelled nor rejected, the match has ended,
+  and it is within 48 h of `score_submitted_at`.
+- **Expiry and promotion are lazy.** Nothing runs on a clock; both halves of `Di` run when the match
+  is next read. A test that asserts a hold has lapsed must read the match first.
+
 ## Scheduled work
 
 `mockRunScheduledWork` (631) drives nine sweeps plus the reminder pass. There is no server and no cron,

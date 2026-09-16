@@ -340,6 +340,54 @@ ok('split_equal over three payers still sums to the total', typeof out.splitEqua
   ok('the retired create wizard is gone', !/\},\s*2468\s*,\s*\[/.test(html), 'module 2468 still registered');
   ok('and nothing still requires it', !/\},\s*\d+\s*,\s*\[[\d,\s]*\b2468\b/.test(html), 'a module still depends on 2468');
 }
+// --- the facade against its call sites ---
+// 671 is the only door between the screens and the backend, and nothing shrinks it. A screen gets
+// rewritten, its last caller goes with it, and the export stays: still exported, still shipped, still
+// re-downloaded on every load because vercel.json sends the whole file with Cache-Control: no-store.
+// Sixty-seven of the 377 exports already have no caller anywhere in the bundle. This does not demand
+// they be deleted - some are staff tools waiting for a screen - it demands the number stop growing.
+// A new orphan means either a call site that was dropped by accident or an export written before the
+// screen that needs it; both want a moment's thought rather than a silent accumulation.
+{
+  const facade = fs.readFileSync(new URL('../bundle-src/671.js', import.meta.url), 'utf8');
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const exported = [...new Set([...facade.matchAll(/^\s*e\.(\w+) =/gm)].map((m) => m[1]))];
+  // Cut 671's own chunk out of the bundle so its definitions do not count as call sites.
+  const starts = [...html.matchAll(/__d\(\s*function\s*\([\w$,\s]*\)\s*\{/g)].map((m) => m.index).concat(html.length);
+  let own = '';
+  for (let i = 0; i < starts.length - 1; i += 1) {
+    const chunk = html.slice(starts[i], starts[i + 1]);
+    const reg = [...chunk.matchAll(/\},\s*(\d+),\s*\[[\d,\s]*\],?\s*\);/g)].pop();
+    if (reg && reg[1] === '671') { own = chunk; break; }
+  }
+  const rest = html.replace(own, '');
+  const orphans = exported.filter((n) => !new RegExp(`\\b${n}\\b`).test(rest));
+
+  // The names that already had no caller when this check went in. Shrink it; do not grow it.
+  const KNOWN = [
+  'adminGrantCredit', 'adminRemoveAchievement', 'adminSuspendTeam', 'auditReplacementLeak',
+  'auditSeatConsistency', 'blockCourtTime', 'cocVersion', 'counterBattleResult', 'createBooking',
+  'deleteSavedGroup', 'deleteTeamChat', 'discardMatchDraft', 'fetchAdminCompatibility',
+  'fetchAllRewardsAdmin', 'fetchAllTeamsAdmin', 'fetchConciergeNotificationPlan',
+  'fetchCrossPartitionGrants', 'fetchDemandPrediction', 'fetchFollowRequests', 'fetchGame',
+  'fetchGamePlayers', 'fetchGroupAnalytics', 'fetchJoinRequestIntel', 'fetchLoyaltyAdminStats',
+  'fetchLoyaltyRules', 'fetchMatchAwards', 'fetchMatchDraft', 'fetchMatchFeed', 'fetchMatchParticipants',
+  'fetchMyReplacementOffers', 'fetchMySeatPayment', 'fetchNeedPlayerFeed', 'fetchNpnCandidates',
+  'fetchOrganizerBookings', 'fetchOrganizerTrustScore', 'fetchPassportPrivacy', 'fetchRecommendedGames',
+  'fetchReplacementAdminStats', 'fetchSkillEvalTargets', 'fetchSkillFit', 'fetchTeamAdminStats',
+  'fetchTeams', 'fetchUnreadDMCount', 'fetchUserPosts', 'grantCrossPartition', 'listLineupTemplates',
+  'listSavedGroups', 'loyaltyActions', 'loyaltyTiers', 'openAwardVoting', 'pinTeamChat', 'rateOrganizer',
+  'recordDemandOutcome', 'refundPayment', 'remediateReplacementLeak', 'revokeCrossPartition',
+  'rewardCategories', 'saveMatchDraft', 'setEarnRule', 'setFeedWeights', 'setReplacementRadius',
+  'setRewardActive', 'syncLoyalty', 'touchPresence', 'unblockCourtTime', 'updateTeam', 'upsertReward'
+  ];
+  const added = orphans.filter((n) => !KNOWN.includes(n));
+  const fixed = KNOWN.filter((n) => !orphans.includes(n));
+  ok('the facade chunk was found', own.length > 1000, String(own.length));
+  ok('no new orphaned facade export', added.length === 0, added.join(','));
+  ok('the orphan list has no stale entries', fixed.length === 0, `now called, drop from KNOWN: ${fixed.join(',')}`);
+}
+
 // --- booking invariants over the world this file has just churned ---
 assertBookingInvariants(ok, await bookingInvariants(page, IDS.admin), { floor: 12 });
 ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
