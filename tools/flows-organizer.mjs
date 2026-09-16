@@ -666,5 +666,58 @@ await run('a cancelled booking cannot be marked, and does not count', async () =
   await browser.close();
 });
 
+// Qt.seatCancellations is the only source for /refunds and it was written in exactly one place -
+// leaving a match. The three other paths that end a live seat and move money all skipped it, so a
+// player whose match was cancelled got a wallet credit and no explanation of where it came from.
+await run('every way a seat ends files a cancellation', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer' });
+  const out = await page.evaluate(async ([org, player]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const mk = async (title, day) => {
+      const g = await api.createMatch(org, {
+        title, sport: 'football', venue_id: venues[day % venues.length].id,
+        starts_at: new Date(Date.now() + day * 864e5).toISOString(),
+        ends_at: new Date(Date.now() + day * 864e5 + 54e5).toISOString(),
+        max_players: 10, waitlist_capacity: 2, price_kwd: 2, visibility: 'public', format: '5v5',
+      });
+      await api.checkoutJoin(player, g.id, 'knet');
+      return g;
+    };
+    const count = async () => (await api.fetchMyCancellations(player)).length;
+    const res = { reasons: [] };
+
+    res.start = await count();
+    const a = await mk('Leaves', 41);
+    await api.leaveMatch(a.id, player);
+    res.afterLeave = await count();
+
+    const b = await mk('Cancelled booking', 43);
+    const bk = (await api.fetchMyBookings(player)).find((x) => x && x.game_id === b.id);
+    await api.cancelBooking(bk.id, player);
+    res.afterCancelBooking = await count();
+
+    const c = await mk('Kicked', 45);
+    // kickPlayer takes (organizer, game, the player's own id, reason)
+    await api.kickPlayer(org, c.id, player, 'No-show twice already');
+    res.afterKick = await count();
+
+    const d = await mk('Match cancelled', 47);
+    await api.cancelMatch(d.id, org, 'Pitch flooded after the storm');
+    res.afterMatchCancel = await count();
+
+    res.reasons = (await api.fetchMyCancellations(player)).map((x) => x.reason);
+    return res;
+  }, [IDS.organizer, IDS.user]);
+
+  ok('leaving files one', out.afterLeave === out.start + 1, `${out.start} -> ${out.afterLeave}`);
+  ok('cancelling a booking files one', out.afterCancelBooking === out.afterLeave + 1, `${out.afterLeave} -> ${out.afterCancelBooking}`);
+  ok('being removed files one', out.afterKick === out.afterCancelBooking + 1, `${out.afterCancelBooking} -> ${out.afterKick}`);
+  ok('the match being cancelled files one', out.afterMatchCancel === out.afterKick + 1, `${out.afterKick} -> ${out.afterMatchCancel}`);
+  ok('each says which path it came from', out.reasons.includes('removed') && out.reasons.includes('match_cancelled'), JSON.stringify(out.reasons));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

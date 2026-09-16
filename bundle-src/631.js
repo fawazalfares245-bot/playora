@@ -3225,6 +3225,23 @@ __d(
         );
       };
     r.mockJoinMatch = ji;
+    // Qt.seatCancellations is the only source for /refunds, and it was written in exactly one place -
+    // mockLeaveMatch. The other three paths that end a live seat and move money all skipped it, so a
+    // player whose match the organizer cancelled received a wallet credit and saw nothing at all on
+    // /refunds explaining where it came from.
+    const recordSeatCancellation9 = async (e, t, a, i) => (
+      Qt.seatCancellations.push({
+        id: ea(),
+        game_id: e,
+        user_id: t,
+        cancelled_at: new Date().toISOString(),
+        paid_kwd: a.paid_kwd ?? 0,
+        refunded_kwd: a.refund_kwd ?? 0,
+        reason: i,
+        audience: aa(t),
+      }),
+      await Za(st, Qt.seatCancellations)
+    );
     const qi = async (e, t) => (
       await ei(),
       Xt(e, async () => {
@@ -3261,18 +3278,7 @@ __d(
                 ? "free_spot"
                 : "unpaid";
         return (
-          r &&
-            (Qt.seatCancellations.push({
-              id: ea(),
-              game_id: e,
-              user_id: t,
-              cancelled_at: new Date().toISOString(),
-              paid_kwd: d.paid_kwd,
-              refunded_kwd: d.refund_kwd,
-              reason: l,
-              audience: aa(t),
-            }),
-            await Za(st, Qt.seatCancellations)),
+          r && (await recordSeatCancellation9(e, t, d, l)),
           { paid_kwd: d.paid_kwd, refund_kwd: d.refund_kwd, refunded: d.refund_kwd > 0, reason: l }
         );
       })
@@ -3448,8 +3454,9 @@ __d(
           ((r.status = "cancelled"),
             (r.reserved_until = null),
             (r.updated_at = new Date().toISOString()),
-            await Za(W, Qt.bookings),
-            await Br(n, a, !0));
+            await Za(W, Qt.bookings));
+          const k9 = await Br(n, a, !0);
+          await recordSeatCancellation9(n.id, a, k9 ?? {}, "removed");
           const s = i ? (0, v.sanitizeText)(i, 200) : "";
           (await (0, w.logAudit)(
             "participant.removed",
@@ -3934,7 +3941,8 @@ __d(
         refundedKwd9 = 0;
       for (const e of o) {
         const t = await Br(n, e, !0);
-        t && t.refund_kwd > 0 && ((refunded9 += 1), (refundedKwd9 += Number(t.refund_kwd)));
+        (t && t.refund_kwd > 0 && ((refunded9 += 1), (refundedKwd9 += Number(t.refund_kwd))),
+          await recordSeatCancellation9(n.id, e, t ?? {}, "match_cancelled"));
       }
       let s = !0;
       if (n.court_booking_id)
@@ -4298,8 +4306,9 @@ __d(
                 for (const t of i) {
                   ((t.status = "cancelled"),
                     (t.squad_dropped_at = new Date().toISOString()),
-                    (t.updated_at = t.squad_dropped_at),
-                    await Br(e, t.user_id, !0));
+                    (t.updated_at = t.squad_dropped_at));
+                  const sd9 = await Br(e, t.user_id, !0);
+                  await recordSeatCancellation9(e.id, t.user_id, sd9 ?? {}, "squad_dropped");
                   const i = Qt.lineups.find((t) => t.game_id === e.id);
                   if (i) {
                     const a = new Set([`self-${t.user_id}`]);

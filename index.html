@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "2cafc63b90"
+  buildId: "d5948604d1"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -5318,6 +5318,23 @@ __d(
         );
       };
     r.mockJoinMatch = ji;
+    // Qt.seatCancellations is the only source for /refunds, and it was written in exactly one place -
+    // mockLeaveMatch. The other three paths that end a live seat and move money all skipped it, so a
+    // player whose match the organizer cancelled received a wallet credit and saw nothing at all on
+    // /refunds explaining where it came from.
+    const recordSeatCancellation9 = async (e, t, a, i) => (
+      Qt.seatCancellations.push({
+        id: ea(),
+        game_id: e,
+        user_id: t,
+        cancelled_at: new Date().toISOString(),
+        paid_kwd: a.paid_kwd ?? 0,
+        refunded_kwd: a.refund_kwd ?? 0,
+        reason: i,
+        audience: aa(t),
+      }),
+      await Za(st, Qt.seatCancellations)
+    );
     const qi = async (e, t) => (
       await ei(),
       Xt(e, async () => {
@@ -5354,18 +5371,7 @@ __d(
                 ? "free_spot"
                 : "unpaid";
         return (
-          r &&
-            (Qt.seatCancellations.push({
-              id: ea(),
-              game_id: e,
-              user_id: t,
-              cancelled_at: new Date().toISOString(),
-              paid_kwd: d.paid_kwd,
-              refunded_kwd: d.refund_kwd,
-              reason: l,
-              audience: aa(t),
-            }),
-            await Za(st, Qt.seatCancellations)),
+          r && (await recordSeatCancellation9(e, t, d, l)),
           { paid_kwd: d.paid_kwd, refund_kwd: d.refund_kwd, refunded: d.refund_kwd > 0, reason: l }
         );
       })
@@ -5541,8 +5547,9 @@ __d(
           ((r.status = "cancelled"),
             (r.reserved_until = null),
             (r.updated_at = new Date().toISOString()),
-            await Za(W, Qt.bookings),
-            await Br(n, a, !0));
+            await Za(W, Qt.bookings));
+          const k9 = await Br(n, a, !0);
+          await recordSeatCancellation9(n.id, a, k9 ?? {}, "removed");
           const s = i ? (0, v.sanitizeText)(i, 200) : "";
           (await (0, w.logAudit)(
             "participant.removed",
@@ -6027,7 +6034,8 @@ __d(
         refundedKwd9 = 0;
       for (const e of o) {
         const t = await Br(n, e, !0);
-        t && t.refund_kwd > 0 && ((refunded9 += 1), (refundedKwd9 += Number(t.refund_kwd)));
+        (t && t.refund_kwd > 0 && ((refunded9 += 1), (refundedKwd9 += Number(t.refund_kwd))),
+          await recordSeatCancellation9(n.id, e, t ?? {}, "match_cancelled"));
       }
       let s = !0;
       if (n.court_booking_id)
@@ -6391,8 +6399,9 @@ __d(
                 for (const t of i) {
                   ((t.status = "cancelled"),
                     (t.squad_dropped_at = new Date().toISOString()),
-                    (t.updated_at = t.squad_dropped_at),
-                    await Br(e, t.user_id, !0));
+                    (t.updated_at = t.squad_dropped_at));
+                  const sd9 = await Br(e, t.user_id, !0);
+                  await recordSeatCancellation9(e.id, t.user_id, sd9 ?? {}, "squad_dropped");
                   const i = Qt.lineups.find((t) => t.game_id === e.id);
                   if (i) {
                     const a = new Set([`self-${t.user_id}`]);
@@ -19974,6 +19983,7 @@ __d(
 
 
 
+
 __d(function(g,_r,_i,_a,m,_e,d){Object.defineProperty(_e,"__esModule",{value:!0}),_e.constantTimeEqual=a,_e.derivePasswordHash=n,_e.generateSalt=async function(e=16){const n=await t.getRandomBytesAsync(e);return Array.from(n).map(t=>t.toString(16).padStart(2,'0')).join('')},_e.hashIdentifier=async function(e){const n=e.replace(/\s+/g,'').toLowerCase();return t.digestStringAsync(t.CryptoDigestAlgorithm.SHA256,`${r}:${n}`)},_e.hashPassword=async function(t,e){if(o)return`scrypt$${i}$${s}$${c}$${await o(t,e,i,s,c)}`;return n(t,e)},_e.randomCode=function(e=6,n="ABCDEFGHJKMNPQRSTUVWXYZ23456789"){const r=t.getRandomBytes(e);let a='';for(let t=0;t<e;t++)a+=n[r[t]%n.length];return a},_e.randomSixDigit=function(){const e=t.getRandomBytes(4),n=((e[0]<<24|e[1]<<16|e[2]<<8|e[3])>>>0)%1e6;return String(n).padStart(6,'0')},_e.randomToken=async function(e=32){const n=await t.getRandomBytesAsync(e);return Array.from(n).map(t=>t.toString(16).padStart(2,'0')).join('')},_e.serverGradeHashing=void 0,_e.verifyPassword=async function(t,e,r){if(r.startsWith('scrypt$')){const[,n,i,s,c]=r.split('$');return!(!o||!c)&&a(await o(t,e,Number(n),Number(i),Number(s)),c)}return a(await n(t,e),r)};var t=(function(t,e){if("function"==typeof WeakMap)var n=new WeakMap,r=new WeakMap;return(function(t,e){if(!e&&t&&t.__esModule)return t;var a,o,i={__proto__:null,default:t};if(null===t||"object"!=typeof t&&"function"!=typeof t)return i;if(a=e?r:n){if(a.has(t))return a.get(t);a.set(t,i)}for(const e in t)"default"!==e&&{}.hasOwnProperty.call(t,e)&&((o=(a=Object.defineProperty)&&Object.getOwnPropertyDescriptor(t,e))&&(o.get||o.set)?a(i,e,o):i[e]=t[e]);return i})(t,e)})(_r(d[0]));const e=12e3;async function n(n,r){let a=`${r}:${n}`;for(let n=0;n<e;n++)a=await t.digestStringAsync(t.CryptoDigestAlgorithm.SHA256,a);return a}const r='playora.v1.identifier.pepper';function a(t,e){if(t.length!==e.length)return!1;let n=0;for(let r=0;r<t.length;r++)n|=t.charCodeAt(r)^e.charCodeAt(r);return 0===n}const o=t.scryptHex,i=(_e.serverGradeHashing=!!o,16384),s=8,c=1},632,[633]);
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0});var n={getRandomBytes:!0,getRandomBytesAsync:!0,digestStringAsync:!0,getRandomValues:!0,randomUUID:!0,digest:!0};e.digest=function(t,n){return new Promise((o,s)=>{try{if('function'==typeof y.default.digestAsync)o(y.default.digestAsync(t,n));else{const s=new Uint8Array(h[t]);y.default.digest(t,s,n),o(s.buffer)}}catch(t){s(t)}})},e.digestStringAsync=async function(t,n,o={encoding:c.CryptoEncoding.HEX}){if(!y.default.digestStringAsync)throw new s.UnavailabilityError('expo-crypto','digestStringAsync');return f(t),p(n),A(o.encoding),await y.default.digestStringAsync(t,n,o)},e.getRandomBytes=function(t){u(t,'getRandomBytes');const n=Math.floor(t);if(y.default.getRandomValues){const t=new Uint8Array(n);return y.default.getRandomValues(t),t}if(y.default.getRandomBase64String){const t=y.default.getRandomBase64String(n);return(0,o.toByteArray)(t)}throw new s.UnavailabilityError('expo-crypto','getRandomBytes')},e.getRandomBytesAsync=async function(t){u(t,'getRandomBytesAsync');const n=Math.floor(t);if(y.default.getRandomValues){const t=new Uint8Array(n);return y.default.getRandomValues(t),t}if(y.default.getRandomBase64StringAsync){const t=await y.default.getRandomBase64StringAsync(n);return(0,o.toByteArray)(t)}throw new s.UnavailabilityError('expo-crypto','getRandomBytesAsync')},e.getRandomValues=function(t){return y.default.getRandomValues(t),t},e.randomUUID=function(){return y.default.randomUUID()};var o=r(d[1]),s=r(d[2]),c=r(d[3]);Object.keys(c).forEach(function(t){"default"!==t&&"__esModule"!==t&&(Object.prototype.hasOwnProperty.call(n,t)||t in e&&e[t]===c[t]||Object.defineProperty(e,t,{enumerable:!0,get:function(){return c[t]}}))});var y=t(r(d[4]));class l extends TypeError{code='ERR_CRYPTO';constructor(t){super(`expo-crypto: ${t}`)}}function u(t,n){if('number'!=typeof t||isNaN(t)||Math.floor(t)<0||Math.floor(t)>1024)throw new TypeError(`expo-crypto: ${n}(${t}) expected a valid number from range 0...1024`)}function f(t){if(!Object.values(c.CryptoDigestAlgorithm).includes(t))throw new l(`Invalid algorithm provided. Expected one of: CryptoDigestAlgorithm.${Object.keys(c.CryptoDigestAlgorithm).join(', AlgCryptoDigestAlgorithmorithm.')}`)}function p(t){if('string'!=typeof t)throw new l("Invalid data provided. Expected a string.")}function A(t){if(!Object.values(c.CryptoEncoding).includes(t))throw new l(`Invalid encoding provided. Expected one of: CryptoEncoding.${Object.keys(c.CryptoEncoding).join(', CryptoEncoding.')}`)}const h={[c.CryptoDigestAlgorithm.SHA1]:20,[c.CryptoDigestAlgorithm.SHA256]:32,[c.CryptoDigestAlgorithm.SHA384]:48,[c.CryptoDigestAlgorithm.SHA512]:64,[c.CryptoDigestAlgorithm.MD2]:16,[c.CryptoDigestAlgorithm.MD4]:16,[c.CryptoDigestAlgorithm.MD5]:16}},633,[33,634,504,635,636]);
 __d(function(g,r,_i,a,m,e,d){'use strict';e.byteLength=function(t){var n=h(t),o=n[0],u=n[1];return 3*(o+u)/4-u},e.toByteArray=function(t){var u,c,f=h(t),A=f[0],C=f[1],y=new o(i(t,A,C)),s=0,v=C>0?A-4:A;for(c=0;c<v;c+=4)u=n[t.charCodeAt(c)]<<18|n[t.charCodeAt(c+1)]<<12|n[t.charCodeAt(c+2)]<<6|n[t.charCodeAt(c+3)],y[s++]=u>>16&255,y[s++]=u>>8&255,y[s++]=255&u;2===C&&(u=n[t.charCodeAt(c)]<<2|n[t.charCodeAt(c+1)]>>4,y[s++]=255&u);1===C&&(u=n[t.charCodeAt(c)]<<10|n[t.charCodeAt(c+1)]<<4|n[t.charCodeAt(c+2)]>>2,y[s++]=u>>8&255,y[s++]=255&u);return y},e.fromByteArray=function(n){for(var o,u=n.length,c=u%3,h=[],i=16383,f=0,C=u-c;f<C;f+=i)h.push(A(n,f,f+i>C?C:f+i));1===c?(o=n[u-1],h.push(t[o>>2]+t[o<<4&63]+'==')):2===c&&(o=(n[u-2]<<8)+n[u-1],h.push(t[o>>10]+t[o>>4&63]+t[o<<2&63]+'='));return h.join('')};for(var t=[],n=[],o='undefined'!=typeof Uint8Array?Uint8Array:Array,u='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',c=0;c<64;++c)t[c]=u[c],n[u.charCodeAt(c)]=c;function h(t){var n=t.length;if(n%4>0)throw new Error('Invalid string. Length must be a multiple of 4');var o=t.indexOf('=');return-1===o&&(o=n),[o,o===n?0:4-o%4]}function i(t,n,o){return 3*(n+o)/4-o}function f(n){return t[n>>18&63]+t[n>>12&63]+t[n>>6&63]+t[63&n]}function A(t,n,o){for(var u,c=[],h=n;h<o;h+=3)u=(t[h]<<16&16711680)+(t[h+1]<<8&65280)+(255&t[h+2]),c.push(f(u));return c.join('')}n['-'.charCodeAt(0)]=62,n['_'.charCodeAt(0)]=63},634,[]);
@@ -22753,6 +22763,9 @@ __d(
         refundNoneWhy: "Kick-off is in less than %{hours} hours.",
         refundNoneWhyTwo: "Kick-off is in less than two hours.",
         refundFreeSpot: "This was a free spot \u2014 no payment to refund.",
+        refundReasonRemoved: "The organizer removed you from this match.",
+        refundReasonMatchCancelled: "The organizer cancelled this match.",
+        refundReasonSquadDropped: "Your seat was released because the squad was not confirmed in time.",
         youPaidRow: "You paid",
         refundRow: "Refund",
         youReceiveRow: "You receive",
@@ -26276,6 +26289,9 @@ __d(
         refundNoneWhyTwo: "\u0627\u0644\u0628\u062f\u0627\u064a\u0629 \u062e\u0644\u0627\u0644 \u0623\u0642\u0644 \u0645\u0646 \u0633\u0627\u0639\u062a\u064a\u0646.",
         refundFreeSpot:
           "\u0643\u0627\u0646 \u0645\u0642\u0639\u062f\u0627\u064b \u0645\u062c\u0627\u0646\u064a\u0627\u064b \u2014 \u0644\u0627 \u064a\u0648\u062c\u062f \u0645\u0628\u0644\u063a \u0644\u0627\u0633\u062a\u0631\u062f\u0627\u062f\u0647.",
+        refundReasonRemoved: "\u0623\u0632\u0627\u0644\u0643 \u0627\u0644\u0645\u0646\u0638\u0651\u0645 \u0645\u0646 \u0647\u0630\u0647 \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629.",
+        refundReasonMatchCancelled: "\u0623\u0644\u063a\u0649 \u0627\u0644\u0645\u0646\u0638\u0651\u0645 \u0647\u0630\u0647 \u0627\u0644\u0645\u0628\u0627\u0631\u0627\u0629.",
+        refundReasonSquadDropped: "\u0623\u064f\u0637\u0644\u0642 \u0645\u0642\u0639\u062f\u0643 \u0644\u0623\u0646\u0651 \u0627\u0644\u062a\u0634\u0643\u064a\u0644\u0629 \u0644\u0645 \u062a\u064f\u0624\u0643\u0651\u062f \u0641\u064a \u0627\u0644\u0648\u0642\u062a.",
         youPaidRow: "\u0627\u0644\u0645\u0628\u0644\u063a \u0627\u0644\u0645\u062f\u0641\u0648\u0639",
         refundRow: "\u0627\u0644\u0645\u0633\u062a\u0631\u062f",
         youReceiveRow: "\u0633\u062a\u0633\u062a\u0644\u0645",
@@ -30642,6 +30658,7 @@ __d(
   909,
   [],
 );
+
 
 
 
@@ -57677,6 +57694,21 @@ __d(
                     : null,
                 ],
               }),
+            // Three of the four ways a seat ends now file a cancellation row, so the reason has to say
+            // which one - the amounts alone cannot distinguish an organizer removing you from a match
+            // being cancelled out from under you.
+            ["removed", "match_cancelled", "squad_dropped"].includes(e.reason)
+              ? (0, M.jsx)(o.default, {
+                  style: [j.typography.caption, { color: s.textMuted, marginTop: j.spacing.sm }],
+                  children: a(
+                    "removed" === e.reason
+                      ? "refundReasonRemoved"
+                      : "match_cancelled" === e.reason
+                        ? "refundReasonMatchCancelled"
+                        : "refundReasonSquadDropped",
+                  ),
+                })
+              : null,
             "past_cutoff" === e.reason && e.starts_at
               ? (0, M.jsxs)(l.default, {
                   style: { marginTop: j.spacing.sm, gap: 2 },
@@ -57773,6 +57805,7 @@ __d(
     674, 675, 1171, 13,
   ],
 );
+
 
 __d(function(g,r,i,a,m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{id:e}=(0,x.useLocalSearchParams)(),{user:c}=(0,I.useAuth)(),{colors:M}=(0,_.useTheme)(),R=(0,x.useRouter)(),z=(0,w.useT)(),[O,P]=(0,t.useState)(null),[E,V]=(0,t.useState)(!0),[W,F]=(0,t.useState)(!1),N=(0,t.useCallback)(async()=>{e&&(P(await(0,k.fetchReplacementOffer)(e,c?.id)),V(!1))},[e,c?.id]);(0,x.useFocusEffect)((0,t.useCallback)(()=>{N()},[N]));if(E)return(0,v.jsx)(p.SafeAreaView,{style:[A.center,{backgroundColor:M.bg}],children:(0,v.jsx)(n.default,{color:M.accentText})});const $=O&&'offered'===O.status&&O.expires_in_min>0;return(0,v.jsxs)(p.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:M.bg},children:[(0,v.jsxs)(f.default,{style:A.header,children:[(0,v.jsx)(s.default,{onPress:()=>R.back(),accessibilityRole:"button",accessibilityLabel:z('back'),style:[A.iconBtn,{backgroundColor:M.surface,borderColor:M.border}],children:(0,v.jsx)(y.Ionicons,{name:(0,B.chevronBack)(),size:22,color:M.text})}),(0,v.jsx)(u.default,{style:[C.typography.h2,{color:M.text,flex:1,marginHorizontal:C.spacing.md}],children:z('replacementOfferTitle')})]}),(0,v.jsx)(o.default,{contentContainerStyle:{padding:C.spacing.lg},children:O?(0,v.jsxs)(v.Fragment,{children:[(0,v.jsxs)(h.Card,{style:{alignItems:'center',marginBottom:C.spacing.lg},children:[(0,v.jsx)(f.default,{style:[A.sportIcon,{backgroundColor:(0,T.sportColor)(O.sport)}],children:(0,v.jsx)(y.Ionicons,{name:T.sportIcon[O.sport],size:28,color:"#fff"})}),(0,v.jsx)(u.default,{style:[C.typography.h2,{color:M.text,marginTop:C.spacing.sm}],children:O.venue_name}),(0,v.jsx)(u.default,{style:[C.typography.body,{color:M.textMuted}],children:(0,T.formatGameTime)(O.starts_at)}),(0,v.jsxs)(u.default,{style:[C.typography.small,{color:M.textMuted,marginTop:2}],children:[(0,T.formatNumber)(O.confirmed)," / ",(0,T.formatNumber)(O.max_players)," ",z('players')]}),(0,v.jsx)(f.default,{style:{marginTop:C.spacing.sm},children:$?(0,v.jsx)(j.Badge,{label:z('offerExpiresIn',{n:(0,T.formatNumber)(O.expires_in_min)}),tone:"warning"}):(0,v.jsx)(j.Badge,{label:z(`offerStatus_${O.status}`),tone:"neutral"})})]}),(0,v.jsx)(u.default,{style:[C.typography.small,{color:M.textMuted,textAlign:'center',marginBottom:C.spacing.lg}],children:z('replacementOfferBody')}),$?(0,v.jsxs)(v.Fragment,{children:[(0,v.jsx)(b.Button,{title:z('acceptSpot'),fullWidth:!0,loading:W,onPress:async()=>{if(c&&O){F(!0);try{const e=await(0,k.acceptReplacement)(c.id,O.id);if(e.payment_due)return void R.replace(`/pay/${e.payment_due.payment_id}`);l.default.alert(z('spotAccepted'),''),R.replace(`/game/${O.game_id}`)}catch(e){l.default.alert(z('error'),(0,S.storeErrorText)(e?.message??'')||z('noActiveOffer')),await N()}finally{F(!1)}}},leftIcon:(0,v.jsx)(y.Ionicons,{name:"checkmark-circle-outline",size:18,color:"#fff"})}),(0,v.jsx)(b.Button,{title:z('declineSpot'),variant:"secondary",fullWidth:!0,onPress:async()=>{if(c&&O){F(!0);try{await(0,k.declineReplacement)(c.id,O.id),R.back()}finally{F(!1)}}},style:{marginTop:C.spacing.sm}})]}):(0,v.jsx)(h.Card,{style:{alignItems:'center'},children:(0,v.jsx)(u.default,{style:[C.typography.small,{color:M.textMuted}],children:z('offerExpired')})})]}):(0,v.jsxs)(h.Card,{style:{alignItems:'center',paddingVertical:C.spacing.xl},children:[(0,v.jsx)(y.Ionicons,{name:"time-outline",size:40,color:M.textMuted}),(0,v.jsx)(u.default,{style:[C.typography.body,{color:M.textMuted,marginTop:C.spacing.sm}],children:z('noActiveOffer')})]})})]})};var t=r(d[1]),n=e(r(d[2])),l=e(r(d[3])),s=e(r(d[4])),o=e(r(d[5])),c=e(r(d[6])),u=e(r(d[7])),f=e(r(d[8])),p=r(d[9]),y=r(d[10]),x=r(d[11]),h=r(d[12]),j=r(d[13]),b=r(d[14]),I=r(d[15]),_=r(d[16]),C=r(d[17]),k=r(d[18]),T=r(d[19]),w=r(d[20]),B=r(d[21]),S=r(d[22]),v=r(d[23]);const A=c.default.create({center:{flex:1,alignItems:'center',justifyContent:'center'},header:{flexDirection:'row',alignItems:'center',paddingHorizontal:C.spacing.lg,paddingVertical:C.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:c.default.hairlineWidth},sportIcon:{width:56,height:56,borderRadius:18,alignItems:'center',justifyContent:'center'}})},2480,[33,15,461,445,369,281,158,146,273,381,1086,20,1623,1624,626,630,615,616,671,1311,675,1171,674,13]);
 __d(function(g,_r,_i,_a,m,_e,d){var e=_r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{user:e}=(0,y.useAuth)(),{colors:I}=(0,b.useTheme)(),z=(0,u.useRouter)(),A=(0,k.useT)(),[E,W]=(0,t.useState)(null),[V,P]=(0,t.useState)([]),[D,N]=(0,t.useState)([]),[H,O]=(0,t.useState)([]),[F,K]=(0,t.useState)(!0),[U,Y]=(0,t.useState)(null),[G,Z]=(0,t.useState)(null),$=(0,t.useCallback)(async()=>{if(e){Y(null);try{const[t,r,a,l]=await Promise.all([(0,T.fetchLoyaltyAccount)(e.id),(0,T.fetchLoyaltyEarnBreakdown)(e.id),(0,T.fetchRewards)(e.id),(0,T.fetchMyRedemptions)(e.id)]);W(t),P(r),N(a),O(l)}catch(e){Y((0,C.storeErrorText)(e?.message??'')||A('error'))}finally{K(!1)}}},[e,A]);return(0,u.useFocusEffect)((0,t.useCallback)(()=>{$()},[$])),(0,B.jsxs)(i.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:I.bg},children:[(0,B.jsxs)(s.default,{style:v.header,children:[(0,B.jsx)(a.default,{onPress:()=>z.back(),accessibilityRole:"button",accessibilityLabel:A('back'),style:[v.iconBtn,{backgroundColor:I.surface,borderColor:I.border}],children:(0,B.jsx)(c.Ionicons,{name:(0,R.chevronBack)(),size:22,color:I.text})}),(0,B.jsx)(n.default,{style:[j.typography.h2,{color:I.text,flex:1,textAlign:'center'}],children:A('loyaltyTitle')}),(0,B.jsx)(a.default,{onPress:()=>z.push('/rewards/ledger'),accessibilityRole:"button",accessibilityLabel:A('rewardsLedgerTitle'),style:[v.iconBtn,{backgroundColor:I.surface,borderColor:I.border}],children:(0,B.jsx)(c.Ionicons,{name:"list-outline",size:20,color:I.text})})]}),F?(0,B.jsx)(s.default,{style:{flex:1,alignItems:'center',justifyContent:'center'},children:(0,B.jsx)(r.default,{color:I.accentText})}):U||!E?(0,B.jsxs)(s.default,{style:{paddingVertical:j.spacing.xl,paddingHorizontal:j.spacing.lg},children:[(0,B.jsx)(f.EmptyState,{icon:"cloud-offline-outline",title:A('error'),body:A('rewardsErrorBody')}),(0,B.jsx)(p.Button,{title:A('retry'),fullWidth:!0,onPress:()=>{K(!0),$()},style:{marginTop:j.spacing.md}})]}):(0,B.jsxs)(l.default,{contentContainerStyle:{padding:j.spacing.lg,paddingBottom:j.spacing.xxxl},children:[(0,B.jsx)(M,{account:E,colors:I,t:A}),(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:I.textMuted,marginTop:j.spacing.lg,marginBottom:j.spacing.sm}],children:A('waysToEarn')}),(0,B.jsxs)(h.Card,{padding:"md",children:[w.LOYALTY_ACTIONS.map((e,t)=>{const r=V.find(t=>t.action===e.action),a=r?.rate??0;return(0,B.jsxs)(s.default,{style:[v.earnRow,{borderTopColor:I.border,borderTopWidth:0===t?0:o.default.hairlineWidth}],children:[(0,B.jsx)(n.default,{style:{fontSize:18},children:e.emoji}),(0,B.jsx)(n.default,{style:[j.typography.small,{color:I.text,flex:1}],children:A(e.labelKey)}),(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:I.accentText}],children:A('perActionPts',{n:(0,S.formatNumber)((0,w.earnAmount)(a,E.lifetime))})})]},e.action)}),(0,B.jsx)(n.default,{style:[j.typography.caption,{color:I.textMuted,marginTop:j.spacing.sm}],children:A('rewardsEarnHint')})]}),(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:I.textMuted,marginTop:j.spacing.lg,marginBottom:j.spacing.sm}],children:A('rewardsCatalog')}),0===D.length?(0,B.jsx)(h.Card,{children:(0,B.jsx)(f.EmptyState,{icon:"gift-outline",title:A('noRewardsYet'),body:A('rewardsCatalogEmpty')})}):D.map(e=>(0,B.jsx)(_,{r:e,colors:I,t:A,onRedeem:()=>Z(e)},e.id)),H.length>0&&(0,B.jsxs)(B.Fragment,{children:[(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:I.textMuted,marginTop:j.spacing.lg,marginBottom:j.spacing.sm}],children:A('myVouchers')}),(0,B.jsx)(h.Card,{padding:"md",children:H.map((e,t)=>(0,B.jsx)(L,{v:e,first:0===t,colors:I,t:A},e.id))})]}),(0,B.jsx)(p.Button,{title:A('rewardsLedgerLink'),variant:"ghost",fullWidth:!0,style:{marginTop:j.spacing.lg},onPress:()=>z.push('/rewards/ledger')})]}),e&&(0,B.jsx)(x.RedeemSheet,{visible:!!G,reward:G,balance:E?.balance??0,userId:e.id,onClose:()=>Z(null),onRedeemed:()=>{$()}})]})};var t=_r(d[1]),r=e(_r(d[2])),a=e(_r(d[3])),l=e(_r(d[4])),o=e(_r(d[5])),n=e(_r(d[6])),s=e(_r(d[7])),i=_r(d[8]),c=_r(d[9]),u=_r(d[10]),p=_r(d[11]),h=_r(d[12]),f=_r(d[13]),x=_r(d[14]),y=_r(d[15]),b=_r(d[16]),j=_r(d[17]),T=_r(d[18]),w=_r(d[19]),S=_r(d[20]),C=_r(d[21]),k=_r(d[22]),R=_r(d[23]),B=_r(d[24]);const I=e=>w.TIERS.find(t=>t.tier===e)??w.TIERS[0];const M=({account:e,colors:t,t:r})=>{const a=I(e.tier),l=r(a.labelKey),o=Math.round(100*(e.multiplier-1)),i=e.nextTier?I(e.nextTier):null;return(0,B.jsxs)(s.default,{style:[v.hero,{backgroundColor:t.accent}],accessibilityLabel:r('rewardsHeroA11y',{n:(0,S.formatNumber)(e.balance),tier:l}),children:[(0,B.jsx)(n.default,{style:[j.typography.small,{color:'rgba(0,0,0,0.6)'}],children:r('balanceLabel')}),(0,B.jsxs)(s.default,{style:{flexDirection:'row',alignItems:'baseline',gap:j.spacing.xs},children:[(0,B.jsx)(n.default,{style:[v.heroAmount,{color:t.accentInk}],children:(0,S.formatNumber)(e.balance)}),(0,B.jsx)(n.default,{style:[v.heroUnit,{color:t.accentInk}],children:r('pointsUnit')})]}),0===e.balance&&0===e.lifetime?(0,B.jsx)(n.default,{style:[j.typography.small,{color:'rgba(0,0,0,0.7)'}],children:r('rewardsZeroBalance')}):null,(0,B.jsxs)(s.default,{style:v.tierRow,children:[(0,B.jsx)(s.default,{style:v.tierChip,children:(0,B.jsxs)(n.default,{style:v.tierText,children:[a.emoji," ",l]})}),(0,B.jsx)(n.default,{style:[j.typography.small,{color:'rgba(0,0,0,0.7)',flex:1}],children:o>0?r('rewardsTierGrants',{pct:o}):r('rewardsTierBase')})]}),(0,B.jsx)(s.default,{style:v.track,children:(0,B.jsx)(s.default,{style:[v.fill,{width:`${Math.round(100*e.progress)}%`,backgroundColor:t.accentInk}]})}),(0,B.jsx)(n.default,{style:[j.typography.caption,{color:'rgba(0,0,0,0.7)',marginTop:j.spacing.xs}],children:i?r('toNextTier',{n:(0,S.formatNumber)(e.pointsToNext),tier:r(i.labelKey)}):r('maxTier')})]})},_=({r:e,colors:t,t:r,onRedeem:a})=>(0,B.jsxs)(h.Card,{style:{marginBottom:j.spacing.sm},children:[(0,B.jsxs)(s.default,{style:v.top,children:[(0,B.jsxs)(s.default,{style:{flex:1,minWidth:0},children:[(0,B.jsx)(n.default,{style:[j.typography.bodyStrong,{color:t.text}],numberOfLines:2,children:e.name}),e.description?(0,B.jsx)(n.default,{style:[j.typography.caption,{color:t.textMuted,marginTop:2}],numberOfLines:2,children:e.description}):null,e.partner?(0,B.jsx)(n.default,{style:[j.typography.caption,{color:t.textMuted,marginTop:2}],children:r('rewardsPartnerAt',{partner:e.partner})}):null]}),(0,B.jsx)(s.default,{style:[v.chip,{backgroundColor:t.surfaceAlt}],children:(0,B.jsx)(n.default,{style:[v.chipText,{color:e.affordable?t.accentText:t.textMuted}],children:r('costPts',{n:(0,S.formatNumber)(e.cost_points)})})})]}),(0,B.jsx)(s.default,{style:{marginTop:j.spacing.sm},children:(0,B.jsx)(p.Button,{title:e.out_of_stock?r('outOfStock'):r('redeem'),variant:e.affordable&&!e.out_of_stock?'primary':'secondary',size:"sm",fullWidth:!0,disabled:e.out_of_stock,onPress:a})})]}),L=({v:e,first:t,colors:r,t:a})=>{const l='active'!==e.status||Date.parse(e.expires_at)<Date.now();return(0,B.jsxs)(s.default,{style:[v.voucherRow,{borderTopColor:r.border,borderTopWidth:t?0:o.default.hairlineWidth}],children:[(0,B.jsxs)(s.default,{style:{flex:1,minWidth:0},children:[(0,B.jsx)(n.default,{style:[j.typography.smallStrong,{color:r.text}],numberOfLines:1,children:e.reward_name}),(0,B.jsx)(n.default,{style:[j.typography.caption,{color:l?r.danger:r.textMuted}],children:a(l?'rewardsVoucherExpired':'rewardsVoucherExpires',{when:(0,S.formatHistoryDate)(e.expires_at)})})]}),(0,B.jsx)(n.default,{style:[v.codeText,{color:l?r.textMuted:r.text}],selectable:!0,children:e.code})]})},v=o.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:j.spacing.lg,paddingVertical:j.spacing.sm,gap:j.spacing.sm},iconBtn:{width:40,height:40,borderRadius:20,borderWidth:1,alignItems:'center',justifyContent:'center'},hero:{borderRadius:j.radius.lg,padding:j.spacing.lg},heroAmount:{fontSize:34,fontWeight:'800',marginVertical:j.spacing.xs},heroUnit:{fontSize:16,fontWeight:'600'},tierRow:{flexDirection:'row',alignItems:'center',gap:j.spacing.sm,marginTop:j.spacing.sm},tierChip:{backgroundColor:'rgba(0,0,0,0.14)',paddingHorizontal:j.spacing.md,paddingVertical:6,borderRadius:12},tierText:{color:'rgba(0,0,0,0.8)',fontFamily:'SpaceMonoBold',fontSize:13,letterSpacing:.5},track:{height:6,borderRadius:3,backgroundColor:'rgba(0,0,0,0.14)',marginTop:j.spacing.md,overflow:'hidden'},fill:{height:6,borderRadius:3},earnRow:{flexDirection:'row',alignItems:'center',gap:j.spacing.sm,paddingVertical:j.spacing.sm},top:{flexDirection:'row',alignItems:'flex-start',gap:j.spacing.sm},chip:{borderRadius:j.radius.pill,paddingHorizontal:j.spacing.sm,paddingVertical:4},chipText:{fontSize:12,fontWeight:'800'},voucherRow:{flexDirection:'row',alignItems:'center',gap:j.spacing.sm,paddingVertical:j.spacing.sm},codeText:{fontFamily:'SpaceMonoBold',fontSize:14,letterSpacing:1}})},2481,[33,15,461,369,281,158,146,273,381,1086,20,626,1623,1627,2482,630,615,616,671,664,1311,674,675,1171,13]);

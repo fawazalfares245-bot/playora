@@ -286,6 +286,21 @@ __d(
                     : null,
                 ],
               }),
+            // Three of the four ways a seat ends now file a cancellation row, so the reason has to say
+            // which one - the amounts alone cannot distinguish an organizer removing you from a match
+            // being cancelled out from under you.
+            ["removed", "match_cancelled", "squad_dropped"].includes(e.reason)
+              ? (0, M.jsx)(o.default, {
+                  style: [j.typography.caption, { color: s.textMuted, marginTop: j.spacing.sm }],
+                  children: a(
+                    "removed" === e.reason
+                      ? "refundReasonRemoved"
+                      : "match_cancelled" === e.reason
+                        ? "refundReasonMatchCancelled"
+                        : "refundReasonSquadDropped",
+                  ),
+                })
+              : null,
             "past_cutoff" === e.reason && e.starts_at
               ? (0, M.jsxs)(l.default, {
                   style: { marginTop: j.spacing.sm, gap: 2 },
