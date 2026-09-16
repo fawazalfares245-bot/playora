@@ -13019,10 +13019,11 @@ __d(
         const n = hi(a.game_id);
         if (!n || "cancelled" === n.status) throw new Error("E_MATCH_UNAVAILABLE");
         // This pushed a booking row straight in, checking only capacity and offer expiry - none of
-        // the fourteen guards mockJoinMatch applies. A banned or suspended account, a guest, a
+        // the guards mockJoinMatch applies. A banned or suspended account, a guest, a
         // cross-partition candidate or a player the organizer had closed registration against could
-        // all take a seat through an outstanding offer.
-        (ra(e, n.audience), md(e), await wd(e));
+        // all take a seat through an outstanding offer. One helper, so the list cannot drift again:
+        // it adds the Code of Conduct check the hand-written version here was still missing.
+        await assertMayHoldSeat9(n, e);
         if (n.registration_closed_at) throw new Error("E_REGISTRATION_IS_CLOSED");
         const r = Date.now();
         if (ki(n.id, r) + id(n.id, r).filter((e) => e.id !== t).length >= n.max_players)

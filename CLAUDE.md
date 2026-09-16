@@ -142,6 +142,12 @@ Three rules cut across all of it:
   and it is within 48 h of `score_submitted_at`.
 - **Expiry and promotion are lazy.** Nothing runs on a clock; both halves of `Di` run when the match
   is next read. A test that asserts a hold has lapsed must read the match first.
+- **Four functions besides `ji` push a row into `Qt.bookings`**: `Wr`, `mockAcceptReplacement`,
+  `mockCreateGroupBooking`, and `ji` itself (`Wi` seats the organizer on their own new match; `an`
+  and `Fo` are demo seeding and reset). Each had grown its own guard list and each list had drifted -
+  the group reservation had no audience or visibility check at all, the replacement path was missing
+  the Code of Conduct check. They all call `assertMayHoldSeat9` now, and `tools/rules.mjs` pins the
+  set, so a new writer fails the check rather than whatever it would have let through.
 
 ## Who may read a match
 

@@ -1,6 +1,6 @@
 // Consumer-side regression checks for the defects the consumer audit confirmed.
 // Run: node tools/flows-consumer.mjs
-import { openApp, IDS } from './smoke.mjs';
+import { openApp, IDS, ORIGIN } from './smoke.mjs';
 import fs from 'node:fs';
 const en = fs.readFileSync(new URL('../bundle-src/909.js', import.meta.url), 'utf8');
 const t = (k) => {
@@ -747,6 +747,68 @@ await run('my bookings are swept, ordered by kick-off and bounded', async () => 
   ok('the soonest kick-off is first', out.firstGame === seed.soon, `${out.firstGame} vs ${seed.soon}`);
   ok('a rejection is not in the list', out.hasRejected === false, String(out.hasRejected));
   ok('cancelled history older than ninety days is dropped', out.hasAncient === false, String(out.hasAncient));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// Every door onto a seat applies the same gate, or the narrowest one is the only one that matters.
+// A women-only match is the sharpest case: mockJoinMatch has always refused a male account with
+// AUDIENCE_MISMATCH, but the three other paths that put a booking row into a match each grew their
+// own guard list, and mockCreateGroupBooking's had no audience check at all - it seated its leader,
+// their friends and their guests on any match it was given. The audience is rewritten in storage and
+// the page reloaded, because the match rows are read once on boot.
+await run('every seat-taking path applies the audience gate', async () => {
+  const { browser, page, errors } = await openApp({ role: 'user', route: '/' });
+  await page.waitForTimeout(1500);
+
+  const seed = await page.evaluate(async (ids) => {
+    const api = __r(671);
+    await api.acceptCoC(ids.user).catch(() => {});
+    await api.acceptCoC(ids.organizer).catch(() => {});
+    const venue = (await api.fetchVenues()).find((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(ids.organizer, {
+      title: 'Audience gate', sport: 'football', venue_id: venue.id, format: '5v5',
+      starts_at: new Date(Date.now() + 57 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 57 * 864e5 + 54e5).toISOString(),
+      max_players: 10, price_kwd: 0, visibility: 'public',
+    });
+    return { gameId: g.id, audience: g.audience };
+  }, IDS);
+
+  await page.evaluate((gameId) => {
+    const games = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]');
+    for (const row of games) if (row.id === gameId) row.audience = 'female';
+    localStorage.setItem('playora.mock.games.v1', JSON.stringify(games));
+  }, seed.gameId);
+  await page.goto(ORIGIN + '/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+
+  const out = await page.evaluate(async ([ids, gameId]) => {
+    const api = __r(671);
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    const res = {};
+    res.audience = (JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]').find((g) => g.id === gameId) || {}).audience;
+    res.join = await code(() => api.joinMatch(gameId, ids.user));
+    res.group = await code(() => api.createGroupBooking(ids.user, gameId, { friendIds: [], guestNames: ['Guest One'], paymentMode: 'group' }));
+    // The control has to be someone the gate admits, which is not the organizer: Test Organizer is
+    // male and is refused by their own women-only match, correctly. A seeded female account is.
+    // The control is the group path, which is the one this gate was missing from. It takes the seat
+    // itself, so nothing may join ahead of it or the answer comes back 'already_booked' - which
+    // would read as a refusal and is not one.
+    const she = JSON.parse(localStorage.getItem('playora.mock.profiles.v1') || '[]').find((p) => 'female' === p.audience);
+    res.control = she?.id ?? null;
+    if (she) {
+      await api.acceptCoC(she.id).catch(() => {});
+      res.controlGroup = await code(() => api.createGroupBooking(she.id, gameId, { friendIds: [], guestNames: ['Guest Two'], paymentMode: 'group' }));
+    }
+    return res;
+  }, [IDS, seed.gameId]);
+
+  ok('the fixture match is women-only', out.audience === 'female', String(out.audience));
+  ok('joining refuses a male account', out.join === 'AUDIENCE_MISMATCH', String(out.join));
+  ok('reserving a group refuses it too', out.group === 'AUDIENCE_MISMATCH', String(out.group));
+  ok('the control account exists', !!out.control, String(out.control));
+  ok('a woman still reserves a group on it (the control)', out.controlGroup === 'accepted', String(out.controlGroup));
   ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
   await browser.close();
 });

@@ -493,6 +493,31 @@ ok('split_equal over three payers still sums to the total', typeof out.splitEqua
   ok('the orphan list has no stale entries', fixed.length === 0, `now called, drop from KNOWN: ${fixed.join(',')}`);
 }
 
+// --- every path that writes a booking row goes through the same gate ---
+// Four functions besides ji push into Qt.bookings, and each had grown its own guard list. The group
+// reservation's had no audience or visibility check at all; the replacement path's was hand-written
+// and had drifted, missing the Code of Conduct check the others applied. A seat is a seat, so they
+// all call assertMayHoldSeat9. This pins the set: a new writer, or an old one that stops calling the
+// helper, fails here rather than at whatever it lets through.
+{
+  const src = fs.readFileSync(new URL('../bundle-src/631.js', import.meta.url), 'utf8');
+  const lines = src.split('\n');
+  let fn = 'top';
+  const writers = new Set();
+  for (const line of lines) {
+    const m = line.match(/^\s*(?:r\.(mock\w+)\s*=|(?:const\s+)?(\w+) = async \(|(\w+) = async \()/);
+    if (m) fn = m[1] || m[2] || m[3];
+    if (line.includes('Qt.bookings.push(')) writers.add(fn);
+  }
+  // Wi seats the organizer on the match they are creating; an and Fo are the demo seeding and reset.
+  const EXEMPT = new Set(['Wi', 'an', 'Fo']);
+  const GATED = ['ji', 'Wr', 'mockAcceptReplacement', 'mockCreateGroupBooking'];
+  const found = [...writers].filter((w) => !EXEMPT.has(w)).sort();
+  ok('the set of booking writers is unchanged', JSON.stringify(found) === JSON.stringify([...GATED].sort()), found.join(','));
+  const helper = (src.match(/assertMayHoldSeat9\(/g) || []).length;
+  ok('and they all reach the one seat gate', helper >= GATED.length + 1, `${helper} call sites`);
+}
+
 // --- booking invariants over the world this file has just churned ---
 assertBookingInvariants(ok, await bookingInvariants(page, IDS.admin), { floor: 12 });
 ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
