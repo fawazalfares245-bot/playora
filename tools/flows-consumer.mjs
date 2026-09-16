@@ -565,5 +565,38 @@ await run('a held seat shows its deadline, and cancelling shows the refund', asy
   await browser.close();
 });
 
+// Sanctions, bans and the reliability score all enforce an agreement nobody was required to make:
+// the join machine checked bans, guests, partition and skill, and never conduct.
+await run('joining requires the current Code of Conduct', async () => {
+  // A profile with no acceptance row, which is what every account was until now.
+  const wipe = `localStorage.setItem('playora.mock.coc.acceptance.v1', '[]');`;
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer', initScript: wipe });
+  const out = await page.evaluate(async ([org, player]) => {
+    const api = __r(671);
+    const res = {};
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Conduct gate', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 57 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 57 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+    res.before = await api.fetchCoCStatus(player);
+    res.refused = await code(() => api.joinMatch(g.id, player));
+    await api.acceptCoC(player);
+    res.after = await api.fetchCoCStatus(player);
+    res.allowed = await code(() => api.joinMatch(g.id, player));
+    return res;
+  }, [IDS.organizer, IDS.user]);
+
+  ok('the account has not accepted', out.before.accepted === false, JSON.stringify(out.before));
+  ok('joining is refused', out.refused === 'E_ACCEPT_THE_CODE_OF_CONDUCT', String(out.refused));
+  ok('accepting records the current version', out.after.accepted === true && out.after.accepted_version === out.after.version, JSON.stringify(out.after));
+  ok('and the same join then succeeds', out.allowed === 'accepted', String(out.allowed));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

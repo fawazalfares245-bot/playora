@@ -51,6 +51,9 @@ export function seedScript(role) {
       localStorage.setItem('playora.mock.users.v1', ${JSON.stringify(JSON.stringify(users))});
       localStorage.setItem('playora.mock.applications.v1', ${JSON.stringify(JSON.stringify([app]))});
       localStorage.setItem('playora.mock.orgseed.v1', JSON.stringify({ uid: '${IDS.organizer}' }));
+      // Joining a match requires the current Code of Conduct. These four stand in for
+      // established accounts, so they have accepted it.
+      localStorage.setItem('playora.mock.coc.acceptance.v1', JSON.stringify([{"user_id": "${IDS.admin}", "version": 1, "accepted_at": "2025-01-01T00:00:00.000Z"}, {"user_id": "${IDS.analyst}", "version": 1, "accepted_at": "2025-01-01T00:00:00.000Z"}, {"user_id": "${IDS.organizer}", "version": 1, "accepted_at": "2025-01-01T00:00:00.000Z"}, {"user_id": "${IDS.user}", "version": 1, "accepted_at": "2025-01-01T00:00:00.000Z"}]));
       ${session ? `localStorage.setItem('secure.playora_session', ${JSON.stringify(JSON.stringify(session))});` : ''}
     } catch (e) { console.error('seed failed', e); }
   })();`;

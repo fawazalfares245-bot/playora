@@ -306,6 +306,14 @@ ok('a custom split over the total is refused', out.splitOver === 'E_SPLIT_EXCEED
 ok('a custom split that matches the total is allowed', typeof out.splitExact === 'object' && Math.abs(sum(out.splitExact) - 12) < 5e-4, JSON.stringify(out.splitExact));
 ok('an under-split still tops the organizer up to the total', typeof out.splitUnder === 'object' && Math.abs(sum(out.splitUnder) - 12) < 5e-4, JSON.stringify(out.splitUnder));
 ok('split_equal over three payers still sums to the total', typeof out.splitEqual === 'object' && Math.abs(sum(out.splitEqual) - 10) < 5e-4, JSON.stringify(out.splitEqual));
+// --- the conduct gate has a code, a mapping and both locales ---
+{
+  const map = fs.readFileSync(new URL('../bundle-src/674.js', import.meta.url), 'utf8');
+  const loc = fs.readFileSync(new URL('../bundle-src/909.js', import.meta.url), 'utf8');
+  ok('E_ACCEPT_THE_CODE_OF_CONDUCT is mapped', /E_ACCEPT_THE_CODE_OF_CONDUCT:\s*"seAcceptTheCodeOfConduct"/.test(map), 'missing from 674');
+  ok('and has a string in both locales', (loc.match(/^ {8}seAcceptTheCodeOfConduct:/gm) || []).length === 2, String((loc.match(/^ {8}seAcceptTheCodeOfConduct:/gm) || []).length));
+}
+
 // --- one definition of "was in this match" ---
 // The test appeared fourteen times in two shapes and eight of them left out the status guard, so a
 // cancelled booking counted the moment anyone wrote an attendance mark onto it.

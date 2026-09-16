@@ -611,6 +611,7 @@ __d(
         seAmountIsOutsideTheAllowedTop: "Amount is outside the allowed top-up range.",
         seAmountIsOutsideTheAllowedTransfer: "Amount is outside the allowed transfer range.",
         seApplicationNotFound: "Application not found.",
+        seAcceptTheCodeOfConduct: "Accept the Code of Conduct before joining a match.",
         seASeatHasAlreadyBeenPaid: "A seat in this series has already been paid for, so the price cannot change.",
         seKycAlreadyReviewed: "That verification has already been reviewed.",
         seAssignAPlayerFirst: "Assign a player first.",
@@ -4288,6 +4289,7 @@ __d(
           "\u0627\u0644\u0645\u0628\u0644\u063a \u062e\u0627\u0631\u062c \u0646\u0637\u0627\u0642 \u0627\u0644\u062a\u062d\u0648\u064a\u0644 \u0627\u0644\u0645\u0633\u0645\u0648\u062d.",
         seApplicationNotFound:
           "\u0627\u0644\u0637\u0644\u0628 \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f.",
+        seAcceptTheCodeOfConduct: "\u0648\u0627\u0641\u0642 \u0639\u0644\u0649 \u0645\u062f\u0648\u0646\u0629 \u0627\u0644\u0633\u0644\u0648\u0643 \u0642\u0628\u0644 \u0627\u0644\u0627\u0646\u0636\u0645\u0627\u0645 \u0625\u0644\u0649 \u0645\u0628\u0627\u0631\u0627\u0629.",
         seASeatHasAlreadyBeenPaid: "\u062a\u0645\u0651 \u062f\u0641\u0639 \u0645\u0642\u0639\u062f \u0641\u064a \u0647\u0630\u0647 \u0627\u0644\u0633\u0644\u0633\u0644\u0629\u060c \u0644\u0630\u0627 \u0644\u0627 \u064a\u0645\u0643\u0646 \u062a\u063a\u064a\u064a\u0631 \u0627\u0644\u0633\u0639\u0631.",
         seKycAlreadyReviewed: "\u062a\u0645\u062a \u0645\u0631\u0627\u062c\u0639\u0629 \u0647\u0630\u0627 \u0627\u0644\u062a\u062d\u0642\u0642 \u0645\u0633\u0628\u0642\u064b\u0627.",
         seAssignAPlayerFirst:

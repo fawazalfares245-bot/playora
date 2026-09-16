@@ -3099,6 +3099,13 @@ __d(
       Bi = async (e, t, a9) => {
         for (const a of Fi(e.id)) a !== e.organizer_id && (await bi(t(a), a9));
       },
+      // One place that answers "has this account accepted the current Code of Conduct".
+      cocAccepted9 = (e) => {
+        if (
+          !Qt.cocAcceptances.some((t) => t.user_id === e && t.version >= D.CURRENT_COC_VERSION)
+        )
+          throw new Error("E_ACCEPT_THE_CODE_OF_CONDUCT");
+      };
       ji = async (e, t) => {
         await ei();
         const a = hi(e);
@@ -3109,6 +3116,11 @@ __d(
         return (
           md(t),
           await wd(t),
+          // Every enforcement mechanism in the product - sanctions, bans, the reliability score -
+          // rests on an agreement nobody was ever required to make. The join machine checked bans,
+          // guests, partition and skill, and never conduct, so bumping the version had no effect on
+          // anyone who did not happen to visit the Code of Conduct screen.
+          cocAccepted9(t),
           Xt(e, async () => {
             await Di(a);
             const i = Date.now(),

@@ -160,7 +160,11 @@ __d(
                 (a.default.alert(t, `${H.venue.name} \xb7 ${(0, P.formatGameTime)(H.starts_at)}`),
                   await Pe());
               } catch (e) {
-                a.default.alert(F("error"), (0, N.storeErrorText)(e?.message ?? "") || F("error"));
+                // Joining requires the current Code of Conduct now. That is not an error the player
+                // can act on from here, so take them to it and bring them back.
+                "E_ACCEPT_THE_CODE_OF_CONDUCT" === e?.message
+                  ? L.push(`/conduct?next=${encodeURIComponent(`/game/${H.id}`)}`)
+                  : a.default.alert(F("error"), (0, N.storeErrorText)(e?.message ?? "") || F("error"));
               } finally {
                 ee(!1);
               }
