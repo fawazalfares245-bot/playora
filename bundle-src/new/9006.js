@@ -15,6 +15,34 @@ __d(
           [res, setRes] = (0, n.useState)(null),
           [err, setErr] = (0, n.useState)(null),
           [kyc, setKyc] = (0, n.useState)([]),
+          // mockCorrectMatchScore is the one legitimate way to change a final result - admin gated,
+          // reason required, written to the privileged audit log - and no screen anywhere called it,
+          // so E_THIS_RESULT_IS_FINAL was absolute in practice.
+          [fixId, setFixId] = (0, n.useState)(""),
+          [fixHome, setFixHome] = (0, n.useState)(""),
+          [fixAway, setFixAway] = (0, n.useState)(""),
+          [fixWhy, setFixWhy] = (0, n.useState)(""),
+          [fixDone, setFixDone] = (0, n.useState)(null),
+          correct = (0, n.useCallback)(async () => {
+            if (!u) return;
+            (setErr(null), setFixDone(null));
+            try {
+              const g9 = await (0, F.correctMatchScore)(
+                u.id,
+                fixId.trim(),
+                Number(fixHome),
+                Number(fixAway),
+                fixWhy,
+              );
+              (setFixDone(`${g9.score_home}-${g9.score_away}`),
+                setFixId(""),
+                setFixHome(""),
+                setFixAway(""),
+                setFixWhy(""));
+            } catch (x) {
+              setErr((0, G9.classifyError)(x));
+            }
+          }, [u, fixId, fixHome, fixAway, fixWhy]),
           run = (0, n.useCallback)(async () => {
             (setBusy(!0), setErr(null));
             try {
@@ -156,6 +184,70 @@ __d(
                       : null,
                   ],
                 }),
+                (0, J.jsxs)(s.default, {
+                  style: [D.card, { borderColor: c.border, backgroundColor: c.surface }],
+                  children: [
+                    (0, J.jsx)(i.default, {
+                      style: [b.typography.h3, { color: c.text }],
+                      children: tr("adminCorrectScoreTitle"),
+                    }),
+                    (0, J.jsx)(i.default, {
+                      style: [b.typography.caption, { color: c.textMuted, marginTop: 4 }],
+                      children: tr("adminCorrectScoreBody"),
+                    }),
+                    (0, J.jsx)(X.default, {
+                      value: fixId,
+                      onChangeText: setFixId,
+                      placeholder: tr("adminCorrectScoreMatch"),
+                      placeholderTextColor: c.textMuted,
+                      autoCapitalize: "none",
+                      style: [D.input, { borderColor: c.border, color: c.text }],
+                    }),
+                    (0, J.jsxs)(s.default, {
+                      style: { flexDirection: "row", gap: b.spacing.sm },
+                      children: [
+                        (0, J.jsx)(X.default, {
+                          value: fixHome,
+                          onChangeText: setFixHome,
+                          placeholder: tr("teamALabel"),
+                          placeholderTextColor: c.textMuted,
+                          inputMode: "numeric",
+                          style: [D.input, { borderColor: c.border, color: c.text, flex: 1 }],
+                        }),
+                        (0, J.jsx)(X.default, {
+                          value: fixAway,
+                          onChangeText: setFixAway,
+                          placeholder: tr("teamBLabel"),
+                          placeholderTextColor: c.textMuted,
+                          inputMode: "numeric",
+                          style: [D.input, { borderColor: c.border, color: c.text, flex: 1 }],
+                        }),
+                      ],
+                    }),
+                    (0, J.jsx)(X.default, {
+                      value: fixWhy,
+                      onChangeText: setFixWhy,
+                      placeholder: tr("adminCorrectWorldReason"),
+                      placeholderTextColor: c.textMuted,
+                      style: [D.input, { borderColor: c.border, color: c.text }],
+                    }),
+                    (0, J.jsx)(o.default, {
+                      onPress: correct,
+                      accessibilityRole: "button",
+                      style: [D.cta, { backgroundColor: c.accent, marginTop: b.spacing.sm }],
+                      children: (0, J.jsx)(i.default, {
+                        style: [b.typography.body, { color: c.accentInk, fontWeight: "700" }],
+                        children: tr("adminCorrectScoreCta"),
+                      }),
+                    }),
+                    fixDone
+                      ? (0, J.jsx)(i.default, {
+                          style: [b.typography.caption, { color: c.success, marginTop: b.spacing.sm }],
+                          children: tr("adminCorrectScoreDone", { score: fixDone }),
+                        })
+                      : null,
+                  ],
+                }),
                 kyc.length
                   ? (0, J.jsxs)(s.default, {
                       style: [D.card, { borderColor: c.border, backgroundColor: c.surface }],
@@ -261,7 +353,8 @@ __d(
       L = _r(d[15]),
       B = _r(d[16]),
       J = _r(d[17]),
-      G9 = _r(d[18]);
+      G9 = _r(d[18]),
+      X = t(_r(d[19]));
     const D = k.default.create({
       center: { flex: 1, alignItems: "center", justifyContent: "center" },
       header: {
@@ -295,6 +388,14 @@ __d(
         borderTopWidth: k.default.hairlineWidth,
         paddingVertical: b.spacing.md,
       },
+      input: {
+        borderWidth: k.default.hairlineWidth,
+        borderRadius: b.radius.md,
+        paddingHorizontal: b.spacing.md,
+        paddingVertical: b.spacing.sm,
+        marginTop: b.spacing.sm,
+        fontSize: 14,
+      },
       chip: {
         borderRadius: b.radius.pill,
         paddingHorizontal: b.spacing.md,
@@ -304,5 +405,5 @@ __d(
     });
   },
   9006,
-  [33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 630, 615, 616, 671, 675, 1171, 13, 9001],
+  [33, 15, 461, 369, 281, 158, 146, 273, 381, 1086, 20, 630, 615, 616, 671, 675, 1171, 13, 9001, 394],
 );

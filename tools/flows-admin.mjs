@@ -396,5 +396,71 @@ await run('an admin removing a booking is not logged as the player leaving', asy
   await browser.close();
 });
 
+// mockCorrectMatchScore is the one legitimate way to change a final result, and no screen anywhere
+// called it - so E_THIS_RESULT_IS_FINAL was absolute in practice. It also notified nobody, so
+// players kept the wrong score they had been pushed.
+await run('a corrected score is recorded and reaches the players', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/' });
+  const seed = await page.evaluate(async ([org, player]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Wrong score', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 55 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 55 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+    await api.joinMatch(g.id, player);
+    const games = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]');
+    for (const row of games) if (row.id === g.id) {
+      row.starts_at = new Date(Date.now() - 2 * 36e5).toISOString();
+      row.ends_at = new Date(Date.now() - 36e5).toISOString();
+    }
+    localStorage.setItem('playora.mock.games.v1', JSON.stringify(games));
+    return { gameId: g.id };
+  }, [IDS.organizer, IDS.user]);
+
+  await page.goto('http://localhost/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const out = await page.evaluate(async ([org, admin, player, gameId]) => {
+    const api = __r(671);
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    // submitMatchScore takes the organizer first, then the match
+    await api.submitMatchScore(org, gameId, 3, 2);
+    const before = (await api.fetchNotifications(player)).filter((n) => n.type === 'match_score').length;
+    const again = await code(() => api.submitMatchScore(org, gameId, 5, 1));
+    const noReason = await code(() => api.correctMatchScore(admin, gameId, 4, 2, 'no'));
+    const notAdmin = await code(() => api.correctMatchScore(org, gameId, 4, 2, 'Scorer miscounted'));
+    const fixed = await api.correctMatchScore(admin, gameId, 4, 2, 'Scorer miscounted the second half');
+    const notes = (await api.fetchNotifications(player)).filter((n) => n.type === 'match_score');
+    const bookingStates = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+      .filter((b) => b.game_id === gameId).map((b) => `${b.user_id.slice(0,4)}:${b.status}`);
+    const dto = await api.fetchGame(gameId, player);
+    const adminLog = JSON.parse(localStorage.getItem('playora.audit.admin.v1') || '[]')
+      .find((r) => r.type === 'match.score_corrected');
+    return {
+      again, noReason, notAdmin,
+      score: `${fixed.score_home}-${fixed.score_away}`,
+      newNotes: notes.length - before,
+      latest: notes[0] ? `${notes[0].score_home}-${notes[0].score_away}` : null,
+      corrected: notes[0] ? notes[0].corrected === true : false,
+      dtoCorrectedAt: dto.score_corrected_at,
+      logged: adminLog ? adminLog.meta : null,
+      bookingStates,
+    };
+  }, [IDS.organizer, IDS.admin, IDS.user, seed.gameId]);
+
+  ok('the organizer cannot resubmit a final score', out.again === 'E_THIS_RESULT_IS_FINAL', String(out.again));
+  ok('a correction needs a reason', out.noReason === 'E_A_REASON_IS_REQUIRED', String(out.noReason));
+  ok('and an administrator', out.notAdmin !== 'accepted', String(out.notAdmin));
+  ok('an admin can correct it', out.score === '4-2', String(out.score));
+  ok('every participant is notified', out.newNotes >= 1, `${out.newNotes} / bookings ${JSON.stringify(out.bookingStates)}`);
+  ok('with the new figures', out.latest === '4-2' && out.corrected === true, `${out.latest}/${out.corrected}`);
+  ok('the match reports it was corrected', !!out.dtoCorrectedAt, String(out.dtoCorrectedAt));
+  ok('the privileged log records from, to and why', out.logged && out.logged.from === '3-2' && out.logged.to === '4-2' && String(out.logged.reason).length > 3, JSON.stringify(out.logged));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

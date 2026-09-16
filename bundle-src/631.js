@@ -2633,17 +2633,23 @@ __d(
           body: JSON.stringify(t.map((e) => ({ to: e, title: a, body: i, sound: "default" }))),
         }).catch(() => {});
       },
-      bi = async (e) => {
+      // The second argument bypasses the one-minute duplicate guard. It exists for the case where a
+      // second notification of the same type about the same match is the point rather than noise - a
+      // corrected score contradicts the one just sent, and suppressing it leaves the player holding
+      // the wrong result.
+      bi = async (e, t9) => {
         e.audience = e.audience ?? aa(e.user_id);
         const t = Date.now() - 6e4;
-        Qt.notifications.some(
-          (a) =>
-            a.user_id === e.user_id &&
-            a.type === e.type &&
-            a.game_id === e.game_id &&
-            !a.read &&
-            new Date(a.created_at).getTime() > t,
-        ) || ((Qt.notifications = [e, ...Qt.notifications]), await Za($, Qt.notifications), Ei(e));
+        (!t9 &&
+          Qt.notifications.some(
+            (a) =>
+              a.user_id === e.user_id &&
+              a.type === e.type &&
+              a.game_id === e.game_id &&
+              !a.read &&
+              new Date(a.created_at).getTime() > t,
+          )) ||
+          ((Qt.notifications = [e, ...Qt.notifications]), await Za($, Qt.notifications), Ei(e));
       },
       Ti = async (e, t, a) => {
         const i = new Date().toISOString(),
@@ -2745,6 +2751,8 @@ __d(
           // but the DTO returned the status and not the deadline, so the reserved CTA had no
           // countdown to show and the seat simply vanished. The confirmed-with-payment branch right
           // above it already renders one off the payment's own deadline.
+          // So /game/[id] can mark a result that an admin has corrected.
+          score_corrected_at: e.score_corrected_at ?? null,
           user_reserved_until:
             Qt.bookings.find(
               (t) =>
@@ -3088,8 +3096,8 @@ __d(
               .map((e) => e.user_id),
           ),
         ),
-      Bi = async (e, t) => {
-        for (const a of Fi(e.id)) a !== e.organizer_id && (await bi(t(a)));
+      Bi = async (e, t, a9) => {
+        for (const a of Fi(e.id)) a !== e.organizer_id && (await bi(t(a), a9));
       },
       ji = async (e, t) => {
         await ei();
@@ -17875,6 +17883,22 @@ __d(
           score_corrected_by: e,
         })),
         await Za(te, Qt.games),
+        // mockSubmitMatchScore fans a match_score notification out to every participant; the
+        // correction notified nobody, so players kept the wrong score they had been pushed and the
+        // only legitimate way to change a final result was invisible to the people it was about.
+        await Bi(Qt.games[r], (e) => ({
+          id: ea(),
+          user_id: e,
+          type: "match_score",
+          game_id: t,
+          venue_name: Ai(o.venue_id),
+          sport: o.sport,
+          score_home: a,
+          score_away: i,
+          corrected: !0,
+          read: !1,
+          created_at: new Date().toISOString(),
+        }), !0),
         await Yi(t, e, "score_corrected", { note: `${d.home}-${d.away} \u2192 ${a}-${i}: ${s}` }),
         await (0, w.logAdminAudit)("match.score_corrected", e, o.organizer_id, {
           game: t.slice(-6),
