@@ -2343,7 +2343,12 @@ __d(
           ? await (0, _.secureSet)(Vt, JSON.stringify(Object.assign({ expires_at: Date.now() + 2592e6 }, e)))
           : await (0, _.secureDelete)(Vt);
       },
-      ci = async (e, t, a, i = "male") => {
+      // Email sign-up. The fifth argument is the date of birth, which only the wizard supplies: the
+      // phone path records birth_date, birth_year and the accepted terms on the profile it creates,
+      // and an account made by email has to carry the same fields or the age gate and the terms
+      // record exist for one half of the users and not the other. It stays optional so the existing
+      // four-argument callers (the AuthProvider's signUp wrapper) are unaffected.
+      ci = async (e, t, a, i = "male", bd9) => {
         await ei();
         const n = e.trim().toLowerCase();
         if (!(0, v.isValidEmail)(n)) throw new Error("E_ENTER_A_VALID_EMAIL_ADDRESS");
@@ -2371,7 +2376,22 @@ __d(
             consent_updated_at: null,
             created_at: new Date().toISOString(),
           };
+        const dob9 = "string" == typeof bd9 ? bd9.trim() : "";
+        if (dob9) {
+          // The same two checks the phone path makes, through the same helpers and throwing the same
+          // codes - fa/ga are the one definition of "is a real date" and "how old is this", and
+          // BIRTH_DATE_REQUIRED / AGE_REQUIREMENT are the vocabulary the sign-up wizard's own error
+          // renderer (module 916, authErrorText) already translates.
+          if (!fa(dob9)) throw new Error("BIRTH_DATE_REQUIRED");
+          if (ga(dob9) < wa) throw new Error("AGE_REQUIREMENT");
+          ((l.birth_date = dob9),
+            (l.birth_year = Number(dob9.slice(0, 4))),
+            (l.terms_accepted_at = new Date().toISOString()),
+            (l.terms_version = ha));
+        }
         (Qt.profiles.push(l), await Promise.all([Za(q, Qt.users), Za(Y, Qt.profiles)]), await Ne1(r, n));
+        dob9 &&
+          (await (0, w.logAudit)("auth.terms_accepted", (0, w.actorRef)(r), { version: ha }));
         const _ = await (0, c.randomToken)(),
           u = { user: { id: r, email: n }, token: _ };
         return (await li(u), await si(r), await (0, w.logAudit)("auth.sign_up", (0, w.actorRef)(r)), u);

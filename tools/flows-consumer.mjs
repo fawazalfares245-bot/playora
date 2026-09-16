@@ -896,5 +896,104 @@ await run('the day key follows the region zone, not UTC', async () => {
   await browser.close();
 });
 
+// Email sign-up. The wizard was phone-OTP only, so anyone who could not take an SMS had no way in,
+// while the backend has had email account creation the whole time - reachable only from the sign-in
+// screen, for accounts that already existed. The branch shares every step after the credentials, so
+// what this guards is that an account made by email is not a lesser account: same age gate, same
+// date of birth, same recorded terms as the phone path writes.
+await run('email sign-up reaches an account with full parity', async () => {
+  const { browser, page, errors } = await openApp({ role: 'guest', route: '/(auth)/sign-up' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(3000);
+  const seen = async () => (await page.evaluate(() => document.body.innerText));
+
+  const entry = page.getByText(t('useEmailInstead'), { exact: true });
+  ok('the phone step offers email as an alternative', (await entry.count()) > 0, t('useEmailInstead'));
+  if ((await entry.count()) === 0) { await browser.close(); return; }
+  await entry.click();
+  await page.waitForTimeout(1000);
+  ok('the email step renders', new RegExp(t('emailStepTitle')).test(await seen()), JSON.stringify((await seen()).split('\n').filter(Boolean).slice(0, 4)));
+
+  const fields = page.locator('input');
+  ok('it asks for an email and a password', (await fields.count()) === 2, String(await fields.count()));
+  await fields.nth(0).fill('flows-email@example.com');
+  await fields.nth(1).fill('short');
+  await page.waitForTimeout(500);
+  const cont = page.getByRole('button', { name: t('continueBtn') }).first();
+  ok('a weak password cannot continue', await cont.isDisabled(), 'continue was enabled');
+  await fields.nth(1).fill('Str0ng!Passw0rd');
+  await page.waitForTimeout(500);
+  ok('a strong one can', !(await cont.isDisabled()), 'continue stayed disabled');
+  await cont.click();
+  await page.waitForTimeout(1200);
+  ok('it continues into the shared name step', new RegExp(t('nameStepTitle')).test(await seen()), JSON.stringify((await seen()).split('\n').filter(Boolean).slice(0, 3)));
+
+  await page.locator('input').first().fill('Flows Email');
+  for (const [label, value] of [['Day', '14'], ['Month', 'March'], ['Year', '1996']]) {
+    await page.getByLabel(label, { exact: true }).click();
+    await page.waitForTimeout(600);
+    const opt = page.getByText(value, { exact: true }).last();
+    if (await opt.count()) await opt.click();
+    await page.waitForTimeout(400);
+  }
+  await page.getByLabel(t('continueBtn'), { exact: true }).first().click();
+  await page.waitForTimeout(1200);
+
+  const men = page.getByText('Men', { exact: true }).first();
+  if (await men.count()) await men.click();
+  await page.waitForTimeout(800);
+  const confirm = page.getByRole('button', { name: t('forkConfirm') }).last();
+  ok('the fork offers its confirm control', (await confirm.count()) > 0, t('forkConfirm'));
+  if ((await confirm.count()) > 0) await confirm.click();
+  await page.waitForTimeout(4500);
+
+  const acct = await page.evaluate(() => {
+    const u = JSON.parse(localStorage.getItem('playora.mock.users.v1') || '[]').find((x) => x.email === 'flows-email@example.com');
+    const p = u && JSON.parse(localStorage.getItem('playora.mock.profiles.v1') || '[]').find((x) => x.id === u.id);
+    return u ? { created: true, hashed: String(u.passwordHash).length > 20, name: p?.full_name,
+      birth_date: p?.birth_date, birth_year: p?.birth_year, terms: !!p?.terms_accepted_at } : { created: false };
+  });
+  ok('the account exists', acct.created === true, JSON.stringify(acct));
+  ok('with a hashed password, never the plaintext', acct.hashed === true, String(acct.hashed));
+  ok('and the date of birth the wizard collected', acct.birth_date === '1996-03-14' && acct.birth_year === 1996, `${acct.birth_date} / ${acct.birth_year}`);
+  ok('and the accepted terms the phone path also records', acct.terms === true, String(acct.terms));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// The guards live in the backend, not only in the screen - an age gate that exists only in a form is
+// not an age gate. mockSignUp keeps working for its existing four-argument callers.
+await run('email sign-up guards hold at the backend', async () => {
+  const { browser, page, errors } = await openApp({ role: 'guest', route: '/' });
+  await page.waitForTimeout(2500);
+  const out = await page.evaluate(async () => {
+    const store = __r(631);
+    const code = async (fn) => { try { const v = await fn(); return v?.user?.id ? 'created' : 'ok'; } catch (e) { return e.code || e.message; } };
+    const yr = new Date().getUTCFullYear();
+    return {
+      underage: await code(() => store.mockSignUp('kid@example.com', 'Str0ng!Passw0rd', 'Kid', 'male', `${yr - 10}-01-01`)),
+      badDate: await code(() => store.mockSignUp('bad@example.com', 'Str0ng!Passw0rd', 'Bad', 'male', 'not-a-date')),
+      weakPw: await code(() => store.mockSignUp('weak@example.com', 'short', 'Weak', 'male', '1996-03-14')),
+      badEmail: await code(() => store.mockSignUp('not-an-email', 'Str0ng!Passw0rd', 'X', 'male', '1996-03-14')),
+      ok: await code(() => store.mockSignUp('ok@example.com', 'Str0ng!Passw0rd', 'Okay', 'male', '1996-03-14')),
+      duplicate: await code(() => store.mockSignUp('ok@example.com', 'Str0ng!Passw0rd', 'Again', 'male', '1996-03-14')),
+      legacy: await code(() => store.mockSignUp('legacy@example.com', 'Str0ng!Passw0rd', 'Legacy', 'male')),
+      signBackIn: await code(() => store.mockSignIn('ok@example.com', 'Str0ng!Passw0rd')),
+    };
+  });
+  // The same codes the phone path throws, so the wizard's own error renderer (module 916) already
+  // translates them - a new vocabulary here would have rendered as a raw code on this screen.
+  ok('an underage date of birth is refused', out.underage === 'AGE_REQUIREMENT', String(out.underage));
+  ok('a malformed date is refused', out.badDate === 'BIRTH_DATE_REQUIRED', String(out.badDate));
+  ok('a weak password is refused', out.weakPw === 'E_PASSWORD_DOES_NOT_MEET_THE_STRENGTH', String(out.weakPw));
+  ok('a malformed email is refused', out.badEmail === 'E_ENTER_A_VALID_EMAIL_ADDRESS', String(out.badEmail));
+  ok('a good one is created (the control)', out.ok === 'created', String(out.ok));
+  ok('the same email twice is refused', out.duplicate === 'E_COULD_NOT_CREATE_THE_ACCOUNT_TRY', String(out.duplicate));
+  ok('the existing four-argument callers still work', out.legacy === 'created', String(out.legacy));
+  ok('and the new account can sign back in', out.signBackIn === 'created', String(out.signBackIn));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

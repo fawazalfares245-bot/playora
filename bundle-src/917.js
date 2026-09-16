@@ -58,12 +58,23 @@ __d(
           [Me, Re] = (0, t.useState)(""),
           [ze, We] = (0, t.useState)(null),
           [Be, Ie] = (0, t.useState)(!1),
-          [Oe, Ee] = (0, t.useState)(null);
+          [Oe, Ee] = (0, t.useState)(null),
+          // Email sign-up. The wizard was phone-OTP only, so anyone who could not or would not take an
+          // SMS had no way in at all - and the backend has had email account creation the whole time
+          // (mockSignUp), reachable only from the sign-in screen for accounts that already existed.
+          // The mode decides the first step and which call creates the account; everything after it -
+          // name, date of birth, audience, clan - is the same wizard.
+          [md9, smd9] = (0, t.useState)("phone"),
+          [em9, sem9] = (0, t.useState)(""),
+          [pw9, spw9] = (0, t.useState)("");
+        const eml9 = "email" === md9,
+          pwIssues9 = (0, T.checkPasswordStrength)(pw9),
+          emailOk9 = (0, T.isValidEmail)(em9.trim()) && 0 === pwIssues9.length;
         (0, t.useEffect)(() => {
-          Oe
+          Oe || eml9
             ? (0, P.clearWizardDraft)()
             : (0, P.saveWizardDraft)({ step: re, phone: me, fullName: ke, birthDate: se ?? "" });
-        }, [re, me, ke, se, Oe]);
+        }, [re, me, ke, se, Oe, eml9]);
         const De = (0, t.useRef)(null),
           [Fe, Le] = (0, t.useState)(null),
           [Ne, Ve] = (0, t.useState)(!1),
@@ -135,9 +146,16 @@ __d(
             if (!t) return null;
             (Le(null), Ve(!0));
             try {
-              const e = (await (0, R.remoteAuthAvailable)())
-                ? await (0, R.remoteOtpVerify)(me, ye.trim(), (0, T.sanitizeName)(ke), t, se ?? "", !0)
-                : await z.store.mockVerifyOtp(me, ye.trim(), (0, T.sanitizeName)(ke), t, se ?? "", !0);
+              // The two ways to mint the account. The email path hands the date of birth to
+              // mockSignUp, which applies the same age gate and records the same terms acceptance the
+              // phone path does - an account should not differ by the door it came through.
+              const e = eml9
+                ? (await (0, R.remoteAuthAvailable)())
+                  ? await (0, R.remoteSignUp)(em9.trim(), pw9, (0, T.sanitizeName)(ke), t, se ?? "")
+                  : await z.store.mockSignUp(em9.trim(), pw9, (0, T.sanitizeName)(ke), t, se ?? "")
+                : (await (0, R.remoteAuthAvailable)())
+                  ? await (0, R.remoteOtpVerify)(me, ye.trim(), (0, T.sanitizeName)(ke), t, se ?? "", !0)
+                  : await z.store.mockVerifyOtp(me, ye.trim(), (0, T.sanitizeName)(ke), t, se ?? "", !0);
               return (
                 (0, R.persistSession)(e),
                 (De.current = e),
@@ -151,6 +169,11 @@ __d(
               );
             } catch (e) {
               const t = (0, I.storeErrorText)(e?.message ?? "") || U("error");
+              if (eml9) {
+                // No code to resend; send them back to the field that can actually be corrected.
+                (Le(t), ne("email"));
+                return null;
+              }
               if ("OTP_EXPIRED" === t || "OTP_WRONG" === t || "OTP_ATTEMPTS" === t) {
                 (xe(""), ne("otp"), Le(U("otpRestart")));
                 try {
@@ -251,13 +274,13 @@ __d(
               }),
             });
           },
-          nt = ({ ix: e }) =>
+          nt = ({ ix: e, total: tot9 = eml9 ? 4 : 5 }) =>
             (0, O.jsx)(l.default, {
               style: $.dots,
               accessibilityRole: "progressbar",
               accessible: !0,
-              accessibilityLabel: U("stepOfSteps", { n: String(e + 1), total: String(5) }),
-              children: Array.from({ length: 5 }, (t, r) =>
+              accessibilityLabel: U("stepOfSteps", { n: String(e + 1), total: String(tot9) }),
+              children: Array.from({ length: tot9 }, (t, r) =>
                 (0, O.jsx)(
                   l.default,
                   { style: [$.dot, { backgroundColor: r <= e ? G.accent : G.border }] },
@@ -402,6 +425,18 @@ __d(
                             }),
                           }),
                         }),
+                        (0, O.jsx)(n.default, {
+                          onPress: () => {
+                            (smd9("email"), ne("email"), Le(null), pe("wizard:email_chosen"));
+                          },
+                          accessibilityRole: "button",
+                          hitSlop: 12,
+                          style: { alignItems: "center", marginTop: j.spacing.sm },
+                          children: (0, O.jsx)(o.default, {
+                            style: [j.typography.smallStrong, { color: G.accentText }],
+                            children: U("useEmailInstead"),
+                          }),
+                        }),
                         He
                           ? (0, O.jsxs)(l.default, {
                               style: { marginTop: j.spacing.lg },
@@ -479,6 +514,94 @@ __d(
                                 children: U("lookAroundFirst"),
                               }),
                             }),
+                      ],
+                    }),
+                  "email" === re &&
+                    (0, O.jsxs)(O.Fragment, {
+                      children: [
+                        (0, O.jsx)(ot, {
+                          onPress: () => {
+                            (smd9("phone"), ne("phone"), Le(null));
+                          },
+                        }),
+                        (0, O.jsx)(nt, { ix: 0 }),
+                        (0, O.jsx)(o.default, {
+                          ref: ce,
+                          accessibilityRole: "header",
+                          style: [j.typography.h1, { color: G.text }],
+                          children: U("emailStepTitle"),
+                        }),
+                        (0, O.jsx)(o.default, {
+                          style: [
+                            j.typography.body,
+                            { color: G.textMuted, marginTop: j.spacing.xs, marginBottom: j.spacing.lg },
+                          ],
+                          children: U("emailStepBody"),
+                        }),
+                        (0, O.jsx)(f.Input, {
+                          label: U("email"),
+                          placeholder: "you@example.com",
+                          accessibilityLabel: U("emailStepTitle"),
+                          value: em9,
+                          onChangeText: sem9,
+                          autoCapitalize: "none",
+                          autoCorrect: !1,
+                          autoComplete: "email",
+                          keyboardType: "email-address",
+                          textContentType: "emailAddress",
+                          maxLength: 254,
+                        }),
+                        (0, O.jsx)(f.Input, {
+                          label: U("password"),
+                          placeholder: "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
+                          accessibilityLabel: U("password"),
+                          value: pw9,
+                          onChangeText: spw9,
+                          secureTextEntry: !0,
+                          autoCapitalize: "none",
+                          autoComplete: "new-password",
+                          textContentType: "newPassword",
+                        }),
+                        (0, O.jsx)(o.default, {
+                          style: [
+                            j.typography.caption,
+                            {
+                              // Red only once they have typed something that does not qualify; an
+                              // untouched field is not a failure.
+                              color: pw9.length > 0 && pwIssues9.length > 0 ? G.danger ?? G.accentText : G.textMuted,
+                              marginTop: -j.spacing.xs,
+                              marginBottom: j.spacing.md,
+                            },
+                          ],
+                          children: U("emailPwHint"),
+                        }),
+                        (0, O.jsx)(h.FormError, {
+                          text: (0, w.authErrorText)(Fe, U),
+                          style: { marginTop: j.spacing.sm },
+                        }),
+                        (0, O.jsx)(y.Button, {
+                          title: U("continueBtn"),
+                          size: "lg",
+                          fullWidth: !0,
+                          loading: Ne,
+                          disabled: !emailOk9,
+                          onPress: () => {
+                            (Le(null), pe("wizard:email_ok"), ne("name"));
+                          },
+                          style: { marginTop: j.spacing.lg },
+                        }),
+                        (0, O.jsx)(n.default, {
+                          onPress: () => {
+                            (smd9("phone"), ne("phone"), Le(null));
+                          },
+                          accessibilityRole: "button",
+                          hitSlop: 12,
+                          style: { alignItems: "center", marginTop: j.spacing.lg },
+                          children: (0, O.jsx)(o.default, {
+                            style: [j.typography.small, { color: G.textMuted }],
+                            children: U("usePhoneInstead"),
+                          }),
+                        }),
                       ],
                     }),
                   "otp" === re &&
@@ -608,10 +731,10 @@ __d(
                       children: [
                         (0, O.jsx)(ot, {
                           onPress: () => {
-                            (ne("otp"), Le(null));
+                            (ne(eml9 ? "email" : "otp"), Le(null));
                           },
                         }),
-                        (0, O.jsx)(nt, { ix: 2 }),
+                        (0, O.jsx)(nt, { ix: eml9 ? 1 : 2 }),
                         (0, O.jsx)(o.default, {
                           ref: ce,
                           accessibilityRole: "header",
@@ -670,7 +793,7 @@ __d(
                             (oe(null), ne("name"));
                           },
                         }),
-                        (0, O.jsx)(nt, { ix: 3 }),
+                        (0, O.jsx)(nt, { ix: eml9 ? 2 : 3 }),
                         (0, O.jsx)(o.default, {
                           ref: ce,
                           accessibilityRole: "header",
@@ -760,7 +883,7 @@ __d(
                   "clan" === re &&
                     (0, O.jsxs)(O.Fragment, {
                       children: [
-                        (0, O.jsx)(nt, { ix: 4 }),
+                        (0, O.jsx)(nt, { ix: eml9 ? 3 : 4 }),
                         (0, O.jsx)(o.default, {
                           ref: ce,
                           accessibilityRole: "header",
