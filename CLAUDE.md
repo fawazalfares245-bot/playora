@@ -15,8 +15,16 @@ edited through the module tooling described below.
   9004 = kid UI kit, 9005 = `/kids` specimen screen).
 - `tools/bundle.py` – `split <id...>` extracts modules from index.html into bundle-src; `build` rebuilds.
 - `tools/flows-admin.mjs`, `tools/flows-organizer.mjs`, `tools/flows-org1.mjs`, `tools/flows-search.mjs`,
-  `tools/flows-xcut.mjs`, `tools/flows-kids.mjs`, `tools/flows-consumer.mjs`, `tools/rules.mjs` – the
-  regression suites. Run all eight after any bundle change.
+  `tools/flows-xcut.mjs`, `tools/flows-kids.mjs`, `tools/flows-consumer.mjs`, `tools/flows-lifecycle.mjs`,
+  `tools/rules.mjs` – the regression suites. Run all nine after any bundle change.
+  `flows-lifecycle.mjs` is the odd one out: instead of testing a screen it drives one world through
+  the whole booking sequence (reserve a court, create a paid match, join, waitlist, pay, leave,
+  refund, promote, check in, mark attendance, submit a score), checking the money at each step. Most
+  of the audit's defects were correct in isolation and only wrong in sequence, which is what it is
+  for. `bookingInvariants`/`assertBookingInvariants` in `tools/smoke.mjs` assert the four properties
+  every booking transition must preserve - one live booking per player per match, no attendance on a
+  cancelled or rejected row, no reserved row without a future hold, no match seated past capacity -
+  and any suite can run them over the world it has just built.
 - `tools/smoke.mjs` – headless Playwright harness: `node tools/smoke.mjs /admin/organizers --role admin`
   boots the app with a seeded session and prints visible text and console/page errors. Import `openApp`
   from it to script flows.
