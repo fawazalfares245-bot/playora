@@ -306,6 +306,12 @@ ok('a custom split over the total is refused', out.splitOver === 'E_SPLIT_EXCEED
 ok('a custom split that matches the total is allowed', typeof out.splitExact === 'object' && Math.abs(sum(out.splitExact) - 12) < 5e-4, JSON.stringify(out.splitExact));
 ok('an under-split still tops the organizer up to the total', typeof out.splitUnder === 'object' && Math.abs(sum(out.splitUnder) - 12) < 5e-4, JSON.stringify(out.splitUnder));
 ok('split_equal over three payers still sums to the total', typeof out.splitEqual === 'object' && Math.abs(sum(out.splitEqual) - 10) < 5e-4, JSON.stringify(out.splitEqual));
+// --- dead code that encoded a different cancellation policy ---
+{
+  const src = fs.readFileSync(new URL('../bundle-src/631.js', import.meta.url), 'utf8');
+  ok('legacyCancelMatchBody is gone', !/legacyCancelMatchBody/.test(src), 'still defined in 631');
+}
+
 // --- the conduct gate has a code, a mapping and both locales ---
 {
   const map = fs.readFileSync(new URL('../bundle-src/674.js', import.meta.url), 'utf8');

@@ -565,7 +565,7 @@ e.fetchOrganizerMatches = (o, c) => {
     e.sendPaymentReminders = (o, c) => t.store.mockSendPaymentReminders(o, c);
     e.paymentMethods = () => t.store.mockGetPaymentMethods();
     e.fetchBookingCheckins = (o, c) => t.store.mockGetBookingCheckins(o, c);
-    e.scanCheckin = (o, c, s, n) => t.store.mockScanCheckin(o, c, s, n);
+    e.scanCheckin = (o, c, s, n, l) => t.store.mockScanCheckin(o, c, s, n, l);
     e.fetchVenueRevenue = (o, c) => t.store.mockGetVenueRevenue(o, c);
     e.createTeam = (o, c) => t.store.mockCreateTeam(o, c);
     e.fetchTeams = (o, c) => t.store.mockGetTeams(o, c);

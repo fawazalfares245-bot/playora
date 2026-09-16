@@ -1312,10 +1312,10 @@ __d(
           ),
           w =
             0 === j ? s("today") : 1 === j ? s("tomorrow") : s("ticketInDays", { n: (0, P.formatNumber)(j) }),
-          T = `PLY\xb7${e.id
-            .replace(/[^a-z0-9]/gi, "")
-            .slice(-4)
-            .toUpperCase()}\xb7KWT`;
+          // Was PLY-<last four of the game id>-KWT: the same string for every player in the match,
+          // derivable from the URL, and never checked against anything. This is the booking's own
+          // check-in token, which the scanner matches.
+          T = e.user_checkin_token ?? "";
         return (0, E.jsxs)(c.default, {
           style: [K.card, { marginTop: _.spacing.lg }],
           children: [

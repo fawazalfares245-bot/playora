@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "e0c2f00b41"
+  buildId: "5ab26814b4"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -2830,6 +2830,13 @@ __d(
         Zt.get(e) === a && Zt.delete(e);
       }
     }
+    // Self-contained on purpose: both places that mint one sit in scopes with their own local `c`,
+    // and reaching for the shared randomCode there is a temporal dead zone.
+    const mkCheckinToken9 = () =>
+      `PLY-${Math.random().toString(36).slice(2, 8).toUpperCase()}${Math.random()
+        .toString(36)
+        .slice(2, 6)
+        .toUpperCase()}`;
     const ea = () =>
         "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (e) =>
           (+e ^ (Math.floor(256 * Math.random()) & (15 >> (+e / 4)))).toString(16),
@@ -4239,10 +4246,20 @@ __d(
                 (e.id ?? "").localeCompare(a.id ?? "");
             n > 0 && seen9.set(t, e);
           }
-          seen9.size !== Qt.bookings.length &&
-            ((Qt.bookings = Qt.bookings.filter((e) => seen9.get(`${e.game_id}|${e.user_id}`) === e)),
-            await Za(W, Qt.bookings),
-            await (0, w.logAudit)("booking.duplicates_collapsed", null, {}));
+          const collapsed9 = seen9.size !== Qt.bookings.length;
+          // No audit row here: this block runs inside hydrate, where `w` is shadowed by a local, and
+          // a migration that fires once per device is not an event anyone needs in the log anyway.
+          collapsed9 &&
+            (Qt.bookings = Qt.bookings.filter((e) => seen9.get(`${e.game_id}|${e.user_id}`) === e));
+          // Rows written before the check-in token existed. It has to be persisted, not minted on
+          // read, or the re-read the match lock performs would drop it.
+          let minted9 = !1;
+          for (const e of Qt.bookings)
+            e.checkin_token ||
+              "cancelled" === e.status ||
+              "rejected" === e.status ||
+              ((e.checkin_token = mkCheckinToken9()), (minted9 = !0));
+          (collapsed9 || minted9) && (await Za(W, Qt.bookings));
         }
         ((Qt.hydrated = !0), $a());
       },
@@ -4818,6 +4835,17 @@ __d(
         const t = hi(e);
         return t ? Xt(e, () => Di(t)) : Promise.resolve(!1);
       },
+      // The viewer's own check-in token. Minted where the booking row is written, so that it is
+      // persisted - a token that existed only in memory would not survive the re-read the match lock
+      // performs, and the scanner would never find it.
+      checkinTokenFor9 = (e, t) => {
+        if (!t) return null;
+        const a = Qt.bookings.find(
+          (a) =>
+            a.game_id === e && a.user_id === t && "cancelled" !== a.status && "rejected" !== a.status,
+        );
+        return a?.checkin_token ?? null;
+      },
       Ri = (e, t) => {
         if (!t) return null;
         const a = Qt.bookings.find(
@@ -4846,6 +4874,11 @@ __d(
           // above it already renders one off the payment's own deadline.
           // So /game/[id] can mark a result that an admin has corrected.
           score_corrected_at: e.score_corrected_at ?? null,
+          // The matchday ticket used to print PLY-<last four of the game id>-KWT, which is identical
+          // for every player in the match and for anyone who has ever seen the URL, and was never
+          // sent anywhere - the scan authenticated on the venue's own token and a player picked off a
+          // list. This is a real per-booking credential, so the ticket proves something.
+          user_checkin_token: checkinTokenFor9(e.id, a),
           user_reserved_until:
             Qt.bookings.find(
               (t) =>
@@ -5297,10 +5330,17 @@ __d(
               .sort(xi)
               .pop();
             const seat9 = (a9) => {
-              if (!dead9) return (Qt.bookings.push(Object.assign({}, l, { status: a9 })), dead9);
+              if (!dead9)
+                return (
+                  Qt.bookings.push(
+                    Object.assign({}, l, { status: a9, checkin_token: mkCheckinToken9() }),
+                  ),
+                  dead9
+                );
               return (
                 Object.assign(dead9, {
                   status: a9,
+                  checkin_token: dead9.checkin_token ?? mkCheckinToken9(),
                   display_name: o,
                   attendance: null,
                   reserved_until: null,
@@ -6121,51 +6161,6 @@ __d(
         if (new Date(n.starts_at).getTime() < Date.now()) throw new Error("E_THIS_MATCH_HAS_ALREADY_STARTED");
         return cancelGameLocked(e, t, r);
       });
-    };
-    const legacyCancelMatchBody = async (e, t, a) => {
-      (await ei(),
-        await on(t),
-        await Xt(e, async () => {
-          const i = Qt.games.findIndex((t) => t.id === e);
-          if (i < 0) throw new Error("E_ONLY_MATCHES_YOU_CREATED_CAN_BE");
-          const n = Qt.games[i];
-          if ((zi(n, t), "cancelled" === n.status)) return;
-          if (new Date(n.ends_at).getTime() < Date.now()) throw new Error("E_THIS_MATCH_HAS_ALREADY_STARTED");
-          const r = (0, v.sanitizeText)(a || "", 200) || "No reason provided";
-          (await Bi(n, (t) => ({
-            id: ea(),
-            user_id: t,
-            type: "match_cancelled",
-            game_id: e,
-            venue_name: Ai(n.venue_id),
-            sport: n.sport,
-            reason: r,
-            read: !1,
-            created_at: new Date().toISOString(),
-          })),
-            (Qt.games[i] = Object.assign({}, n, {
-              status: "cancelled",
-              cancelled_at: new Date().toISOString(),
-              cancellation_reason: r,
-            })),
-            await Za(te, Qt.games));
-          const o = [];
-          for (const t of Qt.bookings)
-            t.game_id === e &&
-              "cancelled" !== t.status &&
-              "rejected" !== t.status &&
-              ((t.status = "cancelled"),
-              (t.reserved_until = null),
-              (t.updated_at = new Date().toISOString()),
-              o.push(t.user_id));
-          await Za(W, Qt.bookings);
-          for (const e of o) await Br(n, e, !0);
-          if (n.court_booking_id)
-            try {
-              await Mr(t, n.court_booking_id, `Match cancelled: ${r}`);
-            } catch {}
-          await (0, w.logAudit)("match.cancelled", (0, w.actorRef)(t), { game: e.slice(-6) });
-        }));
     };
     r.mockSetAttendance = async (e, t, a, i) => {
       (await ei(), await on(t));
@@ -10984,7 +10979,7 @@ __d(
       }
       return Qt.checkins.filter((e) => e.booking_id === t);
     };
-    r.mockScanCheckin = async (e, t, a, i) => {
+    r.mockScanCheckin = async (e, t, a, i, c9) => {
       await ei();
       const n = Qt.courtBookings.find((e) => e.qr_token === t);
       if (!n) throw new Error("E_INVALID_QR_CODE");
@@ -11008,26 +11003,37 @@ __d(
         // newest live row, and refuse rather than silently skip when there is none.
         let b9 = null;
         if (g9) {
-          b9 = Qt.bookings
-            .filter(
-              (e) =>
-                e.game_id === n.game_id &&
-                e.user_id === a &&
-                "cancelled" !== e.status &&
-                "rejected" !== e.status,
-            )
-            .sort(xi)
-            .pop();
+          // A check-in token, when the player presents one, names the booking outright - the caller
+          // does not get to say who they are checking in. Without one this stays a roster tap.
+          b9 = c9
+            ? Qt.bookings.find(
+                (e) =>
+                  e.checkin_token === c9 &&
+                  e.game_id === n.game_id &&
+                  "cancelled" !== e.status &&
+                  "rejected" !== e.status,
+              )
+            : Qt.bookings
+                .filter(
+                  (e) =>
+                    e.game_id === n.game_id &&
+                    e.user_id === a &&
+                    "cancelled" !== e.status &&
+                    "rejected" !== e.status,
+                )
+                .sort(xi)
+                .pop();
           if (!b9) throw new Error("E_PLAYER_NOT_IN_THIS_MATCH");
         }
-        let r = Qt.checkins.find((e) => e.booking_id === n.id && e.player_id === a);
+        const p9 = b9 ? b9.user_id : a;
+        let r = Qt.checkins.find((e) => e.booking_id === n.id && e.player_id === p9);
         (r ||
           ((r = {
             id: ea(),
             booking_id: n.id,
             game_id: n.game_id,
-            player_id: a,
-            player_name: or(a),
+            player_id: p9,
+            player_name: or(p9),
             state: "pending",
             scanned_by: null,
             scanned_at: null,
@@ -20051,6 +20057,11 @@ __d(
 
 
 
+
+
+
+
+
 __d(function(g,_r,_i,_a,m,_e,d){Object.defineProperty(_e,"__esModule",{value:!0}),_e.constantTimeEqual=a,_e.derivePasswordHash=n,_e.generateSalt=async function(e=16){const n=await t.getRandomBytesAsync(e);return Array.from(n).map(t=>t.toString(16).padStart(2,'0')).join('')},_e.hashIdentifier=async function(e){const n=e.replace(/\s+/g,'').toLowerCase();return t.digestStringAsync(t.CryptoDigestAlgorithm.SHA256,`${r}:${n}`)},_e.hashPassword=async function(t,e){if(o)return`scrypt$${i}$${s}$${c}$${await o(t,e,i,s,c)}`;return n(t,e)},_e.randomCode=function(e=6,n="ABCDEFGHJKMNPQRSTUVWXYZ23456789"){const r=t.getRandomBytes(e);let a='';for(let t=0;t<e;t++)a+=n[r[t]%n.length];return a},_e.randomSixDigit=function(){const e=t.getRandomBytes(4),n=((e[0]<<24|e[1]<<16|e[2]<<8|e[3])>>>0)%1e6;return String(n).padStart(6,'0')},_e.randomToken=async function(e=32){const n=await t.getRandomBytesAsync(e);return Array.from(n).map(t=>t.toString(16).padStart(2,'0')).join('')},_e.serverGradeHashing=void 0,_e.verifyPassword=async function(t,e,r){if(r.startsWith('scrypt$')){const[,n,i,s,c]=r.split('$');return!(!o||!c)&&a(await o(t,e,Number(n),Number(i),Number(s)),c)}return a(await n(t,e),r)};var t=(function(t,e){if("function"==typeof WeakMap)var n=new WeakMap,r=new WeakMap;return(function(t,e){if(!e&&t&&t.__esModule)return t;var a,o,i={__proto__:null,default:t};if(null===t||"object"!=typeof t&&"function"!=typeof t)return i;if(a=e?r:n){if(a.has(t))return a.get(t);a.set(t,i)}for(const e in t)"default"!==e&&{}.hasOwnProperty.call(t,e)&&((o=(a=Object.defineProperty)&&Object.getOwnPropertyDescriptor(t,e))&&(o.get||o.set)?a(i,e,o):i[e]=t[e]);return i})(t,e)})(_r(d[0]));const e=12e3;async function n(n,r){let a=`${r}:${n}`;for(let n=0;n<e;n++)a=await t.digestStringAsync(t.CryptoDigestAlgorithm.SHA256,a);return a}const r='playora.v1.identifier.pepper';function a(t,e){if(t.length!==e.length)return!1;let n=0;for(let r=0;r<t.length;r++)n|=t.charCodeAt(r)^e.charCodeAt(r);return 0===n}const o=t.scryptHex,i=(_e.serverGradeHashing=!!o,16384),s=8,c=1},632,[633]);
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0});var n={getRandomBytes:!0,getRandomBytesAsync:!0,digestStringAsync:!0,getRandomValues:!0,randomUUID:!0,digest:!0};e.digest=function(t,n){return new Promise((o,s)=>{try{if('function'==typeof y.default.digestAsync)o(y.default.digestAsync(t,n));else{const s=new Uint8Array(h[t]);y.default.digest(t,s,n),o(s.buffer)}}catch(t){s(t)}})},e.digestStringAsync=async function(t,n,o={encoding:c.CryptoEncoding.HEX}){if(!y.default.digestStringAsync)throw new s.UnavailabilityError('expo-crypto','digestStringAsync');return f(t),p(n),A(o.encoding),await y.default.digestStringAsync(t,n,o)},e.getRandomBytes=function(t){u(t,'getRandomBytes');const n=Math.floor(t);if(y.default.getRandomValues){const t=new Uint8Array(n);return y.default.getRandomValues(t),t}if(y.default.getRandomBase64String){const t=y.default.getRandomBase64String(n);return(0,o.toByteArray)(t)}throw new s.UnavailabilityError('expo-crypto','getRandomBytes')},e.getRandomBytesAsync=async function(t){u(t,'getRandomBytesAsync');const n=Math.floor(t);if(y.default.getRandomValues){const t=new Uint8Array(n);return y.default.getRandomValues(t),t}if(y.default.getRandomBase64StringAsync){const t=await y.default.getRandomBase64StringAsync(n);return(0,o.toByteArray)(t)}throw new s.UnavailabilityError('expo-crypto','getRandomBytesAsync')},e.getRandomValues=function(t){return y.default.getRandomValues(t),t},e.randomUUID=function(){return y.default.randomUUID()};var o=r(d[1]),s=r(d[2]),c=r(d[3]);Object.keys(c).forEach(function(t){"default"!==t&&"__esModule"!==t&&(Object.prototype.hasOwnProperty.call(n,t)||t in e&&e[t]===c[t]||Object.defineProperty(e,t,{enumerable:!0,get:function(){return c[t]}}))});var y=t(r(d[4]));class l extends TypeError{code='ERR_CRYPTO';constructor(t){super(`expo-crypto: ${t}`)}}function u(t,n){if('number'!=typeof t||isNaN(t)||Math.floor(t)<0||Math.floor(t)>1024)throw new TypeError(`expo-crypto: ${n}(${t}) expected a valid number from range 0...1024`)}function f(t){if(!Object.values(c.CryptoDigestAlgorithm).includes(t))throw new l(`Invalid algorithm provided. Expected one of: CryptoDigestAlgorithm.${Object.keys(c.CryptoDigestAlgorithm).join(', AlgCryptoDigestAlgorithmorithm.')}`)}function p(t){if('string'!=typeof t)throw new l("Invalid data provided. Expected a string.")}function A(t){if(!Object.values(c.CryptoEncoding).includes(t))throw new l(`Invalid encoding provided. Expected one of: CryptoEncoding.${Object.keys(c.CryptoEncoding).join(', CryptoEncoding.')}`)}const h={[c.CryptoDigestAlgorithm.SHA1]:20,[c.CryptoDigestAlgorithm.SHA256]:32,[c.CryptoDigestAlgorithm.SHA384]:48,[c.CryptoDigestAlgorithm.SHA512]:64,[c.CryptoDigestAlgorithm.MD2]:16,[c.CryptoDigestAlgorithm.MD4]:16,[c.CryptoDigestAlgorithm.MD5]:16}},633,[33,634,504,635,636]);
 __d(function(g,r,_i,a,m,e,d){'use strict';e.byteLength=function(t){var n=h(t),o=n[0],u=n[1];return 3*(o+u)/4-u},e.toByteArray=function(t){var u,c,f=h(t),A=f[0],C=f[1],y=new o(i(t,A,C)),s=0,v=C>0?A-4:A;for(c=0;c<v;c+=4)u=n[t.charCodeAt(c)]<<18|n[t.charCodeAt(c+1)]<<12|n[t.charCodeAt(c+2)]<<6|n[t.charCodeAt(c+3)],y[s++]=u>>16&255,y[s++]=u>>8&255,y[s++]=255&u;2===C&&(u=n[t.charCodeAt(c)]<<2|n[t.charCodeAt(c+1)]>>4,y[s++]=255&u);1===C&&(u=n[t.charCodeAt(c)]<<10|n[t.charCodeAt(c+1)]<<4|n[t.charCodeAt(c+2)]>>2,y[s++]=u>>8&255,y[s++]=255&u);return y},e.fromByteArray=function(n){for(var o,u=n.length,c=u%3,h=[],i=16383,f=0,C=u-c;f<C;f+=i)h.push(A(n,f,f+i>C?C:f+i));1===c?(o=n[u-1],h.push(t[o>>2]+t[o<<4&63]+'==')):2===c&&(o=(n[u-2]<<8)+n[u-1],h.push(t[o>>10]+t[o>>4&63]+t[o<<2&63]+'='));return h.join('')};for(var t=[],n=[],o='undefined'!=typeof Uint8Array?Uint8Array:Array,u='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',c=0;c<64;++c)t[c]=u[c],n[u.charCodeAt(c)]=c;function h(t){var n=t.length;if(n%4>0)throw new Error('Invalid string. Length must be a multiple of 4');var o=t.indexOf('=');return-1===o&&(o=n),[o,o===n?0:4-o%4]}function i(t,n,o){return 3*(n+o)/4-o}function f(n){return t[n>>18&63]+t[n>>12&63]+t[n>>6&63]+t[63&n]}function A(t,n,o){for(var u,c=[],h=n;h<o;h+=3)u=(t[h]<<16&16711680)+(t[h+1]<<8&65280)+(255&t[h+2]),c.push(f(u));return c.join('')}n['-'.charCodeAt(0)]=62,n['_'.charCodeAt(0)]=63},634,[]);
@@ -21658,7 +21669,7 @@ e.fetchOrganizerMatches = (o, c) => {
     e.sendPaymentReminders = (o, c) => t.store.mockSendPaymentReminders(o, c);
     e.paymentMethods = () => t.store.mockGetPaymentMethods();
     e.fetchBookingCheckins = (o, c) => t.store.mockGetBookingCheckins(o, c);
-    e.scanCheckin = (o, c, s, n) => t.store.mockScanCheckin(o, c, s, n);
+    e.scanCheckin = (o, c, s, n, l) => t.store.mockScanCheckin(o, c, s, n, l);
     e.fetchVenueRevenue = (o, c) => t.store.mockGetVenueRevenue(o, c);
     e.createTeam = (o, c) => t.store.mockCreateTeam(o, c);
     e.fetchTeams = (o, c) => t.store.mockGetTeams(o, c);
@@ -21887,6 +21898,7 @@ e.fetchOrganizerMatches = (o, c) => {
   671,
   [672, 631],
 );
+
 
 
 
@@ -46258,10 +46270,10 @@ __d(
           ),
           w =
             0 === j ? s("today") : 1 === j ? s("tomorrow") : s("ticketInDays", { n: (0, P.formatNumber)(j) }),
-          T = `PLY\xb7${e.id
-            .replace(/[^a-z0-9]/gi, "")
-            .slice(-4)
-            .toUpperCase()}\xb7KWT`;
+          // Was PLY-<last four of the game id>-KWT: the same string for every player in the match,
+          // derivable from the URL, and never checked against anything. This is the booking's own
+          // check-in token, which the scanner matches.
+          T = e.user_checkin_token ?? "";
         return (0, E.jsxs)(c.default, {
           style: [K.card, { marginTop: _.spacing.lg }],
           children: [
@@ -46502,6 +46514,7 @@ __d(
     671, 2380, 2381, 668, 2382, 1311, 675, 1171, 2383, 1676, 2385, 2386, 1679, 2387, 2389, 623, 1803, 674, 13,
   ],
 );
+
 
 
 

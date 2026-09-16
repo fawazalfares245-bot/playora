@@ -296,6 +296,22 @@ await run('a check-in scan respects the attendance window and the live booking',
     // A player with no live booking at all must be refused, not silently skipped.
     try { await api.scanCheckin(org, seed.token, stranger, 'attended'); res.stranger = 'NO_THROW'; }
     catch (e) { res.stranger = e.code || e.message; }
+
+    // The ticket is now the booking's own credential rather than a string derived from the game id.
+    const mine = await api.fetchGame(seed.gameId, player);
+    res.token = mine.user_checkin_token;
+    const other = await api.fetchGame(seed.gameId, org);
+    res.otherToken = other.user_checkin_token;
+    // presenting it identifies the booking without the scanner naming anyone
+    try {
+      await api.scanCheckin(org, seed.token, '00000000-0000-4000-8000-000000000000', 'attended', res.token);
+      res.byToken = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+        .find((b) => b.id === seed.liveId).attendance;
+    } catch (e) { res.byToken = 'ERR:' + (e.code || e.message); }
+    try {
+      await api.scanCheckin(org, seed.token, player, 'attended', 'PLY-NOTATOKEN0');
+      res.foreignToken = 'NO_THROW';
+    } catch (e) { res.foreignToken = e.code || e.message; }
     return res;
   }, [IDS.organizer, IDS.user, IDS.analyst, seed]);
 
@@ -303,6 +319,9 @@ await run('a check-in scan respects the attendance window and the live booking',
   ok('the live booking carries the attendance', out.live === 'attended', String(out.live));
   ok('the cancelled row is left alone', out.cancelled == null, String(out.cancelled));
   ok('scanning a player with no live booking is refused', out.stranger === 'E_PLAYER_NOT_IN_THIS_MATCH', String(out.stranger));
+  ok('the ticket is a real per-booking token', /^PLY-/.test(String(out.token)) && out.token !== out.otherToken, `${out.token} vs ${out.otherToken}`);
+  ok('a token names its own booking', out.byToken === 'attended', String(out.byToken));
+  ok('a token from another match is refused', out.foreignToken === 'E_PLAYER_NOT_IN_THIS_MATCH', String(out.foreignToken));
   ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
   await browser.close();
 });

@@ -737,6 +737,13 @@ __d(
         Zt.get(e) === a && Zt.delete(e);
       }
     }
+    // Self-contained on purpose: both places that mint one sit in scopes with their own local `c`,
+    // and reaching for the shared randomCode there is a temporal dead zone.
+    const mkCheckinToken9 = () =>
+      `PLY-${Math.random().toString(36).slice(2, 8).toUpperCase()}${Math.random()
+        .toString(36)
+        .slice(2, 6)
+        .toUpperCase()}`;
     const ea = () =>
         "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (e) =>
           (+e ^ (Math.floor(256 * Math.random()) & (15 >> (+e / 4)))).toString(16),
@@ -2146,10 +2153,20 @@ __d(
                 (e.id ?? "").localeCompare(a.id ?? "");
             n > 0 && seen9.set(t, e);
           }
-          seen9.size !== Qt.bookings.length &&
-            ((Qt.bookings = Qt.bookings.filter((e) => seen9.get(`${e.game_id}|${e.user_id}`) === e)),
-            await Za(W, Qt.bookings),
-            await (0, w.logAudit)("booking.duplicates_collapsed", null, {}));
+          const collapsed9 = seen9.size !== Qt.bookings.length;
+          // No audit row here: this block runs inside hydrate, where `w` is shadowed by a local, and
+          // a migration that fires once per device is not an event anyone needs in the log anyway.
+          collapsed9 &&
+            (Qt.bookings = Qt.bookings.filter((e) => seen9.get(`${e.game_id}|${e.user_id}`) === e));
+          // Rows written before the check-in token existed. It has to be persisted, not minted on
+          // read, or the re-read the match lock performs would drop it.
+          let minted9 = !1;
+          for (const e of Qt.bookings)
+            e.checkin_token ||
+              "cancelled" === e.status ||
+              "rejected" === e.status ||
+              ((e.checkin_token = mkCheckinToken9()), (minted9 = !0));
+          (collapsed9 || minted9) && (await Za(W, Qt.bookings));
         }
         ((Qt.hydrated = !0), $a());
       },
@@ -2725,6 +2742,17 @@ __d(
         const t = hi(e);
         return t ? Xt(e, () => Di(t)) : Promise.resolve(!1);
       },
+      // The viewer's own check-in token. Minted where the booking row is written, so that it is
+      // persisted - a token that existed only in memory would not survive the re-read the match lock
+      // performs, and the scanner would never find it.
+      checkinTokenFor9 = (e, t) => {
+        if (!t) return null;
+        const a = Qt.bookings.find(
+          (a) =>
+            a.game_id === e && a.user_id === t && "cancelled" !== a.status && "rejected" !== a.status,
+        );
+        return a?.checkin_token ?? null;
+      },
       Ri = (e, t) => {
         if (!t) return null;
         const a = Qt.bookings.find(
@@ -2753,6 +2781,11 @@ __d(
           // above it already renders one off the payment's own deadline.
           // So /game/[id] can mark a result that an admin has corrected.
           score_corrected_at: e.score_corrected_at ?? null,
+          // The matchday ticket used to print PLY-<last four of the game id>-KWT, which is identical
+          // for every player in the match and for anyone who has ever seen the URL, and was never
+          // sent anywhere - the scan authenticated on the venue's own token and a player picked off a
+          // list. This is a real per-booking credential, so the ticket proves something.
+          user_checkin_token: checkinTokenFor9(e.id, a),
           user_reserved_until:
             Qt.bookings.find(
               (t) =>
@@ -3204,10 +3237,17 @@ __d(
               .sort(xi)
               .pop();
             const seat9 = (a9) => {
-              if (!dead9) return (Qt.bookings.push(Object.assign({}, l, { status: a9 })), dead9);
+              if (!dead9)
+                return (
+                  Qt.bookings.push(
+                    Object.assign({}, l, { status: a9, checkin_token: mkCheckinToken9() }),
+                  ),
+                  dead9
+                );
               return (
                 Object.assign(dead9, {
                   status: a9,
+                  checkin_token: dead9.checkin_token ?? mkCheckinToken9(),
                   display_name: o,
                   attendance: null,
                   reserved_until: null,
@@ -4028,51 +4068,6 @@ __d(
         if (new Date(n.starts_at).getTime() < Date.now()) throw new Error("E_THIS_MATCH_HAS_ALREADY_STARTED");
         return cancelGameLocked(e, t, r);
       });
-    };
-    const legacyCancelMatchBody = async (e, t, a) => {
-      (await ei(),
-        await on(t),
-        await Xt(e, async () => {
-          const i = Qt.games.findIndex((t) => t.id === e);
-          if (i < 0) throw new Error("E_ONLY_MATCHES_YOU_CREATED_CAN_BE");
-          const n = Qt.games[i];
-          if ((zi(n, t), "cancelled" === n.status)) return;
-          if (new Date(n.ends_at).getTime() < Date.now()) throw new Error("E_THIS_MATCH_HAS_ALREADY_STARTED");
-          const r = (0, v.sanitizeText)(a || "", 200) || "No reason provided";
-          (await Bi(n, (t) => ({
-            id: ea(),
-            user_id: t,
-            type: "match_cancelled",
-            game_id: e,
-            venue_name: Ai(n.venue_id),
-            sport: n.sport,
-            reason: r,
-            read: !1,
-            created_at: new Date().toISOString(),
-          })),
-            (Qt.games[i] = Object.assign({}, n, {
-              status: "cancelled",
-              cancelled_at: new Date().toISOString(),
-              cancellation_reason: r,
-            })),
-            await Za(te, Qt.games));
-          const o = [];
-          for (const t of Qt.bookings)
-            t.game_id === e &&
-              "cancelled" !== t.status &&
-              "rejected" !== t.status &&
-              ((t.status = "cancelled"),
-              (t.reserved_until = null),
-              (t.updated_at = new Date().toISOString()),
-              o.push(t.user_id));
-          await Za(W, Qt.bookings);
-          for (const e of o) await Br(n, e, !0);
-          if (n.court_booking_id)
-            try {
-              await Mr(t, n.court_booking_id, `Match cancelled: ${r}`);
-            } catch {}
-          await (0, w.logAudit)("match.cancelled", (0, w.actorRef)(t), { game: e.slice(-6) });
-        }));
     };
     r.mockSetAttendance = async (e, t, a, i) => {
       (await ei(), await on(t));
@@ -8891,7 +8886,7 @@ __d(
       }
       return Qt.checkins.filter((e) => e.booking_id === t);
     };
-    r.mockScanCheckin = async (e, t, a, i) => {
+    r.mockScanCheckin = async (e, t, a, i, c9) => {
       await ei();
       const n = Qt.courtBookings.find((e) => e.qr_token === t);
       if (!n) throw new Error("E_INVALID_QR_CODE");
@@ -8915,26 +8910,37 @@ __d(
         // newest live row, and refuse rather than silently skip when there is none.
         let b9 = null;
         if (g9) {
-          b9 = Qt.bookings
-            .filter(
-              (e) =>
-                e.game_id === n.game_id &&
-                e.user_id === a &&
-                "cancelled" !== e.status &&
-                "rejected" !== e.status,
-            )
-            .sort(xi)
-            .pop();
+          // A check-in token, when the player presents one, names the booking outright - the caller
+          // does not get to say who they are checking in. Without one this stays a roster tap.
+          b9 = c9
+            ? Qt.bookings.find(
+                (e) =>
+                  e.checkin_token === c9 &&
+                  e.game_id === n.game_id &&
+                  "cancelled" !== e.status &&
+                  "rejected" !== e.status,
+              )
+            : Qt.bookings
+                .filter(
+                  (e) =>
+                    e.game_id === n.game_id &&
+                    e.user_id === a &&
+                    "cancelled" !== e.status &&
+                    "rejected" !== e.status,
+                )
+                .sort(xi)
+                .pop();
           if (!b9) throw new Error("E_PLAYER_NOT_IN_THIS_MATCH");
         }
-        let r = Qt.checkins.find((e) => e.booking_id === n.id && e.player_id === a);
+        const p9 = b9 ? b9.user_id : a;
+        let r = Qt.checkins.find((e) => e.booking_id === n.id && e.player_id === p9);
         (r ||
           ((r = {
             id: ea(),
             booking_id: n.id,
             game_id: n.game_id,
-            player_id: a,
-            player_name: or(a),
+            player_id: p9,
+            player_name: or(p9),
             state: "pending",
             scanned_by: null,
             scanned_at: null,
