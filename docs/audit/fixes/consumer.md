@@ -25,6 +25,27 @@ the fix; run `node tools/rules.mjs` and `node tools/flows-consumer.mjs`.
   cleared. `tools/smoke.mjs` was seeding exactly such a session, which is part of why this was not
   caught; the harness now seeds a realistic one.
 
+Second pass (this branch) — the remaining confirmed findings:
+
+- F-CSEC-5: Fixed — `mockSearchPlayers` only filtered `private`, so the listing returned exactly the
+  attributes `mockGetPlayerProfile` withholds from a non-follower. The two settings are answered
+  according to what each promises: `connections` drops the row entirely, `followers` reduces it
+  (`skill_level: "all"`, `sports: []`, `area: null`, `limited: true`). A gated row is also dropped
+  from a filtered search, so an attribute filter cannot be used to probe what the row hides.
+- F-CSEC-7: Partially fixed — `mockUpsertReview` now requires the venue to exist
+  (`E_VENUE_NOT_FOUND`) and the author to have actually played there: a match at that venue they
+  participated in, or a court they booked. New code `E_ONLY_PLAYERS_WHO_HAVE_PLAYED_HERE`, mapped in
+  674 and in both locales. The other half — that the author is taken from the payload rather than a
+  session — is F-XC-1: there is no server, so the caller id is the credential everywhere in 631.
+- F-CQUAL-7: Fixed — `mockSignIn` throws `E_INVALID_EMAIL_OR_PASSWORD`, mapped in 674 with
+  `seInvalidEmailOrPassword` in both locales, instead of a hardcoded English sentence.
+- F-CSEC-10: Fixed — `signIn`, `signUp` and `adoptSession` all clear the persisted guest record when
+  the adopted session is not itself a guest. Checked structurally in `tools/rules.mjs`: the three
+  call sites live on the AuthProvider's context value, which a page evaluate cannot reach without
+  rendering through React, so the check is that none of them is missing the helper.
+- F-CSEC-11: Fixed — `auth.otp_requested` records the canonical phone, and `auth.otp_verified` moved
+  below the account lookup so it names the existing account; the creation path logs its own new id.
+
 Not fixed in this pass — scheduled, not urgent:
 
 - F-CSEC-3: password reset routes the recovery code through the SMS provider addressed to an email

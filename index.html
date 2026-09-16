@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "f2bd8bb988"
+  buildId: "4d1f71cd94"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -1990,6 +1990,15 @@ __d(
     // clock was dead code and the only reconciliation that ever ran was the incidental one on the
     // payments screens. Run it on session boot and whenever the tab comes back to the foreground,
     // throttled so switching tabs is not a full sweep, and never blocking or failing a render.
+    // F-CSEC-10: only signOut cleared the guest record, so playora.guest_session outlived the guest
+    // phase. When the real 30-day session lapsed, loadSession returned null and the stale guest
+    // identity was restored in its place - silently, with the user's own account replaced by a
+    // shared one and no signal that anything had changed. Every path that adopts a real session
+    // clears it, and a guest session is left alone so entering guest mode still works.
+    const G9 = async (s9) => {
+      const id9 = s9?.user?.id ?? "";
+      if (id9 && !String(id9).startsWith("guest:")) await (0, h.clearGuestSession)();
+    };
     const M9 = 3e5;
     let N9 = 0;
     const O9 = async (t) => {
@@ -2053,13 +2062,13 @@ __d(
             const o = (await (0, n.remoteAuthAvailable)())
               ? await (0, n.remoteSignIn)(t, u)
               : await (0, s.mockSignIn)(t, u);
-            w(o);
+            (await G9(o), w(o));
           },
           signUp: async (t, u, o, l = "male") => {
             const c = (await (0, n.remoteAuthAvailable)())
               ? await (0, n.remoteSignUp)(t, u, o, l)
               : await (0, s.mockSignUp)(t, u, o, l);
-            w(c);
+            (await G9(c), w(c));
           },
           signOut: async () => {
             (await (0, h.clearGuestSession)(),
@@ -2071,7 +2080,9 @@ __d(
           refreshProfile: async () => {
             v?.user && P(await (0, u.fetchProfile)(v.user.id));
           },
-          adoptSession: (t) => w(t),
+          adoptSession: async (t) => {
+            (await G9(t), w(t));
+          },
           enterGuest: (t) => {
             (0, o.setThemeAudience)(t);
             const s = { user: { id: `guest:${t}`, email: "guest@playora.app" }, token: "guest" };
@@ -2091,6 +2102,7 @@ __d(
   630,
   [15, 631, 671, 913, 623, 673, 914, 915, 13],
 );
+
 __d(
   function (e, t, a, i, n, r, o) {
     var s = t(o[0]);
@@ -2924,7 +2936,9 @@ __d(
         i = (await _a.get(t))?.attempts ?? 0;
       if (
         (await _a.set(t, { code: a, expires: Date.now() + da, attempts: i }),
-        await (0, w.logAudit)("auth.otp_requested", null),
+        // F-CSEC-11: both phone-auth events recorded a null actor, so the primary sign-in route was
+        // the one path the audit log could not attribute. The canonical phone is already in hand.
+        await (0, w.logAudit)("auth.otp_requested", (0, w.actorRef)(t)),
         a !== sa)
       ) {
         try {
@@ -2989,9 +3003,11 @@ __d(
           if (s.attempts > 5) throw (await _a.delete(o), new Error("OTP_ATTEMPTS"));
           if (t.trim() !== s.code) throw (await _a.set(o, s), new Error("OTP_WRONG"));
         }
-        await (0, w.logAudit)("auth.otp_verified", null);
         const d = `${o}@otp.playora.app`,
           l = Qt.users.find((e) => e.email === d);
+        // Logged after the lookup, so an existing account can be named. The creation path logs its
+        // own id below, once there is one.
+        await (0, w.logAudit)("auth.otp_verified", l ? (0, w.actorRef)(l.id) : null);
         if (l) {
           // CSEC (consumer audit): this branch hand-rolled the session, dropping the 30-day expiry and
           // deriving the bearer token from Math.random. Phone is the primary sign-in route, so that was
@@ -3020,6 +3036,8 @@ __d(
             })),
             await Za(Y, Qt.profiles),
             await (0, w.logAudit)("auth.terms_accepted", (0, w.actorRef)(m.user.id), { version: ha })),
+          // The account exists now, so the verification that created it can finally be attributed.
+          await (0, w.logAudit)("auth.otp_verified", (0, w.actorRef)(m.user.id), { created: !0 }),
           m
         );
       };
@@ -4492,7 +4510,7 @@ __d(
             await Za(q, Qt.users)),
           await (0, w.logAudit)("auth.sign_in_failed", n ? (0, w.actorRef)(n.id) : null),
           await _i(a, 200),
-          new Error("Invalid email or password.")
+          new Error("E_INVALID_EMAIL_OR_PASSWORD")
         );
       if (
         ((n.failedAttempts = 0),
@@ -5267,6 +5285,28 @@ __d(
     };
     r.mockUpsertReview = async (e) => {
       await ei();
+      // F-CSEC-7: a review was accepted on any venue id, from any account id the caller cared to
+      // name, with no evidence the reviewer had ever been there - and reviews are averaged into the
+      // public venue rating, so a venue could be rated up or down by anyone with the API. The venue
+      // must exist, and the author must have actually played there: a match at that venue they were
+      // a participant in, or a court they booked themselves.
+      //
+      // The other half of the finding - that the author is taken from the payload rather than a
+      // session - is the architecture, not this function: there is no server, so the caller id is
+      // the credential everywhere in 631 (F-XC-1). The visit requirement is what can be enforced
+      // here, and it is the part that stops a venue being rated by someone who never went.
+      if (!fi().some((t) => t.id === e.venue_id)) throw new Error("E_VENUE_NOT_FOUND");
+      const gm9 = new Set(gi().filter((t) => t.venue_id === e.venue_id).map((e) => e.id));
+      const been9 =
+        Qt.bookings.some((t) => t.user_id === e.user_id && gm9.has(t.game_id) && countsAsParticipant9(t)) ||
+        Qt.courtBookings.some(
+          (t) =>
+            t.organizer_id === e.user_id &&
+            t.venue_id === e.venue_id &&
+            "cancelled" !== t.status &&
+            new Date(t.starts_at).getTime() < Date.now(),
+        );
+      if (!been9) throw new Error("E_ONLY_PLAYERS_WHO_HAVE_PLAYED_HERE");
       const t = Math.max(1, Math.min(5, Math.round(e.rating))),
         a = e.comment ? (0, v.sanitizeText)(e.comment, 1e3) : null,
         i = Qt.reviews.findIndex((t) => t.venue_id === e.venue_id && t.user_id === e.user_id);
@@ -17217,6 +17257,20 @@ __d(
         if (!ia(d, u.audience ?? "male")) continue;
         if (Xd(e, u.id) || tl(e, u.id)) continue;
         if ("private" === al(u.id).profile_visibility) continue;
+        // F-CSEC-5: mockGetPlayerProfile treats followers-only as a gate; this listing over the same
+        // records only filtered "private", so the search handed back exactly the attributes the
+        // profile endpoint withholds. The two can no longer disagree.
+        //
+        // The settings differ in what they promise, so they are answered differently. "connections"
+        // says only connections see the profile, so a non-connection does not get a row at all.
+        // "followers" is about depth rather than existence, so the person stays findable by name and
+        // the gated fields are blanked. Either way an attribute filter cannot be used to probe what
+        // is hidden - a gated row is dropped from a filtered search rather than tested against it.
+        const pv9 = u.privacy_visibility ?? "everyone";
+        if ("connections" === pv9 && !isConnection9(e, u.id)) continue;
+        const ltd9 =
+          "followers" === al(u.id).profile_visibility && !Vd(e, u.id) && !a.has(u.id);
+        if (ltd9 && (t.sport || t.skill || r || t.lookingForGame)) continue;
         const m = u.full_name || "Player",
           w = u.username ?? "";
         if (n && !m.toLowerCase().includes(n) && !w.includes(n.replace(/^@/, ""))) continue;
@@ -17261,10 +17315,11 @@ __d(
           name: m,
           username: u.username ?? null,
           avatar_url: "photo" === u.avatar_mode ? u.avatar_url : null,
-          skill_level: u.skill_level,
-          sports: u.preferred_sports,
-          area: l ? null : (u.home_area ?? null),
-          looking_for_game: p,
+          skill_level: ltd9 ? "all" : u.skill_level,
+          sports: ltd9 ? [] : u.preferred_sports,
+          area: ltd9 || l ? null : (u.home_area ?? null),
+          looking_for_game: !ltd9 && p,
+          limited: ltd9,
           mutuals: h,
           mutual_games: y.size,
           is_following: Vd(e, u.id),
@@ -20237,6 +20292,9 @@ __d(
 
 
 
+
+
+
 __d(function(g,_r,_i,_a,m,_e,d){Object.defineProperty(_e,"__esModule",{value:!0}),_e.constantTimeEqual=a,_e.derivePasswordHash=n,_e.generateSalt=async function(e=16){const n=await t.getRandomBytesAsync(e);return Array.from(n).map(t=>t.toString(16).padStart(2,'0')).join('')},_e.hashIdentifier=async function(e){const n=e.replace(/\s+/g,'').toLowerCase();return t.digestStringAsync(t.CryptoDigestAlgorithm.SHA256,`${r}:${n}`)},_e.hashPassword=async function(t,e){if(o)return`scrypt$${i}$${s}$${c}$${await o(t,e,i,s,c)}`;return n(t,e)},_e.randomCode=function(e=6,n="ABCDEFGHJKMNPQRSTUVWXYZ23456789"){const r=t.getRandomBytes(e);let a='';for(let t=0;t<e;t++)a+=n[r[t]%n.length];return a},_e.randomSixDigit=function(){const e=t.getRandomBytes(4),n=((e[0]<<24|e[1]<<16|e[2]<<8|e[3])>>>0)%1e6;return String(n).padStart(6,'0')},_e.randomToken=async function(e=32){const n=await t.getRandomBytesAsync(e);return Array.from(n).map(t=>t.toString(16).padStart(2,'0')).join('')},_e.serverGradeHashing=void 0,_e.verifyPassword=async function(t,e,r){if(r.startsWith('scrypt$')){const[,n,i,s,c]=r.split('$');return!(!o||!c)&&a(await o(t,e,Number(n),Number(i),Number(s)),c)}return a(await n(t,e),r)};var t=(function(t,e){if("function"==typeof WeakMap)var n=new WeakMap,r=new WeakMap;return(function(t,e){if(!e&&t&&t.__esModule)return t;var a,o,i={__proto__:null,default:t};if(null===t||"object"!=typeof t&&"function"!=typeof t)return i;if(a=e?r:n){if(a.has(t))return a.get(t);a.set(t,i)}for(const e in t)"default"!==e&&{}.hasOwnProperty.call(t,e)&&((o=(a=Object.defineProperty)&&Object.getOwnPropertyDescriptor(t,e))&&(o.get||o.set)?a(i,e,o):i[e]=t[e]);return i})(t,e)})(_r(d[0]));const e=12e3;async function n(n,r){let a=`${r}:${n}`;for(let n=0;n<e;n++)a=await t.digestStringAsync(t.CryptoDigestAlgorithm.SHA256,a);return a}const r='playora.v1.identifier.pepper';function a(t,e){if(t.length!==e.length)return!1;let n=0;for(let r=0;r<t.length;r++)n|=t.charCodeAt(r)^e.charCodeAt(r);return 0===n}const o=t.scryptHex,i=(_e.serverGradeHashing=!!o,16384),s=8,c=1},632,[633]);
 __d(function(g,r,i,a,m,e,d){var t=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0});var n={getRandomBytes:!0,getRandomBytesAsync:!0,digestStringAsync:!0,getRandomValues:!0,randomUUID:!0,digest:!0};e.digest=function(t,n){return new Promise((o,s)=>{try{if('function'==typeof y.default.digestAsync)o(y.default.digestAsync(t,n));else{const s=new Uint8Array(h[t]);y.default.digest(t,s,n),o(s.buffer)}}catch(t){s(t)}})},e.digestStringAsync=async function(t,n,o={encoding:c.CryptoEncoding.HEX}){if(!y.default.digestStringAsync)throw new s.UnavailabilityError('expo-crypto','digestStringAsync');return f(t),p(n),A(o.encoding),await y.default.digestStringAsync(t,n,o)},e.getRandomBytes=function(t){u(t,'getRandomBytes');const n=Math.floor(t);if(y.default.getRandomValues){const t=new Uint8Array(n);return y.default.getRandomValues(t),t}if(y.default.getRandomBase64String){const t=y.default.getRandomBase64String(n);return(0,o.toByteArray)(t)}throw new s.UnavailabilityError('expo-crypto','getRandomBytes')},e.getRandomBytesAsync=async function(t){u(t,'getRandomBytesAsync');const n=Math.floor(t);if(y.default.getRandomValues){const t=new Uint8Array(n);return y.default.getRandomValues(t),t}if(y.default.getRandomBase64StringAsync){const t=await y.default.getRandomBase64StringAsync(n);return(0,o.toByteArray)(t)}throw new s.UnavailabilityError('expo-crypto','getRandomBytesAsync')},e.getRandomValues=function(t){return y.default.getRandomValues(t),t},e.randomUUID=function(){return y.default.randomUUID()};var o=r(d[1]),s=r(d[2]),c=r(d[3]);Object.keys(c).forEach(function(t){"default"!==t&&"__esModule"!==t&&(Object.prototype.hasOwnProperty.call(n,t)||t in e&&e[t]===c[t]||Object.defineProperty(e,t,{enumerable:!0,get:function(){return c[t]}}))});var y=t(r(d[4]));class l extends TypeError{code='ERR_CRYPTO';constructor(t){super(`expo-crypto: ${t}`)}}function u(t,n){if('number'!=typeof t||isNaN(t)||Math.floor(t)<0||Math.floor(t)>1024)throw new TypeError(`expo-crypto: ${n}(${t}) expected a valid number from range 0...1024`)}function f(t){if(!Object.values(c.CryptoDigestAlgorithm).includes(t))throw new l(`Invalid algorithm provided. Expected one of: CryptoDigestAlgorithm.${Object.keys(c.CryptoDigestAlgorithm).join(', AlgCryptoDigestAlgorithmorithm.')}`)}function p(t){if('string'!=typeof t)throw new l("Invalid data provided. Expected a string.")}function A(t){if(!Object.values(c.CryptoEncoding).includes(t))throw new l(`Invalid encoding provided. Expected one of: CryptoEncoding.${Object.keys(c.CryptoEncoding).join(', CryptoEncoding.')}`)}const h={[c.CryptoDigestAlgorithm.SHA1]:20,[c.CryptoDigestAlgorithm.SHA256]:32,[c.CryptoDigestAlgorithm.SHA384]:48,[c.CryptoDigestAlgorithm.SHA512]:64,[c.CryptoDigestAlgorithm.MD2]:16,[c.CryptoDigestAlgorithm.MD4]:16,[c.CryptoDigestAlgorithm.MD5]:16}},633,[33,634,504,635,636]);
 __d(function(g,r,_i,a,m,e,d){'use strict';e.byteLength=function(t){var n=h(t),o=n[0],u=n[1];return 3*(o+u)/4-u},e.toByteArray=function(t){var u,c,f=h(t),A=f[0],C=f[1],y=new o(i(t,A,C)),s=0,v=C>0?A-4:A;for(c=0;c<v;c+=4)u=n[t.charCodeAt(c)]<<18|n[t.charCodeAt(c+1)]<<12|n[t.charCodeAt(c+2)]<<6|n[t.charCodeAt(c+3)],y[s++]=u>>16&255,y[s++]=u>>8&255,y[s++]=255&u;2===C&&(u=n[t.charCodeAt(c)]<<2|n[t.charCodeAt(c+1)]>>4,y[s++]=255&u);1===C&&(u=n[t.charCodeAt(c)]<<10|n[t.charCodeAt(c+1)]<<4|n[t.charCodeAt(c+2)]>>2,y[s++]=u>>8&255,y[s++]=255&u);return y},e.fromByteArray=function(n){for(var o,u=n.length,c=u%3,h=[],i=16383,f=0,C=u-c;f<C;f+=i)h.push(A(n,f,f+i>C?C:f+i));1===c?(o=n[u-1],h.push(t[o>>2]+t[o<<4&63]+'==')):2===c&&(o=(n[u-2]<<8)+n[u-1],h.push(t[o>>10]+t[o>>4&63]+t[o<<2&63]+'='));return h.join('')};for(var t=[],n=[],o='undefined'!=typeof Uint8Array?Uint8Array:Array,u='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',c=0;c<64;++c)t[c]=u[c],n[u.charCodeAt(c)]=c;function h(t){var n=t.length;if(n%4>0)throw new Error('Invalid string. Length must be a multiple of 4');var o=t.indexOf('=');return-1===o&&(o=n),[o,o===n?0:4-o%4]}function i(t,n,o){return 3*(n+o)/4-o}function f(n){return t[n>>18&63]+t[n>>12&63]+t[n>>6&63]+t[63&n]}function A(t,n,o){for(var u,c=[],h=n;h<o;h+=3)u=(t[h]<<16&16711680)+(t[h+1]<<8&65280)+(255&t[h+2]),c.push(f(u));return c.join('')}n['-'.charCodeAt(0)]=62,n['_'.charCodeAt(0)]=63},634,[]);
@@ -22412,6 +22470,7 @@ __d(
         E_UNSUPPORTED_IMAGE: "seUnsupportedImage",
         E_USER_NOT_FOUND: "seUserNotFound",
         E_VENUE_NOT_FOUND: "seVenueNotFound",
+        E_ONLY_PLAYERS_WHO_HAVE_PLAYED_HERE: "seOnlyPlayersWhoHavePlayedHere",
         E_WITHDRAWALS_ARE_AVAILABLE_TO_VERIFIED_ORGANIZERS: "seWithdrawalsAreAvailableToVerifiedOrganizers",
         E_WRITE_A_MESSAGE: "seWriteAMessage",
         E_YOUR_APPLICATION_IS_ALREADY_UNDER_REVIEW: "seYourApplicationIsAlreadyUnderReview",
@@ -22446,6 +22505,7 @@ __d(
         E_COULD_NOT_SAVE_CHANGES: "seCouldNotSaveChanges",
         E_STORAGE_FULL: "seStorageFull",
         E_YOU_CANNOT_REVIEW_YOUR_OWN: "seYouCannotReviewYourOwn",
+        E_INVALID_EMAIL_OR_PASSWORD: "seInvalidEmailOrPassword",
         E_A_REASON_IS_REQUIRED: "seAReasonIsRequired",
         E_INVALID_TRANSITION: "seInvalidTransition",
         E_INVALID_VALUE: "seInvalidValue",
@@ -22495,6 +22555,8 @@ __d(
   674,
   [675],
 );
+
+
 
 
 
@@ -22805,6 +22867,7 @@ __d(
         seStorageFull: "This device\u2019s storage is full, so the change could not be saved. Free up space and try again.",
         seYouCannotReviewYourOwn: "You cannot review your own record.",
         seAReasonIsRequired: "Please enter a reason.",
+        seInvalidEmailOrPassword: "Invalid email or password.",
         seInvalidValue: "One of the values is not valid.",
         adminOnlyTitle: "Administrators only",
         adminOnlyBody: "This area is restricted to platform administrators.",
@@ -23580,6 +23643,7 @@ __d(
         seUnsupportedImage: "Unsupported image.",
         seUserNotFound: "User not found.",
         seVenueNotFound: "Venue not found.",
+        seOnlyPlayersWhoHavePlayedHere: "Only players who have played at this venue can review it.",
         seWithdrawalsAreAvailableToVerifiedOrganizers:
           "Withdrawals are available to verified organizers and venues.",
         seWriteAMessage: "Write a message.",
@@ -26317,6 +26381,7 @@ __d(
         seStorageFull: "\u0645\u0633\u0627\u062d\u0629 \u0627\u0644\u062a\u062e\u0632\u064a\u0646 \u0645\u0645\u062a\u0644\u0626\u0629\u060c \u0644\u0630\u0627 \u062a\u0639\u0630\u0631 \u062d\u0641\u0638 \u0627\u0644\u062a\u063a\u064a\u064a\u0631. \u0623\u0641\u0631\u063a \u0628\u0639\u0636 \u0627\u0644\u0645\u0633\u0627\u062d\u0629 \u0648\u062d\u0627\u0648\u0644 \u0645\u062c\u062f\u062f\u064b\u0627.",
         seYouCannotReviewYourOwn: "\u0644\u0627 \u064a\u0645\u0643\u0646\u0643 \u0645\u0631\u0627\u062c\u0639\u0629 \u0633\u062c\u0644\u0643 \u0627\u0644\u062e\u0627\u0635.",
         seAReasonIsRequired: "\u064a\u0631\u062c\u0649 \u0625\u062f\u062e\u0627\u0644 \u0633\u0628\u0628.",
+        seInvalidEmailOrPassword: "\u0627\u0644\u0628\u0631\u064a\u062f \u0623\u0648 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u063a\u064a\u0631 \u0635\u062d\u064a\u062d\u0629.",
         seInvalidValue: "\u0625\u062d\u062f\u0649 \u0627\u0644\u0642\u064a\u0645 \u063a\u064a\u0631 \u0635\u0627\u0644\u062d\u0629.",
         adminOnlyTitle: "\u0644\u0644\u0645\u0634\u0631\u0641\u064a\u0646 \u0641\u0642\u0637",
         adminOnlyBody: "\u0647\u0630\u0647 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0645\u062e\u0635\u0635\u0629 \u0644\u0645\u0634\u0631\u0641\u064a \u0627\u0644\u0645\u0646\u0635\u0629.",
@@ -27443,6 +27508,7 @@ __d(
           "\u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f.",
         seVenueNotFound:
           "\u0627\u0644\u0645\u0646\u0634\u0623\u0629 \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f\u0629.",
+        seOnlyPlayersWhoHavePlayedHere: "\u064a\u0645\u0643\u0646 \u0641\u0642\u0637 \u0644\u0645\u0646 \u0644\u0639\u0628 \u0641\u064a \u0647\u0630\u0627 \u0627\u0644\u0645\u0644\u0639\u0628 \u062a\u0642\u064a\u064a\u0645\u0647.",
         seWithdrawalsAreAvailableToVerifiedOrganizers:
           "\u0627\u0644\u0633\u062d\u0628 \u0645\u062a\u0627\u062d \u0644\u0644\u0645\u0646\u0638\u0651\u0645\u064a\u0646 \u0648\u0627\u0644\u0645\u0646\u0634\u0622\u062a \u0627\u0644\u0645\u0648\u062b\u0651\u0642\u0629.",
         seWriteAMessage: "\u0627\u0643\u062a\u0628 \u0631\u0633\u0627\u0644\u0629.",
@@ -30933,6 +30999,8 @@ __d(
   909,
   [],
 );
+
+
 
 
 
@@ -58003,7 +58071,793 @@ __d(
   ],
 );
 
-__d(function(g,r,_i,_a,_m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{id:e}=(0,p.useLocalSearchParams)(),{user:i}=(0,b.useAuth)(),{colors:W}=(0,j.useTheme)(),D=(0,p.useRouter)(),A=(0,B.useT)(),[F,M]=(0,t.useState)(null),[$,H]=(0,t.useState)([]),[q,V]=(0,t.useState)(!1),[N,U]=(0,t.useState)(!1),[O,E]=(0,t.useState)(!1),[G,Y]=(0,t.useState)(null),J=e=>{Y(e),setTimeout(()=>Y(null),2e3)},K=(0,t.useCallback)(async()=>{if(i&&e)try{const t=await(0,_.fetchPlayerProfile)(i.id,e);M(t),E(!1),H(t.limited?[]:await(0,_.fetchHighlightCollections)(e))}catch{E(!0)}},[i,e]);(0,p.useFocusEffect)((0,t.useCallback)(()=>{K()},[K]));const Q=async()=>{i&&F&&(U(!1),F.is_blocked?(await(0,_.unblockUser)(i.id,F.user_id),J(A('unblockedToast'))):(await(0,_.blockUser)(i.id,F.user_id),J(A('blockedToast'))),await K())},X=async e=>{if(i&&F){V(!0);try{await(0,_.respondFollowRequest)(i.id,F.user_id,e),await K()}finally{V(!1)}}};if(O)return(0,S.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:W.bg},children:[(0,S.jsx)(c.default,{style:L.header,children:(0,S.jsx)(a.default,{onPress:()=>D.back(),accessibilityRole:"button",accessibilityLabel:A('back'),style:[L.iconBtn,{backgroundColor:W.surface,borderColor:W.border}],children:(0,S.jsx)(h.Ionicons,{name:(0,R.chevronBack)(),size:22,color:W.text})})}),(0,S.jsxs)(c.default,{style:[L.center,{paddingHorizontal:w.spacing.xl}],children:[(0,S.jsx)(h.Ionicons,{name:"lock-closed-outline",size:36,color:W.textMuted,style:{marginBottom:w.spacing.md}}),(0,S.jsx)(n.default,{style:[w.typography.h3,{color:W.text,textAlign:'center'}],children:A('privateAccount')}),(0,S.jsx)(n.default,{style:[w.typography.body,{color:W.textMuted,textAlign:'center',marginTop:w.spacing.xs}],children:A('privateAccountBody')})]})]});return F?(0,S.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:W.bg},children:[(0,S.jsxs)(o.default,{contentContainerStyle:{paddingBottom:w.spacing.xxxl},children:[(0,S.jsxs)(c.default,{style:[L.cover,{backgroundColor:W.accentMuted}],children:[(0,S.jsx)(a.default,{onPress:()=>D.back(),accessibilityRole:"button",accessibilityLabel:A('back'),style:[L.iconBtn,{backgroundColor:W.surface,borderColor:W.border}],children:(0,S.jsx)(h.Ionicons,{name:(0,R.chevronBack)(),size:22,color:W.text})}),!F.is_self&&(0,S.jsx)(a.default,{onPress:()=>U(!0),accessibilityRole:"button",accessibilityLabel:A('moreActions'),style:[L.iconBtn,{backgroundColor:W.surface,borderColor:W.border,position:'absolute',top:w.spacing.md},(0,R.inlineEnd)(w.spacing.lg)],children:(0,S.jsx)(h.Ionicons,{name:"ellipsis-horizontal",size:20,color:W.text})})]}),(0,S.jsxs)(c.default,{style:{paddingHorizontal:w.spacing.lg,marginTop:-34},children:[F.avatar_url?(0,S.jsx)(c.default,{style:[L.avatar,{borderColor:W.bg,overflow:'hidden'}],children:(0,S.jsx)(C.PlayerAvatar,{name:F.display_name||'P',seed:0,uri:F.avatar_url,size:70})}):(0,S.jsx)(c.default,{style:[L.avatar,{backgroundColor:W.surface,borderColor:W.bg}],children:(0,S.jsx)(n.default,{style:[w.typography.h1,{color:W.accentText}],children:(F.display_name||'?').slice(0,1).toUpperCase()})}),(0,S.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',marginTop:w.spacing.sm},children:[(0,S.jsxs)(c.default,{style:{flex:1},children:[(0,S.jsx)(n.default,{style:[w.typography.h2,{color:W.text}],numberOfLines:1,children:F.display_name}),!!F.username&&(0,S.jsxs)(n.default,{style:[w.typography.caption,{color:W.textMuted}],children:["@",F.username]}),F.online?(0,S.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',marginTop:2},children:[(0,S.jsx)(c.default,{style:[L.dot,{backgroundColor:W.success}]}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.success,marginStart:5}],children:A('activeNow')})]}):F.last_active?(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.textMuted,marginTop:2}],children:(0,T.formatRelative)(F.last_active)}):null]}),!F.is_self&&(0,S.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',gap:w.spacing.sm},children:[F.can_message&&(0,S.jsx)(a.default,{onPress:async()=>{if(!i||!F)return;try{const e=await(0,_.startConversation)(i.id,F.user_id);D.push(`/messages/${e.id}`)}catch(e){const t=String(e.message);J(A('messages_followers_only'===t?'msgFollowersToast':'messages_disabled'===t?'msgDisabledToast':'cannotMessageBlocked'))}},accessibilityRole:"button",accessibilityLabel:A('messageBtn'),style:[L.msgBtn,{backgroundColor:W.surface,borderColor:W.border}],children:(0,S.jsx)(h.Ionicons,{name:"chatbubble-ellipses-outline",size:18,color:W.text})}),F.is_blocked?(0,S.jsx)(y.Button,{title:A('unblockBtn'),size:"sm",variant:"secondary",onPress:Q}):(0,S.jsx)(k.FollowButton,{viewerId:i.id,targetId:F.user_id,targetName:F.display_name,isFollowing:F.is_following,isRequested:F.is_requested,onChanged:K})]})]}),(0,S.jsxs)(c.default,{style:{flexDirection:'row',gap:w.spacing.sm,marginTop:w.spacing.xs,flexWrap:'wrap'},children:[F.is_friend&&(0,S.jsx)(m.Badge,{label:A('friendLabel'),tone:"success"}),F.looking_for_game&&(0,S.jsx)(m.Badge,{label:A('lookingForGame'),tone:"accent"}),F.is_muted&&(0,S.jsx)(m.Badge,{label:A('muteBtn'),tone:"warning"})]}),F.requested_me&&(0,S.jsxs)(x.Card,{padding:"lg",style:{marginTop:w.spacing.lg},children:[(0,S.jsx)(n.default,{style:[w.typography.bodyStrong,{color:W.text}],children:A('followRequestFrom',{name:F.display_name})}),(0,S.jsxs)(c.default,{style:{flexDirection:'row',gap:w.spacing.sm,marginTop:w.spacing.md},children:[(0,S.jsx)(c.default,{style:{flex:1},children:(0,S.jsx)(y.Button,{title:A('approve'),size:"sm",fullWidth:!0,loading:q,onPress:()=>X(!0)})}),(0,S.jsx)(c.default,{style:{flex:1},children:(0,S.jsx)(y.Button,{title:A('declineBtn'),size:"sm",fullWidth:!0,variant:"secondary",loading:q,onPress:()=>X(!1)})})]})]}),F.limited&&(0,S.jsxs)(S.Fragment,{children:[(0,S.jsxs)(c.default,{style:[L.statsRow,{borderColor:W.border}],children:[(0,S.jsx)(P,{n:F.followers,label:A('followersLabel'),colors:W}),(0,S.jsx)(P,{n:F.following,label:A('followingLabel'),colors:W}),(0,S.jsx)(P,{n:'\u2014',label:A('matchesPlayedLabel'),colors:W}),(0,S.jsx)(P,{n:'\u2014',label:A('hostedLabel'),colors:W})]}),(0,S.jsxs)(x.Card,{padding:"lg",style:{marginTop:w.spacing.lg,alignItems:'center'},children:[(0,S.jsx)(h.Ionicons,{name:"lock-closed-outline",size:32,color:W.accentText}),(0,S.jsx)(n.default,{style:[w.typography.bodyStrong,{color:W.text,marginTop:w.spacing.sm,textAlign:'center'}],children:'private'===F.limited_reason?A('privateAccount'):A('limitedFollowHint',{name:F.display_name})}),(0,S.jsx)(n.default,{style:[w.typography.small,{color:W.textMuted,textAlign:'center',marginTop:2}],children:'private'===F.limited_reason?A('privateAccountStrict'):A('limitedProfileSub')}),'private'!==F.limited_reason&&!F.is_blocked&&(0,S.jsx)(c.default,{style:{alignSelf:'stretch',marginTop:w.spacing.lg},children:(0,S.jsx)(k.FollowButton,{viewerId:i.id,targetId:F.user_id,targetName:F.display_name,isFollowing:F.is_following,isRequested:F.is_requested,onChanged:K,fullWidth:!0,size:"md"})})]})]}),!F.limited&&(0,S.jsxs)(S.Fragment,{children:[(0,S.jsxs)(c.default,{style:[L.statsRow,{borderColor:W.border}],children:[(0,S.jsx)(P,{n:F.followers,label:A('followersLabel'),colors:W,onPress:()=>D.push(`/follows/${F.user_id}?kind=followers`)}),(0,S.jsx)(P,{n:F.following,label:A('followingLabel'),colors:W,onPress:()=>D.push(`/follows/${F.user_id}?kind=following`)}),(0,S.jsx)(P,{n:F.matches_played,label:A('matchesPlayedLabel'),colors:W}),null!=F.matches_hosted&&(0,S.jsx)(P,{n:F.matches_hosted,label:A('hostedLabel'),colors:W})]}),(0,S.jsx)(z,{title:A('aboutLabel'),colors:W,children:(0,S.jsx)(n.default,{style:[w.typography.body,{color:F.bio?W.text:W.textMuted}],children:F.bio||A('noBioYet')})}),(0,S.jsx)(z,{title:A('favoriteSports'),colors:W,children:(0,S.jsxs)(c.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:w.spacing.sm},children:[F.favorite_sports.map(e=>(0,S.jsx)(m.Badge,{label:A(I[e]),tone:"neutral"},e)),(0,S.jsx)(f.Explainer,{k:"classification",children:(0,S.jsx)(m.Badge,{label:A(F.skill_level),tone:"accent"})}),(0,S.jsx)(m.Badge,{label:`${F.attendance.emoji??''} ${A(F.attendance.key)}`.trim(),tone:F.attendance.tone})]})}),(F.achievements.length>0||F.badges.length>0)&&(0,S.jsx)(z,{title:A('achievementsTitle'),colors:W,children:(0,S.jsx)(c.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:w.spacing.sm},children:[...F.achievements,...F.badges].slice(0,12).map(e=>(0,S.jsxs)(c.default,{style:[L.badgeChip,{backgroundColor:W.surface,borderColor:W.border}],children:[(0,S.jsx)(n.default,{style:{fontSize:16},children:e.emoji}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.text,marginStart:4}],children:A(e.key)})]},e.id))})}),$.length>0&&(0,S.jsx)(z,{title:A('highlightsTitle'),colors:W,children:(0,S.jsx)(c.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:w.spacing.sm},children:$.map(e=>(0,S.jsxs)(c.default,{style:[L.badgeChip,{backgroundColor:W.surface,borderColor:W.border}],children:[(0,S.jsx)(h.Ionicons,{name:"film-outline",size:15,color:W.accentText}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.text,marginHorizontal:4}],children:A(e.label_key)}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.textMuted}],children:A('collectionCount',{n:(0,v.formatNumber)(e.count)})})]},e.cover_clip_id))})}),F.teams.length>0&&(0,S.jsx)(z,{title:A('teamsLabel'),colors:W,children:(0,S.jsx)(c.default,{style:{flexDirection:'row',flexWrap:'wrap',gap:w.spacing.sm},children:F.teams.map(e=>{const t=(e.win_streak??0)>=2,l=(e.loss_streak??0)>=2;return(0,S.jsxs)(a.default,{onPress:()=>D.push(`/teams/${e.id}`),style:[L.badgeChip,{backgroundColor:W.surface,borderColor:W.border}],children:[(0,S.jsx)(n.default,{style:{fontSize:15},children:e.emoji}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:W.text,marginStart:4,flexShrink:1,maxWidth:150}],numberOfLines:1,children:e.name}),t&&(0,S.jsxs)(n.default,{style:[w.typography.caption,{marginStart:3}],children:["\ud83d\udd25",e.win_streak]}),l&&(0,S.jsxs)(n.default,{style:[w.typography.caption,{marginStart:3}],children:["\ud83e\uddca",e.loss_streak]})]},e.id)})})}),F.mutual_friends.length>0&&(0,S.jsx)(z,{title:`${A('mutualFriends')} \xb7 ${F.mutual_friends.length}`,colors:W,children:(0,S.jsx)(c.default,{style:{flexDirection:'row',flexWrap:'wrap'},children:F.mutual_friends.map((e,t)=>(0,S.jsx)(a.default,{onPress:()=>D.push(`/player/${e.id}`),accessibilityRole:"button",accessibilityLabel:e.name,children:(0,S.jsxs)(n.default,{style:[w.typography.small,{color:W.accentText}],children:[e.name,t<F.mutual_friends.length-1?', ':'']})},e.id))})}),F.mutual_teams.length>0&&(0,S.jsx)(z,{title:`${A('mutualTeams')} \xb7 ${F.mutual_teams.length}`,colors:W,children:(0,S.jsx)(n.default,{style:[w.typography.small,{color:W.textMuted}],numberOfLines:2,children:F.mutual_teams.map(e=>e.name).join(', ')})})]})]})]}),(0,S.jsx)(s.default,{visible:N,transparent:!0,animationType:"fade",onRequestClose:()=>U(!1),children:(0,S.jsx)(a.default,{style:L.scrim,onPress:()=>U(!1),children:(0,S.jsxs)(a.default,{style:[L.sheet,{backgroundColor:W.surface}],onPress:()=>{},children:[(0,S.jsxs)(a.default,{onPress:async()=>{if(!i||!F)return;U(!1),F.is_muted?(await(0,_.unmuteUser)(i.id,F.user_id),J(A('unmutedToast'))):(await(0,_.muteUser)(i.id,F.user_id),J(A('mutedToast')));await K()},accessibilityRole:"button",style:L.sheetRow,children:[(0,S.jsx)(h.Ionicons,{name:F.is_muted?'volume-high-outline':'volume-mute-outline',size:20,color:W.text}),(0,S.jsx)(n.default,{style:[w.typography.body,{color:W.text,marginStart:w.spacing.md}],children:F.is_muted?A('unmuteBtn'):A('muteBtn')})]}),(0,S.jsx)(c.default,{style:[L.sheetDivider,{backgroundColor:W.border}]}),(0,S.jsxs)(a.default,{onPress:Q,accessibilityRole:"button",style:L.sheetRow,children:[(0,S.jsx)(h.Ionicons,{name:"ban-outline",size:20,color:W.danger}),(0,S.jsx)(n.default,{style:[w.typography.body,{color:W.danger,marginStart:w.spacing.md}],children:F.is_blocked?A('unblockBtn'):A('blockBtn')})]})]})})}),G&&(0,S.jsx)(c.default,{style:[L.toast,{backgroundColor:W.text}],children:(0,S.jsx)(n.default,{style:[w.typography.smallStrong,{color:W.bg,textAlign:'center'}],children:G})})]}):(0,S.jsx)(u.SafeAreaView,{style:[L.center,{backgroundColor:W.bg}],children:(0,S.jsx)(l.default,{color:W.accentText})})};var t=r(d[1]),l=e(r(d[2])),s=e(r(d[3])),a=e(r(d[4])),o=e(r(d[5])),i=e(r(d[6])),n=e(r(d[7])),c=e(r(d[8])),u=r(d[9]),h=r(d[10]),p=r(d[11]),x=r(d[12]),m=r(d[13]),f=r(d[14]),y=r(d[15]),b=r(d[16]),j=r(d[17]),w=r(d[18]),_=r(d[19]),k=r(d[20]),C=r(d[21]),v=r(d[22]),T=r(d[23]),B=r(d[24]),R=r(d[25]),S=r(d[26]);const I={football:'football',padel:'padel',tennis:'tennis'};const P=({n:e,label:t,colors:l,onPress:s})=>{const o=(0,S.jsxs)(S.Fragment,{children:[(0,S.jsx)(n.default,{style:[w.typography.h3,{color:l.text}],children:'number'==typeof e?(0,v.formatNumber)(e):e}),(0,S.jsx)(n.default,{style:[w.typography.caption,{color:l.textMuted}],children:t})]});return s?(0,S.jsx)(a.default,{onPress:s,accessibilityRole:"button",accessibilityLabel:t,style:{alignItems:'center',flex:1},children:o}):(0,S.jsx)(c.default,{style:{alignItems:'center',flex:1},children:o})},z=({title:e,colors:t,children:l})=>(0,S.jsxs)(c.default,{style:{marginTop:w.spacing.lg},children:[(0,S.jsx)(n.default,{style:[w.typography.smallStrong,{color:t.textMuted,marginBottom:w.spacing.sm}],children:e}),l]}),L=i.default.create({center:{flex:1,alignItems:'center',justifyContent:'center'},cover:{height:120,paddingTop:w.spacing.md,paddingHorizontal:w.spacing.lg},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:i.default.hairlineWidth},avatar:{width:76,height:76,borderRadius:38,alignItems:'center',justifyContent:'center',borderWidth:3},statsRow:{flexDirection:'row',marginTop:w.spacing.lg,paddingVertical:w.spacing.md,borderTopWidth:i.default.hairlineWidth,borderBottomWidth:i.default.hairlineWidth},badgeChip:{flexDirection:'row',alignItems:'center',paddingHorizontal:w.spacing.md,paddingVertical:6,borderRadius:w.radius.pill,borderWidth:i.default.hairlineWidth},msgBtn:{width:36,height:36,borderRadius:18,alignItems:'center',justifyContent:'center',borderWidth:i.default.hairlineWidth},header:{flexDirection:'row',alignItems:'center',paddingHorizontal:w.spacing.lg,paddingVertical:w.spacing.md},dot:{width:8,height:8,borderRadius:4},scrim:{flex:1,backgroundColor:'rgba(0,0,0,0.4)',justifyContent:'flex-end'},sheet:{borderTopLeftRadius:w.radius.xl,borderTopRightRadius:w.radius.xl,padding:w.spacing.sm,paddingBottom:w.spacing.xxxl},sheetRow:{flexDirection:'row',alignItems:'center',padding:w.spacing.lg},sheetDivider:{height:i.default.hairlineWidth,marginHorizontal:w.spacing.lg},toast:{position:'absolute',bottom:28,left:w.spacing.lg,right:w.spacing.lg,padding:w.spacing.md,borderRadius:w.radius.md}})},2475,[33,15,461,467,369,281,158,146,273,381,1086,20,1623,1624,1668,626,630,615,616,671,2377,1679,1311,1626,675,1171,13]);
+__d(
+  function (g, r, _i, _a, _m, _e, d) {
+    var e = r(d[0]);
+    (Object.defineProperty(_e, "__esModule", { value: !0 }),
+      (_e.default = function () {
+        const { id: e } = (0, p.useLocalSearchParams)(),
+          { user: i } = (0, b.useAuth)(),
+          { colors: W } = (0, j.useTheme)(),
+          D = (0, p.useRouter)(),
+          A = (0, B.useT)(),
+          [F, M] = (0, t.useState)(null),
+          [$, H] = (0, t.useState)([]),
+          [q, V] = (0, t.useState)(!1),
+          [N, U] = (0, t.useState)(!1),
+          [O, E] = (0, t.useState)(!1),
+          [G, Y] = (0, t.useState)(null),
+          J = (e) => {
+            (Y(e), setTimeout(() => Y(null), 2e3));
+          },
+          K = (0, t.useCallback)(async () => {
+            if (i && e)
+              try {
+                const t = await (0, _.fetchPlayerProfile)(i.id, e);
+                (M(t), E(!1), H(t.limited ? [] : await (0, _.fetchHighlightCollections)(e)));
+              } catch {
+                E(!0);
+              }
+          }, [i, e]);
+        (0, p.useFocusEffect)(
+          (0, t.useCallback)(() => {
+            K();
+          }, [K]),
+        );
+        const Q = async () => {
+            i &&
+              F &&
+              (U(!1),
+              F.is_blocked
+                ? (await (0, _.unblockUser)(i.id, F.user_id), J(A("unblockedToast")))
+                : (await (0, _.blockUser)(i.id, F.user_id), J(A("blockedToast"))),
+              await K());
+          },
+          X = async (e) => {
+            if (i && F) {
+              V(!0);
+              try {
+                (await (0, _.respondFollowRequest)(i.id, F.user_id, e), await K());
+              } finally {
+                V(!1);
+              }
+            }
+          };
+        if (O)
+          return (0, S.jsxs)(u.SafeAreaView, {
+            edges: ["top"],
+            style: { flex: 1, backgroundColor: W.bg },
+            children: [
+              (0, S.jsx)(c.default, {
+                style: L.header,
+                children: (0, S.jsx)(a.default, {
+                  onPress: () => D.back(),
+                  accessibilityRole: "button",
+                  accessibilityLabel: A("back"),
+                  style: [L.iconBtn, { backgroundColor: W.surface, borderColor: W.border }],
+                  children: (0, S.jsx)(h.Ionicons, { name: (0, R.chevronBack)(), size: 22, color: W.text }),
+                }),
+              }),
+              (0, S.jsxs)(c.default, {
+                style: [L.center, { paddingHorizontal: w.spacing.xl }],
+                children: [
+                  (0, S.jsx)(h.Ionicons, {
+                    name: "lock-closed-outline",
+                    size: 36,
+                    color: W.textMuted,
+                    style: { marginBottom: w.spacing.md },
+                  }),
+                  (0, S.jsx)(n.default, {
+                    style: [w.typography.h3, { color: W.text, textAlign: "center" }],
+                    children: A("privateAccount"),
+                  }),
+                  (0, S.jsx)(n.default, {
+                    style: [
+                      w.typography.body,
+                      { color: W.textMuted, textAlign: "center", marginTop: w.spacing.xs },
+                    ],
+                    children: A("privateAccountBody"),
+                  }),
+                ],
+              }),
+            ],
+          });
+        return F
+          ? (0, S.jsxs)(u.SafeAreaView, {
+              edges: ["top"],
+              style: { flex: 1, backgroundColor: W.bg },
+              children: [
+                (0, S.jsxs)(o.default, {
+                  contentContainerStyle: { paddingBottom: w.spacing.xxxl },
+                  children: [
+                    (0, S.jsxs)(c.default, {
+                      style: [L.cover, { backgroundColor: W.accentMuted }],
+                      children: [
+                        (0, S.jsx)(a.default, {
+                          onPress: () => D.back(),
+                          accessibilityRole: "button",
+                          accessibilityLabel: A("back"),
+                          style: [L.iconBtn, { backgroundColor: W.surface, borderColor: W.border }],
+                          children: (0, S.jsx)(h.Ionicons, {
+                            name: (0, R.chevronBack)(),
+                            size: 22,
+                            color: W.text,
+                          }),
+                        }),
+                        !F.is_self &&
+                          (0, S.jsx)(a.default, {
+                            onPress: () => U(!0),
+                            accessibilityRole: "button",
+                            accessibilityLabel: A("moreActions"),
+                            style: [
+                              L.iconBtn,
+                              {
+                                backgroundColor: W.surface,
+                                borderColor: W.border,
+                                position: "absolute",
+                                top: w.spacing.md,
+                              },
+                              (0, R.inlineEnd)(w.spacing.lg),
+                            ],
+                            children: (0, S.jsx)(h.Ionicons, {
+                              name: "ellipsis-horizontal",
+                              size: 20,
+                              color: W.text,
+                            }),
+                          }),
+                      ],
+                    }),
+                    (0, S.jsxs)(c.default, {
+                      style: { paddingHorizontal: w.spacing.lg, marginTop: -34 },
+                      children: [
+                        F.avatar_url
+                          ? (0, S.jsx)(c.default, {
+                              style: [L.avatar, { borderColor: W.bg, overflow: "hidden" }],
+                              children: (0, S.jsx)(C.PlayerAvatar, {
+                                name: F.display_name || "P",
+                                seed: 0,
+                                uri: F.avatar_url,
+                                size: 70,
+                              }),
+                            })
+                          : (0, S.jsx)(c.default, {
+                              style: [L.avatar, { backgroundColor: W.surface, borderColor: W.bg }],
+                              children: (0, S.jsx)(n.default, {
+                                style: [w.typography.h1, { color: W.accentText }],
+                                children: (F.display_name || "?").slice(0, 1).toUpperCase(),
+                              }),
+                            }),
+                        (0, S.jsxs)(c.default, {
+                          style: { flexDirection: "row", alignItems: "center", marginTop: w.spacing.sm },
+                          children: [
+                            (0, S.jsxs)(c.default, {
+                              style: { flex: 1 },
+                              children: [
+                                (0, S.jsx)(n.default, {
+                                  style: [w.typography.h2, { color: W.text }],
+                                  numberOfLines: 1,
+                                  children: F.display_name,
+                                }),
+                                !!F.username &&
+                                  (0, S.jsxs)(n.default, {
+                                    style: [w.typography.caption, { color: W.textMuted }],
+                                    children: ["@", F.username],
+                                  }),
+                                F.online
+                                  ? (0, S.jsxs)(c.default, {
+                                      style: { flexDirection: "row", alignItems: "center", marginTop: 2 },
+                                      children: [
+                                        (0, S.jsx)(c.default, {
+                                          style: [L.dot, { backgroundColor: W.success }],
+                                        }),
+                                        (0, S.jsx)(n.default, {
+                                          style: [w.typography.caption, { color: W.success, marginStart: 5 }],
+                                          children: A("activeNow"),
+                                        }),
+                                      ],
+                                    })
+                                  : F.last_active
+                                    ? (0, S.jsx)(n.default, {
+                                        style: [w.typography.caption, { color: W.textMuted, marginTop: 2 }],
+                                        children: (0, T.formatRelative)(F.last_active),
+                                      })
+                                    : null,
+                              ],
+                            }),
+                            !F.is_self &&
+                              (0, S.jsxs)(c.default, {
+                                style: { flexDirection: "row", alignItems: "center", gap: w.spacing.sm },
+                                children: [
+                                  F.can_message &&
+                                    (0, S.jsx)(a.default, {
+                                      onPress: async () => {
+                                        if (!i || !F) return;
+                                        try {
+                                          const e = await (0, _.startConversation)(i.id, F.user_id);
+                                          D.push(`/messages/${e.id}`);
+                                        } catch (e) {
+                                          const t = String(e.message);
+                                          J(
+                                            A(
+                                              "messages_followers_only" === t
+                                                ? "msgFollowersToast"
+                                                : "messages_disabled" === t
+                                                  ? "msgDisabledToast"
+                                                  : "cannotMessageBlocked",
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      accessibilityRole: "button",
+                                      accessibilityLabel: A("messageBtn"),
+                                      style: [
+                                        L.msgBtn,
+                                        { backgroundColor: W.surface, borderColor: W.border },
+                                      ],
+                                      children: (0, S.jsx)(h.Ionicons, {
+                                        name: "chatbubble-ellipses-outline",
+                                        size: 18,
+                                        color: W.text,
+                                      }),
+                                    }),
+                                  F.is_blocked
+                                    ? (0, S.jsx)(y.Button, {
+                                        title: A("unblockBtn"),
+                                        size: "sm",
+                                        variant: "secondary",
+                                        onPress: Q,
+                                      })
+                                    : (0, S.jsx)(k.FollowButton, {
+                                        viewerId: i.id,
+                                        targetId: F.user_id,
+                                        targetName: F.display_name,
+                                        isFollowing: F.is_following,
+                                        isRequested: F.is_requested,
+                                        onChanged: K,
+                                      }),
+                                ],
+                              }),
+                          ],
+                        }),
+                        (0, S.jsxs)(c.default, {
+                          style: {
+                            flexDirection: "row",
+                            gap: w.spacing.sm,
+                            marginTop: w.spacing.xs,
+                            flexWrap: "wrap",
+                          },
+                          children: [
+                            F.is_friend && (0, S.jsx)(m.Badge, { label: A("friendLabel"), tone: "success" }),
+                            F.looking_for_game &&
+                              (0, S.jsx)(m.Badge, { label: A("lookingForGame"), tone: "accent" }),
+                            F.is_muted && (0, S.jsx)(m.Badge, { label: A("muteBtn"), tone: "warning" }),
+                          ],
+                        }),
+                        F.requested_me &&
+                          (0, S.jsxs)(x.Card, {
+                            padding: "lg",
+                            style: { marginTop: w.spacing.lg },
+                            children: [
+                              (0, S.jsx)(n.default, {
+                                style: [w.typography.bodyStrong, { color: W.text }],
+                                children: A("followRequestFrom", { name: F.display_name }),
+                              }),
+                              (0, S.jsxs)(c.default, {
+                                style: { flexDirection: "row", gap: w.spacing.sm, marginTop: w.spacing.md },
+                                children: [
+                                  (0, S.jsx)(c.default, {
+                                    style: { flex: 1 },
+                                    children: (0, S.jsx)(y.Button, {
+                                      title: A("approve"),
+                                      size: "sm",
+                                      fullWidth: !0,
+                                      loading: q,
+                                      onPress: () => X(!0),
+                                    }),
+                                  }),
+                                  (0, S.jsx)(c.default, {
+                                    style: { flex: 1 },
+                                    children: (0, S.jsx)(y.Button, {
+                                      title: A("declineBtn"),
+                                      size: "sm",
+                                      fullWidth: !0,
+                                      variant: "secondary",
+                                      loading: q,
+                                      onPress: () => X(!1),
+                                    }),
+                                  }),
+                                ],
+                              }),
+                            ],
+                          }),
+                        F.limited &&
+                          (0, S.jsxs)(S.Fragment, {
+                            children: [
+                              (0, S.jsxs)(c.default, {
+                                style: [L.statsRow, { borderColor: W.border }],
+                                children: [
+                                  (0, S.jsx)(P, { n: F.followers, label: A("followersLabel"), colors: W }),
+                                  (0, S.jsx)(P, { n: F.following, label: A("followingLabel"), colors: W }),
+                                  (0, S.jsx)(P, { n: "\u2014", label: A("matchesPlayedLabel"), colors: W }),
+                                  (0, S.jsx)(P, { n: "\u2014", label: A("hostedLabel"), colors: W }),
+                                ],
+                              }),
+                              (0, S.jsxs)(x.Card, {
+                                padding: "lg",
+                                style: { marginTop: w.spacing.lg, alignItems: "center" },
+                                children: [
+                                  (0, S.jsx)(h.Ionicons, {
+                                    name: "lock-closed-outline",
+                                    size: 32,
+                                    color: W.accentText,
+                                  }),
+                                  (0, S.jsx)(n.default, {
+                                    style: [
+                                      w.typography.bodyStrong,
+                                      { color: W.text, marginTop: w.spacing.sm, textAlign: "center" },
+                                    ],
+                                    children:
+                                      "private" === F.limited_reason
+                                        ? A("privateAccount")
+                                        : A("limitedFollowHint", { name: F.display_name }),
+                                  }),
+                                  (0, S.jsx)(n.default, {
+                                    style: [
+                                      w.typography.small,
+                                      { color: W.textMuted, textAlign: "center", marginTop: 2 },
+                                    ],
+                                    children:
+                                      "private" === F.limited_reason
+                                        ? A("privateAccountStrict")
+                                        : A("limitedProfileSub"),
+                                  }),
+                                  "private" !== F.limited_reason &&
+                                    !F.is_blocked &&
+                                    (0, S.jsx)(c.default, {
+                                      style: { alignSelf: "stretch", marginTop: w.spacing.lg },
+                                      children: (0, S.jsx)(k.FollowButton, {
+                                        viewerId: i.id,
+                                        targetId: F.user_id,
+                                        targetName: F.display_name,
+                                        isFollowing: F.is_following,
+                                        isRequested: F.is_requested,
+                                        onChanged: K,
+                                        fullWidth: !0,
+                                        size: "md",
+                                      }),
+                                    }),
+                                ],
+                              }),
+                            ],
+                          }),
+                        !F.limited &&
+                          (0, S.jsxs)(S.Fragment, {
+                            children: [
+                              (0, S.jsxs)(c.default, {
+                                style: [L.statsRow, { borderColor: W.border }],
+                                children: [
+                                  (0, S.jsx)(P, {
+                                    n: F.followers,
+                                    label: A("followersLabel"),
+                                    colors: W,
+                                    onPress: () => D.push(`/follows/${F.user_id}?kind=followers`),
+                                  }),
+                                  (0, S.jsx)(P, {
+                                    n: F.following,
+                                    label: A("followingLabel"),
+                                    colors: W,
+                                    onPress: () => D.push(`/follows/${F.user_id}?kind=following`),
+                                  }),
+                                  (0, S.jsx)(P, {
+                                    n: F.matches_played,
+                                    label: A("matchesPlayedLabel"),
+                                    colors: W,
+                                  }),
+                                  null != F.matches_hosted &&
+                                    (0, S.jsx)(P, {
+                                      n: F.matches_hosted,
+                                      label: A("hostedLabel"),
+                                      colors: W,
+                                    }),
+                                ],
+                              }),
+                              (0, S.jsx)(z, {
+                                title: A("aboutLabel"),
+                                colors: W,
+                                children: (0, S.jsx)(n.default, {
+                                  style: [w.typography.body, { color: F.bio ? W.text : W.textMuted }],
+                                  children: F.bio || A("noBioYet"),
+                                }),
+                              }),
+                              (0, S.jsx)(z, {
+                                title: A("favoriteSports"),
+                                colors: W,
+                                children: (0, S.jsxs)(c.default, {
+                                  style: { flexDirection: "row", flexWrap: "wrap", gap: w.spacing.sm },
+                                  children: [
+                                    F.favorite_sports.map((e) =>
+                                      (0, S.jsx)(m.Badge, { label: A(I[e]), tone: "neutral" }, e),
+                                    ),
+                                    (0, S.jsx)(f.Explainer, {
+                                      k: "classification",
+                                      children: (0, S.jsx)(m.Badge, {
+                                        label: A(F.skill_level),
+                                        tone: "accent",
+                                      }),
+                                    }),
+                                    (0, S.jsx)(m.Badge, {
+                                      label: `${F.attendance.emoji ?? ""} ${A(F.attendance.key)}`.trim(),
+                                      tone: F.attendance.tone,
+                                    }),
+                                  ],
+                                }),
+                              }),
+                              (F.achievements.length > 0 || F.badges.length > 0) &&
+                                (0, S.jsx)(z, {
+                                  title: A("achievementsTitle"),
+                                  colors: W,
+                                  children: (0, S.jsx)(c.default, {
+                                    style: { flexDirection: "row", flexWrap: "wrap", gap: w.spacing.sm },
+                                    children: [...F.achievements, ...F.badges]
+                                      .slice(0, 12)
+                                      .map((e) =>
+                                        (0, S.jsxs)(
+                                          c.default,
+                                          {
+                                            style: [
+                                              L.badgeChip,
+                                              { backgroundColor: W.surface, borderColor: W.border },
+                                            ],
+                                            children: [
+                                              (0, S.jsx)(n.default, {
+                                                style: { fontSize: 16 },
+                                                children: e.emoji,
+                                              }),
+                                              (0, S.jsx)(n.default, {
+                                                style: [
+                                                  w.typography.caption,
+                                                  { color: W.text, marginStart: 4 },
+                                                ],
+                                                children: A(e.key),
+                                              }),
+                                            ],
+                                          },
+                                          e.id,
+                                        ),
+                                      ),
+                                  }),
+                                }),
+                              $.length > 0 &&
+                                (0, S.jsx)(z, {
+                                  title: A("highlightsTitle"),
+                                  colors: W,
+                                  children: (0, S.jsx)(c.default, {
+                                    style: { flexDirection: "row", flexWrap: "wrap", gap: w.spacing.sm },
+                                    children: $.map((e) =>
+                                      (0, S.jsxs)(
+                                        c.default,
+                                        {
+                                          style: [
+                                            L.badgeChip,
+                                            { backgroundColor: W.surface, borderColor: W.border },
+                                          ],
+                                          children: [
+                                            (0, S.jsx)(h.Ionicons, {
+                                              name: "film-outline",
+                                              size: 15,
+                                              color: W.accentText,
+                                            }),
+                                            (0, S.jsx)(n.default, {
+                                              style: [
+                                                w.typography.caption,
+                                                { color: W.text, marginHorizontal: 4 },
+                                              ],
+                                              children: A(e.label_key),
+                                            }),
+                                            (0, S.jsx)(n.default, {
+                                              style: [w.typography.caption, { color: W.textMuted }],
+                                              children: A("collectionCount", {
+                                                n: (0, v.formatNumber)(e.count),
+                                              }),
+                                            }),
+                                          ],
+                                        },
+                                        e.cover_clip_id,
+                                      ),
+                                    ),
+                                  }),
+                                }),
+                              F.teams.length > 0 &&
+                                (0, S.jsx)(z, {
+                                  title: A("teamsLabel"),
+                                  colors: W,
+                                  children: (0, S.jsx)(c.default, {
+                                    style: { flexDirection: "row", flexWrap: "wrap", gap: w.spacing.sm },
+                                    children: F.teams.map((e) => {
+                                      const t = (e.win_streak ?? 0) >= 2,
+                                        l = (e.loss_streak ?? 0) >= 2;
+                                      return (0, S.jsxs)(
+                                        a.default,
+                                        {
+                                          onPress: () => D.push(`/teams/${e.id}`),
+                                          style: [
+                                            L.badgeChip,
+                                            { backgroundColor: W.surface, borderColor: W.border },
+                                          ],
+                                          children: [
+                                            (0, S.jsx)(n.default, {
+                                              style: { fontSize: 15 },
+                                              children: e.emoji,
+                                            }),
+                                            (0, S.jsx)(n.default, {
+                                              style: [
+                                                w.typography.caption,
+                                                {
+                                                  color: W.text,
+                                                  marginStart: 4,
+                                                  flexShrink: 1,
+                                                  maxWidth: 150,
+                                                },
+                                              ],
+                                              numberOfLines: 1,
+                                              children: e.name,
+                                            }),
+                                            t &&
+                                              (0, S.jsxs)(n.default, {
+                                                style: [w.typography.caption, { marginStart: 3 }],
+                                                children: ["\ud83d\udd25", e.win_streak],
+                                              }),
+                                            l &&
+                                              (0, S.jsxs)(n.default, {
+                                                style: [w.typography.caption, { marginStart: 3 }],
+                                                children: ["\ud83e\uddca", e.loss_streak],
+                                              }),
+                                          ],
+                                        },
+                                        e.id,
+                                      );
+                                    }),
+                                  }),
+                                }),
+                              F.mutual_friends.length > 0 &&
+                                (0, S.jsx)(z, {
+                                  title: `${A("mutualFriends")} \xb7 ${F.mutual_friends.length}`,
+                                  colors: W,
+                                  children: (0, S.jsx)(c.default, {
+                                    style: { flexDirection: "row", flexWrap: "wrap" },
+                                    children: F.mutual_friends.map((e, t) =>
+                                      (0, S.jsx)(
+                                        a.default,
+                                        {
+                                          onPress: () => D.push(`/player/${e.id}`),
+                                          accessibilityRole: "button",
+                                          accessibilityLabel: e.name,
+                                          children: (0, S.jsxs)(n.default, {
+                                            style: [w.typography.small, { color: W.accentText }],
+                                            children: [e.name, t < F.mutual_friends.length - 1 ? ", " : ""],
+                                          }),
+                                        },
+                                        e.id,
+                                      ),
+                                    ),
+                                  }),
+                                }),
+                              F.mutual_teams.length > 0 &&
+                                (0, S.jsx)(z, {
+                                  title: `${A("mutualTeams")} \xb7 ${F.mutual_teams.length}`,
+                                  colors: W,
+                                  children: (0, S.jsx)(n.default, {
+                                    style: [w.typography.small, { color: W.textMuted }],
+                                    numberOfLines: 2,
+                                    children: F.mutual_teams.map((e) => e.name).join(", "),
+                                  }),
+                                }),
+                            ],
+                          }),
+                      ],
+                    }),
+                  ],
+                }),
+                (0, S.jsx)(s.default, {
+                  visible: N,
+                  transparent: !0,
+                  animationType: "fade",
+                  onRequestClose: () => U(!1),
+                  children: (0, S.jsx)(a.default, {
+                    style: L.scrim,
+                    onPress: () => U(!1),
+                    children: (0, S.jsxs)(a.default, {
+                      style: [L.sheet, { backgroundColor: W.surface }],
+                      onPress: () => {},
+                      children: [
+                        (0, S.jsxs)(a.default, {
+                          onPress: async () => {
+                            if (!i || !F) return;
+                            (U(!1),
+                              F.is_muted
+                                ? (await (0, _.unmuteUser)(i.id, F.user_id), J(A("unmutedToast")))
+                                : (await (0, _.muteUser)(i.id, F.user_id), J(A("mutedToast"))));
+                            await K();
+                          },
+                          accessibilityRole: "button",
+                          style: L.sheetRow,
+                          children: [
+                            (0, S.jsx)(h.Ionicons, {
+                              name: F.is_muted ? "volume-high-outline" : "volume-mute-outline",
+                              size: 20,
+                              color: W.text,
+                            }),
+                            (0, S.jsx)(n.default, {
+                              style: [w.typography.body, { color: W.text, marginStart: w.spacing.md }],
+                              children: F.is_muted ? A("unmuteBtn") : A("muteBtn"),
+                            }),
+                          ],
+                        }),
+                        (0, S.jsx)(c.default, { style: [L.sheetDivider, { backgroundColor: W.border }] }),
+                        (0, S.jsxs)(a.default, {
+                          onPress: Q,
+                          accessibilityRole: "button",
+                          style: L.sheetRow,
+                          children: [
+                            (0, S.jsx)(h.Ionicons, { name: "ban-outline", size: 20, color: W.danger }),
+                            (0, S.jsx)(n.default, {
+                              style: [w.typography.body, { color: W.danger, marginStart: w.spacing.md }],
+                              children: F.is_blocked ? A("unblockBtn") : A("blockBtn"),
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                  }),
+                }),
+                G &&
+                  (0, S.jsx)(c.default, {
+                    style: [L.toast, { backgroundColor: W.text }],
+                    children: (0, S.jsx)(n.default, {
+                      style: [w.typography.smallStrong, { color: W.bg, textAlign: "center" }],
+                      children: G,
+                    }),
+                  }),
+              ],
+            })
+          : (0, S.jsx)(u.SafeAreaView, {
+              style: [L.center, { backgroundColor: W.bg }],
+              children: (0, S.jsx)(l.default, { color: W.accentText }),
+            });
+      }));
+    var t = r(d[1]),
+      l = e(r(d[2])),
+      s = e(r(d[3])),
+      a = e(r(d[4])),
+      o = e(r(d[5])),
+      i = e(r(d[6])),
+      n = e(r(d[7])),
+      c = e(r(d[8])),
+      u = r(d[9]),
+      h = r(d[10]),
+      p = r(d[11]),
+      x = r(d[12]),
+      m = r(d[13]),
+      f = r(d[14]),
+      y = r(d[15]),
+      b = r(d[16]),
+      j = r(d[17]),
+      w = r(d[18]),
+      _ = r(d[19]),
+      k = r(d[20]),
+      C = r(d[21]),
+      v = r(d[22]),
+      T = r(d[23]),
+      B = r(d[24]),
+      R = r(d[25]),
+      S = r(d[26]);
+    const I = { football: "football", padel: "padel", tennis: "tennis" };
+    const P = ({ n: e, label: t, colors: l, onPress: s }) => {
+        const o = (0, S.jsxs)(S.Fragment, {
+          children: [
+            (0, S.jsx)(n.default, {
+              style: [w.typography.h3, { color: l.text }],
+              children: "number" == typeof e ? (0, v.formatNumber)(e) : e,
+            }),
+            (0, S.jsx)(n.default, { style: [w.typography.caption, { color: l.textMuted }], children: t }),
+          ],
+        });
+        return s
+          ? (0, S.jsx)(a.default, {
+              onPress: s,
+              accessibilityRole: "button",
+              accessibilityLabel: t,
+              style: { alignItems: "center", flex: 1 },
+              children: o,
+            })
+          : (0, S.jsx)(c.default, { style: { alignItems: "center", flex: 1 }, children: o });
+      },
+      z = ({ title: e, colors: t, children: l }) =>
+        (0, S.jsxs)(c.default, {
+          style: { marginTop: w.spacing.lg },
+          children: [
+            (0, S.jsx)(n.default, {
+              style: [w.typography.smallStrong, { color: t.textMuted, marginBottom: w.spacing.sm }],
+              children: e,
+            }),
+            l,
+          ],
+        }),
+      L = i.default.create({
+        center: { flex: 1, alignItems: "center", justifyContent: "center" },
+        cover: { height: 120, paddingTop: w.spacing.md, paddingHorizontal: w.spacing.lg },
+        iconBtn: {
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          alignItems: "center",
+          justifyContent: "center",
+          borderWidth: i.default.hairlineWidth,
+        },
+        avatar: {
+          width: 76,
+          height: 76,
+          borderRadius: 38,
+          alignItems: "center",
+          justifyContent: "center",
+          borderWidth: 3,
+        },
+        statsRow: {
+          flexDirection: "row",
+          marginTop: w.spacing.lg,
+          paddingVertical: w.spacing.md,
+          borderTopWidth: i.default.hairlineWidth,
+          borderBottomWidth: i.default.hairlineWidth,
+        },
+        badgeChip: {
+          flexDirection: "row",
+          alignItems: "center",
+          paddingHorizontal: w.spacing.md,
+          paddingVertical: 6,
+          borderRadius: w.radius.pill,
+          borderWidth: i.default.hairlineWidth,
+        },
+        msgBtn: {
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          alignItems: "center",
+          justifyContent: "center",
+          borderWidth: i.default.hairlineWidth,
+        },
+        header: {
+          flexDirection: "row",
+          alignItems: "center",
+          paddingHorizontal: w.spacing.lg,
+          paddingVertical: w.spacing.md,
+        },
+        dot: { width: 8, height: 8, borderRadius: 4 },
+        scrim: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+        sheet: {
+          borderTopLeftRadius: w.radius.xl,
+          borderTopRightRadius: w.radius.xl,
+          padding: w.spacing.sm,
+          paddingBottom: w.spacing.xxxl,
+        },
+        sheetRow: { flexDirection: "row", alignItems: "center", padding: w.spacing.lg },
+        sheetDivider: { height: i.default.hairlineWidth, marginHorizontal: w.spacing.lg },
+        toast: {
+          position: "absolute",
+          bottom: 28,
+          left: w.spacing.lg,
+          right: w.spacing.lg,
+          padding: w.spacing.md,
+          borderRadius: w.radius.md,
+        },
+      });
+  },
+  2475,
+  [
+    33, 15, 461, 467, 369, 281, 158, 146, 273, 381, 1086, 20, 1623, 1624, 1668, 626, 630, 615, 616, 671, 2377,
+    1679, 1311, 1626, 675, 1171, 13,
+  ],
+);
+
 __d(function(g,r,i,a,m,_e,d){var e=r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{user:e,profile:o,refreshProfile:T}=(0,y.useAuth)(),{colors:I}=(0,x.useTheme)(),M=(0,h.useRouter)(),R=(0,k.useT)(),[z,L]=(0,t.useState)([]),[A,W]=(0,t.useState)(null),[D,E]=(0,t.useState)(null),[H,V]=(0,t.useState)(!1);(0,h.useFocusEffect)((0,t.useCallback)(()=>{o&&(L(o.preferred_sports??[]),W(o.skill_level&&'all'!==o.skill_level?o.skill_level:null),E(o.home_area??null))},[o]));const F=({on:e,label:t,onPress:l})=>(0,P.jsxs)(s.default,{onPress:l,accessibilityRole:"button",accessibilityState:{selected:e},style:[C.chip,{backgroundColor:e?I.accent:I.surface,borderColor:e?I.accent:I.border}],children:[e&&(0,P.jsx)(p.Ionicons,{name:"checkmark",size:14,color:I.accentInk,style:{marginEnd:4}}),(0,P.jsx)(n.default,{style:[b.typography.small,{color:e?I.accentInk:I.text}],children:t})]});return(0,P.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:I.bg},children:[(0,P.jsxs)(c.default,{style:C.header,children:[(0,P.jsx)(s.default,{onPress:()=>M.back(),accessibilityRole:"button",accessibilityLabel:R('back'),hitSlop:10,style:[C.iconBtn,{backgroundColor:I.surface,borderColor:I.border}],children:(0,P.jsx)(p.Ionicons,{name:(0,w.chevronBack)(),size:22,color:I.text})}),(0,P.jsx)(n.default,{style:[b.typography.h2,{color:I.text,flex:1,textAlign:'center'}],children:R('prefsTitle')}),(0,P.jsx)(c.default,{style:{width:40}})]}),(0,P.jsxs)(c.default,{style:{padding:b.spacing.lg},children:[(0,P.jsx)(n.default,{style:[b.typography.body,{color:I.textMuted,marginBottom:b.spacing.lg}],children:R('prefsBody')}),(0,P.jsx)(n.default,{style:[b.typography.smallStrong,{color:I.textMuted,marginBottom:b.spacing.xs}],children:R('sportsLabel')}),(0,P.jsx)(c.default,{style:C.row,children:S.map(e=>(0,P.jsx)(F,{on:z.includes(e),label:R(e),onPress:()=>L(t=>t.includes(e)?t.filter(t=>t!==e):[...t,e])},e))}),(0,P.jsx)(n.default,{style:[b.typography.smallStrong,{color:I.textMuted,marginTop:b.spacing.lg,marginBottom:b.spacing.xs}],children:R('levelLabel')}),(0,P.jsx)(c.default,{style:C.row,children:B.map(e=>(0,P.jsx)(F,{on:A===e,label:R(e),onPress:()=>W(t=>t===e?null:e)},e))}),(0,P.jsx)(n.default,{style:[b.typography.smallStrong,{color:I.textMuted,marginTop:b.spacing.lg,marginBottom:b.spacing.xs}],children:R('areaLabel')}),(0,P.jsx)(_.AreaPicker,{value:D,onChange:E}),(0,P.jsx)(f.Button,{title:R('saveLabel'),size:"lg",fullWidth:!0,loading:H,onPress:async()=>{if(e){V(!0);try{await(0,j.updateProfile)(e.id,Object.assign({},z.length?{preferred_sports:z}:{},A?{skill_level:A}:{},D?{home_area:D}:{})),await T(),M.back()}catch(e){l.default.alert(R('error'),(0,v.storeErrorText)(e?.message??'')||R('error'))}finally{V(!1)}}},style:{marginTop:b.spacing.xl}}),(0,P.jsx)(s.default,{onPress:()=>M.back(),accessibilityRole:"button",hitSlop:12,style:{alignItems:'center',marginTop:b.spacing.md,minHeight:b.touch.minTarget,justifyContent:'center'},children:(0,P.jsx)(n.default,{style:[b.typography.small,{color:I.textMuted}],children:R('skipForNow')})})]})]})};var t=r(d[1]),l=e(r(d[2])),s=e(r(d[3])),o=e(r(d[4])),n=e(r(d[5])),c=e(r(d[6])),u=r(d[7]),p=r(d[8]),h=r(d[9]),f=r(d[10]),y=r(d[11]),x=r(d[12]),b=r(d[13]),j=r(d[14]),k=r(d[15]),w=r(d[16]),v=r(d[17]),_=r(d[18]),P=r(d[19]);const S=['football','padel','tennis'],B=['beginner','intermediate','advanced'];const C=o.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:b.spacing.lg,paddingVertical:b.spacing.sm},iconBtn:{width:40,height:40,borderRadius:20,borderWidth:1,alignItems:'center',justifyContent:'center'},row:{flexDirection:'row',flexWrap:'wrap',gap:b.spacing.sm},chip:{flexDirection:'row',alignItems:'center',borderRadius:b.radius.pill,borderWidth:1,paddingHorizontal:b.spacing.md,paddingVertical:13}})},2476,[33,15,445,369,158,146,273,381,1086,20,626,630,615,616,671,675,1171,674,1841,13]);
 __d(
   function (g, r, i, _a, m, e, d) {
@@ -60755,7 +61609,259 @@ __d(function(g,_r,_i,a,m,_e,d){var e=_r(d[0]);Object.defineProperty(_e,"__esModu
 __d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){return(0,n.jsx)(t.Redirect,{href:"/(tabs)/games"})};var t=r(d[0]),n=r(d[1])},2499,[20,13]);
 __d(function(g,_r,_i,a,m,e,d){var t=_r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{user:t}=(0,x.useAuth)(),{colors:i}=(0,y.useTheme)(),A=(0,f.useRouter)(),N=(0,w.useT)(),[R,v]=(0,r.useState)(null);if((0,f.useFocusEffect)((0,r.useCallback)(()=>{let r=!0;return(0,j.fetchLeague)(t?.id).then(t=>{r&&v(t)}),()=>{r=!1}},[t])),!R)return(0,S.jsx)(u.SafeAreaView,{style:{flex:1,backgroundColor:i.bg,alignItems:'center',justifyContent:'center'},children:(0,S.jsx)(l.default,{color:M})});const U=R.playoff_top,B=R.table.length-R.relegation,L=({r:t})=>(0,S.jsx)(c.default,{style:[z.formChip,{backgroundColor:'W'===t?'rgba(31,169,116,0.16)':'D'===t?i.surfaceAlt:'rgba(225,72,125,0.14)'}],children:(0,S.jsx)(s.default,{style:{fontSize:9,fontWeight:'800',color:'W'===t?I:'D'===t?i.textMuted:D},children:N('W'===t?'formW':'D'===t?'formD':'formL')})}),T=new Date(R.finale_date).toLocaleDateString(void 0,{weekday:'long',day:'numeric',month:'short'});return(0,S.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:i.bg},children:[(0,S.jsxs)(c.default,{style:z.header,children:[(0,S.jsx)(o.default,{onPress:()=>A.back(),accessibilityRole:"button",accessibilityLabel:N('back'),style:[z.iconBtn,{backgroundColor:i.surface,borderColor:i.border}],children:(0,S.jsx)(p.Ionicons,{name:(0,k.chevronBack)(),size:22,color:i.text})}),(0,S.jsxs)(c.default,{style:{flex:1,marginStart:b.spacing.sm},children:[(0,S.jsx)(s.default,{style:[z.caption,{color:M}],children:N('leagueHeader',{s:(0,C.formatNumber)(R.season)}).toUpperCase()}),(0,S.jsx)(s.default,{style:[b.typography.h2,{color:i.text}],children:R.division})]}),(0,S.jsx)(p.Ionicons,{name:"trophy",size:22,color:M})]}),(0,S.jsxs)(n.default,{contentContainerStyle:{padding:b.spacing.lg,paddingTop:b.spacing.sm,paddingBottom:b.spacing.xl},children:[(0,S.jsxs)(c.default,{style:{flexDirection:'row',gap:b.spacing.sm},children:[(0,S.jsx)(c.default,{style:[z.divChip,{backgroundColor:M}],children:(0,S.jsx)(s.default,{style:[b.typography.smallStrong,{color:W}],children:R.division})}),(0,S.jsx)(c.default,{style:[z.divChip,{backgroundColor:i.surface,borderWidth:1,borderColor:i.border}],children:(0,S.jsx)(s.default,{style:[b.typography.smallStrong,{color:i.textMuted}],children:N('div2Soon')})})]}),(0,S.jsx)(s.default,{style:[b.typography.caption,{color:i.textMuted,marginTop:b.spacing.sm}],children:N('leagueMeta',{n:(0,C.formatNumber)(R.clans),slot:R.slot})}),(0,S.jsxs)(c.default,{style:[z.tableWrap,{backgroundColor:i.surface,borderColor:i.border}],children:[(0,S.jsxs)(c.default,{style:[z.row,{borderBottomWidth:1,borderBottomColor:i.border,paddingVertical:b.spacing.sm}],children:[(0,S.jsx)(s.default,{style:[z.caption,{color:i.textMuted,width:26}],children:"#"}),(0,S.jsx)(s.default,{style:[z.caption,{color:i.textMuted,flex:1}],children:N('colClan').toUpperCase()}),(0,S.jsx)(s.default,{style:[z.caption,{color:i.textMuted,width:22,textAlign:'center'}],children:N('colP').toUpperCase()}),(0,S.jsx)(s.default,{style:[z.caption,{color:i.textMuted,width:74,textAlign:'center'}],children:N('colForm').toUpperCase()}),(0,S.jsx)(s.default,{style:[z.caption,{color:i.textMuted,width:34,textAlign:'right'}],children:N('colGd').toUpperCase()}),(0,S.jsx)(s.default,{style:[z.caption,{color:i.textMuted,width:34,textAlign:'right'}],children:N('colPts').toUpperCase()})]}),R.table.map((t,r)=>{const l=r+1,o=l<=U?M:l>B?D:'transparent';return(0,S.jsxs)(c.default,{children:[(0,S.jsxs)(c.default,{style:[z.row,{paddingVertical:b.spacing.sm,backgroundColor:t.mine?'rgba(242,179,0,0.08)':'transparent'}],children:[(0,S.jsxs)(c.default,{style:{width:26,flexDirection:'row',alignItems:'center'},children:[(0,S.jsx)(c.default,{style:[z.posBar,{backgroundColor:o}]}),(0,S.jsx)(s.default,{style:[b.typography.smallStrong,{color:i.textMuted}],children:(0,C.formatNumber)(l)})]}),(0,S.jsxs)(c.default,{style:{flex:1,flexDirection:'row',alignItems:'center',gap:b.spacing.sm},children:[(0,S.jsx)(h.ClanCrest,{name:t.team.name,color:t.team.color_primary,size:26}),(0,S.jsx)(s.default,{style:[b.typography.smallStrong,{color:i.text,flexShrink:1}],numberOfLines:1,children:t.team.name}),t.mine&&(0,S.jsx)(c.default,{style:[z.youChip,{backgroundColor:M}],children:(0,S.jsx)(s.default,{style:{fontSize:9,fontWeight:'800',color:W},children:N('youChip').toUpperCase()})})]}),(0,S.jsx)(s.default,{style:[b.typography.small,{color:i.textMuted,width:22,textAlign:'center'}],children:(0,C.formatNumber)(t.p)}),(0,S.jsx)(c.default,{style:{width:74,flexDirection:'row',justifyContent:'center',gap:3},children:0===t.form.length?(0,S.jsx)(s.default,{style:[b.typography.caption,{color:i.textMuted}],children:"\u2014"}):t.form.map((t,r)=>(0,S.jsx)(L,{r:t},r))}),(0,S.jsx)(s.default,{style:[b.typography.small,{color:t.gd>0?I:t.gd<0?D:i.textMuted,width:34,textAlign:'right'}],children:t.gd>0?`+${(0,C.formatNumber)(t.gd)}`:(0,C.formatNumber)(t.gd)}),(0,S.jsx)(s.default,{style:[b.typography.smallStrong,{color:i.text,width:34,textAlign:'right'}],children:(0,C.formatNumber)(t.pts)})]}),l===U&&(0,S.jsxs)(c.default,{style:z.lineRow,children:[(0,S.jsx)(c.default,{style:[z.line,{backgroundColor:M}]}),(0,S.jsx)(s.default,{style:[z.lineLabel,{color:M}],children:N('playoffLine',{n:(0,C.formatNumber)(R.playoff_top)}).toUpperCase()}),(0,S.jsx)(c.default,{style:[z.line,{backgroundColor:M}]})]}),l===B&&(0,S.jsxs)(c.default,{style:z.lineRow,children:[(0,S.jsx)(c.default,{style:[z.line,{backgroundColor:D}]}),(0,S.jsx)(s.default,{style:[z.lineLabel,{color:D}],children:N('relegationLine',{n:(0,C.formatNumber)(R.relegation)}).toUpperCase()}),(0,S.jsx)(c.default,{style:[z.line,{backgroundColor:D}]})]})]},t.team.id)})]}),(0,S.jsxs)(c.default,{style:[z.card,{backgroundColor:i.surface,borderColor:i.border}],children:[(0,S.jsx)(s.default,{style:[z.caption,{color:i.textMuted}],children:N('howSeasonEnds').toUpperCase()}),(0,S.jsx)(s.default,{style:[b.typography.small,{color:i.text,marginTop:b.spacing.sm}],children:N('tieBreakIntro')}),[N('tie1'),N('tie2'),N('tie3'),N('tie4')].map((t,r)=>(0,S.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',marginTop:6},children:[(0,S.jsx)(c.default,{style:[z.tieNum,{backgroundColor:i.surfaceAlt}],children:(0,S.jsx)(s.default,{style:{fontSize:10,fontWeight:'800',color:i.textMuted},children:(0,C.formatNumber)(r+1)})}),(0,S.jsx)(s.default,{style:[b.typography.small,{color:i.textMuted,flex:1}],children:t})]},r))]}),(0,S.jsxs)(c.default,{style:[z.card,{backgroundColor:'rgba(242,179,0,0.09)',borderColor:'rgba(242,179,0,0.55)'}],children:[(0,S.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,S.jsx)(p.Ionicons,{name:"flame",size:16,color:M}),(0,S.jsxs)(s.default,{style:[z.caption,{color:M,marginStart:6}],children:[N('finaleWeek').toUpperCase()," \xb7 ",T.toUpperCase()]})]}),(0,S.jsx)(s.default,{style:[b.typography.small,{color:i.text,marginTop:b.spacing.sm}],children:N('finaleBody',{top:(0,C.formatNumber)(R.playoff_top)})})]})]})]})};var r=_r(d[1]),l=t(_r(d[2])),o=t(_r(d[3])),n=t(_r(d[4])),i=t(_r(d[5])),s=t(_r(d[6])),c=t(_r(d[7])),u=_r(d[8]),p=_r(d[9]),f=_r(d[10]),h=_r(d[11]),x=_r(d[12]),y=_r(d[13]),b=_r(d[14]),j=_r(d[15]),C=_r(d[16]),w=_r(d[17]),k=_r(d[18]),S=_r(d[19]);const M='#F2B300',W='#1F1600',D='#E1487D',I='#1FA974';const z=i.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:b.spacing.lg,paddingVertical:b.spacing.sm},iconBtn:{width:40,height:40,borderRadius:20,borderWidth:1,alignItems:'center',justifyContent:'center'},caption:{fontSize:10,fontWeight:'800',letterSpacing:1.5},divChip:{borderRadius:b.radius.pill,paddingHorizontal:b.spacing.md,paddingVertical:7},tableWrap:{borderRadius:b.radius.lg,borderWidth:1,marginTop:b.spacing.md,paddingHorizontal:b.spacing.sm,overflow:'hidden'},row:{flexDirection:'row',alignItems:'center'},posBar:{width:3,height:22,borderRadius:2,marginEnd:6},youChip:{borderRadius:b.radius.pill,paddingHorizontal:6,paddingVertical:2},formChip:{width:16,height:16,borderRadius:4,alignItems:'center',justifyContent:'center'},lineRow:{flexDirection:'row',alignItems:'center',gap:b.spacing.sm,paddingVertical:4},line:{flex:1,height:1,opacity:.6},lineLabel:{fontSize:8.5,fontWeight:'800',letterSpacing:1.2},card:{borderRadius:b.radius.lg,borderWidth:1,padding:b.spacing.md,marginTop:b.spacing.md},tieNum:{width:18,height:18,borderRadius:9,alignItems:'center',justifyContent:'center',marginEnd:b.spacing.sm}})},2500,[33,15,461,369,281,158,146,273,381,1086,20,1631,630,615,616,671,1311,675,1171,13]);
 __d(function(g,_r,_i,a,m,e,d){var t=_r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(){const{user:t}=(0,j.useAuth)(),{colors:s}=(0,y.useTheme)(),I=(0,f.useRouter)(),P=(0,S.useT)(),[H,N]=(0,o.useState)([]),[A,W]=(0,o.useState)(null),[L,D]=(0,o.useState)(!0),E=(0,o.useCallback)(async()=>{D(!0),N(await(0,C.fetchTeamRankings)({sport:A??void 0},t?.id)),D(!1)},[A,t?.id]);return(0,f.useFocusEffect)((0,o.useCallback)(()=>{E()},[E])),(0,_.jsxs)(u.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:s.bg},children:[(0,_.jsxs)(c.default,{style:B.header,children:[(0,_.jsx)(l.default,{onPress:()=>I.back(),accessibilityRole:"button",accessibilityLabel:P('back'),style:[B.iconBtn,{backgroundColor:s.surface,borderColor:s.border}],children:(0,_.jsx)(h.Ionicons,{name:(0,R.chevronBack)(),size:22,color:s.text})}),(0,_.jsx)(i.default,{style:[w.typography.h2,{color:s.text,flex:1,marginHorizontal:w.spacing.md}],children:P('rankings')})]}),(0,_.jsx)(c.default,{style:{paddingHorizontal:w.spacing.lg},children:(0,_.jsxs)(c.default,{style:B.chipRow,children:[(0,_.jsx)(T,{label:P('anySport'),active:null===A,onPress:()=>W(null),colors:s}),v.map(t=>(0,_.jsx)(T,{label:P(t),active:A===t,onPress:()=>W(t),colors:s},t))]})}),L?(0,_.jsx)(n.default,{color:s.accentText,style:{marginTop:w.spacing.xl}}):0===H.length?(0,_.jsx)(x.EmptyState,{icon:"trophy-outline",title:P('noTeams')}):(0,_.jsx)(r.default,{data:H,keyExtractor:t=>t.team.id,contentContainerStyle:{padding:w.spacing.lg,paddingBottom:w.spacing.xxxl},initialNumToRender:12,windowSize:7,renderItem:({item:t,index:o})=>(0,_.jsx)(l.default,{onPress:()=>I.push(`/teams/${t.team.id}`),accessibilityRole:"button",children:(0,_.jsx)(b.Card,{style:{marginBottom:w.spacing.sm},children:(0,_.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center'},children:[(0,_.jsx)(i.default,{style:[w.typography.h3,{width:32,textAlign:'center'}],children:z[o]??(0,k.formatNumber)(o+1)}),(0,_.jsx)(c.default,{style:[B.logo,{backgroundColor:t.team.color_primary}],children:(0,_.jsx)(i.default,{style:{fontSize:18},children:t.team.logo_emoji})}),(0,_.jsxs)(c.default,{style:{flex:1,marginHorizontal:w.spacing.sm},children:[(0,_.jsx)(i.default,{style:[w.typography.bodyStrong,{color:s.text}],numberOfLines:1,children:t.team.name}),(0,_.jsxs)(i.default,{style:[w.typography.caption,{color:s.textMuted}],children:[t.team.home_area," \xb7 ",(0,k.formatNumber)(t.stats.wins),P('winsLabel').charAt(0),"\u2013",(0,k.formatNumber)(t.stats.losses),P('lossesLabel').charAt(0)," \xb7 ",1===t.member_count?P('memberCountOne'):2===t.member_count?P('memberCountTwo'):P('memberCount',{n:(0,k.formatNumber)(t.member_count)})]})]}),(0,_.jsx)(p.Badge,{label:`${(0,k.formatNumber)(t.score)}`,tone:"accent"})]})})})})]})};var o=_r(d[1]),n=t(_r(d[2])),r=t(_r(d[3])),l=t(_r(d[4])),s=t(_r(d[5])),i=t(_r(d[6])),c=t(_r(d[7])),u=_r(d[8]),h=_r(d[9]),f=_r(d[10]),b=_r(d[11]),p=_r(d[12]),x=_r(d[13]),y=_r(d[14]),j=_r(d[15]),w=_r(d[16]),C=_r(d[17]),k=_r(d[18]),S=_r(d[19]),R=_r(d[20]),_=_r(d[21]);const v=['football','padel','tennis'],z=['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'];const T=({label:t,active:o,onPress:n,colors:r})=>(0,_.jsx)(l.default,{onPress:n,accessibilityRole:"button",accessibilityState:{selected:o},style:{minHeight:34,paddingHorizontal:w.spacing.md,borderRadius:999,borderWidth:s.default.hairlineWidth,alignItems:'center',justifyContent:'center',backgroundColor:o?r.accent:r.surface,borderColor:o?r.accent:r.border},children:(0,_.jsx)(i.default,{style:[w.typography.smallStrong,{color:o?'#fff':r.text}],children:t})}),B=s.default.create({header:{flexDirection:'row',alignItems:'center',paddingHorizontal:w.spacing.lg,paddingVertical:w.spacing.md},iconBtn:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:s.default.hairlineWidth},chipRow:{flexDirection:'row',flexWrap:'wrap',gap:w.spacing.sm,marginBottom:w.spacing.sm},logo:{width:40,height:40,borderRadius:12,alignItems:'center',justifyContent:'center'}})},2501,[33,15,461,271,369,158,146,273,381,1086,20,1623,1624,1627,615,630,616,671,1311,675,1171,13]);
-__d(function(g,_r,_i,a,m,_e,d){var e=_r(d[0]);Object.defineProperty(_e,"__esModule",{value:!0}),_e.default=function(){const{id:e}=(0,u.useLocalSearchParams)(),{user:l}=(0,w.useAuth)(),{colors:_}=(0,S.useTheme)(),A=(0,u.useRouter)(),V=(0,k.useT)(),[L,M]=(0,t.useState)(null),[z,D]=(0,t.useState)([]),[E,W]=(0,t.useState)(!0),[O,H]=(0,t.useState)(0),[N,F]=(0,t.useState)(''),[Y,q]=(0,t.useState)(!1),G=(0,t.useCallback)(async()=>{if(!e)return;const[t,r]=await Promise.all([(0,v.fetchVenue)(e),(0,v.fetchReviews)(e)]);M(t),D(r),W(!1)},[e]);(0,t.useEffect)(()=>{G()},[G]);if(E)return(0,I.jsx)(x.SafeAreaView,{style:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:_.bg},children:(0,I.jsx)(r.default,{color:_.accentText})});if(!L)return(0,I.jsx)(x.SafeAreaView,{style:{flex:1,backgroundColor:_.bg},children:(0,I.jsx)(j.EmptyState,{title:V('venueNotFound')})});return(0,I.jsx)(x.SafeAreaView,{edges:['top'],style:{flex:1,backgroundColor:_.bg},children:(0,I.jsxs)(i.default,{contentContainerStyle:{padding:C.spacing.lg,paddingBottom:C.spacing.xxxl},children:[(0,I.jsx)(s.default,{onPress:()=>A.back(),style:[P.back,{backgroundColor:_.surface,borderColor:_.border}],accessibilityRole:"button",accessibilityLabel:V('back'),children:(0,I.jsx)(p.Ionicons,{name:(0,B.chevronBack)(),size:22,color:_.text})}),(0,I.jsx)(o.default,{style:[C.typography.display,{color:_.text,marginTop:C.spacing.lg}],children:L.name}),(0,I.jsxs)(o.default,{style:[C.typography.body,{color:_.textMuted}],children:[L.area,", ",L.city]}),(0,I.jsxs)(c.default,{style:{flexDirection:'row',alignItems:'center',marginTop:C.spacing.sm},children:[(0,I.jsx)(p.Ionicons,{name:"star",size:16,color:_.warning}),(0,I.jsx)(o.default,{style:[C.typography.bodyStrong,{color:_.text,marginHorizontal:C.spacing.xs}],children:(0,T.formatRating)(L.rating)}),(0,I.jsxs)(o.default,{style:[C.typography.small,{color:_.textMuted}],children:[(0,T.formatCountParens)(L.rating_count)," ",V('reviews').toLowerCase()]})]}),(0,I.jsx)(c.default,{style:{flexDirection:'row',gap:C.spacing.xs,marginTop:C.spacing.md,flexWrap:'wrap'},children:L.sports.map(e=>(0,I.jsx)(b.Badge,{label:V(e),tone:"accent"},e))}),L.description&&(0,I.jsxs)(y.Card,{style:{marginTop:C.spacing.lg},children:[(0,I.jsx)(o.default,{style:[C.typography.smallStrong,{color:_.textMuted,marginBottom:C.spacing.xs}],children:V('aboutVenue')}),(0,I.jsx)(o.default,{style:[C.typography.body,{color:_.text}],children:L.description})]}),(0,I.jsx)(o.default,{style:[C.typography.h2,{color:_.text,marginTop:C.spacing.xl,marginBottom:C.spacing.md}],children:V('writeReview')}),(0,I.jsxs)(y.Card,{children:[(0,I.jsx)(o.default,{style:[C.typography.smallStrong,{color:_.textMuted,marginBottom:C.spacing.sm}],children:V('rateThisVenue')}),(0,I.jsx)(c.default,{style:{flexDirection:'row',marginBottom:C.spacing.md},children:[1,2,3,4,5].map(e=>(0,I.jsx)(s.default,{onPress:()=>H(e),hitSlop:8,accessibilityRole:"button",accessibilityLabel:V('ratingStarA11y',{n:(0,T.formatNumber)(e)}),children:(0,I.jsx)(p.Ionicons,{name:e<=O?'star':'star-outline',size:32,color:e<=O?_.warning:_.textMuted,style:{marginEnd:C.spacing.xs}})},e))}),(0,I.jsx)(h.Input,{placeholder:V('reviewPlaceholder'),value:N,onChangeText:F,multiline:!0,numberOfLines:3,style:{minHeight:80,textAlignVertical:'top'}}),(0,I.jsx)(f.Button,{title:V('submitReview'),onPress:async()=>{if(l&&L&&0!==O){q(!0);try{await(0,v.upsertReview)({venue_id:L.id,user_id:l.id,rating:O,comment:N}),F(''),H(0),await G()}catch(e){n.default.alert(V('error'),(0,R.storeErrorText)(e?.message??'')||V('error'))}finally{q(!1)}}},disabled:0===O,loading:Y,fullWidth:!0})]}),(0,I.jsx)(o.default,{style:[C.typography.h2,{color:_.text,marginTop:C.spacing.xl,marginBottom:C.spacing.md}],children:V('reviews')}),0===z.length?(0,I.jsx)(j.EmptyState,{icon:"chatbubble-outline",title:V('noReviewsYet')}):z.map(e=>(0,I.jsxs)(y.Card,{style:{marginBottom:C.spacing.sm},children:[(0,I.jsxs)(c.default,{style:{flexDirection:'row',justifyContent:'space-between'},children:[(0,I.jsx)(o.default,{style:[C.typography.bodyStrong,{color:_.text,flexShrink:1}],numberOfLines:1,children:e.author?.full_name||V('player')}),(0,I.jsx)(c.default,{style:{flexDirection:'row'},children:Array.from({length:5}).map((t,r)=>(0,I.jsx)(p.Ionicons,{name:r<e.rating?'star':'star-outline',size:14,color:_.warning},r))})]}),e.comment&&(0,I.jsx)(o.default,{style:[C.typography.body,{color:_.text,marginTop:C.spacing.xs}],children:e.comment})]},e.id))]})})};var t=_r(d[1]),r=e(_r(d[2])),n=e(_r(d[3])),s=e(_r(d[4])),i=e(_r(d[5])),l=e(_r(d[6])),o=e(_r(d[7])),c=e(_r(d[8])),u=_r(d[9]),x=_r(d[10]),p=_r(d[11]),y=_r(d[12]),h=_r(d[13]),f=_r(d[14]),b=_r(d[15]),j=_r(d[16]),w=_r(d[17]),S=_r(d[18]),C=_r(d[19]),v=_r(d[20]),T=_r(d[21]),k=_r(d[22]),B=_r(d[23]),R=_r(d[24]),I=_r(d[25]);const P=l.default.create({back:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',borderWidth:l.default.hairlineWidth}})},2502,[33,15,461,445,369,281,158,146,273,20,381,1086,1623,625,626,1624,1627,630,615,616,671,1311,675,1171,674,13]);
+__d(
+  function (g, _r, _i, a, m, _e, d) {
+    var e = _r(d[0]);
+    (Object.defineProperty(_e, "__esModule", { value: !0 }),
+      (_e.default = function () {
+        const { id: e } = (0, u.useLocalSearchParams)(),
+          { user: l } = (0, w.useAuth)(),
+          { colors: _ } = (0, S.useTheme)(),
+          A = (0, u.useRouter)(),
+          V = (0, k.useT)(),
+          [L, M] = (0, t.useState)(null),
+          [z, D] = (0, t.useState)([]),
+          [E, W] = (0, t.useState)(!0),
+          [O, H] = (0, t.useState)(0),
+          [N, F] = (0, t.useState)(""),
+          [Y, q] = (0, t.useState)(!1),
+          G = (0, t.useCallback)(async () => {
+            if (!e) return;
+            const [t, r] = await Promise.all([(0, v.fetchVenue)(e), (0, v.fetchReviews)(e)]);
+            (M(t), D(r), W(!1));
+          }, [e]);
+        (0, t.useEffect)(() => {
+          G();
+        }, [G]);
+        if (E)
+          return (0, I.jsx)(x.SafeAreaView, {
+            style: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: _.bg },
+            children: (0, I.jsx)(r.default, { color: _.accentText }),
+          });
+        if (!L)
+          return (0, I.jsx)(x.SafeAreaView, {
+            style: { flex: 1, backgroundColor: _.bg },
+            children: (0, I.jsx)(j.EmptyState, { title: V("venueNotFound") }),
+          });
+        return (0, I.jsx)(x.SafeAreaView, {
+          edges: ["top"],
+          style: { flex: 1, backgroundColor: _.bg },
+          children: (0, I.jsxs)(i.default, {
+            contentContainerStyle: { padding: C.spacing.lg, paddingBottom: C.spacing.xxxl },
+            children: [
+              (0, I.jsx)(s.default, {
+                onPress: () => A.back(),
+                style: [P.back, { backgroundColor: _.surface, borderColor: _.border }],
+                accessibilityRole: "button",
+                accessibilityLabel: V("back"),
+                children: (0, I.jsx)(p.Ionicons, { name: (0, B.chevronBack)(), size: 22, color: _.text }),
+              }),
+              (0, I.jsx)(o.default, {
+                style: [C.typography.display, { color: _.text, marginTop: C.spacing.lg }],
+                children: L.name,
+              }),
+              (0, I.jsxs)(o.default, {
+                style: [C.typography.body, { color: _.textMuted }],
+                children: [L.area, ", ", L.city],
+              }),
+              (0, I.jsxs)(c.default, {
+                style: { flexDirection: "row", alignItems: "center", marginTop: C.spacing.sm },
+                children: [
+                  (0, I.jsx)(p.Ionicons, { name: "star", size: 16, color: _.warning }),
+                  (0, I.jsx)(o.default, {
+                    style: [C.typography.bodyStrong, { color: _.text, marginHorizontal: C.spacing.xs }],
+                    children: (0, T.formatRating)(L.rating),
+                  }),
+                  (0, I.jsxs)(o.default, {
+                    style: [C.typography.small, { color: _.textMuted }],
+                    children: [(0, T.formatCountParens)(L.rating_count), " ", V("reviews").toLowerCase()],
+                  }),
+                ],
+              }),
+              (0, I.jsx)(c.default, {
+                style: { flexDirection: "row", gap: C.spacing.xs, marginTop: C.spacing.md, flexWrap: "wrap" },
+                children: L.sports.map((e) => (0, I.jsx)(b.Badge, { label: V(e), tone: "accent" }, e)),
+              }),
+              L.description &&
+                (0, I.jsxs)(y.Card, {
+                  style: { marginTop: C.spacing.lg },
+                  children: [
+                    (0, I.jsx)(o.default, {
+                      style: [C.typography.smallStrong, { color: _.textMuted, marginBottom: C.spacing.xs }],
+                      children: V("aboutVenue"),
+                    }),
+                    (0, I.jsx)(o.default, {
+                      style: [C.typography.body, { color: _.text }],
+                      children: L.description,
+                    }),
+                  ],
+                }),
+              (0, I.jsx)(o.default, {
+                style: [
+                  C.typography.h2,
+                  { color: _.text, marginTop: C.spacing.xl, marginBottom: C.spacing.md },
+                ],
+                children: V("writeReview"),
+              }),
+              (0, I.jsxs)(y.Card, {
+                children: [
+                  (0, I.jsx)(o.default, {
+                    style: [C.typography.smallStrong, { color: _.textMuted, marginBottom: C.spacing.sm }],
+                    children: V("rateThisVenue"),
+                  }),
+                  (0, I.jsx)(c.default, {
+                    style: { flexDirection: "row", marginBottom: C.spacing.md },
+                    children: [1, 2, 3, 4, 5].map((e) =>
+                      (0, I.jsx)(
+                        s.default,
+                        {
+                          onPress: () => H(e),
+                          hitSlop: 8,
+                          accessibilityRole: "button",
+                          accessibilityLabel: V("ratingStarA11y", { n: (0, T.formatNumber)(e) }),
+                          children: (0, I.jsx)(p.Ionicons, {
+                            name: e <= O ? "star" : "star-outline",
+                            size: 32,
+                            color: e <= O ? _.warning : _.textMuted,
+                            style: { marginEnd: C.spacing.xs },
+                          }),
+                        },
+                        e,
+                      ),
+                    ),
+                  }),
+                  (0, I.jsx)(h.Input, {
+                    placeholder: V("reviewPlaceholder"),
+                    value: N,
+                    onChangeText: F,
+                    multiline: !0,
+                    numberOfLines: 3,
+                    style: { minHeight: 80, textAlignVertical: "top" },
+                  }),
+                  (0, I.jsx)(f.Button, {
+                    title: V("submitReview"),
+                    onPress: async () => {
+                      if (l && L && 0 !== O) {
+                        q(!0);
+                        try {
+                          (await (0, v.upsertReview)({
+                            venue_id: L.id,
+                            user_id: l.id,
+                            rating: O,
+                            comment: N,
+                          }),
+                            F(""),
+                            H(0),
+                            await G());
+                        } catch (e) {
+                          n.default.alert(V("error"), (0, R.storeErrorText)(e?.message ?? "") || V("error"));
+                        } finally {
+                          q(!1);
+                        }
+                      }
+                    },
+                    disabled: 0 === O,
+                    loading: Y,
+                    fullWidth: !0,
+                  }),
+                ],
+              }),
+              (0, I.jsx)(o.default, {
+                style: [
+                  C.typography.h2,
+                  { color: _.text, marginTop: C.spacing.xl, marginBottom: C.spacing.md },
+                ],
+                children: V("reviews"),
+              }),
+              0 === z.length
+                ? (0, I.jsx)(j.EmptyState, { icon: "chatbubble-outline", title: V("noReviewsYet") })
+                : z.map((e) =>
+                    (0, I.jsxs)(
+                      y.Card,
+                      {
+                        style: { marginBottom: C.spacing.sm },
+                        children: [
+                          (0, I.jsxs)(c.default, {
+                            style: { flexDirection: "row", justifyContent: "space-between" },
+                            children: [
+                              (0, I.jsx)(o.default, {
+                                style: [C.typography.bodyStrong, { color: _.text, flexShrink: 1 }],
+                                numberOfLines: 1,
+                                children: e.author?.full_name || V("player"),
+                              }),
+                              (0, I.jsx)(c.default, {
+                                style: { flexDirection: "row" },
+                                children: Array.from({ length: 5 }).map((t, r) =>
+                                  (0, I.jsx)(
+                                    p.Ionicons,
+                                    {
+                                      name: r < e.rating ? "star" : "star-outline",
+                                      size: 14,
+                                      color: _.warning,
+                                    },
+                                    r,
+                                  ),
+                                ),
+                              }),
+                            ],
+                          }),
+                          e.comment &&
+                            (0, I.jsx)(o.default, {
+                              style: [C.typography.body, { color: _.text, marginTop: C.spacing.xs }],
+                              children: e.comment,
+                            }),
+                        ],
+                      },
+                      e.id,
+                    ),
+                  ),
+            ],
+          }),
+        });
+      }));
+    var t = _r(d[1]),
+      r = e(_r(d[2])),
+      n = e(_r(d[3])),
+      s = e(_r(d[4])),
+      i = e(_r(d[5])),
+      l = e(_r(d[6])),
+      o = e(_r(d[7])),
+      c = e(_r(d[8])),
+      u = _r(d[9]),
+      x = _r(d[10]),
+      p = _r(d[11]),
+      y = _r(d[12]),
+      h = _r(d[13]),
+      f = _r(d[14]),
+      b = _r(d[15]),
+      j = _r(d[16]),
+      w = _r(d[17]),
+      S = _r(d[18]),
+      C = _r(d[19]),
+      v = _r(d[20]),
+      T = _r(d[21]),
+      k = _r(d[22]),
+      B = _r(d[23]),
+      R = _r(d[24]),
+      I = _r(d[25]);
+    const P = l.default.create({
+      back: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: l.default.hairlineWidth,
+      },
+    });
+  },
+  2502,
+  [
+    33, 15, 461, 445, 369, 281, 158, 146, 273, 20, 381, 1086, 1623, 625, 626, 1624, 1627, 630, 615, 616, 671,
+    1311, 675, 1171, 674, 13,
+  ],
+);
+
 __d(
   function (g, r, i, a, m, _e, d) {
     var e = r(d[0]);

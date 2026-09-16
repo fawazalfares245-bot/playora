@@ -17,6 +17,15 @@ __d(
     // clock was dead code and the only reconciliation that ever ran was the incidental one on the
     // payments screens. Run it on session boot and whenever the tab comes back to the foreground,
     // throttled so switching tabs is not a full sweep, and never blocking or failing a render.
+    // F-CSEC-10: only signOut cleared the guest record, so playora.guest_session outlived the guest
+    // phase. When the real 30-day session lapsed, loadSession returned null and the stale guest
+    // identity was restored in its place - silently, with the user's own account replaced by a
+    // shared one and no signal that anything had changed. Every path that adopts a real session
+    // clears it, and a guest session is left alone so entering guest mode still works.
+    const G9 = async (s9) => {
+      const id9 = s9?.user?.id ?? "";
+      if (id9 && !String(id9).startsWith("guest:")) await (0, h.clearGuestSession)();
+    };
     const M9 = 3e5;
     let N9 = 0;
     const O9 = async (t) => {
@@ -80,13 +89,13 @@ __d(
             const o = (await (0, n.remoteAuthAvailable)())
               ? await (0, n.remoteSignIn)(t, u)
               : await (0, s.mockSignIn)(t, u);
-            w(o);
+            (await G9(o), w(o));
           },
           signUp: async (t, u, o, l = "male") => {
             const c = (await (0, n.remoteAuthAvailable)())
               ? await (0, n.remoteSignUp)(t, u, o, l)
               : await (0, s.mockSignUp)(t, u, o, l);
-            w(c);
+            (await G9(c), w(c));
           },
           signOut: async () => {
             (await (0, h.clearGuestSession)(),
@@ -98,7 +107,9 @@ __d(
           refreshProfile: async () => {
             v?.user && P(await (0, u.fetchProfile)(v.user.id));
           },
-          adoptSession: (t) => w(t),
+          adoptSession: async (t) => {
+            (await G9(t), w(t));
+          },
           enterGuest: (t) => {
             (0, o.setThemeAudience)(t);
             const s = { user: { id: `guest:${t}`, email: "guest@playora.app" }, token: "guest" };

@@ -831,7 +831,9 @@ __d(
         i = (await _a.get(t))?.attempts ?? 0;
       if (
         (await _a.set(t, { code: a, expires: Date.now() + da, attempts: i }),
-        await (0, w.logAudit)("auth.otp_requested", null),
+        // F-CSEC-11: both phone-auth events recorded a null actor, so the primary sign-in route was
+        // the one path the audit log could not attribute. The canonical phone is already in hand.
+        await (0, w.logAudit)("auth.otp_requested", (0, w.actorRef)(t)),
         a !== sa)
       ) {
         try {
@@ -896,9 +898,11 @@ __d(
           if (s.attempts > 5) throw (await _a.delete(o), new Error("OTP_ATTEMPTS"));
           if (t.trim() !== s.code) throw (await _a.set(o, s), new Error("OTP_WRONG"));
         }
-        await (0, w.logAudit)("auth.otp_verified", null);
         const d = `${o}@otp.playora.app`,
           l = Qt.users.find((e) => e.email === d);
+        // Logged after the lookup, so an existing account can be named. The creation path logs its
+        // own id below, once there is one.
+        await (0, w.logAudit)("auth.otp_verified", l ? (0, w.actorRef)(l.id) : null);
         if (l) {
           // CSEC (consumer audit): this branch hand-rolled the session, dropping the 30-day expiry and
           // deriving the bearer token from Math.random. Phone is the primary sign-in route, so that was
@@ -927,6 +931,8 @@ __d(
             })),
             await Za(Y, Qt.profiles),
             await (0, w.logAudit)("auth.terms_accepted", (0, w.actorRef)(m.user.id), { version: ha })),
+          // The account exists now, so the verification that created it can finally be attributed.
+          await (0, w.logAudit)("auth.otp_verified", (0, w.actorRef)(m.user.id), { created: !0 }),
           m
         );
       };
@@ -2399,7 +2405,7 @@ __d(
             await Za(q, Qt.users)),
           await (0, w.logAudit)("auth.sign_in_failed", n ? (0, w.actorRef)(n.id) : null),
           await _i(a, 200),
-          new Error("Invalid email or password.")
+          new Error("E_INVALID_EMAIL_OR_PASSWORD")
         );
       if (
         ((n.failedAttempts = 0),
@@ -3174,6 +3180,28 @@ __d(
     };
     r.mockUpsertReview = async (e) => {
       await ei();
+      // F-CSEC-7: a review was accepted on any venue id, from any account id the caller cared to
+      // name, with no evidence the reviewer had ever been there - and reviews are averaged into the
+      // public venue rating, so a venue could be rated up or down by anyone with the API. The venue
+      // must exist, and the author must have actually played there: a match at that venue they were
+      // a participant in, or a court they booked themselves.
+      //
+      // The other half of the finding - that the author is taken from the payload rather than a
+      // session - is the architecture, not this function: there is no server, so the caller id is
+      // the credential everywhere in 631 (F-XC-1). The visit requirement is what can be enforced
+      // here, and it is the part that stops a venue being rated by someone who never went.
+      if (!fi().some((t) => t.id === e.venue_id)) throw new Error("E_VENUE_NOT_FOUND");
+      const gm9 = new Set(gi().filter((t) => t.venue_id === e.venue_id).map((e) => e.id));
+      const been9 =
+        Qt.bookings.some((t) => t.user_id === e.user_id && gm9.has(t.game_id) && countsAsParticipant9(t)) ||
+        Qt.courtBookings.some(
+          (t) =>
+            t.organizer_id === e.user_id &&
+            t.venue_id === e.venue_id &&
+            "cancelled" !== t.status &&
+            new Date(t.starts_at).getTime() < Date.now(),
+        );
+      if (!been9) throw new Error("E_ONLY_PLAYERS_WHO_HAVE_PLAYED_HERE");
       const t = Math.max(1, Math.min(5, Math.round(e.rating))),
         a = e.comment ? (0, v.sanitizeText)(e.comment, 1e3) : null,
         i = Qt.reviews.findIndex((t) => t.venue_id === e.venue_id && t.user_id === e.user_id);
@@ -15124,6 +15152,20 @@ __d(
         if (!ia(d, u.audience ?? "male")) continue;
         if (Xd(e, u.id) || tl(e, u.id)) continue;
         if ("private" === al(u.id).profile_visibility) continue;
+        // F-CSEC-5: mockGetPlayerProfile treats followers-only as a gate; this listing over the same
+        // records only filtered "private", so the search handed back exactly the attributes the
+        // profile endpoint withholds. The two can no longer disagree.
+        //
+        // The settings differ in what they promise, so they are answered differently. "connections"
+        // says only connections see the profile, so a non-connection does not get a row at all.
+        // "followers" is about depth rather than existence, so the person stays findable by name and
+        // the gated fields are blanked. Either way an attribute filter cannot be used to probe what
+        // is hidden - a gated row is dropped from a filtered search rather than tested against it.
+        const pv9 = u.privacy_visibility ?? "everyone";
+        if ("connections" === pv9 && !isConnection9(e, u.id)) continue;
+        const ltd9 =
+          "followers" === al(u.id).profile_visibility && !Vd(e, u.id) && !a.has(u.id);
+        if (ltd9 && (t.sport || t.skill || r || t.lookingForGame)) continue;
         const m = u.full_name || "Player",
           w = u.username ?? "";
         if (n && !m.toLowerCase().includes(n) && !w.includes(n.replace(/^@/, ""))) continue;
@@ -15168,10 +15210,11 @@ __d(
           name: m,
           username: u.username ?? null,
           avatar_url: "photo" === u.avatar_mode ? u.avatar_url : null,
-          skill_level: u.skill_level,
-          sports: u.preferred_sports,
-          area: l ? null : (u.home_area ?? null),
-          looking_for_game: p,
+          skill_level: ltd9 ? "all" : u.skill_level,
+          sports: ltd9 ? [] : u.preferred_sports,
+          area: ltd9 || l ? null : (u.home_area ?? null),
+          looking_for_game: !ltd9 && p,
+          limited: ltd9,
           mutuals: h,
           mutual_games: y.size,
           is_following: Vd(e, u.id),

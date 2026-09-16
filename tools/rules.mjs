@@ -149,6 +149,45 @@ const out = await page.evaluate(async (ids) => {
     await api.updatePrivacy(me9, { privacy_visibility: 'everyone' });
     res.privOpen = await prof9(ids.analyst, me9);
 
+    // F-CSEC-5: mockSearchPlayers over the same records only filtered "private", so the listing
+    // returned exactly the attributes mockGetPlayerProfile withholds from a non-follower.
+    // The subject is taken from the search's own output, because two separate filters would
+    // otherwise make every line below pass for the wrong reason: mockSearchPlayers drops admins and
+    // analysts by role, and it drops a hardcoded list of test-account names that includes the
+    // harness's own "Test Player".
+    const seed9 = await api.searchPlayers(ids.organizer, {});
+    const subj9 = seed9[0] ?? null;
+    res.searchSubject = subj9 ? { id: subj9.id, skill: subj9.skill_level, sports: (subj9.sports || []).length } : null;
+    const row9 = (rows) => (subj9 ? (rows.find((r) => r.id === subj9.id) ?? null) : null);
+    if (subj9) {
+      await api.setPrivacySettings(subj9.id, { profile_visibility: 'followers' });
+      res.searchGated = row9(await api.searchPlayers(ids.organizer, {}));
+      // ...and an attribute filter must not become a way to probe what the row hides.
+      res.searchProbe = row9(await api.searchPlayers(ids.organizer, { skill: subj9.skill_level }));
+      // the connections setting removes the row outright rather than reducing it
+      await api.setPrivacySettings(subj9.id, { profile_visibility: 'public' });
+      await api.updatePrivacy(subj9.id, { privacy_visibility: 'connections' });
+      res.searchConnections = row9(await api.searchPlayers(ids.organizer, {}));
+      await api.updatePrivacy(subj9.id, { privacy_visibility: 'everyone' });
+      res.searchOpen = row9(await api.searchPlayers(ids.organizer, {}));
+    }
+
+    // F-CSEC-7: a review was accepted on any venue id, from any account, with no evidence the author
+    // had ever been there - and reviews are averaged into the public venue rating.
+    const rev9 = async (venueId, userId) => {
+      try { await api.upsertReview({ venue_id: venueId, user_id: userId, rating: 1, comment: 'never been' }); return 'accepted'; }
+      catch (e) { return e.code || e.message; }
+    };
+    const anyVenue9 = (await api.fetchVenues())[0];
+    res.reviewNoVisit = await rev9(anyVenue9.id, ids.analyst);
+    res.reviewNoVenue = await rev9('no-such-venue', ids.organizer);
+    // the organizer created pg at vs[0] and holds a seat on it, so they have played there
+    const pgVenue9 = (await api.fetchGame(pg.id, ids.organizer))?.venue_id;
+    res.reviewAfterVisit = await rev9(pgVenue9, ids.organizer);
+
+    // F-CQUAL-7: the commonest auth failure was the one message in the path that is not a code.
+    res.signInBadPassword = await code(() => __r(631).mockSignIn('player@rush-x.test', 'wrong-password-here'));
+
     // ...and a public match is read by anyone, which is the point of the gate having a shape. This
     // takes a seeded match rather than creating one: the organizer has an hourly creation cap and
     // this file already spends two of it above.
@@ -441,6 +480,15 @@ ok('an outsider cannot read the match chat', out.chatOutsider === 'E_MATCH_NOT_F
 ok('nor can a signed-out visitor', out.chatGuest === 'E_MATCH_NOT_FOUND', String(out.chatGuest));
 ok('an outsider cannot post into it', out.chatWriteOutsider === 'E_MATCH_NOT_FOUND', String(out.chatWriteOutsider));
 ok('a message is signed with the author\u2019s own name', out.chatAuthorName === 'Test Player', String(out.chatAuthorName));
+ok('the search probe found a subject with attributes to hide', out.searchSubject && out.searchSubject.sports > 0, JSON.stringify(out.searchSubject));
+ok('a followers-only profile is reduced in search, not detailed', out.searchGated?.limited === true && out.searchGated?.skill_level === 'all' && (out.searchGated?.sports || []).length === 0 && out.searchGated?.area === null, JSON.stringify(out.searchGated));
+ok('and an attribute filter cannot probe what it hides', out.searchProbe === null, JSON.stringify(out.searchProbe));
+ok('a connections-only profile is absent from search', out.searchConnections === null, JSON.stringify(out.searchConnections));
+ok('an open profile is returned in full (the control)', out.searchOpen?.limited === false && (out.searchOpen?.sports || []).length > 0, JSON.stringify(out.searchOpen));
+ok('a review needs the venue to exist', out.reviewNoVenue === 'E_VENUE_NOT_FOUND', String(out.reviewNoVenue));
+ok('a review needs the author to have played there', out.reviewNoVisit === 'E_ONLY_PLAYERS_WHO_HAVE_PLAYED_HERE', String(out.reviewNoVisit));
+ok('someone who has played there can review it (the control)', out.reviewAfterVisit === 'accepted', String(out.reviewAfterVisit));
+ok('a bad password throws a mappable code', out.signInBadPassword === 'E_INVALID_EMAIL_OR_PASSWORD', String(out.signInBadPassword));
 ok('the connections setting hides the profile from a stranger', out.privStranger?.limited === true && out.privStranger?.reason === 'connections', JSON.stringify(out.privStranger));
 ok('and hides the name, as the screen previews', out.privStranger?.name === 'Player', String(out.privStranger?.name));
 ok('the owner still sees their own profile', out.privSelf?.limited === false, JSON.stringify(out.privSelf));
@@ -571,6 +619,23 @@ ok('split_equal over three payers still sums to the total', typeof out.splitEqua
   ok('the set of booking writers is unchanged', JSON.stringify(found) === JSON.stringify([...GATED].sort()), found.join(','));
   const helper = (src.match(/assertMayHoldSeat9\(/g) || []).length;
   ok('and they all reach the one seat gate', helper >= GATED.length + 1, `${helper} call sites`);
+}
+
+// --- F-CSEC-10: every path that adopts a real session clears the guest record ---
+// This one is checked structurally rather than behaviourally: the three call sites live on the
+// AuthProvider's context value, which a page evaluate cannot reach without rendering through React.
+// The behaviour is three call sites and one helper, so the check is that none of them is missing it.
+// playora.guest_session used to outlive the guest phase, and when the real 30-day session lapsed the
+// stale guest identity was restored in its place, silently.
+{
+  const src = fs.readFileSync(new URL('../bundle-src/630.js', import.meta.url), 'utf8');
+  const helper = /const G9 = async \(s9\) => \{[\s\S]*?startsWith\("guest:"\)\) await \(0, h\.clearGuestSession\)\(\);/.test(src);
+  ok('the guest-clear helper exists and skips guest sessions', helper, 'G9 missing or changed shape');
+  for (const site of ['signIn', 'signUp', 'adoptSession']) {
+    const at = src.indexOf(`${site}: async (`);
+    const body = at < 0 ? null : src.slice(at, at + 420);
+    ok(`${site} clears the guest record`, !!body && body.includes('await G9('), body ? 'no G9 call' : 'call site not found');
+  }
 }
 
 // --- booking invariants over the world this file has just churned ---

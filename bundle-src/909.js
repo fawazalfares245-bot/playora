@@ -69,6 +69,7 @@ __d(
         seStorageFull: "This device\u2019s storage is full, so the change could not be saved. Free up space and try again.",
         seYouCannotReviewYourOwn: "You cannot review your own record.",
         seAReasonIsRequired: "Please enter a reason.",
+        seInvalidEmailOrPassword: "Invalid email or password.",
         seInvalidValue: "One of the values is not valid.",
         adminOnlyTitle: "Administrators only",
         adminOnlyBody: "This area is restricted to platform administrators.",
@@ -844,6 +845,7 @@ __d(
         seUnsupportedImage: "Unsupported image.",
         seUserNotFound: "User not found.",
         seVenueNotFound: "Venue not found.",
+        seOnlyPlayersWhoHavePlayedHere: "Only players who have played at this venue can review it.",
         seWithdrawalsAreAvailableToVerifiedOrganizers:
           "Withdrawals are available to verified organizers and venues.",
         seWriteAMessage: "Write a message.",
@@ -3581,6 +3583,7 @@ __d(
         seStorageFull: "\u0645\u0633\u0627\u062d\u0629 \u0627\u0644\u062a\u062e\u0632\u064a\u0646 \u0645\u0645\u062a\u0644\u0626\u0629\u060c \u0644\u0630\u0627 \u062a\u0639\u0630\u0631 \u062d\u0641\u0638 \u0627\u0644\u062a\u063a\u064a\u064a\u0631. \u0623\u0641\u0631\u063a \u0628\u0639\u0636 \u0627\u0644\u0645\u0633\u0627\u062d\u0629 \u0648\u062d\u0627\u0648\u0644 \u0645\u062c\u062f\u062f\u064b\u0627.",
         seYouCannotReviewYourOwn: "\u0644\u0627 \u064a\u0645\u0643\u0646\u0643 \u0645\u0631\u0627\u062c\u0639\u0629 \u0633\u062c\u0644\u0643 \u0627\u0644\u062e\u0627\u0635.",
         seAReasonIsRequired: "\u064a\u0631\u062c\u0649 \u0625\u062f\u062e\u0627\u0644 \u0633\u0628\u0628.",
+        seInvalidEmailOrPassword: "\u0627\u0644\u0628\u0631\u064a\u062f \u0623\u0648 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u063a\u064a\u0631 \u0635\u062d\u064a\u062d\u0629.",
         seInvalidValue: "\u0625\u062d\u062f\u0649 \u0627\u0644\u0642\u064a\u0645 \u063a\u064a\u0631 \u0635\u0627\u0644\u062d\u0629.",
         adminOnlyTitle: "\u0644\u0644\u0645\u0634\u0631\u0641\u064a\u0646 \u0641\u0642\u0637",
         adminOnlyBody: "\u0647\u0630\u0647 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0645\u062e\u0635\u0635\u0629 \u0644\u0645\u0634\u0631\u0641\u064a \u0627\u0644\u0645\u0646\u0635\u0629.",
@@ -4707,6 +4710,7 @@ __d(
           "\u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f.",
         seVenueNotFound:
           "\u0627\u0644\u0645\u0646\u0634\u0623\u0629 \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f\u0629.",
+        seOnlyPlayersWhoHavePlayedHere: "\u064a\u0645\u0643\u0646 \u0641\u0642\u0637 \u0644\u0645\u0646 \u0644\u0639\u0628 \u0641\u064a \u0647\u0630\u0627 \u0627\u0644\u0645\u0644\u0639\u0628 \u062a\u0642\u064a\u064a\u0645\u0647.",
         seWithdrawalsAreAvailableToVerifiedOrganizers:
           "\u0627\u0644\u0633\u062d\u0628 \u0645\u062a\u0627\u062d \u0644\u0644\u0645\u0646\u0638\u0651\u0645\u064a\u0646 \u0648\u0627\u0644\u0645\u0646\u0634\u0622\u062a \u0627\u0644\u0645\u0648\u062b\u0651\u0642\u0629.",
         seWriteAMessage: "\u0627\u0643\u062a\u0628 \u0631\u0633\u0627\u0644\u0629.",
