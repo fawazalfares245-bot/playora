@@ -2849,9 +2849,37 @@ __d(
       await ei();
       const t = await pi(),
         a = new Map(t.map((e) => [e.id, e]));
+      // This did none of the housekeeping its siblings do, so an expired fifteen-minute hold still
+      // reported itself as reserved until some other read of that match happened to sweep it. Sweep
+      // the matches this player actually has bookings in, once each.
+      for (const t of new Set(
+        Qt.bookings.filter((t) => t.user_id === e).map((e) => e.game_id),
+      ))
+        await Oi(t);
+      const cut9 = Date.now() - 90 * 864e5;
       return Qt.bookings
         .filter((t) => t.user_id === e)
-        .sort((e, t) => new Date(t.created_at).getTime() - new Date(e.created_at).getTime())
+        // Rejected rows are not this player's history, and cancelled ones older than ninety days are
+        // not either - the screen grew into a wall of red for anyone who had used the app for a
+        // while. Everything live, and recent history.
+        .filter(
+          (e) =>
+            "rejected" !== e.status &&
+            ("cancelled" !== e.status ||
+              new Date(e.updated_at ?? e.created_at ?? 0).getTime() > cut9),
+        )
+        // By kick-off, not by when the row was written: a booking for next month used to sit above
+        // tonight's.
+        .sort((e, t) => {
+          const a9 = hi(e.game_id),
+            i9 = hi(t.game_id),
+            n9 = a9 ? new Date(a9.starts_at).getTime() : 0,
+            r9 = i9 ? new Date(i9.starts_at).getTime() : 0,
+            o9 = Date.now(),
+            s9 = n9 >= o9,
+            d9 = r9 >= o9;
+          return s9 !== d9 ? (s9 ? -1 : 1) : s9 ? n9 - r9 : r9 - n9;
+        })
         .map((t) => {
           const i = hi(t.game_id);
           if (!i) return null;
@@ -3801,6 +3829,10 @@ __d(
         (Qt.games.push(c),
         await Za(te, Qt.games),
         l && ((l.game_id = c.id), await Za(me, Qt.courtBookings)),
+        // The organizer's own seat was pushed with four fields where every other booking site writes
+        // seven. mockSetAttendance and the check-in scanner then wrote attendance onto a row that
+        // never declared the field, and anything sorting or diffing on updated_at saw undefined for
+        // the organizer alone.
         !1 !== t.organizer_plays &&
           (Qt.bookings.push({
             id: ea(),
@@ -3808,7 +3840,11 @@ __d(
             user_id: e,
             display_name: Td(e),
             status: "confirmed",
+            attendance: null,
+            reserved_until: null,
+            checkin_token: mkCheckinToken9(),
             created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           }),
           await Za(W, Qt.bookings)),
         t.formation_key)

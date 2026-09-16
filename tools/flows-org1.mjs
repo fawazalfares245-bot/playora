@@ -318,12 +318,21 @@ await run('a series does not consume the one-off match limit', async () => {
     const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
     const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
     const now = new Date();
-    const oneOff = (k) => api.createMatch(org, {
-      title: 'Limit probe ' + k, sport: 'football', venue_id: venues[k % venues.length].id,
-      starts_at: new Date(Date.now() + (30 + k) * 864e5).toISOString(),
-      ends_at: new Date(Date.now() + (30 + k) * 864e5 + 54e5).toISOString(),
-      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
-    });
+    // Pinned to 03:00 so it can never overlap the 10:00 series below - the probe used to start at
+    // whatever time the suite happened to run, which collided once the day wore on.
+    const at3 = (days) => {
+      const d = new Date(Date.now() + days * 864e5);
+      d.setHours(3, 0, 0, 0);
+      return d;
+    };
+    const oneOff = (k) => {
+      const s = at3(30 + k);
+      return api.createMatch(org, {
+        title: 'Limit probe ' + k, sport: 'football', venue_id: venues[k % venues.length].id,
+        starts_at: s.toISOString(), ends_at: new Date(s.getTime() + 54e5).toISOString(),
+        max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+      });
+    };
 
     const before = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]').length;
     await api.createSeries(org, {

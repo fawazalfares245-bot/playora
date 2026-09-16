@@ -657,5 +657,69 @@ await run('the re-seat path refunds rather than seating someone who cannot play'
   await browser.close();
 });
 
+// mockGetMyBookings did none of the housekeeping its siblings do: an expired hold still reported
+// itself as reserved, the list was ordered by when the row was written rather than by kick-off, and
+// it returned every historical row forever including rejected ones.
+await run('my bookings are swept, ordered by kick-off and bounded', async () => {
+  const boot = await openApp({ role: 'organizer', route: '/organizer' });
+  const seed = await boot.page.evaluate(async ([org, player]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const mk = async (label, days) => {
+      const g = await api.createMatch(org, {
+        title: label, sport: 'football', venue_id: venues[days % venues.length].id,
+        starts_at: new Date(Date.now() + days * 864e5).toISOString(),
+        ends_at: new Date(Date.now() + days * 864e5 + 54e5).toISOString(),
+        max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+      });
+      await api.joinMatch(g.id, player);
+      return g;
+    };
+    const soon = await mk('Tonight', 1);
+    const later = await mk('Next month', 30);
+    const stale = await mk('Expired hold', 5);
+
+    const rows = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]');
+    const old = new Date(Date.now() - 200 * 864e5).toISOString();
+    for (const b of rows) {
+      // a hold that lapsed while nobody was looking
+      if (b.game_id === stale.id && b.user_id === player) {
+        b.status = 'reserved';
+        b.reserved_until = new Date(Date.now() - 6e5).toISOString();
+      }
+    }
+    // history that should not follow the player around, and a rejection that is not theirs to see
+    rows.push({ id: 'bk-ancient', game_id: soon.id, user_id: player, display_name: 'Test Player',
+      status: 'cancelled', attendance: null, reserved_until: null, created_at: old, updated_at: old });
+    rows.push({ id: 'bk-rejected', game_id: later.id, user_id: player, display_name: 'Test Player',
+      status: 'rejected', attendance: null, reserved_until: null,
+      created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+    localStorage.setItem('playora.mock.bookings.v1', JSON.stringify(rows));
+    const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); o[k] = localStorage.getItem(k); }
+    return { soon: soon.id, later: later.id, stale: stale.id, state: o };
+  }, [IDS.organizer, IDS.user]);
+  await boot.browser.close();
+
+  const restore = `(() => { const s = ${JSON.stringify(seed.state)}; for (const k of Object.keys(s)) if (k !== 'secure.playora_session') localStorage.setItem(k, s[k]); })();`;
+  const { browser, page, errors } = await openApp({ role: 'user', route: '/', initScript: restore });
+  const out = await page.evaluate(async ([player, seed]) => {
+    const rows = await __r(671).fetchMyBookings(player);
+    return {
+      ids: rows.map((r) => r.id),
+      firstGame: rows[0] ? rows[0].game_id : null,
+      staleStatus: (rows.find((r) => r.game_id === seed.stale) || {}).status ?? null,
+      hasAncient: rows.some((r) => r.id === 'bk-ancient'),
+      hasRejected: rows.some((r) => r.id === 'bk-rejected'),
+    };
+  }, [IDS.user, seed]);
+
+  ok('the expired hold reports itself cancelled on first load', out.staleStatus === 'cancelled', String(out.staleStatus));
+  ok('the soonest kick-off is first', out.firstGame === seed.soon, `${out.firstGame} vs ${seed.soon}`);
+  ok('a rejection is not in the list', out.hasRejected === false, String(out.hasRejected));
+  ok('cancelled history older than ninety days is dropped', out.hasAncient === false, String(out.hasAncient));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

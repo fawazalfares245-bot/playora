@@ -738,5 +738,31 @@ await run('every way a seat ends files a cancellation', async () => {
   await browser.close();
 });
 
+// The organizer's own seat was pushed with four fields where every other booking site writes seven,
+// so attendance was written onto a row that never declared the field.
+await run('the organizer booking has the same shape as a joiner booking', async () => {
+  const { browser, page, errors } = await openApp({ role: 'organizer', route: '/organizer' });
+  const out = await page.evaluate(async ([org, player]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Row shape', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 61 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 61 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+    await api.joinMatch(g.id, player);
+    const rows = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+      .filter((b) => b.game_id === g.id);
+    const keys = (id) => Object.keys(rows.find((b) => b.user_id === id) || {}).sort();
+    return { organizer: keys(org), joiner: keys(player) };
+  }, [IDS.organizer, IDS.user]);
+
+  ok('the two rows declare the same fields', JSON.stringify(out.organizer) === JSON.stringify(out.joiner), `${JSON.stringify(out.organizer)} vs ${JSON.stringify(out.joiner)}`);
+  ok('including attendance and updated_at', out.organizer.includes('attendance') && out.organizer.includes('updated_at'), JSON.stringify(out.organizer));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);
