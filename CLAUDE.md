@@ -61,6 +61,20 @@ code bug.
   normal day hit the Hobby plan's 100-builds-per-day cap and pinned every deployment at "rate limited,
   retry in 24 hours" for a full day. `vercel.json`'s `ignoreCommand` now limits builds to `main`; it
   exits 1 on `main` (build) and 0 elsewhere (skip), because Vercel treats exit 0 as "skip".
+- **The live site has been found serving a build from before any of this work.** On 2026-09-16 a
+  screenshot of `rush-x.xyz` was fingerprinted against every historical build: no home search bar
+  (added `16fbcde`, 13 Sep 21:19), an "Offline" banner (its `backendUrl` guard was added `df2aaf8`,
+  13 Sep 19:59 - after which a `backendUrl: null` build can never show it), and no "Demo mode"
+  banner (the config block carrying `demo: true` arrived `9c593dd`, 13 Sep 06:57). The only commit
+  satisfying all three is `01d228f`, 7 Sep - the original upload, which has no `__PLAYORA_CONFIG__`
+  block and no `buildId` at all. So the domain was nine days and ~56 commits behind `main`.
+  **The quickest check is the build id at the bottom of the profile screen**, which only exists from
+  `9c593dd` onward; the console also logs `Rush X build <id>` on boot. If it is absent, the site is
+  on the original upload. When that happens the cause is in the Vercel dashboard, not the code, and
+  it is one of three things: the `rush-x.xyz` domain sits on a project that is not connected to this
+  repo (there are four projects, and `…-playora2.vercel.app` is a different one); that project's Git
+  integration is not pointed at this repo's `main`; or its production deployment is pinned to an old
+  one that nothing has re-promoted. `vercel.json`'s `ignoreCommand` is correct and is not the cause.
 - **The Expo source that produces `index.html` is not in any repo.** It lives on one laptop, uncommitted.
   Anything edited in `bundle-src/` is a patch to a build artifact: the next Expo build overwrites it
   silently and without conflict. That has already happened at least once. Until the Expo project is
