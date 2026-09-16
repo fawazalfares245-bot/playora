@@ -81,6 +81,71 @@ export async function openApp({ role = 'admin', route = '/', seed = true, initSc
   return { browser, page, errors };
 }
 
+// Four properties every booking transition in 631 is meant to preserve. Most of the defects found in
+// the audit broke one of them: a promotion that ran on a match that had already finished, a second
+// live booking minted by rejoining after a cancellation, an attendance mark written onto a cancelled
+// row, an approval that confirmed a seat which no longer existed. Run this over a world a suite has
+// just churned and a regression shows up without anyone having written a bespoke test for it first.
+//
+// Pass the page and an admin id; returns { bookings, games, dupes, ghosts, stale, over }.
+export async function bookingInvariants(page, adminId) {
+  return page.evaluate(async (admin) => {
+    const api = __r(671);
+    const read = () => JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]');
+    // Expiry is lazy - a reserved hold is swept when its match is next read - so read every match
+    // that still carries one, then assert that no expired hold survived the read.
+    const held = [...new Set(read().filter((b) => 'reserved' === b.status).map((b) => b.game_id))];
+    for (const id of held) await api.fetchGame(id, admin).catch(() => null);
+
+    const now = Date.now();
+    const bookings = read();
+    const games = new Map(
+      JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]').map((g) => [g.id, g]),
+    );
+    // yi(): the seats a match has actually given away, confirmed or still held.
+    const live = (b) =>
+      'confirmed' === b.status ||
+      ('reserved' === b.status && !!b.reserved_until && new Date(b.reserved_until).getTime() > now);
+
+    const seen = new Set();
+    const dupes = [];
+    const ghosts = [];
+    const stale = [];
+    const seats = new Map();
+    for (const b of bookings) {
+      if (live(b)) {
+        const k = `${b.game_id}|${b.user_id}`;
+        if (seen.has(k)) dupes.push(k);
+        seen.add(k);
+        seats.set(b.game_id, (seats.get(b.game_id) || 0) + 1);
+      }
+      if (('cancelled' === b.status || 'rejected' === b.status) && null != b.attendance) ghosts.push(b.id);
+      if ('reserved' === b.status && !(b.reserved_until && new Date(b.reserved_until).getTime() > now))
+        stale.push(b.id);
+    }
+    const over = [];
+    let covered = 0;
+    for (const [id, n] of seats) {
+      const g = games.get(id);
+      if (!g) continue; // the demo fixtures live inside 631 and never reach storage
+      covered += 1;
+      if (n > g.max_players) over.push(`${id} ${n}/${g.max_players}`);
+    }
+    return { bookings: bookings.length, games: covered, dupes, ghosts, stale, over };
+  }, adminId);
+}
+
+// Report a bookingInvariants() result through a suite's own ok(). `floor` is the smallest world the
+// caller expects to have built; a probe that runs over an empty world passes everything and proves
+// nothing, so the coverage line is an assertion too.
+export function assertBookingInvariants(ok, inv, { floor = 1 } = {}) {
+  ok('the invariants were given a populated world', inv.bookings >= floor && inv.games > 0, `${inv.bookings} bookings, ${inv.games} matches`);
+  ok('at most one live booking per player per match', inv.dupes.length === 0, inv.dupes.slice(0, 5).join(','));
+  ok('no cancelled or rejected row carries attendance', inv.ghosts.length === 0, inv.ghosts.slice(0, 5).join(','));
+  ok('every reserved row still holds a future seat', inv.stale.length === 0, inv.stale.slice(0, 5).join(','));
+  ok('no match is seated past its capacity', inv.over.length === 0, inv.over.slice(0, 5).join(','));
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   const { browser, page, errors } = await openApp({ role, route });
   const text = await page.evaluate(() => document.body.innerText);

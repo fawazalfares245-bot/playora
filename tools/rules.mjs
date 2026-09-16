@@ -1,6 +1,6 @@
 // Backend rule checks executed inside the real runtime via the Metro require (__r).
 // Run: node tools/rules.mjs
-import { openApp, IDS } from './smoke.mjs';
+import { openApp, IDS, bookingInvariants, assertBookingInvariants } from './smoke.mjs';
 import fs from 'node:fs';
 const results = [];
 const ok = (n, c, x = '') => results.push(`${c ? 'PASS' : 'FAIL'} ${n} ${x}`);
@@ -340,6 +340,8 @@ ok('split_equal over three payers still sums to the total', typeof out.splitEqua
   ok('the retired create wizard is gone', !/\},\s*2468\s*,\s*\[/.test(html), 'module 2468 still registered');
   ok('and nothing still requires it', !/\},\s*\d+\s*,\s*\[[\d,\s]*\b2468\b/.test(html), 'a module still depends on 2468');
 }
+// --- booking invariants over the world this file has just churned ---
+assertBookingInvariants(ok, await bookingInvariants(page, IDS.admin), { floor: 12 });
 ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).join(';'));
 await browser.close();
 
