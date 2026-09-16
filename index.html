@@ -16,7 +16,7 @@ window.__PLAYORA_CONFIG__ = {
   demo: true,
   adminEmails: ["admin@rush-x.xyz"],
   backendUrl: null,
-  buildId: "5ab26814b4"
+  buildId: "8e63ba1a0e"
 };
 try { console.info("Rush X build " + window.__PLAYORA_CONFIG__.buildId); } catch (e) {}
 </script>
@@ -5225,6 +5225,14 @@ __d(
       Bi = async (e, t, a9) => {
         for (const a of Fi(e.id)) a !== e.organizer_id && (await bi(t(a), a9));
       },
+      // The hard refusals the join machine applies before it will seat anyone: the audience partition,
+      // guests, bans and suspensions, and the Code of Conduct. Wr - the re-seat path the payment
+      // success handler and the reconciler use - applied none of them, so a ban issued between
+      // payment and reconciliation did not stop the seat and the money path could create a
+      // cross-partition booking the join path would have thrown on.
+      assertMayHoldSeat9 = async (e, t) => {
+        (ra(t, e.audience), md(t), await wd(t), cocAccepted9(t));
+      },
       // One place that answers "has this account accepted the current Code of Conduct".
       cocAccepted9 = (e) => {
         if (
@@ -5240,13 +5248,8 @@ __d(
         if (new Date(a.starts_at).getTime() < Date.now()) throw new Error("E_THIS_MATCH_HAS_ALREADY_STARTED");
         if (a.organizer_id === t) throw new Error("E_YOU_ARE_THE_ORGANIZER_OF_THIS");
         return (
-          md(t),
-          await wd(t),
-          // Every enforcement mechanism in the product - sanctions, bans, the reliability score -
-          // rests on an agreement nobody was ever required to make. The join machine checked bans,
-          // guests, partition and skill, and never conduct, so bumping the version had no effect on
-          // anyone who did not happen to visit the Code of Conduct screen.
-          cocAccepted9(t),
+          // The partition check above already ran; this repeats it harmlessly and keeps one list.
+          await assertMayHoldSeat9(a, t),
           Xt(e, async () => {
             await Di(a);
             const i = Date.now(),
@@ -10355,12 +10358,23 @@ __d(
       },
       Wr = async (e, t) => {
         const a = e.game_id ? hi(e.game_id) : null;
+        // Capacity was measured as raw confirmed rows rather than ki, which counts live reserved
+        // holds too - so with holds outstanding this could seat a player past max_players.
+        let may9 = !1;
+        if (a && !a.registration_closed_at)
+          try {
+            (await assertMayHoldSeat9(a, t), (may9 = !0));
+          } catch {
+            // A guard refused, so this seat is not theirs to take. The branch below refunds instead,
+            // which is what the money path should do when the player can no longer be seated.
+            may9 = !1;
+          }
         if (
           !!a &&
+          may9 &&
           "cancelled" !== a.status &&
           new Date(a.starts_at).getTime() > Date.now() &&
-          Qt.bookings.filter((e) => e.game_id === a.id && "confirmed" === e.status).length < a.max_players &&
-          a
+          ki(a.id) < a.max_players
         ) {
           const e = Qt.bookings.find(
               (e) =>
@@ -20027,6 +20041,10 @@ __d(
     657, 658, 659, 660, 661, 662, 663, 664, 665, 666, 667, 668, 669, 670,
   ],
 );
+
+
+
+
 
 
 

@@ -598,5 +598,64 @@ await run('joining requires the current Code of Conduct', async () => {
   await browser.close();
 });
 
+// Wr re-seats a player whose payment succeeded but whose booking vanished. It wrote a confirmed
+// booking directly, with none of the join guards - so a ban issued between payment and
+// reconciliation did not stop the seat - and measured capacity as raw confirmed rows rather than ki,
+// which counts live reserved holds, so it could seat past max_players.
+await run('the re-seat path refunds rather than seating someone who cannot play', async () => {
+  const ban = `(() => {
+    const k = 'playora.mock.sanctions.v1';
+    const rows = JSON.parse(localStorage.getItem(k) || '[]');
+    rows.push({ id: 'sanction-reseat', user_id: '${IDS.analyst}', type: 'ban', category: 'abuse',
+      reason: 'seeded', evidence_url: null, game_id: null, issued_by: '${IDS.admin}',
+      issuer_role: 'admin', status: 'active', created_at: new Date().toISOString(),
+      reviewed_by: '${IDS.admin}', reviewed_at: new Date().toISOString(), review_note: null });
+    localStorage.setItem(k, JSON.stringify(rows));
+  })();`;
+  const boot = await openApp({ role: 'organizer', route: '/organizer', initScript: ban });
+  const seed = await boot.page.evaluate(async ([org, banned]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Reseat guard', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 59 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 59 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 3, visibility: 'public', format: '5v5',
+    });
+    // a paid seat whose booking has vanished, for a player who is now banned
+    const pays = JSON.parse(localStorage.getItem('playora.mock.payments.v1') || '[]');
+    pays.push({
+      id: 'pay-reseat-banned', kind: 'seat', booking_id: null, game_id: g.id, payer_id: banned,
+      payer_name: 'Test Analyst', payee_venue_id: venues[0].id, amount_kwd: 3, status: 'paid',
+      method: 'knet', gateway_ref: 'x', reminders_sent: 0, reserved_until: null,
+      paid_at: new Date().toISOString(), refunded_at: null,
+      created_at: new Date(Date.UTC(2020, 0, 2)).toISOString(),
+    });
+    localStorage.setItem('playora.mock.payments.v1', JSON.stringify(pays));
+    localStorage.removeItem('playora.mock.reconcilecursor.v1');
+    const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); o[k] = localStorage.getItem(k); }
+    return { gameId: g.id, state: o };
+  }, [IDS.organizer, IDS.analyst]);
+  await boot.browser.close();
+
+  const restore = `${ban}\n(() => { const s = ${JSON.stringify(seed.state)}; for (const k of Object.keys(s)) if (k !== 'secure.playora_session') localStorage.setItem(k, s[k]); })();`;
+  const { browser, page, errors } = await openApp({ role: 'guest', route: '/', initScript: restore });
+  const out = await page.evaluate(async ([banned, gameId]) => {
+    const api = __r(671);
+    const res = await api.reconcileSeatPayments();
+    const pay = JSON.parse(localStorage.getItem('playora.mock.payments.v1') || '[]')
+      .find((p) => p.id === 'pay-reseat-banned');
+    const seat = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+      .find((b) => b.game_id === gameId && b.user_id === banned && b.status === 'confirmed');
+    return { res, payStatus: pay ? pay.status : null, seated: !!seat };
+  }, [IDS.analyst, seed.gameId]);
+
+  ok('the reconciler refunded rather than seating', out.res.refunded >= 1 && out.res.seated === 0, JSON.stringify(out.res));
+  ok('the payment ends refunded', out.payStatus === 'refunded', String(out.payStatus));
+  ok('and no confirmed booking exists for them', out.seated === false, String(out.seated));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);
