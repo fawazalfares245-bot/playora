@@ -215,7 +215,14 @@ __d(
                       children: L("playTab"),
                     }),
                     (0, C.jsxs)(s.default, {
-                      onPress: () => F("/discover"),
+                      // This row says "Browse matches near you and join one" and used to open
+                      // /discover, which is a people directory - Discover players, Find people to play
+                      // with, follow and message. The app's most important call to action landed on a
+                      // screen that cannot show a game. Games are on the Home tab. navigate rather
+                      // than push, so tapping it from Home does not stack a second copy.
+                      onPress: () => {
+                        (H(!1), z.navigate("index"));
+                      },
                       accessibilityRole: "button",
                       style: [R.sheetRow, { borderColor: M.border }],
                       children: [
@@ -303,6 +310,39 @@ __d(
                             (0, C.jsx)(i.default, {
                               style: [x.typography.caption, { color: M.textMuted }],
                               children: L(O ? "hostMatchSub" : "becomeOrganizerHint"),
+                            }),
+                          ],
+                        }),
+                        (0, C.jsx)(c.Ionicons, {
+                          name: (0, k.chevronForward)(),
+                          size: 18,
+                          color: M.textMuted,
+                        }),
+                      ],
+                    }),
+                    (0, C.jsxs)(s.default, {
+                      onPress: () => F("/discover"),
+                      accessibilityRole: "button",
+                      style: [R.sheetRow, { borderColor: M.border }],
+                      children: [
+                        (0, C.jsx)(l.default, {
+                          style: [R.sheetIcon, { backgroundColor: M.accent }],
+                          children: (0, C.jsx)(c.Ionicons, {
+                            name: "people-outline",
+                            size: 20,
+                            color: M.accentInk,
+                          }),
+                        }),
+                        (0, C.jsxs)(l.default, {
+                          style: { flex: 1, marginHorizontal: x.spacing.md },
+                          children: [
+                            (0, C.jsx)(i.default, {
+                              style: [x.typography.bodyStrong, { color: M.text }],
+                              children: L("discoverTitle"),
+                            }),
+                            (0, C.jsx)(i.default, {
+                              style: [x.typography.caption, { color: M.textMuted }],
+                              children: L("discoverSub"),
                             }),
                           ],
                         }),

@@ -598,6 +598,9 @@ __d(
         npn_radius_km: 10,
         npn_activated_at: null,
         npn_activation_count: 0,
+        // Absent from these defaults, so it was undefined on every game until the first update - which
+        // meant the first update after any activation always broadcast, whatever the throttle said.
+        npn_last_broadcast_at: null,
         npn_notifications_sent: 0,
         npn_joins: 0,
         npn_filled_at: null,
@@ -734,6 +737,13 @@ __d(
         Zt.get(e) === a && Zt.delete(e);
       }
     }
+    // Self-contained on purpose: both places that mint one sit in scopes with their own local `c`,
+    // and reaching for the shared randomCode there is a temporal dead zone.
+    const mkCheckinToken9 = () =>
+      `PLY-${Math.random().toString(36).slice(2, 8).toUpperCase()}${Math.random()
+        .toString(36)
+        .slice(2, 6)
+        .toUpperCase()}`;
     const ea = () =>
         "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (e) =>
           (+e ^ (Math.floor(256 * Math.random()) & (15 >> (+e / 4)))).toString(16),
@@ -821,7 +831,9 @@ __d(
         i = (await _a.get(t))?.attempts ?? 0;
       if (
         (await _a.set(t, { code: a, expires: Date.now() + da, attempts: i }),
-        await (0, w.logAudit)("auth.otp_requested", null),
+        // F-CSEC-11: both phone-auth events recorded a null actor, so the primary sign-in route was
+        // the one path the audit log could not attribute. The canonical phone is already in hand.
+        await (0, w.logAudit)("auth.otp_requested", (0, w.actorRef)(t)),
         a !== sa)
       ) {
         try {
@@ -886,9 +898,11 @@ __d(
           if (s.attempts > 5) throw (await _a.delete(o), new Error("OTP_ATTEMPTS"));
           if (t.trim() !== s.code) throw (await _a.set(o, s), new Error("OTP_WRONG"));
         }
-        await (0, w.logAudit)("auth.otp_verified", null);
         const d = `${o}@otp.playora.app`,
           l = Qt.users.find((e) => e.email === d);
+        // Logged after the lookup, so an existing account can be named. The creation path logs its
+        // own id below, once there is one.
+        await (0, w.logAudit)("auth.otp_verified", l ? (0, w.actorRef)(l.id) : null);
         if (l) {
           // CSEC (consumer audit): this branch hand-rolled the session, dropping the 30-day expiry and
           // deriving the bearer token from Math.random. Phone is the primary sign-in route, so that was
@@ -917,6 +931,8 @@ __d(
             })),
             await Za(Y, Qt.profiles),
             await (0, w.logAudit)("auth.terms_accepted", (0, w.actorRef)(m.user.id), { version: ha })),
+          // The account exists now, so the verification that created it can finally be attributed.
+          await (0, w.logAudit)("auth.otp_verified", (0, w.actorRef)(m.user.id), { created: !0 }),
           m
         );
       };
@@ -2124,6 +2140,40 @@ __d(
           )),
             t && (await Za(Y, Qt.profiles)));
         }
+        {
+          // Rows written before ji learned to revive: a player who cancelled and rejoined owns two or
+          // three for the same game. Keep the newest live one, or the newest row if none is live, and
+          // drop the rest - an unfiltered lookup on (game, user) has to have one answer.
+          const seen9 = new Map();
+          for (const e of Qt.bookings) {
+            const t = `${e.game_id}|${e.user_id}`,
+              a = seen9.get(t);
+            if (!a) {
+              seen9.set(t, e);
+              continue;
+            }
+            const i = (e) => ("cancelled" !== e.status && "rejected" !== e.status ? 1 : 0),
+              n =
+                i(e) - i(a) ||
+                (e.created_at ?? "").localeCompare(a.created_at ?? "") ||
+                (e.id ?? "").localeCompare(a.id ?? "");
+            n > 0 && seen9.set(t, e);
+          }
+          const collapsed9 = seen9.size !== Qt.bookings.length;
+          // No audit row here: this block runs inside hydrate, where `w` is shadowed by a local, and
+          // a migration that fires once per device is not an event anyone needs in the log anyway.
+          collapsed9 &&
+            (Qt.bookings = Qt.bookings.filter((e) => seen9.get(`${e.game_id}|${e.user_id}`) === e));
+          // Rows written before the check-in token existed. It has to be persisted, not minted on
+          // read, or the re-read the match lock performs would drop it.
+          let minted9 = !1;
+          for (const e of Qt.bookings)
+            e.checkin_token ||
+              "cancelled" === e.status ||
+              "rejected" === e.status ||
+              ((e.checkin_token = mkCheckinToken9()), (minted9 = !0));
+          (collapsed9 || minted9) && (await Za(W, Qt.bookings));
+        }
         ((Qt.hydrated = !0), $a());
       },
       ai = [
@@ -2355,7 +2405,7 @@ __d(
             await Za(q, Qt.users)),
           await (0, w.logAudit)("auth.sign_in_failed", n ? (0, w.actorRef)(n.id) : null),
           await _i(a, 200),
-          new Error("Invalid email or password.")
+          new Error("E_INVALID_EMAIL_OR_PASSWORD")
         );
       if (
         ((n.failedAttempts = 0),
@@ -2526,6 +2576,14 @@ __d(
         "confirmed" === e.status ||
         ("reserved" === e.status && !!e.reserved_until && new Date(e.reserved_until).getTime() > t),
       ki = (e, t = Date.now()) => Qt.bookings.filter((a) => a.game_id === e && yi(a, t)).length,
+      // "Was in this match". This test appeared fourteen times in two shapes, and eight of them left
+      // out the status guard the other six applied - so a booking a player cancelled a week early
+      // still counted the moment anyone wrote an attendance mark onto it, in fill rate, returning
+      // players, attendance rate and the reliability score. One definition, used everywhere.
+      countsAsParticipant9 = (e) =>
+        "confirmed" === e.status ||
+        ("cancelled" !== e.status && "rejected" !== e.status && null != e.attendance),
+
       vi = (e) =>
         Qt.bookings
           .filter((t) => t.game_id === e && "waitlisted" === t.status)
@@ -2598,17 +2656,23 @@ __d(
           body: JSON.stringify(t.map((e) => ({ to: e, title: a, body: i, sound: "default" }))),
         }).catch(() => {});
       },
-      bi = async (e) => {
+      // The second argument bypasses the one-minute duplicate guard. It exists for the case where a
+      // second notification of the same type about the same match is the point rather than noise - a
+      // corrected score contradicts the one just sent, and suppressing it leaves the player holding
+      // the wrong result.
+      bi = async (e, t9) => {
         e.audience = e.audience ?? aa(e.user_id);
         const t = Date.now() - 6e4;
-        Qt.notifications.some(
-          (a) =>
-            a.user_id === e.user_id &&
-            a.type === e.type &&
-            a.game_id === e.game_id &&
-            !a.read &&
-            new Date(a.created_at).getTime() > t,
-        ) || ((Qt.notifications = [e, ...Qt.notifications]), await Za($, Qt.notifications), Ei(e));
+        (!t9 &&
+          Qt.notifications.some(
+            (a) =>
+              a.user_id === e.user_id &&
+              a.type === e.type &&
+              a.game_id === e.game_id &&
+              !a.read &&
+              new Date(a.created_at).getTime() > t,
+          )) ||
+          ((Qt.notifications = [e, ...Qt.notifications]), await Za($, Qt.notifications), Ei(e));
       },
       Ti = async (e, t, a) => {
         const i = new Date().toISOString(),
@@ -2634,6 +2698,13 @@ __d(
       Ai = (e) => fi().find((t) => t.id === e)?.name ?? "the venue",
       Di = async (e) => {
         const t = Date.now();
+        // rd already refuses to act on a match that is cancelled or finished; Di did not, so every
+        // sweep that touched a stale match (mockGetOrganizerMatches among them) promoted waitlisted
+        // players into it - taking a seat payment and firing a waitlist_promoted notification for a
+        // game that was already over. The guard covers the promotion loop only: the reserved-hold
+        // sweep below still runs unconditionally so stale holds clear on a finished match, and the
+        // return value still reports whether anything changed so the bookings table is persisted.
+        const n = "cancelled" !== e.status && new Date(e.ends_at).getTime() > t;
         let a = !1;
         for (const i of Qt.bookings)
           i.game_id === e.id &&
@@ -2647,7 +2718,7 @@ __d(
             await (0, w.logAudit)("participant.reservation_expired", (0, w.actorRef)(i.user_id), {
               game: e.id.slice(-6),
             }));
-        for (; ki(e.id, t) < e.max_players; ) {
+        for (; n && ki(e.id, t) < e.max_players; ) {
           const i = vi(e.id)[0];
           if (!i) break;
           ((i.status = "reserved"),
@@ -2677,6 +2748,33 @@ __d(
         const t = hi(e);
         return t ? Xt(e, () => Di(t)) : Promise.resolve(!1);
       },
+      // The viewer's own check-in token. Minted where the booking row is written, so that it is
+      // persisted - a token that existed only in memory would not survive the re-read the match lock
+      // performs, and the scanner would never find it.
+      checkinTokenFor9 = (e, t) => {
+        if (!t) return null;
+        const a = Qt.bookings.find(
+          (a) =>
+            a.game_id === e && a.user_id === t && "cancelled" !== a.status && "rejected" !== a.status,
+        );
+        return a?.checkin_token ?? null;
+      },
+      // "May this caller see this match at all". `visibility` was decorative: join never read it and
+      // the getter returned the whole row, so anyone holding the id could read a private match and
+      // its invite code. Mirrors the team rule in mockGetTeams - "private" !== privacy || member ||
+      // admin - with a live booking standing in for membership. An invite holder reaches the match
+      // through mockResolveInviteCode, not here.
+      //
+      // It lived inside Ni, and only inside Ni. Every sibling reader of the same match answered in
+      // full: mockGetGameScreen fetched the roster, the lineup, the fit score and the evaluation
+      // targets before it ever looked at what Ni had returned, so a stranger asking for a private
+      // match got game: null and, next to it, every player's name and id and the board they were
+      // standing on. mockGetGamePlayers and mockGetLineup answered the same way when asked directly.
+      err9 = () => {
+        throw new Error("E_MATCH_NOT_FOUND");
+      },
+      maySeeMatch9 = (e, t) =>
+        "private" !== e.visibility || e.organizer_id === t || null != Ri(e.id, t) || !!(t && ro(t)),
       Ri = (e, t) => {
         if (!t) return null;
         const a = Qt.bookings.find(
@@ -2688,33 +2786,69 @@ __d(
         const i = t.get(e.venue_id),
           n = Ri(e.id, a);
         return Object.assign({}, e, {
+          // The invite code is a capability - holding it is enough to join a private match - and this
+          // DTO spread the whole row, so every caller got it. mockGetOrganizerMatches already treats it
+          // as the organizer's alone and withholds it from admins too; match that here rather than
+          // inventing a second rule.
+          invite_code: e.organizer_id === a ? (e.invite_code ?? null) : null,
           venue: i,
           bookings_count: ki(e.id),
           waitlist_count: vi(e.id).length,
           pending_count: Qt.bookings.filter((t) => t.game_id === e.id && "pending" === t.status).length,
           user_booked: "confirmed" === n,
           user_status: n,
+          // Di gives a promoted waitlister fifteen minutes, and the notification it sends says so -
+          // but the DTO returned the status and not the deadline, so the reserved CTA had no
+          // countdown to show and the seat simply vanished. The confirmed-with-payment branch right
+          // above it already renders one off the payment's own deadline.
+          // So /game/[id] can mark a result that an admin has corrected.
+          score_corrected_at: e.score_corrected_at ?? null,
+          // The matchday ticket used to print PLY-<last four of the game id>-KWT, which is identical
+          // for every player in the match and for anyone who has ever seen the URL, and was never
+          // sent anywhere - the scan authenticated on the venue's own token and a player picked off a
+          // list. This is a real per-booking credential, so the ticket proves something.
+          user_checkin_token: checkinTokenFor9(e.id, a),
+          user_reserved_until:
+            Qt.bookings.find(
+              (t) =>
+                t.game_id === e.id &&
+                t.user_id === a &&
+                "cancelled" !== t.status &&
+                "rejected" !== t.status,
+            )?.reserved_until ?? null,
           organizer_name: e.organizer_id === Aa ? void 0 : or(e.organizer_id),
           series_frequency: e.series_id
             ? (Qt.templates.find((t) => t.id === e.series_id)?.frequency ?? null)
             : null,
         });
       },
+      // F-CARCH-3: this returned every public future match in the partition, with no window and no
+      // bound, and swept each one's expired holds on the way - on every focus of the home screen.
+      // The screen renders 24 rows. Two changes: an optional day window, and a bound applied after
+      // the sort so the soonest matches win. The bound is deliberately far above anything a screen
+      // renders - it exists so the query cannot grow without limit as the table does, not to
+      // paginate - and the per-match sweep now runs over the page that is actually returned rather
+      // than over the whole future table.
       Mi = async (e) => {
         (await ei(), await tn(), await Yn());
         const t = await pi(),
           a = new Map(t.map((e) => [e.id, e])),
           i = Date.now(),
-          n = gi().filter(
-            (e) =>
-              "scheduled" === e.status && "public" === e.visibility && new Date(e.starts_at).getTime() >= i,
-          );
-        return (
-          await Promise.all(n.map((e) => Oi(e.id))),
-          na(n, e?.userId)
+          w9 =
+            Number.isFinite(e?.days) && e.days > 0 ? i + e.days * 864e5 : Number.POSITIVE_INFINITY,
+          lm9 = Number.isFinite(e?.limit) && e.limit > 0 ? Math.floor(e.limit) : 200,
+          n = gi().filter((e) => {
+            if ("scheduled" !== e.status || "public" !== e.visibility) return !1;
+            const t = new Date(e.starts_at).getTime();
+            return t >= i && t <= w9;
+          }),
+          pg9 = na(n, e?.userId)
             .filter((t) => !e?.sport || t.sport === e.sport)
             .sort((e, t) => new Date(e.starts_at).getTime() - new Date(t.starts_at).getTime())
-            .map((t) => Ii(t, a, e?.userId))
+            .slice(0, lm9);
+        return (
+          await Promise.all(pg9.map((e) => Oi(e.id))),
+          pg9.map((t) => Ii(t, a, e?.userId))
         );
       };
     r.mockGetUpcomingGames = Mi;
@@ -2723,6 +2857,7 @@ __d(
       const a = hi(e);
       if (!a) return null;
       ra(t, a.audience);
+      if (!maySeeMatch9(a, t)) return null;
       const i = new Map((await pi()).map((e) => [e.id, e]));
       return Ii(a, i, t);
     };
@@ -2743,9 +2878,37 @@ __d(
       await ei();
       const t = await pi(),
         a = new Map(t.map((e) => [e.id, e]));
+      // This did none of the housekeeping its siblings do, so an expired fifteen-minute hold still
+      // reported itself as reserved until some other read of that match happened to sweep it. Sweep
+      // the matches this player actually has bookings in, once each.
+      for (const t of new Set(
+        Qt.bookings.filter((t) => t.user_id === e).map((e) => e.game_id),
+      ))
+        await Oi(t);
+      const cut9 = Date.now() - 90 * 864e5;
       return Qt.bookings
         .filter((t) => t.user_id === e)
-        .sort((e, t) => new Date(t.created_at).getTime() - new Date(e.created_at).getTime())
+        // Rejected rows are not this player's history, and cancelled ones older than ninety days are
+        // not either - the screen grew into a wall of red for anyone who had used the app for a
+        // while. Everything live, and recent history.
+        .filter(
+          (e) =>
+            "rejected" !== e.status &&
+            ("cancelled" !== e.status ||
+              new Date(e.updated_at ?? e.created_at ?? 0).getTime() > cut9),
+        )
+        // By kick-off, not by when the row was written: a booking for next month used to sit above
+        // tonight's.
+        .sort((e, t) => {
+          const a9 = hi(e.game_id),
+            i9 = hi(t.game_id),
+            n9 = a9 ? new Date(a9.starts_at).getTime() : 0,
+            r9 = i9 ? new Date(i9.starts_at).getTime() : 0,
+            o9 = Date.now(),
+            s9 = n9 >= o9,
+            d9 = r9 >= o9;
+          return s9 !== d9 ? (s9 ? -1 : 1) : s9 ? n9 - r9 : r9 - n9;
+        })
         .map((t) => {
           const i = hi(t.game_id);
           if (!i) return null;
@@ -2790,18 +2953,28 @@ __d(
           }),
           new Error("E_YOU_CAN_ONLY_CANCEL_YOUR_OWN")
         );
-      await Xt(a.game_id, async () => {
-        const t = Qt.bookings.find((t) => t.id === e);
-        if (!t || "cancelled" === t.status) return;
-        const a = yi(t, Date.now());
-        ((t.status = "cancelled"),
-          (t.reserved_until = null),
-          (t.updated_at = new Date().toISOString()),
-          await (0, w.logAudit)("match.leave", (0, w.actorRef)(t.user_id), { game: t.game_id.slice(-6) }),
-          await Za(W, Qt.bookings));
-        const i = hi(t.game_id);
-        a && i && (await Di(i), await rd(i));
-      });
+      // This used to flip the status and promote the waitlist without ever settling the payment, so
+      // the /my-bookings button silently kept the money while the Leave button on /game/[id] refunded
+      // it - two ways to give up a seat, one refund. qi (mockLeaveMatch) is the one that does it
+      // properly: refund, lineup cleanup, and a seatCancellations row. It takes its own Xt lock on the
+      // game, so it must not be wrapped in one again here.
+      // The seat settled is the booking's owner, not the caller, so an organizer or admin cancelling
+      // on someone's behalf refunds that player rather than themselves.
+      //
+      // qi logs match.leave with the booking's owner as the actor, which is right when the player
+      // cancelled their own seat and wrong for the other two actors this function admits: every
+      // organizer and admin removal through here was recorded in the audit log as the player having
+      // left of their own accord, with no way to tell the two apart afterwards. Record the removal
+      // against the caller before delegating. participant.removed already exists with this shape.
+      return (
+        n ||
+          (await (0, w.logAudit)("participant.removed", (0, w.actorRef)(t), {
+            game: a.game_id.slice(-6),
+            player: (0, w.actorRef)(a.user_id) ?? "unknown",
+            via: "cancel_booking",
+          })),
+        qi(a.game_id, a.user_id)
+      );
     };
     r.mockGetReviews = async (e) => (
       await ei(),
@@ -2872,13 +3045,33 @@ __d(
           });
         (Qt.chatMessages.push(...i), Qt.chatSeededFor.add(e), await Za(ee, Qt.chatMessages));
       };
-    r.mockEnsureChatSeed = async (e) => {
+    r.mockEnsureChatSeed = async (e, cr9) => {
       await ei();
+      // The screen calls this before it reads, and it writes seed rows into the match's channel.
+      void 0 !== cr9 && mayChat9(e, cr9);
       const t = La.find((t) => t.id === e);
       (t && (await oi(t)), await Li(e));
     };
+    // Match chat had no gate on either side. Reading took a game id, a channel name and a viewer id
+    // that was used only to decide which bubbles to draw on the right, so anyone holding a match id
+    // - signed out included - could read a private match's whole conversation, addresses and phone
+    // numbers and all. Writing was worse: mockSendChatMessage took the author's id and display name
+    // straight from the payload and pushed the row, so a stranger could post into any match under
+    // any name. The screen at /chat/[gameId] enforces nothing either; it renders whatever id is in
+    // the URL.
+    //
+    // Chat belongs to the people in the match: its participants, its organizer, and an admin.
+    const mayChat9 = (e, t) => {
+      const a = hi(e);
+      if (!a) throw new Error("E_MATCH_NOT_FOUND");
+      (ra(t, a.audience), maySeeMatch9(a, t) || err9());
+      if (!t || (a.organizer_id !== t && !ro(t) && !Fi(e).includes(t)))
+        throw new Error("E_MATCH_NOT_FOUND");
+      return a;
+    };
     r.mockGetChatMessages = async (e, t, a) => (
       await ei(),
+      mayChat9(e, a),
       Qt.chatMessages
         .filter((a) => a.game_id === e && a.channel === t)
         .map((e) => Object.assign({}, e, { is_self: a ? e.author_id === `self-${a}` : e.is_self }))
@@ -2886,12 +3079,17 @@ __d(
     );
     const Gi = async (e) => {
       await ei();
+      mayChat9(e.game_id, e.user_id);
       const t = {
         id: ea(),
         game_id: e.game_id,
         channel: e.channel,
         author_id: `self-${e.user_id}`,
-        author_name: (0, v.sanitizeName)(e.user_name),
+        // The name is the author's, not the caller's to choose: it arrived in the payload, so a
+        // message could be signed with anyone's name.
+        author_name: (0, v.sanitizeName)(
+          Qt.profiles.find((t) => t.id === e.user_id)?.full_name || e.user_name,
+        ),
         avatar_seed: 99,
         is_self: !0,
         body: (0, v.sanitizeText)(e.body, 1e3),
@@ -2902,6 +3100,11 @@ __d(
     r.mockSendChatMessage = Gi;
     const Ui = async (e, t) => {
       await ei();
+      const gm9 = hi(e);
+      if (gm9) {
+        // A caller who may not see the match is told it does not exist, which is what Ni's null says.
+        (ra(t, gm9.audience), maySeeMatch9(gm9, t) || err9());
+      }
       const a = La.find((t) => t.id === e);
       a && (await oi(a));
       const i = Qt.gamePlayers.filter((t) => t.game_id === e);
@@ -2913,21 +3116,32 @@ __d(
           ((e.user_id = ni(e.display_name)),
           ri(e.user_id, e.display_name, a?.sport ?? "football") && (r = !0),
           (n = !0));
-      if ((n && (await Za(X, Qt.gamePlayers)), r && (await Za(Y, Qt.profiles)), t)) {
-        const a = Qt.bookings.some((a) => a.game_id === e && a.user_id === t && "confirmed" === a.status),
-          n = i.some((e) => e.id === `self-${t}`);
-        if (a && !n) {
-          const a = Qt.profiles.find((e) => e.id === t);
-          i.push({
-            id: `self-${t}`,
-            game_id: e,
-            display_name: a?.full_name || "You",
-            avatar_seed: 99,
-            team: null,
-            is_self: !0,
-            user_id: t,
-          });
-        }
+      (n && (await Za(X, Qt.gamePlayers)), r && (await Za(Y, Qt.profiles)));
+      // The roster was the gamePlayers rows plus a self-entry for whoever happened to be asking, and
+      // joining a match creates no gamePlayers row - those are the guests an organizer types in by
+      // name. So on any real match the organizer's bench held exactly one player, themselves, and
+      // mockAssignLineupSlot refused every actual joiner with E_PLAYER_IS_NOT_IN_THIS_MATCH: nobody
+      // could be put on the board at all. Only the demo matches, which ship with gamePlayers rows,
+      // ever worked, which is why the board looked fine. Build the roster from the seats as well,
+      // keeping the `self-<user id>` key that the slot references and the cancellation cleanup in
+      // qi, mockKickPlayer and the squad sweep already write and clear.
+      for (const b9 of Qt.bookings) {
+        if (b9.game_id !== e || "confirmed" !== b9.status) continue;
+        const k9 = `self-${b9.user_id}`;
+        if (i.some((e) => e.id === k9 || e.user_id === b9.user_id)) continue;
+        // or() is the one name resolver: profile, then the name the booking was made under. The
+        // demo players' profiles live in the module rather than in storage, so a direct profile
+        // lookup renders a bench of "Player".
+        const nm9 = or(b9.user_id);
+        i.push({
+          id: k9,
+          game_id: e,
+          display_name: "Player" === nm9 && b9.user_id === t ? "You" : nm9,
+          avatar_seed: 99,
+          team: null,
+          is_self: b9.user_id === t,
+          user_id: b9.user_id,
+        });
       }
       const o = new Map(Qt.profiles.map((e) => [e.id, e.avatar_url ?? null]));
       return i.map((e) =>
@@ -2978,6 +3192,28 @@ __d(
     };
     r.mockUpsertReview = async (e) => {
       await ei();
+      // F-CSEC-7: a review was accepted on any venue id, from any account id the caller cared to
+      // name, with no evidence the reviewer had ever been there - and reviews are averaged into the
+      // public venue rating, so a venue could be rated up or down by anyone with the API. The venue
+      // must exist, and the author must have actually played there: a match at that venue they were
+      // a participant in, or a court they booked themselves.
+      //
+      // The other half of the finding - that the author is taken from the payload rather than a
+      // session - is the architecture, not this function: there is no server, so the caller id is
+      // the credential everywhere in 631 (F-XC-1). The visit requirement is what can be enforced
+      // here, and it is the part that stops a venue being rated by someone who never went.
+      if (!fi().some((t) => t.id === e.venue_id)) throw new Error("E_VENUE_NOT_FOUND");
+      const gm9 = new Set(gi().filter((t) => t.venue_id === e.venue_id).map((e) => e.id));
+      const been9 =
+        Qt.bookings.some((t) => t.user_id === e.user_id && gm9.has(t.game_id) && countsAsParticipant9(t)) ||
+        Qt.courtBookings.some(
+          (t) =>
+            t.organizer_id === e.user_id &&
+            t.venue_id === e.venue_id &&
+            "cancelled" !== t.status &&
+            new Date(t.starts_at).getTime() < Date.now(),
+        );
+      if (!been9) throw new Error("E_ONLY_PLAYERS_WHO_HAVE_PLAYED_HERE");
       const t = Math.max(1, Math.min(5, Math.round(e.rating))),
         a = e.comment ? (0, v.sanitizeText)(e.comment, 1e3) : null,
         i = Qt.reviews.findIndex((t) => t.venue_id === e.venue_id && t.user_id === e.user_id);
@@ -3013,9 +3249,24 @@ __d(
               .map((e) => e.user_id),
           ),
         ),
-      Bi = async (e, t) => {
-        for (const a of Fi(e.id)) a !== e.organizer_id && (await bi(t(a)));
+      Bi = async (e, t, a9) => {
+        for (const a of Fi(e.id)) a !== e.organizer_id && (await bi(t(a), a9));
       },
+      // The hard refusals the join machine applies before it will seat anyone: the audience partition,
+      // guests, bans and suspensions, and the Code of Conduct. Wr - the re-seat path the payment
+      // success handler and the reconciler use - applied none of them, so a ban issued between
+      // payment and reconciliation did not stop the seat and the money path could create a
+      // cross-partition booking the join path would have thrown on.
+      assertMayHoldSeat9 = async (e, t) => {
+        (ra(t, e.audience), md(t), await wd(t), cocAccepted9(t));
+      },
+      // One place that answers "has this account accepted the current Code of Conduct".
+      cocAccepted9 = (e) => {
+        if (
+          !Qt.cocAcceptances.some((t) => t.user_id === e && t.version >= D.CURRENT_COC_VERSION)
+        )
+          throw new Error("E_ACCEPT_THE_CODE_OF_CONDUCT");
+      };
       ji = async (e, t) => {
         await ei();
         const a = hi(e);
@@ -3024,8 +3275,8 @@ __d(
         if (new Date(a.starts_at).getTime() < Date.now()) throw new Error("E_THIS_MATCH_HAS_ALREADY_STARTED");
         if (a.organizer_id === t) throw new Error("E_YOU_ARE_THE_ORGANIZER_OF_THIS");
         return (
-          md(t),
-          await wd(t),
+          // The partition check above already ran; this repeats it harmlessly and keeps one list.
+          await assertMayHoldSeat9(a, t),
           Xt(e, async () => {
             await Di(a);
             const i = Date.now(),
@@ -3094,9 +3345,54 @@ __d(
               created_at: n,
               updated_at: n,
             };
+            // A player who cancels and rejoins used to end up owning two or three rows for the same
+            // game, because this pushed a fresh one every time. That ambiguity is what broke the
+            // check-in scanner and the payment-forfeit lookup, both of which took the first match.
+            // Wr already demonstrates the right shape: find the cancelled or rejected row and revive
+            // it in place, keeping its id. Only push when there is genuinely nothing to revive.
+            const dead9 = Qt.bookings
+              .filter(
+                (a) =>
+                  a.game_id === e &&
+                  a.user_id === t &&
+                  ("cancelled" === a.status || "rejected" === a.status),
+              )
+              .sort(xi)
+              .pop();
+            const seat9 = (a9) => {
+              if (!dead9)
+                return (
+                  Qt.bookings.push(
+                    Object.assign({}, l, { status: a9, checkin_token: mkCheckinToken9() }),
+                  ),
+                  dead9
+                );
+              return (
+                Object.assign(dead9, {
+                  status: a9,
+                  checkin_token: dead9.checkin_token ?? mkCheckinToken9(),
+                  display_name: o,
+                  attendance: null,
+                  reserved_until: null,
+                  rejection_reason: null,
+                  squad_opted_out_at: null,
+                  squad_dropped_at: null,
+                  squad_confirmed_at: null,
+                  updated_at: n,
+                }),
+                dead9
+              );
+            };
+            // A manual-approval join became a pending request with no capacity test at all, so
+            // requests piled up against seats that did not exist while Di kept handing those seats
+            // to waitlisters who joined later. Reject rather than waitlist: Di promotes a
+            // waitlisted player straight to a reserved seat, which would walk them into a
+            // manual-approval match the organizer never approved.
+            if ("manual" === a.approval_mode && ki(e, i) >= a.max_players)
+              throw new Error("E_THIS_MATCH_IS_ALREADY_FULL");
             if ("manual" === a.approval_mode || d)
               return (
-                Qt.bookings.push(Object.assign({}, l, { status: "pending" })),
+                seat9("pending"),
                 await Za(W, Qt.bookings),
                 await (0, w.logAudit)("match.join", (0, w.actorRef)(t), {
                   game: e.slice(-6),
@@ -3116,7 +3412,7 @@ __d(
                 { status: "pending" }
               );
             if (ki(e, i) < a.max_players) {
-              (Qt.bookings.push(Object.assign({}, l, { status: "confirmed" })),
+              (seat9("confirmed"),
                 await Za(W, Qt.bookings),
                 await (0, w.logAudit)("match.join", (0, w.actorRef)(t), { game: e.slice(-6) }),
                 await Ti(a, o, [t]),
@@ -3128,7 +3424,7 @@ __d(
             const c = vi(e);
             if (c.length < a.waitlist_capacity)
               return (
-                Qt.bookings.push(Object.assign({}, l, { status: "waitlisted" })),
+                seat9("waitlisted"),
                 await Za(W, Qt.bookings),
                 await (0, w.logAudit)("participant.waitlisted", (0, w.actorRef)(t), { game: e.slice(-6) }),
                 { status: "waitlisted", waitlistPosition: c.length + 1 }
@@ -3138,6 +3434,23 @@ __d(
         );
       };
     r.mockJoinMatch = ji;
+    // Qt.seatCancellations is the only source for /refunds, and it was written in exactly one place -
+    // mockLeaveMatch. The other three paths that end a live seat and move money all skipped it, so a
+    // player whose match the organizer cancelled received a wallet credit and saw nothing at all on
+    // /refunds explaining where it came from.
+    const recordSeatCancellation9 = async (e, t, a, i) => (
+      Qt.seatCancellations.push({
+        id: ea(),
+        game_id: e,
+        user_id: t,
+        cancelled_at: new Date().toISOString(),
+        paid_kwd: a.paid_kwd ?? 0,
+        refunded_kwd: a.refund_kwd ?? 0,
+        reason: i,
+        audience: aa(t),
+      }),
+      await Za(st, Qt.seatCancellations)
+    );
     const qi = async (e, t) => (
       await ei(),
       Xt(e, async () => {
@@ -3174,18 +3487,7 @@ __d(
                 ? "free_spot"
                 : "unpaid";
         return (
-          r &&
-            (Qt.seatCancellations.push({
-              id: ea(),
-              game_id: e,
-              user_id: t,
-              cancelled_at: new Date().toISOString(),
-              paid_kwd: d.paid_kwd,
-              refunded_kwd: d.refund_kwd,
-              reason: l,
-              audience: aa(t),
-            }),
-            await Za(st, Qt.seatCancellations)),
+          r && (await recordSeatCancellation9(e, t, d, l)),
           { paid_kwd: d.paid_kwd, refund_kwd: d.refund_kwd, refunded: d.refund_kwd > 0, reason: l }
         );
       })
@@ -3233,11 +3535,18 @@ __d(
         await Xt(e, async () => {
           const i = hi(e);
           if (!i) throw new Error("E_MATCH_NOT_FOUND");
-          (zi(i, t), await Di(i));
+          zi(i, t);
+          // Di used to run here, before the capacity check below. It fills the match from the
+          // waitlist up to max_players, so on any manual-approval match with a waitlist the
+          // organizer's approval was blocked by the promotion this very call had just performed -
+          // unapprovable by construction, and every retry repeated it. Take the seat first, then
+          // backfill whatever is still free at the end.
           if ("scheduled" !== i.status || new Date(i.ends_at).getTime() < Date.now())
             throw new Error("E_THIS_MATCH_CAN_NO_LONGER_BE");
           const n = Qt.bookings.find((t) => t.id === a && t.game_id === e);
           if (!n || "pending" !== n.status) return;
+          // ki counts an expired reserved hold as gone already, so the seat count is honest here
+          // without Di having swept first.
           if (ki(e) >= i.max_players) throw new Error("E_MATCH_IS_FULL_FREE_A_SLOT");
           ((n.status = "confirmed"),
             (n.updated_at = new Date().toISOString()),
@@ -3268,6 +3577,10 @@ __d(
               read: !1,
               created_at: new Date().toISOString(),
             }));
+          // Now that the approved seat is taken, expire stale holds and backfill anything still
+          // free. Called directly: this already holds the Xt lock for the match, and Oi would
+          // re-take it.
+          await Di(i);
         }));
     };
     r.mockRejectParticipant = async (e, t, a, r9) => {
@@ -3350,8 +3663,9 @@ __d(
           ((r.status = "cancelled"),
             (r.reserved_until = null),
             (r.updated_at = new Date().toISOString()),
-            await Za(W, Qt.bookings),
-            await Br(n, a, !0));
+            await Za(W, Qt.bookings));
+          const k9 = await Br(n, a, !0);
+          await recordSeatCancellation9(n.id, a, k9 ?? {}, "removed");
           const s = i ? (0, v.sanitizeText)(i, 200) : "";
           (await (0, w.logAudit)(
             "participant.removed",
@@ -3432,6 +3746,82 @@ __d(
     };
     r.validateMatchInput = validateMatchInput;
     const e9 = (e) => String(e ?? "").slice(0, 40);
+    // ORG1 (F-ORG1-19): a venue an organizer types in is usable for their own match straight away but
+    // stays out of the public directory (listed: false) until an admin reviews the pending
+    // registration created below. `created_by` records the organizer, not the venue name.
+    //
+    // Three paths used to create venues and only this one governed them: mockCreateSeries built its
+    // own literal with no listed, no review_status, no created_by and no venueProfile at all, and
+    // mockGetVenues filters on `!1 !== listed`, so undefined passed and a series venue went straight
+    // into the public directory with nothing in the admin queue. Both lanes are fed the identical
+    // object by the same UI field, so they now share the same helper and the same outcome.
+    const createCustomVenue9 = async (e, sport9, cv9) => {
+      const vn9 = (0, v.sanitizeText)(cv9.name, 80);
+      if (!vn9) throw new Error("E_ADD_A_VENUE_NAME");
+      const lat9 = Number(cv9.lat),
+        lng9 = Number(cv9.lng);
+      if (Number.isNaN(lat9) || Number.isNaN(lng9))
+        throw new Error("E_PICK_THE_VENUE_LOCATION_ON_THE");
+      const n = (0, v.sanitizeText)(cv9.address, 160),
+        r = {
+          id: ea(),
+          name: vn9,
+          city: "Kuwait",
+          area: n ? n.split(",")[0] : "Custom location",
+          sports: [sport9],
+          cover_url: null,
+          rating: 0,
+          rating_count: 0,
+          description: null,
+          address: n || null,
+          lat: lat9,
+          lng: lng9,
+          custom: !0,
+          listed: !1,
+          review_status: "pending",
+          created_by: e,
+          created_at: new Date().toISOString(),
+        };
+      (Qt.venues.push(r), await Za(ae, Qt.venues));
+      const vp9 = {
+        venue_id: r.id,
+        owner_id: e,
+        status: "pending",
+        commission_type: he,
+        commission_value: 10,
+        payout_iban_last4: null,
+        cancellation_policy: "Free cancellation up to 6 hours before start.",
+        cancellation_cutoff_hours: 6,
+        amenities: [],
+        photos: [],
+        auto_accept: !1,
+        staff: [],
+        origin: "organizer_custom",
+        created_at: new Date().toISOString(),
+        reviewed_at: null,
+        reviewed_by: null,
+        review_note: null,
+      };
+      return (
+        Qt.venueProfiles.push(vp9),
+        await Za(ce, Qt.venueProfiles),
+        await br((t9) => ({
+          id: ea(),
+          user_id: t9,
+          type: "venue_application",
+          venue_id: r.id,
+          venue_name: r.name,
+          read: !1,
+          created_at: new Date().toISOString(),
+        })),
+        await (0, w.logAudit)("venue.created", (0, w.actorRef)(e), {
+          venue: r.id.slice(-6),
+          name: e9(r.name),
+          listed: !1,
+        }),
+        r.id
+      );
+    };
     const Wi = async (e, t) => {
       (await ei(), await on(e));
       const a = (0, v.sanitizeText)(t.title, 100);
@@ -3442,9 +3832,17 @@ __d(
       const r = v9.price_kwd,
         o = t.notes ? (0, v.sanitizeText)(t.notes, 500) : null,
         s = Math.max(0, Math.min(20, t.waitlist_capacity ?? Ma(t.max_players)));
+      // Series occurrences are pushed straight into Qt.games by the generator with a fresh
+      // created_at and never pass through here, so one daily series could produce dozens of rows and
+      // lock the organizer out of the main create flow for an hour. Only hand-created matches count;
+      // the series side keeps its own 3-templates-per-hour guard.
       if (
-        Qt.games.filter((t) => t.organizer_id === e && Date.now() - new Date(t.created_at).getTime() < 36e5)
-          .length >= 5
+        Qt.games.filter(
+          (t) =>
+            t.organizer_id === e &&
+            !t.series_id &&
+            Date.now() - new Date(t.created_at).getTime() < 36e5,
+        ).length >= 5
       )
         throw (
           await (0, w.logAudit)("match.create_blocked", (0, w.actorRef)(e), { reason: "rate_limit" }),
@@ -3462,71 +3860,7 @@ __d(
       }
       if (l) d = l.venue_id;
       else if (t.custom_venue) {
-        // ORG1 (F-ORG1-19): a venue an organizer types in is usable for their own match straight away
-        // but stays out of the public directory (listed: false) until an admin reviews the pending
-        // registration created below. `created_by` records the organizer, not the venue name.
-        const vn9 = (0, v.sanitizeText)(t.custom_venue.name, 80);
-        if (!vn9) throw new Error("E_ADD_A_VENUE_NAME");
-        const a = Number(t.custom_venue.lat),
-          i = Number(t.custom_venue.lng);
-        if (Number.isNaN(a) || Number.isNaN(i)) throw new Error("E_PICK_THE_VENUE_LOCATION_ON_THE");
-        const n = (0, v.sanitizeText)(t.custom_venue.address, 160),
-          r = {
-            id: ea(),
-            name: vn9,
-            city: "Kuwait",
-            area: n ? n.split(",")[0] : "Custom location",
-            sports: [t.sport],
-            cover_url: null,
-            rating: 0,
-            rating_count: 0,
-            description: null,
-            address: n || null,
-            lat: a,
-            lng: i,
-            custom: !0,
-            listed: !1,
-            review_status: "pending",
-            created_by: e,
-            created_at: new Date().toISOString(),
-          };
-        (Qt.venues.push(r), await Za(ae, Qt.venues));
-        const vp9 = {
-          venue_id: r.id,
-          owner_id: e,
-          status: "pending",
-          commission_type: he,
-          commission_value: 10,
-          payout_iban_last4: null,
-          cancellation_policy: "Free cancellation up to 6 hours before start.",
-          cancellation_cutoff_hours: 6,
-          amenities: [],
-          photos: [],
-          auto_accept: !1,
-          staff: [],
-          origin: "organizer_custom",
-          created_at: new Date().toISOString(),
-          reviewed_at: null,
-          reviewed_by: null,
-          review_note: null,
-        };
-        (Qt.venueProfiles.push(vp9),
-          await Za(ce, Qt.venueProfiles),
-          await br((t9) => ({
-            id: ea(),
-            user_id: t9,
-            type: "venue_application",
-            venue_id: r.id,
-            venue_name: r.name,
-            read: !1,
-            created_at: new Date().toISOString(),
-          })),
-          await (0, w.logAudit)("venue.created", (0, w.actorRef)(e), {
-            venue: r.id.slice(-6),
-            name: e9(r.name),
-            listed: !1,
-          }),
-          (d = r.id));
+        d = await createCustomVenue9(e, t.sport, t.custom_venue);
       } else {
         const v9 = fi().find((e) => e.id === t.venue_id);
         if (!t.venue_id || !v9) throw new Error("E_CHOOSE_A_VENUE");
@@ -3587,6 +3921,10 @@ __d(
         (Qt.games.push(c),
         await Za(te, Qt.games),
         l && ((l.game_id = c.id), await Za(me, Qt.courtBookings)),
+        // The organizer's own seat was pushed with four fields where every other booking site writes
+        // seven. mockSetAttendance and the check-in scanner then wrote attendance onto a row that
+        // never declared the field, and anything sorting or diffing on updated_at saw undefined for
+        // the organizer alone.
         !1 !== t.organizer_plays &&
           (Qt.bookings.push({
             id: ea(),
@@ -3594,7 +3932,11 @@ __d(
             user_id: e,
             display_name: Td(e),
             status: "confirmed",
+            attendance: null,
+            reserved_until: null,
+            checkin_token: mkCheckinToken9(),
             created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           }),
           await Za(W, Qt.bookings)),
         t.formation_key)
@@ -3809,7 +4151,16 @@ __d(
           (t.updated_at = new Date().toISOString()),
           o.push(t.user_id));
       await Za(W, Qt.bookings);
-      for (const e of o) await Br(n, e, !0);
+      // refunded used to report o.length - the number of bookings cancelled, not the number of seats
+      // actually refunded - so mockCancelSeries's summary told the organizer every player got their
+      // money back even when most of them had never paid. Br already returns the amounts; count them.
+      let refunded9 = 0,
+        refundedKwd9 = 0;
+      for (const e of o) {
+        const t = await Br(n, e, !0);
+        (t && t.refund_kwd > 0 && ((refunded9 += 1), (refundedKwd9 += Number(t.refund_kwd))),
+          await recordSeatCancellation9(n.id, e, t ?? {}, "match_cancelled"));
+      }
       let s = !0;
       if (n.court_booking_id)
         try {
@@ -3826,11 +4177,12 @@ __d(
         await (0, w.logAudit)("match.cancelled", (0, w.actorRef)(t), {
           game: e.slice(-6),
           reason: r,
-          refunded: o.length,
+          cancelled: o.length,
+          refunded: refunded9,
           court_released: s,
           series: o9.series ?? null,
         }),
-        { court_released: s, refunded: o.length }
+        { court_released: s, refunded: refunded9, cancelled: o.length, refunded_kwd: (0, z.roundKwd)(refundedKwd9) }
       );
     };
     r.mockCancelMatch = async (e, t, a) => {
@@ -3848,51 +4200,6 @@ __d(
         return cancelGameLocked(e, t, r);
       });
     };
-    const legacyCancelMatchBody = async (e, t, a) => {
-      (await ei(),
-        await on(t),
-        await Xt(e, async () => {
-          const i = Qt.games.findIndex((t) => t.id === e);
-          if (i < 0) throw new Error("E_ONLY_MATCHES_YOU_CREATED_CAN_BE");
-          const n = Qt.games[i];
-          if ((zi(n, t), "cancelled" === n.status)) return;
-          if (new Date(n.ends_at).getTime() < Date.now()) throw new Error("E_THIS_MATCH_HAS_ALREADY_STARTED");
-          const r = (0, v.sanitizeText)(a || "", 200) || "No reason provided";
-          (await Bi(n, (t) => ({
-            id: ea(),
-            user_id: t,
-            type: "match_cancelled",
-            game_id: e,
-            venue_name: Ai(n.venue_id),
-            sport: n.sport,
-            reason: r,
-            read: !1,
-            created_at: new Date().toISOString(),
-          })),
-            (Qt.games[i] = Object.assign({}, n, {
-              status: "cancelled",
-              cancelled_at: new Date().toISOString(),
-              cancellation_reason: r,
-            })),
-            await Za(te, Qt.games));
-          const o = [];
-          for (const t of Qt.bookings)
-            t.game_id === e &&
-              "cancelled" !== t.status &&
-              "rejected" !== t.status &&
-              ((t.status = "cancelled"),
-              (t.reserved_until = null),
-              (t.updated_at = new Date().toISOString()),
-              o.push(t.user_id));
-          await Za(W, Qt.bookings);
-          for (const e of o) await Br(n, e, !0);
-          if (n.court_booking_id)
-            try {
-              await Mr(t, n.court_booking_id, `Match cancelled: ${r}`);
-            } catch {}
-          await (0, w.logAudit)("match.cancelled", (0, w.actorRef)(t), { game: e.slice(-6) });
-        }));
-    };
     r.mockSetAttendance = async (e, t, a, i) => {
       (await ei(), await on(t));
       const n = hi(e);
@@ -3905,6 +4212,10 @@ __d(
       if (n.score_submitted_at && Date.now() - new Date(n.score_submitted_at).getTime() > 1728e5)
         throw new Error("E_ATTENDANCE_LOCKED");
       const r = Qt.bookings.find((t) => t.id === a && t.game_id === e);
+      // Looked up by id with no status filter, so an organizer could mark no_show on a booking the
+      // player had cancelled a week early - and that row then counted as a participant everywhere.
+      if (r && ("cancelled" === r.status || "rejected" === r.status))
+        throw new Error("E_PLAYER_NOT_IN_THIS_MATCH");
       r &&
         ((r.attendance = i),
         (r.updated_at = new Date().toISOString()),
@@ -4167,8 +4478,9 @@ __d(
                 for (const t of i) {
                   ((t.status = "cancelled"),
                     (t.squad_dropped_at = new Date().toISOString()),
-                    (t.updated_at = t.squad_dropped_at),
-                    await Br(e, t.user_id, !0));
+                    (t.updated_at = t.squad_dropped_at));
+                  const sd9 = await Br(e, t.user_id, !0);
+                  await recordSeatCancellation9(e.id, t.user_id, sd9 ?? {}, "squad_dropped");
                   const i = Qt.lineups.find((t) => t.game_id === e.id);
                   if (i) {
                     const a = new Set([`self-${t.user_id}`]);
@@ -4227,9 +4539,13 @@ __d(
             : "upcoming";
     // ORG1 (F-ORG1-16): every organizer read takes the caller and only the organizer (or an admin)
     // may read it. Private invite codes are never returned to anyone else.
+    // The caller is mandatory. This used to read `if (t && ...) throw; return !t || t === e`, so an
+    // undefined caller skipped the throw AND returned true - full owner access, invite codes included,
+    // to anyone who simply omitted the argument. The facade exposes the caller as a plain optional
+    // second parameter, so any screen that forgot it silently got owner-level reads. Fail closed.
     const orgSelf = (e, t) => {
-      if (t && t !== e && !ro(t)) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
-      return !t || t === e;
+      if (!t || (t !== e && !ro(t))) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return t === e;
     };
     r.mockGetOrganizerMatches = async (e, t9) => {
       (await ei(), await tn(), await Yn());
@@ -4247,14 +4563,32 @@ __d(
           return own9 ? row9 : Object.assign(row9, { invite_code: null });
         });
     };
-    const Qi = async (e) => {
+    // This took no caller at all and the facade exported it that way, so anyone holding a match id
+    // could read its whole roster - every booking row, its status, and the seat payment's id, method
+    // and amount - for a private match as readily as a public one. Its only caller inside 631 is the
+    // organizer match screen, which already checks that the caller is the organizer, so the guard
+    // was there in one place and absent from the door next to it.
+    const Qi = async (e, cr9) => {
       (await ei(), await Oi(e));
+      const gm9 = hi(e);
+      if (!gm9) throw new Error("E_MATCH_NOT_FOUND");
+      if (!cr9 || (gm9.organizer_id !== cr9 && !ro(cr9)))
+        throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
       const t = Qt.bookings.filter((t) => t.game_id === e);
+      // The screen cannot offer to settle a cash seat without a handle on the payment.
+      const p9 = (e) => {
+        const t = Gr(e.game_id, e.user_id);
+        return Object.assign({}, e, {
+          seat_payment: t
+            ? { id: t.id, status: t.status, method: t.method, amount_kwd: t.amount_kwd }
+            : null,
+        });
+      };
       return {
-        confirmed: t.filter((e) => "confirmed" === e.status).sort(xi),
-        reserved: t.filter((e) => "reserved" === e.status).sort(xi),
-        pending: t.filter((e) => "pending" === e.status).sort(xi),
-        waitlist: t.filter((e) => "waitlisted" === e.status).sort(xi),
+        confirmed: t.filter((e) => "confirmed" === e.status).sort(xi).map(p9),
+        reserved: t.filter((e) => "reserved" === e.status).sort(xi).map(p9),
+        pending: t.filter((e) => "pending" === e.status).sort(xi).map(p9),
+        waitlist: t.filter((e) => "waitlisted" === e.status).sort(xi).map(p9),
       };
     };
     r.mockGetMatchParticipants = Qi;
@@ -4265,7 +4599,7 @@ __d(
         i = t.filter((e) => "completed" === Ji(e)).length,
         n = t.filter((e) => "cancelled" === e.status).length,
         r = (e) =>
-          Qt.bookings.filter((t) => t.game_id === e && ("confirmed" === t.status || null != t.attendance)),
+          Qt.bookings.filter((t) => t.game_id === e && countsAsParticipant9(t)),
         o = t.filter((e) => "cancelled" !== e.status),
         s = o.map((e) => Math.min(1, r(e.id).length / e.max_players)),
         d = s.length ? s.reduce((e, t) => e + t, 0) / s.length : 0,
@@ -4282,7 +4616,7 @@ __d(
         _ = new Map();
       for (const e of Qt.bookings)
         !t.some((t) => t.id === e.game_id) ||
-          ("confirmed" !== e.status && null == e.attendance) ||
+          (!countsAsParticipant9(e)) ||
           _.set(e.user_id, (_.get(e.user_id) ?? 0) + 1);
       return {
         matchesCreated: a,
@@ -4305,7 +4639,7 @@ __d(
         d = 0;
       for (const e of t.filter((e) => "completed" === Ji(e))) {
         const t = Qt.bookings.filter(
-          (t) => t.game_id === e.id && ("confirmed" === t.status || null != t.attendance),
+          (t) => t.game_id === e.id && countsAsParticipant9(t),
         );
         ((d += t.length), (s += t.filter((e) => null != e.attendance).length));
       }
@@ -5426,9 +5760,18 @@ __d(
           (n.npn_activated_at = new Date().toISOString()),
           (n.npn_activation_count += 1),
           (n.npn_filled_at = null));
-        const o = fi().find((e) => e.id === n.venue_id);
+        const o = fi().find((e) => e.id === n.venue_id),
+          // ORG2 (F-ORG2-15): at most one broadcast per 10 minutes per match. Activation broadcast
+          // unconditionally and never recorded the timestamp, so an activate/update/deactivate cycle
+          // fanned out to every nearby player in the partition with nothing in the way - six waves
+          // inside a few seconds, given the three-activation cap.
+          t9 =
+            n.npn_last_broadcast_at &&
+            Date.now() - new Date(n.npn_last_broadcast_at).getTime() < 6e5;
         return (
-          (n.npn_notifications_sent += await En(n, o)),
+          t9 ||
+            ((n.npn_notifications_sent += await En(n, o)),
+            (n.npn_last_broadcast_at = new Date().toISOString())),
           await Za(te, Qt.games),
           await (0, w.logAudit)("npn.activated", (0, w.actorRef)(t), {
             game: e.slice(-6),
@@ -5577,7 +5920,7 @@ __d(
           n = 0;
         for (const r of Qt.bookings) {
           if (r.user_id !== e) continue;
-          if ("confirmed" !== r.status && null == r.attendance) continue;
+          if (!countsAsParticipant9(r)) continue;
           const o = hi(r.game_id);
           !o ||
             "cancelled" === o.status ||
@@ -5659,7 +6002,7 @@ __d(
         throw new Error("E_SKILL_EVALUATIONS_OPEN_AFTER_THE_MATCH");
       const s = (e) =>
         Qt.bookings.some(
-          (t) => t.game_id === a && t.user_id === e && ("confirmed" === t.status || null != t.attendance),
+          (t) => t.game_id === a && t.user_id === e && countsAsParticipant9(t),
         );
       if (!s(r) || !s(i))
         throw (
@@ -5695,7 +6038,7 @@ __d(
       if (!a || "cancelled" === a.status) return [];
       if (new Date(a.ends_at).getTime() > Date.now()) return [];
       const i = Qt.bookings.filter(
-        (t) => t.game_id === e && ("confirmed" === t.status || null != t.attendance),
+        (t) => t.game_id === e && countsAsParticipant9(t),
       );
       return i.some((e) => e.user_id === t)
         ? i
@@ -6024,7 +6367,7 @@ __d(
                   Qt.bookings
                     .filter((e) => {
                       const t = hi(e.game_id);
-                      return t?.series_id === d && ("confirmed" === e.status || null != e.attendance);
+                      return t?.series_id === d && countsAsParticipant9(e);
                     })
                     .map((e) => e.user_id),
                 ),
@@ -6033,6 +6376,9 @@ __d(
         var d;
         let l = 0;
         for (const a of r) {
+          // horizon_weeks is fixed at 12 and 'daily' is otherwise unbounded, so a single pass could
+          // mint 84 occurrences. Cap it; the next pass picks up where this one stopped.
+          if (l >= 60) break;
           if (o.some((e) => Un(e.starts_at, a))) continue;
           const i = Fn(e, a);
           if (
@@ -6096,25 +6442,7 @@ __d(
         throw new Error("E_PICK_THE_MONTHLY_PATTERN");
       let i;
       if (t.custom_venue) {
-        const e = (0, v.sanitizeText)(t.custom_venue.name, 80);
-        if (!e) throw new Error("E_ADD_A_VENUE_NAME");
-        const a = {
-          id: ea(),
-          name: e,
-          city: "Kuwait",
-          area: (0, v.sanitizeText)(t.custom_venue.address, 80).split(",")[0] || "Custom location",
-          sports: [t.sport],
-          cover_url: null,
-          rating: 0,
-          rating_count: 0,
-          description: null,
-          address: (0, v.sanitizeText)(t.custom_venue.address, 160) || null,
-          lat: Number(t.custom_venue.lat),
-          lng: Number(t.custom_venue.lng),
-          custom: !0,
-          created_at: new Date().toISOString(),
-        };
-        (Qt.venues.push(a), await Za(ae, Qt.venues), (i = a.id));
+        i = await createCustomVenue9(e, t.sport, t.custom_venue);
       } else {
         if (!t.venue_id || !fi().some((e) => e.id === t.venue_id)) throw new Error("E_CHOOSE_A_VENUE");
         i = t.venue_id;
@@ -6175,7 +6503,49 @@ __d(
       if (i.organizer_id !== t) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE_3");
       await on(t);
       const n = Qt.templates.findIndex((t) => t.id === e);
-      Qt.templates[n] = Object.assign({}, i, a);
+      // The patch was applied verbatim, so the price and duration bounds enforced at creation could be
+      // walked straight past on edit - mockUpdateMatch refuses to touch price at all, and the two
+      // editors disagreed. Allow-list what a series edit may change and validate the result.
+      const EDITABLE9 = [
+          "title",
+          "notes",
+          "skill_level",
+          "start_minutes",
+          "end_minutes",
+          "max_players",
+          "waitlist_capacity",
+          "price_kwd",
+        ],
+        patch9 = {};
+      for (const e of EDITABLE9) e in (a ?? {}) && (patch9[e] = a[e]);
+      // The series screen only offers a start time, so a move has to carry the duration with it.
+      // Without this the end minute stayed put and an edit could produce zero-length sessions, which
+      // is what it did: moving a 18:00-19:30 series to 19:30 left every occurrence starting and
+      // ending at 19:30, and nothing complained.
+      null != patch9.start_minutes &&
+        null == patch9.end_minutes &&
+        (patch9.end_minutes = patch9.start_minutes + (i.end_minutes - i.start_minutes));
+      const merged9 = Object.assign({}, i, patch9);
+      {
+        // validateMatchInput takes a time window, and a template carries minutes; synthesise one for
+        // the same day so the duration bounds apply here too.
+        const d9 = new Date();
+        d9.setHours(0, 0, 0, 0);
+        validateMatchInput(merged9, {
+          starts_at: new Date(d9.getTime() + 6e4 * merged9.start_minutes + 864e5).toISOString(),
+          ends_at: new Date(d9.getTime() + 6e4 * merged9.end_minutes + 864e5).toISOString(),
+        });
+      }
+      // Repricing an occupied seat leaves the money already taken at the old amount with no top-up and
+      // no refund, and nothing downstream reconciles the difference.
+      const repriced9 = Number(merged9.price_kwd) !== Number(i.price_kwd);
+      if (repriced9) {
+        const paidOn9 = Kn(e).some((e) =>
+          Qt.payments.some((t) => "seat" === t.kind && t.game_id === e.id && "paid" === t.status),
+        );
+        if (paidOn9) throw new Error("E_A_SEAT_HAS_ALREADY_BEEN_PAID");
+      }
+      Qt.templates[n] = merged9;
       const r = Qt.templates[n];
       let o = 0;
       for (const t of Kn(e)) {
@@ -6276,15 +6646,34 @@ __d(
       (await ei(), md(t));
       const a = Wn(e);
       if (!a) throw new Error("E_SERIES_NOT_FOUND");
+      // A paused or ended series could still be joined through the occurrences it had already
+      // generated.
+      if ("active" !== a.status) throw new Error("E_THIS_MATCH_IS_NO_LONGER_OPEN");
       await jn(a);
+      // This kept two counts and threw away everything else each occurrence returned. On a paid
+      // series every seat comes back with a payment deadline attached, so a player who joined twelve
+      // weeks of matches was told "12 joined" and never told about twelve payment deadlines, each of
+      // which expires the seat when it passes. Genuine refusals - a ban, a closed registration, the
+      // wrong partition - were discarded too, so a blocked player saw the same two zeroes as a
+      // successful one. Carry the deadlines out, and surface the first refusal.
       let i = 0,
-        n = 0;
+        n = 0,
+        r9 = 0,
+        b9 = null;
+      const d9 = [];
       for (const a of Kn(e).sort((e, t) => new Date(e.starts_at).getTime() - new Date(t.starts_at).getTime()))
         try {
           const e = await ji(a.id, t);
-          "confirmed" === e.status ? (i += 1) : "waitlisted" === e.status && (n += 1);
-        } catch {}
-      return { joined: i, waitlisted: n };
+          ("confirmed" === e.status
+            ? (i += 1)
+            : "waitlisted" === e.status
+              ? (n += 1)
+              : "reserved" === e.status && (r9 += 1),
+            e.payment_due && d9.push(e.payment_due));
+        } catch (e) {
+          b9 || (b9 = e instanceof Error ? e.message : String(e));
+        }
+      return { joined: i, waitlisted: n, reserved: r9, payments_due: d9, blocked: b9 };
     };
     const Vn = (e, t) => {
       const a = Qt.games.filter((t) => t.series_id === e.id),
@@ -6339,7 +6728,7 @@ __d(
       for (const e of t)
         for (const t of Qt.bookings)
           t.game_id === e.id &&
-            (("confirmed" !== t.status && null == t.attendance) ||
+            ((!countsAsParticipant9(t)) ||
               ((s += 1), o.set(t.user_id, (o.get(t.user_id) ?? 0) + 1)),
             null != t.attendance && ((d += 1), "attended" === t.attendance && (l += 1)));
       const c = o.size,
@@ -6347,7 +6736,7 @@ __d(
         u = t.filter((e) => "cancelled" !== e.status),
         m = u.map((e) => {
           const t = Qt.bookings.filter(
-            (t) => t.game_id === e.id && ("confirmed" === t.status || null != t.attendance),
+            (t) => t.game_id === e.id && countsAsParticipant9(t),
           ).length;
           return Math.min(1, t / e.max_players);
         });
@@ -6361,11 +6750,16 @@ __d(
         cancellationRate: t.length ? r.length / t.length : 0,
         returningPlayers: _,
         retentionRate: c ? _ / c : 0,
-        // Real takings: paid seat payments for the series' games, minus refunds.
+        // Gross seat takings for the series' games. This used to count every payment carrying one of
+        // those game ids, and court-booking payment-plan rows carry game_id too - so the organizer's
+        // own court fee and every co-payer's share were counted as series revenue. Filter on the seat
+        // kind. (The old comment said "minus refunds"; refunds are excluded rather than subtracted,
+        // which is the same answer for a sum of paid rows, but the comment was describing something
+        // the code did not do.)
         revenueKwd: (0, z.roundKwd)(
           Qt.payments
-            .filter((a) => t.some((t) => t.id === a.game_id))
-            .reduce((e, t) => e + ("paid" === t.status ? t.amount_kwd : "refunded" === t.status ? 0 : 0), 0),
+            .filter((a) => "seat" === a.kind && "paid" === a.status && t.some((t) => t.id === a.game_id))
+            .reduce((e, t) => e + Number(t.amount_kwd || 0), 0),
         ),
         revenueEstimatedKwd: s * (Wn(e)?.price_kwd ?? 0),
       };
@@ -6388,10 +6782,18 @@ __d(
         const r = { code: n, game_id: e, created_at: new Date().toISOString(), expires_at: i.ends_at };
         return (Qt.invites.push(r), await Za(zt, Qt.invites), r);
       };
-    r.mockGetMatchInvite = async (e) => {
+    r.mockGetMatchInvite = async (e, t) => {
       await ei();
-      const t = await Xn(e);
-      return { code: t.code, link: `https://playora.app/m/${t.code}`, expires_at: t.expires_at };
+      // This took no caller at all, and Xn mints and persists a code when the match has none - so any
+      // session could ask for a private match's invite link and have one created on demand. The code
+      // is a capability: holding it is enough to join. It belongs to the organizer, the same rule the
+      // DTO and mockGetOrganizerMatches already apply to invite_code.
+      const a = hi(e);
+      if (!a) throw new Error("E_MATCH_NOT_FOUND");
+      if (!t || (a.organizer_id !== t && !ro(t)))
+        throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE");
+      const i = await Xn(e);
+      return { code: i.code, link: `https://playora.app/m/${i.code}`, expires_at: i.expires_at };
     };
     const er = async (e, t) => {
       await ei();
@@ -6503,7 +6905,7 @@ __d(
           a = [];
         for (const i of Qt.bookings) {
           if (i.user_id !== e) continue;
-          if ("confirmed" !== i.status && null == i.attendance) continue;
+          if (!countsAsParticipant9(i)) continue;
           const n = hi(i.game_id);
           !n ||
             "cancelled" === n.status ||
@@ -6845,7 +7247,7 @@ __d(
       ur = async (e) => {
         if (Qt.compat.some((t) => t.game_id === e.id)) return;
         const t = Qt.bookings
-          .filter((t) => t.game_id === e.id && ("confirmed" === t.status || null != t.attendance))
+          .filter((t) => t.game_id === e.id && countsAsParticipant9(t))
           .map((e) => e.user_id);
         if (!(t.length < 2)) {
           for (let a = 0; a < t.length; a++) {
@@ -7065,6 +7467,19 @@ __d(
       (await ei(), await Dr());
       // ADM1 (F-ADM1-19): administrators review venues, so they cannot also own one.
       if (ro(e)) throw new Error("E_ADMINS_CANNOT_REGISTER_VENUES");
+      // There was no rate limit either, so one loop could seed the directory. Mirror the velocity
+      // guard mockCreateMatch already applies to matches.
+      if (
+        Qt.venueProfiles.filter(
+          (t) => t.owner_id === e && Date.now() - new Date(t.created_at).getTime() < 36e5,
+        ).length >= 2
+      )
+        throw (
+          await (0, w.logAudit)("venue.application_blocked", (0, w.actorRef)(e), {
+            reason: "rate_limit",
+          }),
+          new Error("E_TOO_MANY_VENUE_APPLICATIONS")
+        );
       let a = t.venue_id;
       if (a) {
         if (hr(a)) throw new Error("E_THIS_VENUE_IS_ALREADY_REGISTERED");
@@ -7075,7 +7490,15 @@ __d(
         const i = (0, v.sanitizeText)(t.area ?? "Kuwait City", 40) || "Kuwait City",
           n = va[i] ?? va["Kuwait City"],
           r = ea(),
-          [o, s] = Ea(r),
+          // The venue used to land in the public directory the moment it was applied for, because
+          // mockGetVenues filters on `!1 !== listed` and this row carried no listed and no
+          // review_status - only mockAdminReviewVenue ever stamps them. /venue/portal meanwhile
+          // promises that an admin reviews every application before you go live. Now it is true.
+          // The coordinates came from the area centroid plus jitter, which made distance_km in
+          // mockSearchBookableVenues fiction; take what the applicant gave, and fall back to the
+          // centroid itself rather than a random point near it.
+          l9 = Number(t.lat),
+          c9 = Number(t.lng),
           d = {
             id: r,
             name: e,
@@ -7087,9 +7510,12 @@ __d(
             rating_count: 0,
             description: null,
             address: `${i}, Kuwait`,
-            lat: n[0] + o,
-            lng: n[1] + s,
+            lat: Number.isFinite(l9) ? l9 : n[0],
+            lng: Number.isFinite(c9) ? c9 : n[1],
             custom: !0,
+            listed: !1,
+            review_status: "pending",
+            created_by: e,
             created_at: new Date().toISOString(),
           };
         (Qt.venues.push(d), await Za(ae, Qt.venues), (a = r));
@@ -7110,6 +7536,9 @@ __d(
         photos: [],
         auto_accept: !1,
         staff: [],
+        // Wi stamps origin on its own profiles; without one here an admin cannot tell a deliberate
+        // venue-partner application from a name typed into the match wizard.
+        origin: "venue_application",
         created_at: new Date().toISOString(),
         reviewed_at: null,
         reviewed_by: null,
@@ -7150,22 +7579,47 @@ __d(
         null != a.amenities &&
           (i.amenities = a.amenities.slice(0, 12).map((e) => (0, v.sanitizeText)(e, 30))),
         null != a.auto_accept && (i.auto_accept = a.auto_accept),
+        // Where the venue's money lands is the owner's to set, not the reception desk's - Sr admits
+        // staff to everything else on this profile.
         null != a.payout_iban_last4 &&
-          (i.payout_iban_last4 = a.payout_iban_last4.replace(/\D/g, "").slice(-4) || null),
+          (() => {
+            if (i.owner_id !== e && !ro(e)) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE");
+            i.payout_iban_last4 = a.payout_iban_last4.replace(/\D/g, "").slice(-4) || null;
+          })(),
         await Za(ce, Qt.venueProfiles),
         await (0, w.logAudit)("venue.updated", (0, w.actorRef)(e), { venue: t.slice(-6) }),
         i
       );
     };
+    // Staff roles the venue can assign. The role used to be stored verbatim, whatever was typed.
+    const VENUE_STAFF_ROLES9 = ["manager", "reception", "scanner"];
     r.mockAddVenueStaff = async (e, t, a, i) => {
       (await ei(), await Sr(e, t));
-      const n = hr(t),
-        r = (0, v.sanitizeName)(a);
-      if (!r) throw new Error("E_ADD_A_STAFF_NAME");
+      const n = hr(t);
+      // The staff member used to be invented: user_id was `staff-<random>` derived from a typed name,
+      // while vr authorises on a real profile id - so a staff id could never match and every
+      // staff-gated call (venue bookings, the booking decision, courts, blocks, the check-in scanner)
+      // stayed permanently closed to them. The whole feature added rows that did nothing. Resolve a
+      // real account instead, by id or by email.
+      const q9 = String(a ?? "").trim().toLowerCase();
+      if (!q9) throw new Error("E_ADD_A_STAFF_NAME");
+      const u9 =
+        Qt.profiles.find((e) => e.id === q9) ??
+        Qt.profiles.find((e) => (e.email ?? "").toLowerCase() === q9) ??
+        (() => {
+          const t9 = Qt.users.find((e) => (e.email ?? "").toLowerCase() === q9);
+          return t9 ? Qt.profiles.find((e) => e.id === t9.id) : null;
+        })();
+      if (!u9) throw new Error("E_NO_SUCH_PLAYER");
+      // An administrator reviews venues, so they cannot also staff one.
+      if (ro(u9.id)) throw new Error("E_ADMINS_CANNOT_REGISTER_VENUES");
+      if (!VENUE_STAFF_ROLES9.includes(i)) throw new Error("E_INVALID_MATCH_OPTION");
+      if (n.staff.some((e) => e.user_id === u9.id)) throw new Error("E_THAT_PLAYER_IS_ALREADY_IN_THIS");
+      const r = (0, v.sanitizeName)(u9.full_name) || "Staff";
       if (n.staff.length >= 20) throw new Error("E_STAFF_LIMIT_REACHED");
       return (
         n.staff.push({
-          user_id: `staff-${ea().slice(0, 8)}`,
+          user_id: u9.id,
           name: r,
           role: i,
           added_at: new Date().toISOString(),
@@ -7191,10 +7645,21 @@ __d(
         .filter((e) => !!e.venue)
         .sort((e, t) => ("pending" === e.profile.status ? -1 : 1) - ("pending" === t.profile.status ? -1 : 1))
         .map(({ venue: e, profile: t }) => ({
-          venue: { id: e.id, name: e.name, area: e.area, sports: e.sports },
+          // An admin could not tell a deliberate venue-partner application from a name an organizer
+          // typed into the match wizard - which, because that path makes the organizer the registered
+          // owner, quietly hands them a venue they can later add courts to and claim payouts from.
+          venue: {
+            id: e.id,
+            name: e.name,
+            area: e.area,
+            sports: e.sports,
+            review_status: e.review_status ?? null,
+            created_by: e.created_by ?? null,
+          },
           profile: {
             venue_id: t.venue_id,
             owner_id: t.owner_id,
+            origin: t.origin ?? null,
             status: t.status,
             commission_type: t.commission_type,
             commission_value: t.commission_value,
@@ -7310,21 +7775,45 @@ __d(
       const a = Qt.courts.filter((t) => t.venue_id === e);
       return t && vr(t, e) ? a : a.filter((e) => e.active);
     };
+    // A court whose confirmed bookings would fall outside its new hours, or off a court being
+    // deactivated. mockBlockCourtTime already refuses to blank out a booked slot; these are the other
+    // two ways to make the same slot unavailable, and neither checked.
+    const courtWouldStrand9 = (e, t, a) =>
+      Qt.courtBookings.some((i) => {
+        if (i.court_id !== e || "confirmed" !== i.status) return !1;
+        if (null == t) return !0;
+        const n = new Date(i.starts_at),
+          r = new Date(i.ends_at),
+          o = 60 * n.getHours() + n.getMinutes(),
+          s = 60 * r.getHours() + r.getMinutes();
+        return o < t || s > a;
+      });
     r.mockUpsertCourt = async (e, t, a) => {
       (await ei(), await Sr(e, t));
       const i = (0, v.sanitizeText)(a.name, 60);
       if (!i) throw new Error("E_ADD_A_COURT_NAME");
-      if (a.close_minutes <= a.open_minutes) throw new Error("E_CLOSING_TIME_MUST_BE_AFTER_OPENING");
+      // The sport was written verbatim, and the hours were unbounded - mockGetCourtAvailability feeds
+      // them straight into the slot generator, so a close_minutes of 100000 built thousands of slot
+      // objects and hung the booking screen.
+      if (!MATCH_ENUMS.sport.includes(a.sport)) throw new Error("E_INVALID_MATCH_OPTION");
+      const o9 = Math.round(Number(a.open_minutes)),
+        c9 = Math.round(Number(a.close_minutes));
+      if (!Number.isFinite(o9) || !Number.isFinite(c9)) throw new Error("E_INVALID_MATCH_OPTION");
+      if (o9 < 0 || o9 > 1439) throw new Error("E_INVALID_MATCH_OPTION");
+      if (c9 <= o9) throw new Error("E_CLOSING_TIME_MUST_BE_AFTER_OPENING");
+      if (c9 < o9 + 30 || c9 > 1440) throw new Error("E_INVALID_MATCH_OPTION");
       const n = Math.max(0, Math.min(500, Number(a.price_per_hour_kwd) || 0));
       if (a.id) {
         const r = fr(a.id);
         if (!r || r.venue_id !== t) throw new Error("E_COURT_NOT_FOUND");
+        if ((o9 > r.open_minutes || c9 < r.close_minutes) && courtWouldStrand9(r.id, o9, c9))
+          throw new Error("E_THERE_IS_A_CONFIRMED_BOOKING_IN");
         return (
           (r.name = i),
           (r.sport = a.sport),
           (r.price_per_hour_kwd = n),
-          (r.open_minutes = a.open_minutes),
-          (r.close_minutes = a.close_minutes),
+          (r.open_minutes = o9),
+          (r.close_minutes = c9),
           a.amenities && (r.amenities = a.amenities.slice(0, 12).map((e) => (0, v.sanitizeText)(e, 30))),
           await Za(_e, Qt.courts),
           await (0, w.logAudit)("court.updated", (0, w.actorRef)(e), { court: r.id.slice(-6) }),
@@ -7337,8 +7826,8 @@ __d(
         name: i,
         sport: a.sport,
         price_per_hour_kwd: n,
-        open_minutes: a.open_minutes,
-        close_minutes: a.close_minutes,
+        open_minutes: o9,
+        close_minutes: c9,
         amenities: (a.amenities ?? []).slice(0, 12).map((e) => (0, v.sanitizeText)(e, 30)),
         photos: [],
         active: !0,
@@ -7355,8 +7844,10 @@ __d(
       await ei();
       const i = fr(t);
       if (!i) throw new Error("E_COURT_NOT_FOUND");
-      (await Sr(e, i.venue_id),
-        (i.active = a),
+      await Sr(e, i.venue_id);
+      // A deactivated court vanishes from search while its confirmed bookings still block the slot.
+      if (!a && courtWouldStrand9(t, null)) throw new Error("E_THERE_IS_A_CONFIRMED_BOOKING_IN");
+      (((i.active = a)),
         await Za(_e, Qt.courts),
         await (0, w.logAudit)("court.updated", (0, w.actorRef)(e), { court: t.slice(-6), active: a }));
     };
@@ -7564,9 +8055,14 @@ __d(
       const o = Qt.payments.filter(
         (e) => e.booking_id === i.id && ("paid" === e.status || "pending" === e.status),
       );
+      // Money kept because free cancellation had already lapsed. The condition below deliberately
+      // skips the refund in that case, so it has to be accounted for somewhere - see the settlement
+      // handling at the end.
+      let kept9 = 0;
       for (const e of o) {
         const t = "paid" === e.status;
-        ((!r && t) ||
+        (!r && t && (kept9 += Number(e.amount_kwd || 0)),
+          (!r && t) ||
           ((e.status = t ? "refunded" : "expired"),
           t && ((e.refunded_at = new Date().toISOString()), await ac(e.payer_id, e.amount_kwd, e.id))),
           t &&
@@ -7581,11 +8077,33 @@ __d(
               created_at: new Date().toISOString(),
             })));
       }
+      // The pending settlement used to be deleted outright. Combined with the skipped refund above,
+      // forfeited money ended up with no settlement, no refund and no posting anywhere: the venue
+      // lost the slot and the money, the organizer lost the money, and no report could see it. Keep
+      // the row and mark it forfeited for whatever was retained, so venue revenue and the admin
+      // financials can account for it. (The matching ledger transfer is the backend half.)
+      const st9 = Qt.settlements.find((e) => e.booking_id === i.id && "pending" === e.status);
+      if (st9 && kept9 > 0) {
+        // The commission snapshot lives on the booking, not on the settlement row, and is what
+        // insulates it from a later mockAdminSetCommission change.
+        const c9 = (0, z.settlement)(kept9, i.commission_type, i.commission_value);
+        ((st9.status = "forfeited"),
+          (st9.gross_kwd = c9.gross),
+          (st9.commission_kwd = c9.commission),
+          (st9.net_to_venue_kwd = c9.net),
+          (st9.forfeited_at = new Date().toISOString()));
+      } else
+        Qt.settlements = Qt.settlements.filter(
+          (e) => !(e.booking_id === i.id && "pending" === e.status),
+        );
       return (
         o.length && (await Za(we, Qt.payments)),
-        (Qt.settlements = Qt.settlements.filter((e) => !(e.booking_id === i.id && "pending" === e.status))),
         await Za(fe, Qt.settlements),
-        await (0, w.logAudit)("booking.cancelled", (0, w.actorRef)(e), { booking: i.id.slice(-6), free: r }),
+        await (0, w.logAudit)("booking.cancelled", (0, w.actorRef)(e), {
+          booking: i.id.slice(-6),
+          free: r,
+          kept: kept9,
+        }),
         i
       );
     };
@@ -7622,13 +8140,19 @@ __d(
             "confirmed" === a.status && new Date(a.ends_at).getTime() < e && (await Nr(a.id)));
         t && (await Za(me, Qt.courtBookings));
       },
-      Pr = (e) => {
-        const t = fr(e.court_id);
+      // The settlement breakdown - gross, the venue's commission and what it nets - is the venue's
+      // business. This mapper serves the organizer-facing reads as well, so any organizer who booked a
+      // court could read that venue's negotiated commission rate and exactly what it takes home.
+      // The organizer sees the gross, which is the price they pay. qr_token stays: they need it to
+      // check players in.
+      Pr = (e, venueSide9) => {
+        const t = fr(e.court_id),
+          s9 = Rr(e);
         return Object.assign({}, e, {
           court_name: t?.name ?? "Court",
           venue_name: Ai(e.venue_id),
           sport: t?.sport ?? "padel",
-          settlement: Rr(e),
+          settlement: venueSide9 ? s9 : { gross: s9.gross },
         });
       };
     r.mockGetOrganizerBookings = async (e) => (
@@ -7647,7 +8171,7 @@ __d(
       Qt.courtBookings
         .filter((e) => e.venue_id === t)
         .sort((e, t) => new Date(t.starts_at).getTime() - new Date(e.starts_at).getTime())
-        .map(Pr)
+        .map((e) => Pr(e, !0))
     );
     r.mockGetBooking = async (e, t) => {
       (await ei(), await Cr());
@@ -7668,14 +8192,29 @@ __d(
               .filter((e) => e.game_id === n.game_id && ("confirmed" === e.status || "pending" === e.status))
               .map((e) => e.user_id)
           : [],
-        o = [...new Set([e, ...r])],
-        s = (0, z.splitAmounts)({
-          mode: a,
-          total: n.court_price_kwd,
-          payerIds: o,
-          organizerId: e,
-          custom: i,
-        });
+        // Re-running a plan used to wipe only the pending rows, so a payer whose share was already
+        // paid - still a confirmed booking, so still in this list - was issued a second charge and a
+        // second payment_request for the same booking. Nothing downstream deduplicates: $r does not
+        // notice, and Ur/Gr dedupe only seat-kind payments, which plan rows are not. Settled payers
+        // drop out of the plan, and what they already paid comes off the total the rest are asked
+        // for, so the plan collects the court price once.
+        paid9 = Qt.payments.filter(
+          (t) => t.booking_id === n.id && ("paid" === t.status || "refunded" === t.status),
+        ),
+        settled9 = new Set(paid9.filter((e) => "paid" === e.status).map((e) => e.payer_id)),
+        collected9 = (0, z.roundKwd)(
+          paid9.filter((e) => "paid" === e.status).reduce((e, t) => e + Number(t.amount_kwd || 0), 0),
+        ),
+        o = [...new Set([e, ...r])].filter((e) => !settled9.has(e)),
+        s = o.length
+          ? (0, z.splitAmounts)({
+              mode: a,
+              total: Math.max(0, (0, z.roundKwd)(Number(n.court_price_kwd) - collected9)),
+              payerIds: o,
+              organizerId: settled9.has(e) ? o[0] : e,
+              custom: i,
+            })
+          : {};
       ((n.split_mode = a),
         (Qt.payments = Qt.payments.filter((e) => !(e.booking_id === n.id && "pending" === e.status))));
       const d = [];
@@ -7863,12 +8402,23 @@ __d(
       },
       Wr = async (e, t) => {
         const a = e.game_id ? hi(e.game_id) : null;
+        // Capacity was measured as raw confirmed rows rather than ki, which counts live reserved
+        // holds too - so with holds outstanding this could seat a player past max_players.
+        let may9 = !1;
+        if (a && !a.registration_closed_at)
+          try {
+            (await assertMayHoldSeat9(a, t), (may9 = !0));
+          } catch {
+            // A guard refused, so this seat is not theirs to take. The branch below refunds instead,
+            // which is what the money path should do when the player can no longer be seated.
+            may9 = !1;
+          }
         if (
           !!a &&
+          may9 &&
           "cancelled" !== a.status &&
           new Date(a.starts_at).getTime() > Date.now() &&
-          Qt.bookings.filter((e) => e.game_id === a.id && "confirmed" === e.status).length < a.max_players &&
-          a
+          ki(a.id) < a.max_players
         ) {
           const e = Qt.bookings.find(
               (e) =>
@@ -7918,51 +8468,34 @@ __d(
         return i.game_id ? Xt(i.game_id, () => $r(e, t, a)) : $r(e, t, a);
       };
     r.mockPayRequest = Kr;
-    const $r = async (e, t, a) => {
-        const i = Qt.payments.find((e) => e.id === t);
-        if (!i) throw new Error("E_PAYMENT_NOT_FOUND");
-        if (i.payer_id !== e) throw new Error("E_THIS_PAYMENT_REQUEST_IS_NOT_YOURS");
-        if ("paid" === i.status) return Lr(i);
-        if ("pending" !== i.status) throw new Error("E_THIS_PAYMENT_CAN_NO_LONGER_BE");
-        if (!(0, z.isOnlineMethod)(a))
-          return (
-            (i.method = a),
-            await Za(we, Qt.payments),
-            await (0, w.logAudit)("payment.cash_selected", (0, w.actorRef)(e), { payment: i.id.slice(-6) }),
-            Lr(i)
-          );
-        const n = Ur(i),
-          r = Qt.paymentCharges.find((e) => e.key === n);
-        if (r && "captured" === r.status) i.gateway_ref = r.gateway_ref;
-        else if (r && "in_flight" === r.status) throw new Error("E_PAYMENT_IS_ALREADY_BEING_PROCESSED");
-        if (!r || "failed" === r.status) {
-          const t = {
-            key: n,
-            payment_id: i.id,
-            status: "in_flight",
-            gateway_ref: null,
-            amount_kwd: i.amount_kwd,
-            created_at: new Date().toISOString(),
-            settled_at: null,
-          };
-          let o;
-          (r ? Object.assign(r, t) : Qt.paymentCharges.push(t), await Za(Q, Qt.paymentCharges));
-          try {
-            o = await Yr(e, i.amount_kwd, i.game_id ? "match_payment" : "court_booking", i.id, a);
-          } catch (e) {
-            throw (
-              (Qt.paymentCharges.find((e) => e.key === n).status = "failed"),
-              await Za(Q, Qt.paymentCharges),
-              e
-            );
-          }
-          const s = Qt.paymentCharges.find((e) => e.key === n);
-          ((s.status = "captured"),
-            (s.gateway_ref = o),
-            (s.settled_at = new Date().toISOString()),
-            await Za(Q, Qt.paymentCharges),
-            (i.gateway_ref = o));
-        }
+    // The counterpart to selecting cash: whoever is collecting at the venue confirms it, and the seat
+    // settles through exactly the same path an online payment takes.
+    r.mockConfirmCashPayment = async (e, t) => {
+      await ei();
+      const a = Qt.payments.find((e) => e.id === t);
+      if (!a) throw new Error("E_PAYMENT_NOT_FOUND");
+      if ("paid" === a.status) return Lr(a);
+      if ("pending" !== a.status) throw new Error("E_THIS_PAYMENT_CAN_NO_LONGER_BE");
+      const i = a.game_id ? hi(a.game_id) : null;
+      if (
+        !(i && i.organizer_id === e) &&
+        !(a.payee_venue_id && vr(e, a.payee_venue_id)) &&
+        !ro(e)
+      )
+        throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE");
+      return (
+        await (0, w.logAudit)("payment.cash_confirmed", (0, w.actorRef)(e), {
+          payment: a.id.slice(-6),
+          payer: a.payer_id.slice(-6),
+        }),
+        a.game_id
+          ? Xt(a.game_id, () => settleSeatPayment9(a, a.payer_id, "cash"))
+          : settleSeatPayment9(a, a.payer_id, "cash")
+      );
+    };
+    // Marking a payment paid and turning it into a seat used to live only inside the online path,
+    // so cash had no way to reach it. Both callers share it now.
+    const settleSeatPayment9 = async (i, e, a) => {
         if (
           ((i.status = "paid"),
           (i.method = a),
@@ -8014,6 +8547,63 @@ __d(
           }),
           Lr(i)
         );
+    };
+    const $r = async (e, t, a) => {
+        const i = Qt.payments.find((e) => e.id === t);
+        if (!i) throw new Error("E_PAYMENT_NOT_FOUND");
+        if (i.payer_id !== e) throw new Error("E_THIS_PAYMENT_REQUEST_IS_NOT_YOURS");
+        if ("paid" === i.status) return Lr(i);
+        if ("pending" !== i.status) throw new Error("E_THIS_PAYMENT_CAN_NO_LONGER_BE");
+        if (!(0, z.isOnlineMethod)(a)) {
+          // Cash left the payment pending with a fifteen-minute hold still ticking, so the seat was
+          // swept before the player ever reached the venue - and nothing could ever mark it paid, so
+          // seatMayConfirm stayed false forever. For Kuwait pickup football cash is how organizers
+          // actually collect, so every cash organizer lost every player. Carry the hold to kick-off
+          // instead of clearing it: the reconciler voids a confirmed-but-unpaid seat whose hold has
+          // lapsed, so a null here would void it immediately. The organizer settles it at the venue
+          // through mockConfirmCashPayment.
+          const g9 = i.game_id ? hi(i.game_id) : null;
+          return (
+            (i.method = a),
+            g9 && (i.reserved_until = g9.starts_at),
+            await Za(we, Qt.payments),
+            await (0, w.logAudit)("payment.cash_selected", (0, w.actorRef)(e), { payment: i.id.slice(-6) }),
+            Lr(i)
+          );
+        }
+        const n = Ur(i),
+          r = Qt.paymentCharges.find((e) => e.key === n);
+        if (r && "captured" === r.status) i.gateway_ref = r.gateway_ref;
+        else if (r && "in_flight" === r.status) throw new Error("E_PAYMENT_IS_ALREADY_BEING_PROCESSED");
+        if (!r || "failed" === r.status) {
+          const t = {
+            key: n,
+            payment_id: i.id,
+            status: "in_flight",
+            gateway_ref: null,
+            amount_kwd: i.amount_kwd,
+            created_at: new Date().toISOString(),
+            settled_at: null,
+          };
+          let o;
+          (r ? Object.assign(r, t) : Qt.paymentCharges.push(t), await Za(Q, Qt.paymentCharges));
+          try {
+            o = await Yr(e, i.amount_kwd, i.game_id ? "match_payment" : "court_booking", i.id, a);
+          } catch (e) {
+            throw (
+              (Qt.paymentCharges.find((e) => e.key === n).status = "failed"),
+              await Za(Q, Qt.paymentCharges),
+              e
+            );
+          }
+          const s = Qt.paymentCharges.find((e) => e.key === n);
+          ((s.status = "captured"),
+            (s.gateway_ref = o),
+            (s.settled_at = new Date().toISOString()),
+            await Za(Q, Qt.paymentCharges),
+            (i.gateway_ref = o));
+        }
+        return settleSeatPayment9(i, e, a);
       },
       Vr = async (e, t, a) => u.sandboxProvider.capture(e, Math.round(1e3 * t));
     r.mockCreatePaymentIntent = async (e, t, a) => {
@@ -8447,41 +9037,82 @@ __d(
       }
       return Qt.checkins.filter((e) => e.booking_id === t);
     };
-    r.mockScanCheckin = async (e, t, a, i) => {
+    r.mockScanCheckin = async (e, t, a, i, c9) => {
       await ei();
       const n = Qt.courtBookings.find((e) => e.qr_token === t);
       if (!n) throw new Error("E_INVALID_QR_CODE");
       if (n.organizer_id !== e && !vr(e, n.venue_id)) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_SCAN");
-      let r = Qt.checkins.find((e) => e.booking_id === n.id && e.player_id === a);
-      if (
+      // A scan writes booking.attendance - the same field mockSetAttendance guards - but enforced
+      // none of its rules: any venue staff could mark a player attended days before kickoff, or
+      // reopen a record the organizer's 48 h freeze had already closed. Apply the same window here.
+      // A court booking with no match has no attendance to write and keeps the plain check-in path.
+      const g9 = n.game_id ? hi(n.game_id) : null;
+      if (g9) {
+        if (new Date(g9.ends_at).getTime() > Date.now()) throw new Error("E_MATCH_NOT_FINISHED");
+        if (g9.score_submitted_at && Date.now() - new Date(g9.score_submitted_at).getTime() > 1728e5)
+          throw new Error("E_ATTENDANCE_LOCKED");
+      }
+      // The write was also unserialised, so two scanners raced the bookings table. Take the match
+      // lock it needs; a court booking with no match locks on itself.
+      return Xt(n.game_id ?? n.id, async () => {
+        // ji appends a fresh booking row when a player rejoins instead of reviving the cancelled
+        // one, so an unfiltered find returned the stale cancelled row: the live booking kept
+        // attendance: null and the player was scored as neither attended nor no-show. Take the
+        // newest live row, and refuse rather than silently skip when there is none.
+        let b9 = null;
+        if (g9) {
+          // A check-in token, when the player presents one, names the booking outright - the caller
+          // does not get to say who they are checking in. Without one this stays a roster tap.
+          b9 = c9
+            ? Qt.bookings.find(
+                (e) =>
+                  e.checkin_token === c9 &&
+                  e.game_id === n.game_id &&
+                  "cancelled" !== e.status &&
+                  "rejected" !== e.status,
+              )
+            : Qt.bookings
+                .filter(
+                  (e) =>
+                    e.game_id === n.game_id &&
+                    e.user_id === a &&
+                    "cancelled" !== e.status &&
+                    "rejected" !== e.status,
+                )
+                .sort(xi)
+                .pop();
+          if (!b9) throw new Error("E_PLAYER_NOT_IN_THIS_MATCH");
+        }
+        const p9 = b9 ? b9.user_id : a;
+        let r = Qt.checkins.find((e) => e.booking_id === n.id && e.player_id === p9);
         (r ||
           ((r = {
             id: ea(),
             booking_id: n.id,
             game_id: n.game_id,
-            player_id: a,
-            player_name: or(a),
+            player_id: p9,
+            player_name: or(p9),
             state: "pending",
             scanned_by: null,
             scanned_at: null,
           }),
           Qt.checkins.push(r)),
-        (r.state = i),
-        (r.scanned_by = e),
-        (r.scanned_at = new Date().toISOString()),
-        await Za(pe, Qt.checkins),
-        n.game_id)
-      ) {
-        const e = Qt.bookings.find((e) => e.game_id === n.game_id && e.user_id === a);
-        e &&
-          ((e.attendance = "no_show" === i ? "no_show" : "pending" === i ? null : "attended"),
-          (e.updated_at = new Date().toISOString()),
-          await Za(W, Qt.bookings));
-      }
-      return (
-        await (0, w.logAudit)("checkin.scanned", (0, w.actorRef)(e), { booking: n.id.slice(-6), state: i }),
-        r
-      );
+          (r.state = i),
+          (r.scanned_by = e),
+          (r.scanned_at = new Date().toISOString()),
+          await Za(pe, Qt.checkins));
+        if (b9)
+          ((b9.attendance = "no_show" === i ? "no_show" : "pending" === i ? null : "attended"),
+            (b9.updated_at = new Date().toISOString()),
+            await Za(W, Qt.bookings));
+        return (
+          await (0, w.logAudit)("checkin.scanned", (0, w.actorRef)(e), {
+            booking: n.id.slice(-6),
+            state: i,
+          }),
+          r
+        );
+      });
     };
     r.mockGetVenueRevenue = async (e, t) => {
       (await ei(), await Sr(e, t), await Cr());
@@ -12095,7 +12726,14 @@ __d(
           { created_at: new Date().toISOString() },
         ),
       ed = async (e, t, a, i) => {
-        const n = Sn(e, t).filter((e) => !i.has(e.user_id)),
+        // The demo world appends synthetic npn-demo-N names to the candidate pool, and the shipped
+        // config has demo on. They surfaced in the replacement shortlist, and offering one reserved a
+        // real seat for the reservation window - nd subtracts outstanding offers from the open slots -
+        // that no one could ever accept, because there is no account behind the id. Replacements move
+        // real seats, so the pool here is real people only.
+        const n = Sn(e, t).filter(
+          (e) => !i.has(e.user_id) && !String(e.user_id).startsWith("npn-demo-"),
+        ),
           r = [];
         for (const t of n) {
           const a = await lr(t.user_id, e),
@@ -12445,6 +13083,13 @@ __d(
           );
         const n = hi(a.game_id);
         if (!n || "cancelled" === n.status) throw new Error("E_MATCH_UNAVAILABLE");
+        // This pushed a booking row straight in, checking only capacity and offer expiry - none of
+        // the guards mockJoinMatch applies. A banned or suspended account, a guest, a
+        // cross-partition candidate or a player the organizer had closed registration against could
+        // all take a seat through an outstanding offer. One helper, so the list cannot drift again:
+        // it adds the Code of Conduct check the hand-written version here was still missing.
+        await assertMayHoldSeat9(n, e);
+        if (n.registration_closed_at) throw new Error("E_REGISTRATION_IS_CLOSED");
         const r = Date.now();
         if (ki(n.id, r) + id(n.id, r).filter((e) => e.id !== t).length >= n.max_players)
           throw (
@@ -12576,6 +13221,12 @@ __d(
       await ei();
       const i = hi(t);
       if (!i) throw new Error("E_MATCH_NOT_FOUND");
+      // The candidate id comes from the organizer and nothing checked it: not that the profile
+      // exists, not the audience partition, not sanctions. The auto path is safe only because its
+      // shortlist is pre-filtered, and neither path checked bans - so an offer could reach an
+      // account barred from matches, and accepting it seated them.
+      if (!Qt.profiles.some((e) => e.id === a)) throw new Error("E_NO_SUCH_PLAYER");
+      (ra(a, i.audience), await wd(a));
       (zi(i, e),
         await Xt(t, async () => {
           if (nd(i) <= 0) throw new Error("E_NO_OPEN_SLOTS_TO_FILL");
@@ -13901,6 +14552,7 @@ __d(
       await ei();
       const a = hi(t);
       if (!a) throw new Error("not_found");
+      (ra(e, a.audience), maySeeMatch9(a, e) || err9());
       await Xt(t, async () => {
         (await Di(a), await Bd(a));
       });
@@ -13920,9 +14572,17 @@ __d(
       if (!i) throw new Error("not_found");
       if ("scheduled" !== i.status) throw new Error("match_closed");
       if (new Date(i.starts_at).getTime() < Date.now()) throw new Error("match_started");
+      // This is a seat-taking path that never went through ji: it pushes booking rows straight into
+      // Qt.bookings with status "reserved", and it checked only that the leader was not banned or
+      // sanctioned. So a stranger could reserve seats on a private match they had never been shown,
+      // and a man could take seats - his own and his friends' - on a women-only one. Capacity and
+      // double-booking were the only rules it kept. Every seat here is a seat, so every seat here
+      // goes through the same gate joining does, for the friends as well as for the leader; a guest
+      // has no account to check and rides on the leader's.
+      maySeeMatch9(i, e) || err9();
+      await assertMayHoldSeat9(i, e);
+      for (const f9 of new Set(a.friendIds ?? [])) await assertMayHoldSeat9(i, f9);
       return (
-        md(e),
-        await wd(e),
         Xt(t, async () => {
           (await Di(i), await Bd(i));
           const n = Fd(i);
@@ -14318,6 +14978,21 @@ __d(
       al = (e) =>
         Qt.privacySettings.find((t) => t.user_id === e) ??
         Object.assign({ user_id: e }, "female" === aa(e) ? _t : ct),
+      // "Only people you've played with or follow" - the promise /privacy-controls makes for its
+      // most restrictive setting. privacy_visibility was written to the profile by that screen and
+      // read by nothing, so choosing it changed nothing at all: a stranger still got the bio, the
+      // favourite sports and the stats. Its middle setting, same_audience, needed no wiring - oa
+      // already blocks every cross-audience profile read, for everyone, whatever they choose - but
+      // connections did. Note this is a second privacy model living beside profile_visibility in
+      // privacySettings, which is enforced and is set from a different screen.
+      playedTogether9 = (e, t) => {
+        const a = new Set(
+          Qt.bookings.filter((a) => a.user_id === e && countsAsParticipant9(a)).map((e) => e.game_id),
+        );
+        return Qt.bookings.some((i) => i.user_id === t && a.has(i.game_id) && countsAsParticipant9(i));
+      },
+      isConnection9 = (e, t) =>
+        e === t || Vd(e, t) || Vd(t, e) || Qd(e).has(t) || playedTogether9(e, t),
       il = (e) => Qt.presence.find((t) => t.user_id === e)?.last_active ?? null,
       nl = (e) => {
         if (!al(e).show_online) return !1;
@@ -14476,7 +15151,7 @@ __d(
         l = "female" === d,
         c = new Set(
           Qt.bookings
-            .filter((t) => t.user_id === e && ("confirmed" === t.status || null != t.attendance))
+            .filter((t) => t.user_id === e && countsAsParticipant9(t))
             .map((e) => e.game_id),
         ),
         _ = (t) => {
@@ -14489,6 +15164,20 @@ __d(
         if (!ia(d, u.audience ?? "male")) continue;
         if (Xd(e, u.id) || tl(e, u.id)) continue;
         if ("private" === al(u.id).profile_visibility) continue;
+        // F-CSEC-5: mockGetPlayerProfile treats followers-only as a gate; this listing over the same
+        // records only filtered "private", so the search handed back exactly the attributes the
+        // profile endpoint withholds. The two can no longer disagree.
+        //
+        // The settings differ in what they promise, so they are answered differently. "connections"
+        // says only connections see the profile, so a non-connection does not get a row at all.
+        // "followers" is about depth rather than existence, so the person stays findable by name and
+        // the gated fields are blanked. Either way an attribute filter cannot be used to probe what
+        // is hidden - a gated row is dropped from a filtered search rather than tested against it.
+        const pv9 = u.privacy_visibility ?? "everyone";
+        if ("connections" === pv9 && !isConnection9(e, u.id)) continue;
+        const ltd9 =
+          "followers" === al(u.id).profile_visibility && !Vd(e, u.id) && !a.has(u.id);
+        if (ltd9 && (t.sport || t.skill || r || t.lookingForGame)) continue;
         const m = u.full_name || "Player",
           w = u.username ?? "";
         if (n && !m.toLowerCase().includes(n) && !w.includes(n.replace(/^@/, ""))) continue;
@@ -14515,7 +15204,7 @@ __d(
         const y = new Set();
         for (const e of Qt.bookings)
           e.user_id !== u.id ||
-            ("confirmed" !== e.status && null == e.attendance) ||
+            (!countsAsParticipant9(e)) ||
             !c.has(e.game_id) ||
             y.add(e.game_id);
         const v = Qt.dmConversations.find((t) => t.id === _l(e, u.id)),
@@ -14533,10 +15222,11 @@ __d(
           name: m,
           username: u.username ?? null,
           avatar_url: "photo" === u.avatar_mode ? u.avatar_url : null,
-          skill_level: u.skill_level,
-          sports: u.preferred_sports,
-          area: l ? null : (u.home_area ?? null),
-          looking_for_game: p,
+          skill_level: ltd9 ? "all" : u.skill_level,
+          sports: ltd9 ? [] : u.preferred_sports,
+          area: ltd9 || l ? null : (u.home_area ?? null),
+          looking_for_game: !ltd9 && p,
+          limited: ltd9,
           mutuals: h,
           mutual_games: y.size,
           is_following: Vd(e, u.id),
@@ -14567,7 +15257,9 @@ __d(
         r = !n && Qd(e).has(t),
         o = !n && Vd(e, t),
         s = al(t).profile_visibility,
-        d = n || (!i && ("private" === s || ("followers" === s && !o && !r))),
+        pv9 = Qt.profiles.find((e) => e.id === t)?.privacy_visibility ?? "everyone",
+        con9 = !i && "connections" === pv9 && !isConnection9(e, t),
+        d = n || (!i && ("private" === s || ("followers" === s && !o && !r) || con9)),
         l = al(t).allow_messages,
         c = !i && !Xd(e, t) && ("everyone" === l || ("followers" === l && (o || r))),
         _ = {
@@ -14604,7 +15296,10 @@ __d(
           mutual_teams: [],
           looking_for_game: !1,
           limited: !0,
-          limited_reason: n || "private" !== s ? "followers" : "private",
+          limited_reason: n ? "followers" : "private" === s ? "private" : con9 ? "connections" : "followers",
+          // The screen previews this setting as "Name visible to connections only", so the name goes
+          // too - the limited branch had always kept it.
+          display_name: con9 && !n && "private" !== s ? "Player" : _.display_name,
         });
       const u = await dr(t, e),
         m = Zd(e),
@@ -15236,7 +15931,7 @@ __d(
           a = new Set();
         t && a.add(t.organizer_id);
         for (const t of Qt.bookings)
-          t.game_id !== e || ("confirmed" !== t.status && null == t.attendance) || a.add(t.user_id);
+          t.game_id !== e || (!countsAsParticipant9(t)) || a.add(t.user_id);
         return [...a];
       },
       El = (e, t) => !!t && (t.organizer_id === e || vl(e)),
@@ -15353,6 +16048,8 @@ __d(
       await ei();
       const a = hi(t);
       if (!a) throw new Error("not_found");
+      // The ballot carries the nominee list, which is the participant list. Same gate as the match.
+      (ra(e, a.audience), maySeeMatch9(a, e) || err9());
       const i = await Il(a),
         n = Sl(t),
         r = n.includes(e),
@@ -15504,9 +16201,11 @@ __d(
         i
       );
     };
-    r.mockGetMatchAwards = async (e) => {
+    r.mockGetMatchAwards = async (e, cr9) => {
       await ei();
       const t = hi(e);
+      // Award winners are named players. On a private match that is the roster under another name.
+      t && (ra(cr9, t.audience), maySeeMatch9(t, cr9) || err9());
       return (
         t && (await Il(t)),
         Qt.awardWins
@@ -16413,18 +17112,60 @@ __d(
       if (!i) throw new Error("E_ENTER_YOUR_LEGAL_NAME");
       if (!(0, A.looksLikeCivilId)(a)) throw new Error("E_ENTER_A_VALID_12_DIGIT_CIVIL");
       await (0, w.logAudit)("wallet.kyc_submitted", (0, w.actorRef)(e));
+      // This used to stamp itself verified on submission, which made the identity gate in front of
+      // withdrawals decorative. It waits for a human now, the same way venue and organizer
+      // applications do.
       const n = {
         user_id: e,
-        status: "verified",
+        status: "pending",
         full_name: i,
         id_masked: (0, A.maskIdNumber)(a),
         submitted_at: new Date().toISOString(),
-        reviewed_at: new Date().toISOString(),
+        reviewed_at: null,
+        reviewed_by: null,
+        review_note: null,
       };
       return (
         (Qt.walletKyc = [...Qt.walletKyc.filter((t) => t.user_id !== e), n]),
         await Za(it, Qt.walletKyc),
-        await (0, w.logAudit)("wallet.kyc_verified", (0, w.actorRef)(e)),
+        await br((t9) => ({
+          id: ea(),
+          user_id: t9,
+          type: "kyc_submitted",
+          read: !1,
+          created_at: new Date().toISOString(),
+        })),
+        n
+      );
+    };
+    r.mockGetPendingWalletKyc = async (e) => (
+      await ei(),
+      await sn(e),
+      Qt.walletKyc
+        .filter((e) => "pending" === e.status)
+        .map((e) => Object.assign({}, e, { display_name: or(e.user_id) }))
+    );
+    r.mockReviewWalletKyc = async (e, t, a, i) => {
+      (await ei(), await sn(e));
+      const n = Qt.walletKyc.find((e) => e.user_id === t);
+      if (!n) throw new Error("E_APPLICATION_NOT_FOUND");
+      if ("pending" !== n.status) throw new Error("E_KYC_ALREADY_REVIEWED");
+      return (
+        (n.status = a ? "verified" : "rejected"),
+        (n.reviewed_at = new Date().toISOString()),
+        (n.reviewed_by = e),
+        (n.review_note = i ? (0, v.sanitizeText)(i, 200) : null),
+        await Za(it, Qt.walletKyc),
+        await bi({
+          id: ea(),
+          user_id: t,
+          type: a ? "kyc_verified" : "kyc_rejected",
+          read: !1,
+          created_at: new Date().toISOString(),
+        }),
+        await (0, w.logAdminAudit)(a ? "wallet.kyc_verified" : "wallet.kyc_rejected", e, t, {
+          note: n.review_note,
+        }),
         n
       );
     };
@@ -16761,6 +17502,7 @@ __d(
         await ei();
         const a = hi(e);
         if (!a) throw new Error("E_MATCH_NOT_FOUND");
+        (ra(t, a.audience), maySeeMatch9(a, t) || err9());
         const i = await oc(e, t),
           n = await Ui(e, t),
           r = new Map(n.map((e) => [e.id, e])),
@@ -17315,6 +18057,17 @@ __d(
       await ei();
       const a = await Ni(t, e);
       await Vi();
+      // Ni is the gate and null is its refusal. Everything below used to be fetched regardless.
+      if (!a)
+        return {
+          game: null,
+          players: [],
+          fit: null,
+          eval_targets: [],
+          lineup: null,
+          seat_payment: null,
+          squad_status: null,
+        };
       const [i, n, r, o, s] = await Promise.all([
         Ui(t, e),
         Mn(t, e).catch(() => null),
@@ -17331,10 +18084,12 @@ __d(
     };
     r.mockGetOrganizerMatchScreen = async (e, t) => {
       await ei();
-      const a = await Ni(t, e),
-        i = await Qi(t);
+      const a = await Ni(t, e);
+      // The roster is read after this check, not before it, so a caller who is not the organizer
+      // still gets the graceful empty screen rather than the refusal Qi now throws.
       if (!(!!a && !!e && a.organizer_id === e))
         return { game: a, participants: { confirmed: [], reserved: [], pending: [], waitlist: [] }, candidates: [], intel: [] };
+      const i = await Qi(t, e);
       const [n, r] = await Promise.all([
         bn(t, e).catch(() => []),
         i.pending.length > 0 ? Pn(e, t).catch(() => []) : Promise.resolve([]),
@@ -17360,6 +18115,22 @@ __d(
           score_corrected_by: e,
         })),
         await Za(te, Qt.games),
+        // mockSubmitMatchScore fans a match_score notification out to every participant; the
+        // correction notified nobody, so players kept the wrong score they had been pushed and the
+        // only legitimate way to change a final result was invisible to the people it was about.
+        await Bi(Qt.games[r], (e) => ({
+          id: ea(),
+          user_id: e,
+          type: "match_score",
+          game_id: t,
+          venue_name: Ai(o.venue_id),
+          sport: o.sport,
+          score_home: a,
+          score_away: i,
+          corrected: !0,
+          read: !1,
+          created_at: new Date().toISOString(),
+        }), !0),
         await Yi(t, e, "score_corrected", { note: `${d.home}-${d.away} \u2192 ${a}-${i}: ${s}` }),
         await (0, w.logAdminAudit)("match.score_corrected", e, o.organizer_id, {
           game: t.slice(-6),

@@ -25,10 +25,15 @@ def modules(bundle):
     starts = [m.start() for m in re.finditer(r'__d\(\s*function\s*\([\w$,\s]*\)\s*\{', bundle)] + [len(bundle)]
     out = {}
     for s, e in zip(starts, starts[1:]):
-        body = bundle[s:e]
-        m = re.search(r'\},\s*(\d+),\s*\[([\d,\s]*)\],?\s*\);?\s*$', body.rstrip())
-        if m:
-            out[m.group(1)] = body
+        chunk = bundle[s:e]
+        # Cut each chunk at its own closing ");" rather than requiring the registration to be the last
+        # thing in it. The final module is followed by the `__r(0);` entry call, so anchoring at the end
+        # made that one module invisible here - and build() then appended it a second time on the next
+        # run. Five of the six modules in bundle-src/new/ had shipped twice by the time that was found.
+        found = list(re.finditer(r'\},\s*(\d+),\s*\[([\d,\s]*)\],?\s*\);', chunk))
+        if found:
+            m = found[-1]
+            out[m.group(1)] = chunk[:m.end()]
     return out
 
 def split(ids):

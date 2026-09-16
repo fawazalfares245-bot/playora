@@ -88,5 +88,28 @@ for (const demo of [true, false]) {
   await browser.close();
 }
 
+// Expo Router's built-in sitemap listed all 88 routes as .tsx filenames - every admin screen, the
+// venue portal and the scanner - to anyone who typed the URL.
+{
+  const { browser, page, errors } = await openApp({ role: 'user', route: '/_sitemap' });
+  const body = await page.evaluate(() => document.body.innerText);
+  ok('no admin routes are listed', !body.includes('admin/'), body.slice(0, 120).replace(/\n/g, '|'));
+  ok('no route filenames are listed', !/\.tsx/.test(body), body.slice(0, 120).replace(/\n/g, '|'));
+  ok('no link back to the sitemap', !body.includes('Sitemap'), body.slice(0, 120).replace(/\n/g, '|'));
+  // The 404 illustration pointed at an asset path that does not exist here, so every unmatched route
+  // logged a CSP error for a picture nobody saw.
+  ok('an unmatched route is quiet', errors.length === 0, errors.slice(0, 1).join(''));
+  await browser.close();
+}
+
+{
+  const v = JSON.parse(fs.readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+  const red = (v.redirects || []).find((r) => r.source === '/_sitemap');
+  // Vercel evaluates redirects before rewrites, so this has to survive the catch-all below it. It is
+  // also the half of the fix that an Expo rebuild cannot revert.
+  ok('vercel.json redirects /_sitemap', !!red && red.destination === '/', JSON.stringify(v.redirects));
+  ok('the catch-all rewrite is still there', (v.rewrites || []).some((r) => r.destination === '/index.html'), JSON.stringify(v.rewrites));
+}
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

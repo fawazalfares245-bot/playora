@@ -410,7 +410,7 @@ __d(
     e.fetchGamePlayers = (o, c) => t.store.mockGetGamePlayers(o, c);
     e.setPlayerTeam = (o, c, s) => t.store.mockSetPlayerTeam(o, c, s);
     e.upsertSelfPlayer = (o) => t.store.mockUpsertSelfPlayer(o);
-    e.ensureChatSeed = (o) => t.store.mockEnsureChatSeed(o);
+    e.ensureChatSeed = (o, c) => t.store.mockEnsureChatSeed(o, c);
     e.fetchChatMessages = (o, c, s) => t.store.mockGetChatMessages(o, c, s);
     e.sendChatMessage = (o) => t.store.mockSendChatMessage(o);
     e.submitContact = (o) => t.store.mockSubmitContact(o);
@@ -442,13 +442,24 @@ __d(
     e.confirmSquadSpot = (o, c) => t.store.mockConfirmSquadSpot(o, c);
     e.optOutSquad = (o, c) => t.store.mockOptOutSquad(o, c);
     e.fetchSquadState = (o, c) => t.store.mockGetSquadState(o, c);
-    e.fetchOrganizerMatches = (o, c) => t.store.mockGetOrganizerMatches(o, c);
+        // The caller is not optional. orgSelf used to treat a missing one as the owner, so the
+    // omission has to fail here too rather than reaching the store.
+e.fetchOrganizerMatches = (o, c) => {
+      if (!c) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return t.store.mockGetOrganizerMatches(o, c);
+    };
     e.reconcileSeatPayments = () => t.store.mockReconcileSeatPayments();
     e.auditSeatConsistency = () => t.store.mockAuditSeatConsistency();
-    e.fetchMatchParticipants = (o) => t.store.mockGetMatchParticipants(o);
-    e.fetchOrganizerStats = (o, c) => t.store.mockGetOrganizerStats(o, c);
+    e.fetchMatchParticipants = (o, c) => t.store.mockGetMatchParticipants(o, c);
+    e.fetchOrganizerStats = (o, c) => {
+      if (!c) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return t.store.mockGetOrganizerStats(o, c);
+    };
     e.fetchOrganizerReputation = (o) => t.store.mockGetOrganizerReputation(o);
-    e.fetchOrganizerRatings = (o, c) => t.store.mockGetOrganizerRatings(o, c);
+    e.fetchOrganizerRatings = (o, c) => {
+      if (!c) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return t.store.mockGetOrganizerRatings(o, c);
+    };
     e.rateOrganizer = (o) => t.store.mockRateOrganizer(o);
     e.fetchMyOrganizerApplication = (o) => t.store.mockGetMyOrganizerApplication(o);
     e.submitOrganizerApplication = (o, c) => t.store.mockSubmitOrganizerApplication(o, c);
@@ -481,7 +492,10 @@ __d(
     e.endSeries = (o, c) => t.store.mockEndSeries(o, c);
     e.cancelSeries = (o, c, s) => t.store.mockCancelSeries(o, c, s);
     e.joinSeries = (o, c) => t.store.mockJoinSeries(o, c);
-    e.fetchOrganizerSeries = (o, c) => t.store.mockGetOrganizerSeries(o, c);
+    e.fetchOrganizerSeries = (o, c) => {
+      if (!c) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return t.store.mockGetOrganizerSeries(o, c);
+    };
     e.fetchSeries = (o, c) => t.store.mockGetSeries(o, c);
     e.fetchSeriesAnalytics = (o, c) => t.store.mockGetSeriesAnalytics(o, c);
     e.activateNeedPlayer = (o, c, s) => t.store.mockActivateNeedPlayer(o, c, s);
@@ -502,11 +516,18 @@ __d(
     e.fetchPassportPrivacy = (o) => t.store.mockGetPassportPrivacy(o);
     e.updatePassportPrivacy = (o, c) => t.store.mockUpdatePassportPrivacy(o, c);
     e.adminRemoveAchievement = (o, c, s) => t.store.mockAdminRemoveAchievement(o, c, s);
-    e.fetchMatchInvite = (o) => t.store.mockGetMatchInvite(o);
+    // The invite code is the organizer's; the caller is not optional.
+    e.fetchMatchInvite = (o, c) => {
+      if (!c) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_MANAGE");
+      return t.store.mockGetMatchInvite(o, c);
+    };
     e.resolveInviteCode = (o, c) => t.store.mockResolveInviteCode(o, c);
     e.logShare = (o, c, s) => t.store.mockLogShare(o, c, s);
     e.joinByCode = (o, c) => t.store.mockJoinByCode(o, c);
-    e.fetchOrganizerReferralStats = (o, c) => t.store.mockGetOrganizerReferralStats(o, c);
+    e.fetchOrganizerReferralStats = (o, c) => {
+      if (!c) throw new Error("E_YOU_ARE_NOT_AUTHORIZED_TO_VIEW");
+      return t.store.mockGetOrganizerReferralStats(o, c);
+    };
     e.fetchGrowthAdminStats = (o) => t.store.mockGetGrowthAdminStats(o);
     e.searchBookableVenues = (o) => t.store.mockSearchBookableVenues(o);
     e.fetchVenueBookingDetail = (o) => t.store.mockGetVenueBookingDetail(o);
@@ -537,11 +558,14 @@ __d(
     e.fetchMyPaymentRequests = (o) => t.store.mockGetMyPaymentRequests(o);
     e.fetchPayment = (o, c) => t.store.mockGetPayment(o, c);
     e.payRequest = (o, c, s) => t.store.mockPayRequest(o, c, s);
+    e.confirmCashPayment = (o, c) => t.store.mockConfirmCashPayment(o, c);
+    e.fetchPendingWalletKyc = (o) => t.store.mockGetPendingWalletKyc(o);
+    e.reviewWalletKyc = (o, c, s, n) => t.store.mockReviewWalletKyc(o, c, s, n);
     e.refundPayment = (o, c) => t.store.mockRefundPayment(o, c);
     e.sendPaymentReminders = (o, c) => t.store.mockSendPaymentReminders(o, c);
     e.paymentMethods = () => t.store.mockGetPaymentMethods();
     e.fetchBookingCheckins = (o, c) => t.store.mockGetBookingCheckins(o, c);
-    e.scanCheckin = (o, c, s, n) => t.store.mockScanCheckin(o, c, s, n);
+    e.scanCheckin = (o, c, s, n, l) => t.store.mockScanCheckin(o, c, s, n, l);
     e.fetchVenueRevenue = (o, c) => t.store.mockGetVenueRevenue(o, c);
     e.createTeam = (o, c) => t.store.mockCreateTeam(o, c);
     e.fetchTeams = (o, c) => t.store.mockGetTeams(o, c);
@@ -695,7 +719,7 @@ __d(
     e.openAwardVoting = (o, c) => t.store.mockOpenAwardVoting(o, c);
     e.publishAwards = (o, c) => t.store.mockPublishAwards(o, c);
     e.createCustomAward = (o, c) => t.store.mockCreateCustomAward(o, c);
-    e.fetchMatchAwards = (o) => t.store.mockGetMatchAwards(o);
+    e.fetchMatchAwards = (o, c) => t.store.mockGetMatchAwards(o, c);
     e.fetchPlayerAwards = (o) => t.store.mockGetPlayerAwards(o);
     e.fetchAwardLeaderboard = (o) => t.store.mockGetAwardLeaderboard(o);
     e.fetchAwardSeasons = () => t.store.mockGetAwardSeasons();

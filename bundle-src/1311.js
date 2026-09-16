@@ -50,8 +50,12 @@ __d(
         year: "numeric",
       });
     e.formatAmount = (o) => (0, a.formatMoney)(o || 0, "ar" === (0, t.getLocale)() ? "ar" : "en");
+    // formatPrice means "this listing has no price", so only a missing price reads as Free. It used to
+    // test the value itself, which turned every 0 into the word - a zero commission, a zero balance and
+    // a zero amount due all advertised themselves as free. A priced item that computes to zero reads
+    // 0.000 KWD. Balances and ledger figures belong in formatAmount above, never here.
     e.formatPrice = (o) =>
-      o ? (0, a.formatMoney)(o, "ar" === (0, t.getLocale)() ? "ar" : "en") : (0, t.t)("free");
+      null == o ? (0, t.t)("free") : (0, a.formatMoney)(o, "ar" === (0, t.getLocale)() ? "ar" : "en");
     e.sportIcon = { football: "football", padel: "tennisball", tennis: "tennisball" };
     e.sportColor = (o) => ("football" === o ? "#FF5A1F" : "padel" === o ? "#3F7DD6" : "#1FA974");
   },

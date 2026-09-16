@@ -39,7 +39,9 @@ __d(
             }
             (V(t.game),
               K(t.players),
-              (0, T.fetchMatchInvite)(e)
+              // e is the match id, A.id the viewer. A non-organizer is refused now, and the catch
+              // below leaves the share link unrendered, which is the point: the code is a capability.
+              (0, T.fetchMatchInvite)(e, A.id)
                 .then((e) => he(e?.link ?? null))
                 .catch(() => he(null)),
               ie(t.fit),
@@ -158,7 +160,11 @@ __d(
                 (a.default.alert(t, `${H.venue.name} \xb7 ${(0, P.formatGameTime)(H.starts_at)}`),
                   await Pe());
               } catch (e) {
-                a.default.alert(F("error"), (0, N.storeErrorText)(e?.message ?? "") || F("error"));
+                // Joining requires the current Code of Conduct now. That is not an error the player
+                // can act on from here, so take them to it and bring them back.
+                "E_ACCEPT_THE_CODE_OF_CONDUCT" === e?.message
+                  ? L.push(`/conduct?next=${encodeURIComponent(`/game/${H.id}`)}`)
+                  : a.default.alert(F("error"), (0, N.storeErrorText)(e?.message ?? "") || F("error"));
               } finally {
                 ee(!1);
               }
@@ -359,11 +365,27 @@ __d(
                           if (A && H.series_id) {
                             ee(!0);
                             try {
-                              const e = await (0, T.joinSeries)(H.series_id, A.id);
-                              (a.default.alert(
-                                F("joinedSeriesTitle"),
-                                F("joinedSeriesBody", { joined: e.joined, waitlisted: e.waitlisted }),
-                              ),
+                              const e = await (0, T.joinSeries)(H.series_id, A.id),
+                                // On a paid series every seat comes back reserved with a payment
+                                // deadline, so joined and waitlisted are both zero and the old
+                                // message said nothing had happened. A refusal that stopped every
+                                // occurrence used to read the same way.
+                                landed9 = (e.joined || 0) + (e.waitlisted || 0) + (e.reserved || 0);
+                              (!landed9 && e.blocked
+                                ? a.default.alert(
+                                    F("error"),
+                                    (0, N.storeErrorText)(e.blocked) || F("error"),
+                                  )
+                                : a.default.alert(
+                                    F("joinedSeriesTitle"),
+                                    F("joinedSeriesBody", {
+                                      joined: e.joined,
+                                      waitlisted: e.waitlisted,
+                                    }) +
+                                      (e.payments_due && e.payments_due.length
+                                        ? `\n${F("joinedSeriesReserved", { n: String(e.payments_due.length) })}`
+                                        : ""),
+                                  ),
                                 await Pe());
                             } catch (e) {
                               a.default.alert(
@@ -814,8 +836,11 @@ __d(
                           })
                       : "reserved" === De
                         ? (0, E.jsxs)(c.default, {
-                            style: { flexDirection: "row", gap: _.spacing.sm },
+                            style: { gap: _.spacing.xs },
                             children: [
+                              (0, E.jsxs)(c.default, {
+                                style: { flexDirection: "row", gap: _.spacing.sm },
+                                children: [
                               (0, E.jsx)(x.Button, {
                                 title: F("leaveGame"),
                                 variant: "secondary",
@@ -834,6 +859,17 @@ __d(
                                 onPress: () => (Ne && "paid" !== me?.status ? je({}) : Ge()),
                                 style: { flex: 2 },
                               }),
+                                ],
+                              }),
+                              // The promotion holds this seat for fifteen minutes and said so only in
+                              // the notification. Show the clock the player is racing.
+                              !!H.user_reserved_until &&
+                                (0, E.jsx)(d.default, {
+                                  style: [_.typography.caption, { color: q.warning, textAlign: "center" }],
+                                  children: F("heldUntil", {
+                                    time: (0, P.formatClock)(H.user_reserved_until),
+                                  }),
+                                }),
                             ],
                           })
                         : "pending" === De
@@ -1276,10 +1312,10 @@ __d(
           ),
           w =
             0 === j ? s("today") : 1 === j ? s("tomorrow") : s("ticketInDays", { n: (0, P.formatNumber)(j) }),
-          T = `PLY\xb7${e.id
-            .replace(/[^a-z0-9]/gi, "")
-            .slice(-4)
-            .toUpperCase()}\xb7KWT`;
+          // Was PLY-<last four of the game id>-KWT: the same string for every player in the match,
+          // derivable from the URL, and never checked against anything. This is the booking's own
+          // check-in token, which the scanner matches.
+          T = e.user_checkin_token ?? "";
         return (0, E.jsxs)(c.default, {
           style: [K.card, { marginTop: _.spacing.lg }],
           children: [

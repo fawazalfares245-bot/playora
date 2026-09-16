@@ -199,5 +199,268 @@ await run('admin activity log is denied to a player', async () => {
   await browser.close();
 });
 
+// mockReconcileSeatPayments had no caller anywhere in the bundle. seedDrift plants the two shapes it
+// exists to find, plus enough settled rows that one 100-row pass cannot reach the end.
+const seedDrift = async (page) =>
+  page.evaluate(async ([org, seatless, unpaid]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Reconcile drift', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 19 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 19 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 3, visibility: 'public', format: '5v5',
+    });
+    // Dated in 2020 so these sort ahead of every demo payment and the first pass is all ours.
+    const pay = (n, payer, status, extra) => Object.assign({
+      id: 'pay-recon-' + n, kind: 'seat', booking_id: null, game_id: g.id, payer_id: payer,
+      payer_name: 'Seeded', payee_venue_id: g.venue_id, amount_kwd: 3, status,
+      method: null, gateway_ref: null, reminders_sent: 0, reserved_until: null,
+      paid_at: null, refunded_at: null,
+      created_at: new Date(Date.UTC(2020, 0, 1, 0, 0, n)).toISOString(),
+    }, extra || {});
+    const payments = JSON.parse(localStorage.getItem('playora.mock.payments.v1') || '[]');
+    // 1. paid, but the player holds no seat -> the reconciler must re-seat them.
+    payments.push(pay(0, seatless, 'paid', { paid_at: new Date().toISOString(), method: 'knet' }));
+    // 2. seat confirmed, payment never made and the hold long expired -> the seat must be voided.
+    payments.push(pay(1, unpaid, 'pending', { reserved_until: new Date(Date.now() - 864e5).toISOString() }));
+    // 3. 101 settled rows, so the pass runs out at 100 and has to leave a cursor behind.
+    for (let k = 2; k < 103; k++) payments.push(pay(k, seatless, 'refunded'));
+    localStorage.setItem('playora.mock.payments.v1', JSON.stringify(payments));
+    const bookings = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]');
+    const now = new Date().toISOString();
+    bookings.push({
+      id: 'bk-recon-unpaid', game_id: g.id, user_id: unpaid, display_name: 'Unpaid Player',
+      status: 'confirmed', attendance: null, reserved_until: null, created_at: now, updated_at: now,
+    });
+    localStorage.setItem('playora.mock.bookings.v1', JSON.stringify(bookings));
+    localStorage.removeItem('playora.mock.reconcilecursor.v1');
+    return { gameId: g.id, cursorBefore: localStorage.getItem('playora.mock.reconcilecursor.v1') };
+  }, [IDS.organizer, IDS.user, IDS.analyst]);
+
+
+// Guest: the boot sweep is skipped for a session-less visitor, so the reconciler is called cold here
+// and its return value can be pinned exactly.
+await run('the seat payment reconciler reports the drift it fixed', async () => {
+  const { browser, page, errors } = await openApp({ role: 'guest', route: '/' });
+  const seed = await seedDrift(page);
+  ok('the cursor starts unset', seed.cursorBefore === null, String(seed.cursorBefore));
+  await page.goto('http://localhost/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const out = await page.evaluate(async ([seatless, gameId]) => {
+    const res = await __r(671).reconcileSeatPayments();
+    const bookings = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+      .filter((b) => b.game_id === gameId);
+    return {
+      res,
+      cursor: localStorage.getItem('playora.mock.reconcilecursor.v1'),
+      seatedRow: (bookings.find((b) => b.user_id === seatless) || {}).status ?? null,
+      voidedRow: (bookings.find((b) => b.id === 'bk-recon-unpaid') || {}).status ?? null,
+    };
+  }, [IDS.user, seed.gameId]);
+
+  ok('one player was re-seated', out.res.seated === 1, JSON.stringify(out.res));
+  ok('one unpaid seat was voided', out.res.seats_voided === 1, JSON.stringify(out.res));
+  ok('the re-seated player now holds a confirmed booking', out.seatedRow === 'confirmed', String(out.seatedRow));
+  ok('the unpaid booking was cancelled', out.voidedRow === 'cancelled', String(out.voidedRow));
+  ok('the pass stopped at 100 rows', out.res.scanned === 100 && out.res.done === false, JSON.stringify(out.res));
+  ok('the cursor advanced', String(out.cursor).includes('pay-recon-99'), String(out.cursor));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// Signed in: nothing calls the reconciler explicitly, so this asserts the AuthProvider boot sweep does.
+await run('booting a session runs the scheduled sweep', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/' });
+  const seed = await seedDrift(page);
+  await page.goto('http://localhost/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(3500);
+  const out = await page.evaluate(([seatless, gameId]) => {
+    const bookings = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+      .filter((b) => b.game_id === gameId);
+    return {
+      cursor: localStorage.getItem('playora.mock.reconcilecursor.v1'),
+      seatedRow: (bookings.find((b) => b.user_id === seatless) || {}).status ?? null,
+      voidedRow: (bookings.find((b) => b.id === 'bk-recon-unpaid') || {}).status ?? null,
+    };
+  }, [IDS.user, seed.gameId]);
+
+  ok('boot re-seated the paid player with no seat', out.seatedRow === 'confirmed', String(out.seatedRow));
+  ok('boot voided the unpaid confirmed seat', out.voidedRow === 'cancelled', String(out.voidedRow));
+  ok('boot left the paging cursor behind', String(out.cursor).includes('pay-recon-99'), String(out.cursor));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+await run('the admin maintenance screen runs the reconciler', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/admin' });
+  const body = await page.evaluate(() => document.body.innerText);
+  ok('the /admin route resolves', body.includes(t('adminReconcileTitle')), body.slice(0, 60).replace(/\n/g, '|'));
+  await page.getByRole('button', { name: t('adminReconcileCta'), exact: true }).first().click();
+  await page.waitForTimeout(1500);
+  const after = await page.evaluate(() => document.body.innerText);
+  ok('the button reports a result', /scanned/i.test(after), after.slice(0, 200).replace(/\n/g, '|'));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// withdrawEligible qualified every approved organizer regardless of earnings, but nothing writes the
+// organizer_payout ledger kind - so the button sat over a zero balance with nothing claimable behind
+// it. And wallet KYC stamped itself verified on submission, making the gate behind it decorative.
+await run('withdrawal follows the money, and identity waits for a human', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/' });
+  const out = await page.evaluate(async ([org, admin]) => {
+    const api = __r(671);
+    const res = {};
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    const w1 = await api.fetchWallet(org);
+    res.organizerEligible = w1.withdraw_eligible;
+    res.organizerClaimable = w1.claimable_payout_fils;
+    res.withdrawAttempt = await code(() => api.walletWithdraw(org, 5000));
+
+    // the identity check now queues instead of verifying itself
+    const kyc = await api.submitWalletKyc(org, 'Test Organizer', '123456789012');
+    res.kycStatus = kyc.status;
+    res.queued = (await api.fetchPendingWalletKyc(admin)).some((k) => k.user_id === org);
+    res.strangerReview = await code(() => api.reviewWalletKyc(org, org, true, null));
+    await api.reviewWalletKyc(admin, org, true, null);
+    res.afterReview = (await api.fetchWallet(org)).kyc_status;
+    res.secondReview = await code(() => api.reviewWalletKyc(admin, org, true, null));
+    return res;
+  }, [IDS.organizer, IDS.admin]);
+
+  ok('an organizer with no venue is not withdraw-eligible', out.organizerEligible === false, String(out.organizerEligible));
+  ok('and has nothing claimable anyway', out.organizerClaimable === 0, String(out.organizerClaimable));
+  ok('withdrawing is refused', out.withdrawAttempt === 'E_WITHDRAWALS_ARE_AVAILABLE_TO_VERIFIED_ORGANIZERS', String(out.withdrawAttempt));
+  ok('a submitted identity check is pending, not verified', out.kycStatus === 'pending', String(out.kycStatus));
+  ok('it appears in the admin queue', out.queued === true, String(out.queued));
+  ok('a non-admin cannot review it', out.strangerReview !== 'accepted', String(out.strangerReview));
+  ok('an admin verifies it', out.afterReview === 'verified', String(out.afterReview));
+  ok('it cannot be reviewed twice', out.secondReview === 'E_KYC_ALREADY_REVIEWED', String(out.secondReview));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// mockCancelBooking admits three actors - the owner, the organizer and an admin - but delegates to
+// the leave path, which records the booking's owner as the actor. So every organizer and admin
+// removal through it was logged as the player having left of their own accord.
+await run('an admin removing a booking is not logged as the player leaving', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/' });
+  const out = await page.evaluate(async ([org, player, admin]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const mk = async (day) => {
+      const g = await api.createMatch(org, {
+        title: 'Audit actor ' + day, sport: 'football', venue_id: venues[day % venues.length].id,
+        starts_at: new Date(Date.now() + day * 864e5).toISOString(),
+        ends_at: new Date(Date.now() + day * 864e5 + 54e5).toISOString(),
+        max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+      });
+      await api.joinMatch(g.id, player);
+      return g;
+    };
+    // the log is newest-first, and rows carry type / actorRef / meta
+    const entries = () => JSON.parse(localStorage.getItem('playora.audit.v1') || '[]');
+    const since = (n) => entries().slice(0, Math.max(0, entries().length - n));
+
+    const a = await mk(49);
+    const bkA = (await api.fetchMyBookings(player)).find((x) => x && x.game_id === a.id);
+    const markA = entries().length;
+    await api.cancelBooking(bkA.id, player);
+    const ownRows = since(markA);
+
+    const b = await mk(51);
+    const bkB = (await api.fetchMyBookings(player)).find((x) => x && x.game_id === b.id);
+    const markB = entries().length;
+    await api.cancelBooking(bkB.id, admin);
+    const adminRows = since(markB);
+
+    const pick = (rows, type) => rows.find((r) => r.type === type) || null;
+    return {
+      ownLeave: !!pick(ownRows, 'match.leave'),
+      ownRemoved: !!pick(ownRows, 'participant.removed'),
+      adminRemoved: pick(adminRows, 'participant.removed'),
+      adminActor: (pick(adminRows, 'participant.removed') || {}).actorRef ?? null,
+      adminMeta: (pick(adminRows, 'participant.removed') || {}).meta ?? null,
+      playerRef: __r(643).actorRef(player),
+      adminRef: __r(643).actorRef(admin),
+    };
+  }, [IDS.organizer, IDS.user, IDS.admin]);
+
+  ok('a player cancelling their own seat is still a leave', out.ownLeave === true, String(out.ownLeave));
+  ok('and is not recorded as a removal', out.ownRemoved === false, String(out.ownRemoved));
+  ok('an admin doing it is recorded as a removal', !!out.adminRemoved, JSON.stringify(out.adminRemoved));
+  ok('with the admin as the actor', out.adminActor === out.adminRef, `${out.adminActor} vs admin ${out.adminRef}`);
+  ok('and the player named in the entry', out.adminMeta && out.adminMeta.player === out.playerRef, JSON.stringify(out.adminMeta));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
+// mockCorrectMatchScore is the one legitimate way to change a final result, and no screen anywhere
+// called it - so E_THIS_RESULT_IS_FINAL was absolute in practice. It also notified nobody, so
+// players kept the wrong score they had been pushed.
+await run('a corrected score is recorded and reaches the players', async () => {
+  const { browser, page, errors } = await openApp({ role: 'admin', route: '/' });
+  const seed = await page.evaluate(async ([org, player]) => {
+    const api = __r(671);
+    const venues = (await api.fetchVenues()).filter((v) => (v.sports || []).includes('football'));
+    const g = await api.createMatch(org, {
+      title: 'Wrong score', sport: 'football', venue_id: venues[0].id,
+      starts_at: new Date(Date.now() + 55 * 864e5).toISOString(),
+      ends_at: new Date(Date.now() + 55 * 864e5 + 54e5).toISOString(),
+      max_players: 10, waitlist_capacity: 2, price_kwd: 0, visibility: 'public', format: '5v5',
+    });
+    await api.joinMatch(g.id, player);
+    const games = JSON.parse(localStorage.getItem('playora.mock.games.v1') || '[]');
+    for (const row of games) if (row.id === g.id) {
+      row.starts_at = new Date(Date.now() - 2 * 36e5).toISOString();
+      row.ends_at = new Date(Date.now() - 36e5).toISOString();
+    }
+    localStorage.setItem('playora.mock.games.v1', JSON.stringify(games));
+    return { gameId: g.id };
+  }, [IDS.organizer, IDS.user]);
+
+  await page.goto('http://localhost/profile', { waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  const out = await page.evaluate(async ([org, admin, player, gameId]) => {
+    const api = __r(671);
+    const code = async (fn) => { try { await fn(); return 'accepted'; } catch (e) { return e.code || e.message; } };
+    // submitMatchScore takes the organizer first, then the match
+    await api.submitMatchScore(org, gameId, 3, 2);
+    const before = (await api.fetchNotifications(player)).filter((n) => n.type === 'match_score').length;
+    const again = await code(() => api.submitMatchScore(org, gameId, 5, 1));
+    const noReason = await code(() => api.correctMatchScore(admin, gameId, 4, 2, 'no'));
+    const notAdmin = await code(() => api.correctMatchScore(org, gameId, 4, 2, 'Scorer miscounted'));
+    const fixed = await api.correctMatchScore(admin, gameId, 4, 2, 'Scorer miscounted the second half');
+    const notes = (await api.fetchNotifications(player)).filter((n) => n.type === 'match_score');
+    const bookingStates = JSON.parse(localStorage.getItem('playora.mock.bookings.v1') || '[]')
+      .filter((b) => b.game_id === gameId).map((b) => `${b.user_id.slice(0,4)}:${b.status}`);
+    const dto = await api.fetchGame(gameId, player);
+    const adminLog = JSON.parse(localStorage.getItem('playora.audit.admin.v1') || '[]')
+      .find((r) => r.type === 'match.score_corrected');
+    return {
+      again, noReason, notAdmin,
+      score: `${fixed.score_home}-${fixed.score_away}`,
+      newNotes: notes.length - before,
+      latest: notes[0] ? `${notes[0].score_home}-${notes[0].score_away}` : null,
+      corrected: notes[0] ? notes[0].corrected === true : false,
+      dtoCorrectedAt: dto.score_corrected_at,
+      logged: adminLog ? adminLog.meta : null,
+      bookingStates,
+    };
+  }, [IDS.organizer, IDS.admin, IDS.user, seed.gameId]);
+
+  ok('the organizer cannot resubmit a final score', out.again === 'E_THIS_RESULT_IS_FINAL', String(out.again));
+  ok('a correction needs a reason', out.noReason === 'E_A_REASON_IS_REQUIRED', String(out.noReason));
+  ok('and an administrator', out.notAdmin !== 'accepted', String(out.notAdmin));
+  ok('an admin can correct it', out.score === '4-2', String(out.score));
+  ok('every participant is notified', out.newNotes >= 1, `${out.newNotes} / bookings ${JSON.stringify(out.bookingStates)}`);
+  ok('with the new figures', out.latest === '4-2' && out.corrected === true, `${out.latest}/${out.corrected}`);
+  ok('the match reports it was corrected', !!out.dtoCorrectedAt, String(out.dtoCorrectedAt));
+  ok('the privileged log records from, to and why', out.logged && out.logged.from === '3-2' && out.logged.to === '4-2' && String(out.logged.reason).length > 3, JSON.stringify(out.logged));
+  ok('no page errors', !errors.some((e) => e.startsWith('pageerror')), errors.filter((e) => e.startsWith('pageerror')).slice(0, 1).join(''));
+  await browser.close();
+});
+
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

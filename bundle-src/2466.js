@@ -827,6 +827,19 @@ __d(
                               b: e,
                               colors: v,
                               children: [
+                                // Cash was selectable and then unsettleable: the payment stayed
+                                // pending forever and the seat could never be confirmed. This is the
+                                // other half - whoever is collecting marks it received at the venue.
+                                e.seat_payment && "pending" === e.seat_payment.status
+                                  ? (0, W.jsx)(E, {
+                                      active: !1,
+                                      label: C("markCashPaid"),
+                                      tone: "success",
+                                      colors: v,
+                                      onPress: () =>
+                                        Ue(() => (0, w.confirmCashPayment)(o.id, e.seat_payment.id)),
+                                    })
+                                  : null,
                                 et
                                   ? (0, W.jsxs)(W.Fragment, {
                                       children: [
