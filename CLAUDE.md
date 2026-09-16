@@ -75,6 +75,24 @@ code bug.
   repo (there are four projects, and `…-playora2.vercel.app` is a different one); that project's Git
   integration is not pointed at this repo's `main`; or its production deployment is pinned to an old
   one that nothing has re-promoted. `vercel.json`'s `ignoreCommand` is correct and is not the cause.
+- **The project id behind `rush-x.xyz` is `prj_Sd0nSU1UooYlKwJG2XfXvdo6ulZ8`** (given 2026-09-16).
+  Note it is **not** obviously one of the four projects listed above, which is the most likely reason
+  the domain has never tracked `main`: a project that is not connected to this repo receives nothing,
+  however often the repo is pushed. Confirm before assuming anything else is wrong. From a machine
+  with Vercel access:
+
+  ```sh
+  vercel link --yes --project prj_Sd0nSU1UooYlKwJG2XfXvdo6ulZ8   # link this checkout to it
+  vercel project ls                                              # which projects exist
+  vercel domains inspect rush-x.xyz                              # which project the domain is on
+  vercel ls --prod                                               # its production deployments
+  vercel inspect <deployment-url>                                # the commit a deployment was built from
+  ```
+
+  If its Git integration is not connected to `fawazalfares245-bot/playora` on `main`, connect it -
+  that is the fix, and nothing in this repo can do it. As a one-off, `vercel deploy --prod` from a
+  checkout of `main` uploads the committed `index.html` directly and bypasses the Git integration
+  entirely; there is no build step, so what is committed is what is served.
 - **The Expo source that produces `index.html` is not in any repo.** It lives on one laptop, uncommitted.
   Anything edited in `bundle-src/` is a patch to a build artifact: the next Expo build overwrites it
   silently and without conflict. That has already happened at least once. Until the Expo project is
