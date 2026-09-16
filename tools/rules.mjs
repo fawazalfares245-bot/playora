@@ -106,6 +106,22 @@ const out = await page.evaluate(async (ids) => {
     // and have no booking on it, which is what a caller who should get through looks like.
     res.groupOnPrivateByAdmin = await grp9(ids.admin, pg.id);
 
+    // Match chat had no gate on either side: reading took a game id and a channel, and the viewer id
+    // only decided which bubbles drew on the right, so a signed-out visitor could read a private
+    // match's whole conversation. Writing took the author's id AND display name from the payload, so
+    // a stranger could post into any match under any name. The screen enforces nothing either - it
+    // renders whatever id is in the URL.
+    const chat9 = async (fn) => { try { const v = await fn(); return Array.isArray(v) ? `rows:${v.length}` : 'accepted'; } catch (e) { return e.code || e.message; } };
+    await api.sendChatMessage({ game_id: pg.id, channel: 'general', user_id: ids.organizer, user_name: 'Test Organizer', body: 'Meet at the north gate' });
+    res.chatOrganizer = await chat9(() => api.fetchChatMessages(pg.id, 'general', ids.organizer));
+    res.chatParticipant = await chat9(() => api.fetchChatMessages(pg.id, 'general', ids.user));
+    res.chatOutsider = await chat9(() => api.fetchChatMessages(pg.id, 'general', ids.analyst));
+    res.chatGuest = await chat9(() => api.fetchChatMessages(pg.id, 'general', undefined));
+    res.chatWriteOutsider = await chat9(() => api.sendChatMessage({ game_id: pg.id, channel: 'general', user_id: ids.analyst, user_name: 'Test Organizer', body: 'not mine to send' }));
+    // The name on a message is the author's, not the caller's to choose.
+    const posted = await api.sendChatMessage({ game_id: pg.id, channel: 'general', user_id: ids.user, user_name: 'Someone Else Entirely', body: 'signed by me' });
+    res.chatAuthorName = posted.author_name;
+
     // ...and a public match is read by anyone, which is the point of the gate having a shape. This
     // takes a seeded match rather than creating one: the organizer has an hourly creation cap and
     // this file already spends two of it above.
@@ -392,6 +408,12 @@ ok('nor can a player who is only in the match', out.partsParticipant === 'E_YOU_
 ok('the organizer reads their own participant roster', /confirmed:[1-9]/.test(String(out.partsOrganizer)), String(out.partsOrganizer));
 ok('an admin reads it too', /confirmed:[1-9]/.test(String(out.partsAdmin)), String(out.partsAdmin));
 ok('the organizer match screen stays empty rather than erroring', out.omsOutsider === 'confirmed:0', String(out.omsOutsider));
+ok('the organizer reads the match chat', /^rows:[1-9]/.test(String(out.chatOrganizer)), String(out.chatOrganizer));
+ok('a participant reads it too', /^rows:[1-9]/.test(String(out.chatParticipant)), String(out.chatParticipant));
+ok('an outsider cannot read the match chat', out.chatOutsider === 'E_MATCH_NOT_FOUND', String(out.chatOutsider));
+ok('nor can a signed-out visitor', out.chatGuest === 'E_MATCH_NOT_FOUND', String(out.chatGuest));
+ok('an outsider cannot post into it', out.chatWriteOutsider === 'E_MATCH_NOT_FOUND', String(out.chatWriteOutsider));
+ok('a message is signed with the author\u2019s own name', out.chatAuthorName === 'Test Player', String(out.chatAuthorName));
 ok('a stranger cannot reserve a group on a private match', out.groupOnPrivateByStranger === 'E_MATCH_NOT_FOUND', String(out.groupOnPrivateByStranger));
 ok('an admin still can (the control)', out.groupOnPrivateByAdmin === 'created', String(out.groupOnPrivateByAdmin));
 for (const [name, r] of Object.entries(out.readers || {})) {

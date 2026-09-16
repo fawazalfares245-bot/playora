@@ -410,7 +410,7 @@ __d(
     e.fetchGamePlayers = (o, c) => t.store.mockGetGamePlayers(o, c);
     e.setPlayerTeam = (o, c, s) => t.store.mockSetPlayerTeam(o, c, s);
     e.upsertSelfPlayer = (o) => t.store.mockUpsertSelfPlayer(o);
-    e.ensureChatSeed = (o) => t.store.mockEnsureChatSeed(o);
+    e.ensureChatSeed = (o, c) => t.store.mockEnsureChatSeed(o, c);
     e.fetchChatMessages = (o, c, s) => t.store.mockGetChatMessages(o, c, s);
     e.sendChatMessage = (o) => t.store.mockSendChatMessage(o);
     e.submitContact = (o) => t.store.mockSubmitContact(o);

@@ -3027,13 +3027,33 @@ __d(
           });
         (Qt.chatMessages.push(...i), Qt.chatSeededFor.add(e), await Za(ee, Qt.chatMessages));
       };
-    r.mockEnsureChatSeed = async (e) => {
+    r.mockEnsureChatSeed = async (e, cr9) => {
       await ei();
+      // The screen calls this before it reads, and it writes seed rows into the match's channel.
+      void 0 !== cr9 && mayChat9(e, cr9);
       const t = La.find((t) => t.id === e);
       (t && (await oi(t)), await Li(e));
     };
+    // Match chat had no gate on either side. Reading took a game id, a channel name and a viewer id
+    // that was used only to decide which bubbles to draw on the right, so anyone holding a match id
+    // - signed out included - could read a private match's whole conversation, addresses and phone
+    // numbers and all. Writing was worse: mockSendChatMessage took the author's id and display name
+    // straight from the payload and pushed the row, so a stranger could post into any match under
+    // any name. The screen at /chat/[gameId] enforces nothing either; it renders whatever id is in
+    // the URL.
+    //
+    // Chat belongs to the people in the match: its participants, its organizer, and an admin.
+    const mayChat9 = (e, t) => {
+      const a = hi(e);
+      if (!a) throw new Error("E_MATCH_NOT_FOUND");
+      (ra(t, a.audience), maySeeMatch9(a, t) || err9());
+      if (!t || (a.organizer_id !== t && !ro(t) && !Fi(e).includes(t)))
+        throw new Error("E_MATCH_NOT_FOUND");
+      return a;
+    };
     r.mockGetChatMessages = async (e, t, a) => (
       await ei(),
+      mayChat9(e, a),
       Qt.chatMessages
         .filter((a) => a.game_id === e && a.channel === t)
         .map((e) => Object.assign({}, e, { is_self: a ? e.author_id === `self-${a}` : e.is_self }))
@@ -3041,12 +3061,17 @@ __d(
     );
     const Gi = async (e) => {
       await ei();
+      mayChat9(e.game_id, e.user_id);
       const t = {
         id: ea(),
         game_id: e.game_id,
         channel: e.channel,
         author_id: `self-${e.user_id}`,
-        author_name: (0, v.sanitizeName)(e.user_name),
+        // The name is the author's, not the caller's to choose: it arrived in the payload, so a
+        // message could be signed with anyone's name.
+        author_name: (0, v.sanitizeName)(
+          Qt.profiles.find((t) => t.id === e.user_id)?.full_name || e.user_name,
+        ),
         avatar_seed: 99,
         is_self: !0,
         body: (0, v.sanitizeText)(e.body, 1e3),

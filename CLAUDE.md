@@ -169,6 +169,15 @@ and `mockGetMatchAwards`. `mockCreateGroupBooking` is a **write** that never wen
 pushes `reserved` booking rows straight into `Qt.bookings` - so it takes `maySeeMatch9` and
 `assertMayHoldSeat9`, for every friend on the reservation as well as the leader.
 
+Match chat is narrower than the match: `mayChat9(gameId, callerId)` requires the visibility and
+audience gates **and** that the caller is a participant, the organizer, or an admin. It guards
+`mockGetChatMessages`, `mockSendChatMessage` and `mockEnsureChatSeed`. Neither side had any gate at
+all - a signed-out visitor could read a private match's whole conversation, and a stranger could post
+into any match under any display name, because the author's name arrived in the payload. It comes
+from the profile now. `/chat/[gameId]` (module 1843) enforces nothing itself and renders whatever id
+is in the URL, so it must handle the refusal: it catches, shows the `chatClosed*` empty state and
+hides the composer.
+
 Anything new that reads or seats against a match by id belongs behind the same calls.
 `tools/rules.mjs` asserts the matrix - outsider, guest, participant, organizer, admin, against both
 a private and a public match. Test the organizer too: a reader with no data refuses everyone and
